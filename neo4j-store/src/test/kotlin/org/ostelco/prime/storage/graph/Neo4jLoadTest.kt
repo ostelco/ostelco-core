@@ -16,6 +16,7 @@ import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.Segment
 import java.time.Instant
+import java.util.*
 import java.util.concurrent.CountDownLatch
 import kotlin.test.BeforeTest
 import kotlin.test.Ignore
@@ -64,7 +65,10 @@ class Neo4jLoadTest {
 
             Neo4jStoreSingleton.addSubscription(
                     identity = Identity(id = "test-$user", type = "EMAIL", provider = "email"),
-                    msisdn = "$user")
+                    msisdn = "$user",
+                    iccId = UUID.randomUUID().toString(),
+                    regionCode = "no",
+                    alias = "")
                     .mapLeft { fail(it.message) }
         }
 

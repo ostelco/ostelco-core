@@ -24,10 +24,18 @@ class SubscriptionsResource {
 
     @POST
     fun createSubscription(
-            @QueryParam("subscription_id") email: String,
+            @QueryParam("email") email: String,
+            @QueryParam("regionCode") regionCode: String,
+            @QueryParam("iccId") iccId: String,
+            @QueryParam("alias") alias: String,
             @QueryParam("msisdn") msisdn: String): Response {
 
-        return adminDataSource.addSubscription(Identity(email, "EMAIL", "email"), msisdn)
+        return adminDataSource.addSubscription(
+                identity = Identity(email, "EMAIL", "email"),
+                regionCode = regionCode,
+                iccId = iccId,
+                alias = alias,
+                msisdn = msisdn)
                 .fold({ Response.status(Response.Status.NOT_FOUND).entity(it.message).build() },
                         { Response.status(Response.Status.CREATED).build() })
     }

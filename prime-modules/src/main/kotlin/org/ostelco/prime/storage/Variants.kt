@@ -210,7 +210,14 @@ interface AdminGraphStore {
      * Link Customer to MSISDN
      */
     @Deprecated(message = "Assigning MSISDN to Customer via Admin API will be removed in future.")
-    fun addSubscription(identity: Identity, msisdn: String): Either<StoreError, Unit>
+    fun addSubscription(
+            identity: Identity,
+            regionCode: String,
+            iccId: String,
+            alias: String,
+            msisdn: String): Either<StoreError, Unit>
+
+    fun deleteSimProfileWithSubscription(regionCode: String, iccId: String): Either<StoreError, Unit>
 
     // simple create
     fun createProductClass(productClass: ProductClass): Either<StoreError, Unit>

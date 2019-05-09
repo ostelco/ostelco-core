@@ -24,7 +24,10 @@ fun createSubscription(email: String): String {
     post<String> {
         path = "/admin/subscriptions"
         queryParams = mapOf(
-                "subscription_id" to email,
+                "email" to email,
+                "regionCode" to "no",
+                "iccId" to "unknown",
+                "alias" to "default",
                 "msisdn" to msisdn
         )
     }
