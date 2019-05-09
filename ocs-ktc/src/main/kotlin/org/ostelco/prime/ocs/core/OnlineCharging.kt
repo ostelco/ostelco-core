@@ -124,9 +124,12 @@ object OnlineCharging : OcsAsyncRequestConsumer {
             } else {
                 responseMscc.volumeQuotaThreshold = (grantedTotalOctets * 0.2).toLong() // When client has 20% left
             }
+            responseMscc.resultCode = ResultCode.DIAMETER_SUCCESS
+        } else if (mscc.requested.totalOctets > 0) {
+            responseMscc.resultCode = ResultCode.DIAMETER_CREDIT_LIMIT_REACHED
+        } else {
+            responseMscc.resultCode = ResultCode.DIAMETER_SUCCESS
         }
-
-        responseMscc.resultCode = ResultCode.DIAMETER_SUCCESS
 
         synchronized(OnlineCharging) {
             response.addMscc(responseMscc.build())

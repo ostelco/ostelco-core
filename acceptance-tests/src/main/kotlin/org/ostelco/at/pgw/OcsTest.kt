@@ -178,6 +178,46 @@ class OcsTest {
         }
     }
 
+    //@Test
+    fun multiRatingGroupsInitUserUnknown() {
+
+        val client = testClient ?: fail("Test client is null")
+
+        val session = client.createSession() ?: fail("Failed to create session")
+        val request = client.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session
+        ) ?: fail("Failed to create request")
+
+        TestHelper.createInitRequestMultiRatingGroups(request.getAvps(), "4794763521", 5000L)
+
+        client.sendNextRequest(request, session)
+
+        waitForAnswer()
+
+        assertEquals(DIAMETER_USER_UNKNOWN, client.resultCodeAvp!!.getInteger32().toLong())
+        val resultAvps = client.resultAvps
+        assertEquals(DEST_HOST, resultAvps!!.getAvp(Avp.ORIGIN_HOST).getUTF8String())
+        assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String())
+        assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32().toLong())
+        val resultMSCCs = resultAvps.getAvps(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
+        assertEquals(3, resultMSCCs.size().toLong())
+        for (i in 0 until resultMSCCs.size()) {
+            val mscc = resultMSCCs.getAvpByIndex(i).getGrouped()
+            assertEquals(DIAMETER_USER_UNKNOWN, mscc.getAvp(Avp.RESULT_CODE).getInteger32().toLong())
+            val granted = mscc.getAvp(Avp.GRANTED_SERVICE_UNIT)
+            assertEquals(0L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64())
+            val serviceIdentifier = mscc.getAvp(Avp.SERVICE_IDENTIFIER_CCA).getUnsigned32().toInt()
+            when (serviceIdentifier) {
+                1 -> assertEquals(10, mscc.getAvp(Avp.RATING_GROUP).getUnsigned32())
+                2 -> assertEquals(12, mscc.getAvp(Avp.RATING_GROUP).getUnsigned32())
+                4 -> assertEquals(14, mscc.getAvp(Avp.RATING_GROUP).getUnsigned32())
+                else -> fail("Unexpected Service-Identifier")
+            }
+        }
+    }
+
     @Test
     fun simpleCreditControlRequestInitUpdateAndTerminate() {
 
@@ -239,8 +279,8 @@ class OcsTest {
 
         val client = testClient ?: fail("Test client is null")
 
-        val session = client.createSession() ?: fail("Failed to create session")
-        val request = client.createRequest(
+        var session = client.createSession() ?: fail("Failed to create session")
+        var request = client.createRequest(
                 DEST_REALM,
                 DEST_HOST,
                 session
@@ -317,6 +357,39 @@ class OcsTest {
             assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
             assertEquals(RequestType.TERMINATION_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
         }
+
+        // If P-GW tries another CCR-I we should reply DIAMETER_CREDIT_LIMIT_REACHED
+
+        session = client.createSession() ?: fail("Failed to create session")
+        request = client.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session
+        ) ?: fail("Failed to create request")
+
+
+        // Requesting one more bucket, the balance should be zero now
+        TestHelper.createInitRequest(request.avps, msisdn, BUCKET_SIZE, ratingGroup, serviceIdentifier)
+
+        client.sendNextRequest(request, session)
+
+        waitForAnswer()
+
+        // First request should reserve the full balance
+        run {
+            assertEquals(DIAMETER_SUCCESS, client.resultCodeAvp?.integer32?.toLong())
+            val resultAvps = client.resultAvps ?: fail("Missing AVPs")
+            assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
+            assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
+            assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+            val resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
+            assertEquals(DIAMETER_CREDIT_LIMIT_REACHED, resultMSCC.grouped.getAvp(Avp.RESULT_CODE).integer32.toLong())
+            assertEquals(serviceIdentifier.toLong(), resultMSCC.grouped.getAvp(Avp.SERVICE_IDENTIFIER_CCA).integer32.toLong())
+            assertEquals(ratingGroup.toLong(), resultMSCC.grouped.getAvp(Avp.RATING_GROUP).integer32.toLong())
+            val granted = resultMSCC.grouped.getAvp(Avp.GRANTED_SERVICE_UNIT)
+            assertEquals(0L, granted.grouped.getAvp(Avp.CC_TOTAL_OCTETS).unsigned64)
+        }
+
     }
 
 
@@ -455,6 +528,7 @@ class OcsTest {
         private const val DEFAULT_REQUESTED_SERVICE_UNIT = 40_000_000L
 
         private const val DIAMETER_SUCCESS = 2001L
+        private const val DIAMETER_CREDIT_LIMIT_REACHED = 4012L
         private const val DIAMETER_USER_UNKNOWN = 5030L
     }
 }
