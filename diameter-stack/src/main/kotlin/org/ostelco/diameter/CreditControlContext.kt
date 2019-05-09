@@ -89,8 +89,8 @@ class CreditControlContext(
 
                 if (mscc.granted.total > -1) {
                     val gsuAvp = answerMSCC.addGroupedAvp(Avp.GRANTED_SERVICE_UNIT, true, false)
-                    gsuAvp.addAvp(Avp.CC_INPUT_OCTETS, 0L, true, false)
-                    gsuAvp.addAvp(Avp.CC_OUTPUT_OCTETS, 0L, true, false)
+                    //gsuAvp.addAvp(Avp.CC_INPUT_OCTETS, 0L, true, false)
+                    //gsuAvp.addAvp(Avp.CC_OUTPUT_OCTETS, 0L, true, false)
                     gsuAvp.addAvp(Avp.CC_TOTAL_OCTETS, mscc.granted.total, true, false)
                 }
             }
