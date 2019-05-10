@@ -14,9 +14,10 @@ class ObjectHandlerTest {
         val expectedMap = LinkedHashMap<String, Any>()
         expectedMap["sku"] = "1GB_249NOK"
         expectedMap["price${separator}amount"] = 24900
-        expectedMap["price${separator}currency"]  = "NOK"
-        expectedMap["properties${separator}noOfBytes"]  = "1_000_000_000"
-        expectedMap["presentation${separator}label"]  = "1 GB for 249"
+        expectedMap["price${separator}currency"] = "NOK"
+        expectedMap["properties${separator}noOfBytes"] = "1_073_741_824"
+        expectedMap["properties${separator}productClass"] = "SIMPLE_DATA"
+        expectedMap["presentation${separator}label"] = "1 GB for 249"
 
         assertEquals(expectedMap, map)
 
@@ -24,14 +25,15 @@ class ObjectHandlerTest {
         expectedNestedMap["sku"] = "1GB_249NOK"
         val priceMap = LinkedHashMap<String, Any>()
         expectedNestedMap["price"] = priceMap
-        priceMap["amount"]  = 24900
-        priceMap["currency"]  = "NOK"
+        priceMap["amount"] = 24900
+        priceMap["currency"] = "NOK"
         val propertiesMap = LinkedHashMap<String, Any>()
         expectedNestedMap["properties"] = propertiesMap
-        propertiesMap["noOfBytes"]  = "1_000_000_000"
+        propertiesMap["noOfBytes"] = "1_073_741_824"
+        propertiesMap["productClass"] = "SIMPLE_DATA"
         val presentationMap = LinkedHashMap<String, Any>()
         expectedNestedMap["presentation"] = presentationMap
-        presentationMap["label"]  = "1 GB for 249"
+        presentationMap["label"] = "1 GB for 249"
 
         val nestedMap = ObjectHandler.toNestedMap(map)
         assertEquals(expectedNestedMap, nestedMap)

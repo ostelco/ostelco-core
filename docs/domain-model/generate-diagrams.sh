@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-plantuml classes.puml
+plantuml -tsvg classes.puml

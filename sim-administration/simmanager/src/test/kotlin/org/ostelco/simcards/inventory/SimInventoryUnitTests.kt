@@ -10,8 +10,8 @@ import org.apache.http.impl.client.CloseableHttpClient
 import org.junit.AfterClass
 import org.junit.Before
 import org.junit.ClassRule
-import org.junit.Ignore
 import org.junit.Test
+import org.mockito.Mockito
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.reset
 import org.mockito.Mockito.verify
@@ -22,6 +22,7 @@ import org.ostelco.simcards.admin.SimAdministrationConfiguration
 import org.ostelco.simcards.hss.HssEntry
 import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
 import java.io.ByteArrayInputStream
+import java.io.InputStream
 import java.util.*
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
@@ -291,7 +292,6 @@ class SimInventoryUnitTests {
     //  3. Copy/modify/refactor to test that this will also work when setting the
     //     initial hss state of the profile.
     @Test
-    @Ignore
     fun testImport() {
         org.mockito.Mockito.`when`(dao.findSimVendorForHssPermissions(1L, 1L))
                 .thenReturn(listOf(0L).right())
@@ -307,8 +307,7 @@ class SimInventoryUnitTests {
             """.trimIndent()
         val data = ByteArrayInputStream(sampleCsvIinput.toByteArray(Charsets.UTF_8))
 
-        // XXX For some reason this mock fails to match...
-        org.mockito.Mockito.`when`(dao.importSims("importer", 1L, 1L, data))
+        org.mockito.Mockito.`when`(dao.importSims(eq("importer"), eq(1L), eq(1L), any(InputStream::class.java)))
                 .thenReturn(SimImportBatch(
                         id = 0L,
                         status = "SUCCESS",
@@ -326,4 +325,8 @@ class SimInventoryUnitTests {
         val simEntry = response.readEntity(SimImportBatch::class.java)
         assertNotNull(simEntry)
     }
+
+    // TODO rmz: Move this to some utility class if they are needed again.
+    private fun <T> any(type: Class<T>): T = Mockito.any<T>(type)
+    private fun <T> eq(obj : T): T = Mockito.eq<T>(obj)
 }

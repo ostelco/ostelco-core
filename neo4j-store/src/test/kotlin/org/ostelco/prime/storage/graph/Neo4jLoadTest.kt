@@ -16,6 +16,7 @@ import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.Segment
 import java.time.Instant
+import java.util.*
 import java.util.concurrent.CountDownLatch
 import kotlin.test.BeforeTest
 import kotlin.test.Ignore
@@ -37,13 +38,13 @@ class Neo4jLoadTest {
         Neo4jStoreSingleton.createIndex()
 
         Neo4jStoreSingleton.createProduct(
-                Product(sku = "100MB_FREE_ON_JOINING",
-                        price = Price(0, CURRENCY),
-                        properties = mapOf("noOfBytes" to "100_000_000")))
+                Product(sku = "2GB_FREE_ON_JOINING",
+                        price = Price(0, ""),
+                        properties = mapOf("noOfBytes" to "2_147_483_648")))
 
         Neo4jStoreSingleton.createProduct(
                 Product(sku = "1GB_FREE_ON_REFERRED",
-                        price = Price(0, CURRENCY),
+                        price = Price(0, ""),
                         properties = mapOf("noOfBytes" to "1_000_000_000")))
 
         val allSegment = Segment(id = getSegmentNameFromCountryCode(COUNTRY))
@@ -64,7 +65,10 @@ class Neo4jLoadTest {
 
             Neo4jStoreSingleton.addSubscription(
                     identity = Identity(id = "test-$user", type = "EMAIL", provider = "email"),
-                    msisdn = "$user")
+                    msisdn = "$user",
+                    iccId = UUID.randomUUID().toString(),
+                    regionCode = "no",
+                    alias = "")
                     .mapLeft { fail(it.message) }
         }
 

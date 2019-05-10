@@ -3,9 +3,9 @@ info:
   title: "Ostelco API"
   description: "The customer API."
   version: "1.0.0"
-host: "api.ostelco.org"
+host: "api.oya.world"
 x-google-endpoints:
-  - name: "api.ostelco.org"
+  - name: "api.oya.world"
     allowCors: true
 schemes:
   - "https"
@@ -21,15 +21,31 @@ paths:
           in: query
           description: "Stripe API version"
           type: string
+          format: email
       responses:
         200:
           description: "Get Stripe Ephemeral key."
           schema:
             type: string
-        404:
-          description: "User not found."
       security:
         - auth0_jwt: []
+        - firebase: []
+  "/context":
+    get:
+      description: "Get context which is customer and region details."
+      produces:
+        - application/json
+      operationId: "getContext"
+      responses:
+        200:
+          description: "Get the customer context."
+          schema:
+            $ref: '#/definitions/Context'
+        404:
+          description: "Customer not found."
+      security:
+        - auth0_jwt: []
+        - firebase: []
   "/customer":
     get:
       description: "Get customer info (email-id present in the bearer token)."
@@ -45,6 +61,7 @@ paths:
           description: "Customer not found."
       security:
         - auth0_jwt: []
+        - firebase: []
     post:
       description: "Create a new customer."
       consumes:
@@ -53,12 +70,17 @@ paths:
         - application/json
       operationId: "createCustomer"
       parameters:
-        - name: customer
-          in: body
-          description: The customer to create.
-          schema:
-            $ref: '#/definitions/Customer'
-        - name: referred_by
+        - name: nickname
+          in: query
+          description: "Nickname of the customer"
+          type: string
+          required: true
+        - name: contactEmail
+          in: query
+          description: "Contact Email of the customer"
+          type: string
+          required: true
+        - name: referredBy
           in: query
           description: "Referral ID of user who has invited this user"
           type: string
@@ -69,12 +91,11 @@ paths:
             $ref: '#/definitions/Customer'
         400:
           description: "Incomplete customer info"
-        403:
-          description: "Customer invalid or already created"
-        502:
+        500:
           description: "Failed to store customer"
       security:
         - auth0_jwt: []
+        - firebase: []
     put:
       description: "Update an existing customer."
       consumes:
@@ -83,55 +104,109 @@ paths:
         - application/json
       operationId: "updateCustomer"
       parameters:
-        - in: body
-          name: customer
-          description: The updated customer.
-          schema:
-            $ref: '#/definitions/Customer'
+        - name: nickname
+          in: query
+          description: "Nickname of the customer"
+          type: string
+        - name: contactEmail
+          in: query
+          description: "Contact Email of the customer"
+          type: string
       responses:
         200:
           description: "Successfully updated the customer."
           schema:
             $ref: '#/definitions/Customer'
         400:
-          description: "Incomplete Customer info"
+          description: "Incomplete Customer info."
         404:
           description: "Customer not found."
-        502:
-          description: "Failed to store customer info"
+        500:
+          description: "Failed to update customer info."
       security:
         - auth0_jwt: []
-  "/regions/{countryCode}/kyc/jumio/scans":
+        - firebase: []
+    delete:
+      description: "Remove customer."
+      produces:
+        - application/json
+      operationId: "removeCustomer"
+      responses:
+        204:
+          description: "Remove customer."
+        404:
+          description: "Customer not found."
+      security:
+        - auth0_jwt: []
+        - firebase: []
+  "/regions":
+    get:
+      description: "Get all regions and region details like SIM Profiles for that region."
+      produces:
+        - application/json
+      operationId: "getAllRegions"
+      responses:
+        200:
+          description: "List of all Region Details"
+          schema:
+            $ref: '#/definitions/RegionDetailsList'
+      security:
+        - auth0_jwt: []
+        - firebase: []
+  "/regions/{regionCode}":
+    get:
+      description: "Get region details like SIM Profiles for a region."
+      produces:
+        - application/json
+      operationId: "getRegion"
+      parameters:
+        - name: regionCode
+          in: path
+          description: "Region code"
+          required: true
+          type: string
+      responses:
+        200:
+          description: "Region Details for a region"
+          schema:
+            $ref: '#/definitions/RegionDetails'
+        404:
+          description: "Region not found."
+      security:
+        - auth0_jwt: []
+        - firebase: []
+  "/regions/{regionCode}/kyc/jumio/scans":
     post:
       description: "Get a new Id for eKYC scanning."
       produces:
         - application/json
       operationId: "createNewJumioKycScanId"
       parameters:
-        - name: countryCode
+        - name: regionCode
           in: path
-          description: "Country code in ISO 3166-1 alpha-3 format"
+          description: "Region code"
           required: true
           type: string
       responses:
-        200:
+        201:
           description: "Successfully retrieved new ScanId."
           schema:
             $ref: '#/definitions/ScanInformation'
         404:
-          description: "User not found."
+          description: "Region not found."
       security:
         - auth0_jwt: []
-  "/regions/{countryCode}/kyc/jumio/scans/{scanId}/status":
+        - firebase: []
+  "/regions/{regionCode}/kyc/jumio/scans/{scanId}":
     get:
       description: "Get status of eKYC scan."
       produces:
         - application/json
-      operationId: "getScanStatus"
+      operationId: "getScan"
       parameters:
-        - name: countryCode
+        - name: regionCode
           in: path
-          description: "Country code in ISO 3166-1 alpha-3 format"
+          description: "Region code"
           required: true
           type: string
         - name: scanId
@@ -145,21 +220,228 @@ paths:
           schema:
             $ref: '#/definitions/ScanInformation'
         404:
-          description: "Scan not found."
+          description: "Region or Scan not found."
       security:
         - auth0_jwt: []
-  "/regions/{countryCode}/subscriptions":
+        - firebase: []
+  "/regions/sg/kyc/myInfo/{authorisationCode}":
+    get:
+      description: "Get Customer Data from Singapore MyInfo service."
+      produces:
+        - application/json
+      operationId: "getCustomerMyInfoData"
+      parameters:
+        - name: authorisationCode
+          in: path
+          description: "Authorisation Code"
+          required: true
+          type: string
+      responses:
+        200:
+          description: "Successfully retrieved Customer Data from MyInfo service."
+          schema:
+            type: object
+        404:
+          description: "Person Data not found."
+      security:
+        - auth0_jwt: []
+        - firebase: []
+  "/regions/sg/kyc/myInfoConfig":
+    get:
+      description: "Get Singapore MyInfo service config."
+      produces:
+        - application/json
+      operationId: "getMyInfoConfig"
+      responses:
+        200:
+          description: "MyInfo service config."
+          schema:
+            $ref: "#/definitions/MyInfoConfig"
+        404:
+          description: "Config not found."
+      security:
+        - auth0_jwt: []
+        - firebase: []
+  "/regions/sg/kyc/dave/{nricFinId}":
+    get:
+      description: "Get Customer Data from Singapore MyInfo service."
+      produces:
+        - application/json
+      operationId: "checkNricFinId"
+      parameters:
+        - name: nricFinId
+          in: path
+          description: "NRIC/FIN ID for Singapore"
+          required: true
+          type: string
+      responses:
+        204:
+          description: "Successfully verified Singapore's NRIC/FIN ID for the Customer."
+        400:
+          description: "Invalid NRIC/FIN ID"
+      security:
+        - auth0_jwt: []
+        - firebase: []
+  "/regions/sg/kyc/profile":
+    put:
+      description: "Update Singapore Customer's address and phone number."
+      produces:
+        - application/json
+      operationId: "updateDetails"
+      parameters:
+        - name: address
+          in: query
+          description: "Customer's Address"
+          required: true
+          type: string
+        - name: phoneNumber
+          in: query
+          description: "Customer's phone number"
+          required: true
+          type: string
+      responses:
+        204:
+          description: "Successfully updated customer's details."
+      security:
+        - auth0_jwt: []
+        - firebase: []
+  "/regions/{regionCode}/simProfiles":
+    get:
+      description: "Get SIM profile for the user (identified by bearer token)."
+      produces:
+        - application/json
+      operationId: "getSimProfiles"
+      parameters:
+        - name: regionCode
+          in: path
+          description: "Region code"
+          required: true
+          type: string
+      responses:
+        200:
+          description: "Get SIM profiles for this user."
+          schema:
+            $ref: '#/definitions/SimProfileList'
+        404:
+          description: "Not allowed for this region, or No SIM profiles found for this user for this region."
+        500:
+          description: "Service Unavailable"
+      security:
+        - auth0_jwt: []
+        - firebase: []
+    post:
+      description: "Provision SIM Profile for the user (identified by bearer token)."
+      produces:
+        - application/json
+      operationId: "provisionSimProfile"
+      parameters:
+        - name: regionCode
+          in: path
+          description: "Region code"
+          required: true
+          type: string
+        - name: profileType
+          in: query
+          description: "Profile Type"
+          type: string
+      responses:
+        201:
+          description: "Provisioned SIM profile for this user."
+          schema:
+            $ref: '#/definitions/SimProfile'
+        400:
+          description: "Not allowed for this region, or missing parameters."
+        500:
+          description: "Service Unavailable"
+      security:
+        - auth0_jwt: []
+        - firebase: []
+  "/regions/{regionCode}/simProfiles/{iccId}":
+    put:
+      description: "Update SIM Profile for the user (identified by bearer token)."
+      produces:
+        - application/json
+      operationId: "updateSimProfile"
+      parameters:
+        - name: regionCode
+          in: path
+          description: "Region code"
+          required: true
+          type: string
+        - name: iccId
+          in: path
+          description: "ICC ID"
+          required: true
+          type: string
+        - name: alias
+          in: query
+          description: "Human readable alias"
+          required: true
+          type: string
+      responses:
+        201:
+          description: "Updated SIM profile for this user."
+          schema:
+            $ref: '#/definitions/SimProfile'
+        400:
+          description: "Not allowed for this region, or missing parameters."
+  "/regions/{regionCode}/simProfiles/{iccId}/resendEmail":
+    get:
+      description: "Resend email with eSIM Activation QR code for this SIM profile for the user (identified by bearer token)."
+      produces:
+        - application/json
+      operationId: "sendEmailWithEsimActivationQrCode"
+      parameters:
+        - name: regionCode
+          in: path
+          description: "Region code"
+          required: true
+          type: string
+        - name: iccId
+          in: path
+          description: "ICC ID"
+          required: true
+          type: string
+      responses:
+        200:
+          description: "Get SIM profile for this user for which eSIM Activation QR code is sent."
+          schema:
+            $ref: '#/definitions/SimProfile'
+        404:
+          description: "Not allowed for this region, or No SIM profiles found for this user for this region."
+        500:
+          description: "Service Unavailable"
+      security:
+        - auth0_jwt: []
+        - firebase: []
+  "/regions/{regionCode}/subscriptions":
+    get:
+      description: "Get subscription (msisdn) for the user (identified by bearer token)."
+      produces:
+        - application/json
+      operationId: "getSubscriptionsForRegion"
+      parameters:
+        - name: regionCode
+          in: path
+          description: "Region code"
+          required: true
+          type: string
+      responses:
+        200:
+          description: "Get subscriptions for a region for this user."
+          schema:
+            $ref: '#/definitions/SubscriptionList'
+        404:
+          description: "No subscription found for this user."
+      security:
+        - auth0_jwt: []
+        - firebase: []
+  "/subscriptions":
     get:
       description: "Get subscription (msisdn) for the user (identified by bearer token)."
       produces:
         - application/json
       operationId: "getSubscriptions"
-      parameters:
-        - name: countryCode
-          in: path
-          description: "Country code in ISO 3166-1 alpha-3 format"
-          required: true
-          type: string
       responses:
         200:
           description: "Get subscriptions for this user."
@@ -169,29 +451,8 @@ paths:
           description: "No subscription found for this user."
       security:
         - auth0_jwt: []
-    post:
-      description: "Create subscriptions (msisdn) for the user (identified by bearer token)."
-      produces:
-        - application/json
-      operationId: "createSubscriptions"
-      parameters:
-        - name: countryCode
-          in: path
-          description: "Country code in ISO 3166-1 alpha-3 format"
-          required: true
-          type: string
-      responses:
-        201:
-          description: "Created subscriptions for this user."
-          schema:
-            $ref: '#/definitions/SubscriptionList'
-        404:
-          description: "User not found."
-        503:
-          description: "Service Unavailable"
-      security:
-        - auth0_jwt: []
-  "/applicationtoken":
+        - firebase: []
+  "/applicationToken":
     post:
       description: "Store application token"
       consumes:
@@ -214,10 +475,11 @@ paths:
           description: "Token malformed. Not able to store"
         404:
           description: "User not found."
-        507:
+        500:
           description: "Not able to store token."
       security:
         - auth0_jwt: []
+        - firebase: []
   "/paymentSources":
     get:
       description: "Get all payment sources for the user."
@@ -235,6 +497,7 @@ paths:
           description: "Service Unavailable"
       security:
         - auth0_jwt: []
+        - firebase: []
     post:
       description: "Add a new payment source for user"
       produces:
@@ -251,14 +514,15 @@ paths:
           description: "Successfully added source to user"
           schema:
             $ref: '#/definitions/PaymentSource'
-        403:
+        400:
           description: "Invalid source"
         404:
           description: "User not found."
-        503:
+        500:
           description: "Service Unavailable"
       security:
         - auth0_jwt: []
+        - firebase: []
     put:
       description: "Set the source as default for user"
       produces:
@@ -275,14 +539,15 @@ paths:
           description: "Successfully set as default source to user"
           schema:
             $ref: '#/definitions/PaymentSource'
-        403:
+        400:
           description: "Invalid source"
         404:
           description: "User not found."
-        503:
+        500:
           description: "Service Unavailable"
       security:
         - auth0_jwt: []
+        - firebase: []
     delete:
       description: "Remove a payment source for user"
       produces:
@@ -300,15 +565,14 @@ paths:
           schema:
             $ref: '#/definitions/PaymentSource'
         400:
-          description: "The source could not be removed"
-        403:
-          description: "Invalid source"
+          description: "Invalid source, or The source could not be removed"
         404:
           description: "No such source for user"
-        503:
+        500:
           description: "Service Unavailable"
       security:
         - auth0_jwt: []
+        - firebase: []
   "/products":
     get:
       description: "Get all products for the user."
@@ -324,6 +588,7 @@ paths:
           description: "No products found for the user."
       security:
         - auth0_jwt: []
+        - firebase: []
   "/products/{sku}/purchase":
     post:
       description: "Buy the product specified in sku parameter."
@@ -356,6 +621,7 @@ paths:
           description: "Product not found."
       security:
         - auth0_jwt: []
+        - firebase: []
   "/purchases":
     get:
       description: "Get list of all purchases."
@@ -368,14 +634,15 @@ paths:
           description: "List of Purchase Records."
           schema:
             $ref: '#/definitions/PurchaseRecordList'
-        403:
+        400:
           description: "Not allowed to charge this source"
         404:
           description: "No Purchase Records found for the user."
-        503:
+        500:
           description: "Service Unavailable"
       security:
         - auth0_jwt: []
+        - firebase: []
   "/bundles":
     get:
       description: "Get bundles (balance) for the user (identified by bearer token)."
@@ -391,6 +658,7 @@ paths:
           description: "No bundle found for this user."
       security:
         - auth0_jwt: []
+        - firebase: []
   "/referred":
     get:
       description: "Get list of people whom the user has referred to."
@@ -406,6 +674,7 @@ paths:
           description: "No referrals found for this user."
       security:
         - auth0_jwt: []
+        - firebase: []
   "/referred/by":
     get:
       description: "Get the people who had referred this user."
@@ -421,6 +690,7 @@ paths:
           description: "No 'referred by' found for this user."
       security:
         - auth0_jwt: []
+        - firebase: []
   "/graphql":
     post:
       description: "GraphQL endpoint"
@@ -438,6 +708,7 @@ paths:
           description: "Not found"
       security:
         - auth0_jwt: []
+        - firebase: []
       parameters:
         - name: "request"
           in: body
@@ -446,14 +717,21 @@ paths:
             $ref: '#/definitions/GraphQLRequest'
 
 definitions:
+  Context:
+    type: object
+    properties:
+      customer:
+        $ref: '#/definitions/Customer'
+      regions:
+        $ref: '#/definitions/RegionDetailsList'
   Customer:
     type: object
     properties:
       id:
         type: string
-      name:
+      nickname:
         type: string
-      email:
+      contactEmail:
         type: string
         format: email
       analyticsId:
@@ -461,6 +739,7 @@ definitions:
       referralId:
         type: string
     required:
+      - name
       - email
   RegionDetailsList:
     type: array
@@ -474,7 +753,34 @@ definitions:
       status:
         description: "Customer Status for this region"
         type: string
-        enum: [ PENDING, APPROVED, REJECTED ]
+        enum: [ PENDING, APPROVED ]
+      kycStatusMap:
+        description: "Map of status for each KYC"
+        type: object
+        properties:
+          kycType:
+            $ref: '#/definitions/KycType'
+        additionalProperties:
+          $ref: '#/definitions/KycStatus'
+        example:
+          JUMIO: PENDING
+          MY_INFO: APPROVED
+          NRIC_FIN: REJECTED
+          ADDRESS_AND_PHONE_NUMBER: PENDING
+      simProfiles:
+        $ref: '#/definitions/SimProfileList'
+  KycType:
+    type: string
+    enum: [ JUMIO, MY_INFO, NRIC_FIN, ADDRESS_AND_PHONE_NUMBER ]
+  KycStatus:
+    type: string
+    enum: [ PENDING, REJECTED, APPROVED ]
+  MyInfoConfig:
+    type: object
+    properties:
+      url:
+        type: string
+        description: "URL for MyInfo authorise"
   Region:
     type: object
     properties:
@@ -491,14 +797,6 @@ definitions:
     properties:
       msisdn:
         description: "Mobile number for this subscription"
-        type: string
-      alias:
-        description: "Human readable optional alias for this subscription"
-        type: string
-      analyticsId:
-        type: string
-      eSimActivationCode:
-        description: "eSim Activation Code to download eSIM"
         type: string
   BundleList:
     type: array
@@ -696,8 +994,8 @@ definitions:
       scanId:
         description: "New scan Id for eKYC"
         type: string
-      countryCode:
-        description: "The 3 letter country code (or global) for the scan "
+      regionCode:
+        description: "Region code"
         type: string
       status:
         description: "The status of the scan"
@@ -708,11 +1006,42 @@ definitions:
     required:
       - scanId
       - status
+  SimProfileList:
+    type: array
+    items:
+      $ref: '#/definitions/SimProfile'
+  SimProfile:
+    type: object
+    properties:
+      iccId:
+        description: "ID of Sim Profile"
+        type: string
+      eSimActivationCode:
+        description: "eSIM activation code"
+        type: string
+      status:
+        description: "The status of the SIM profile, e.g. INSTALLED"
+        type: string
+        enum: [ NOT_READY, AVAILABLE_FOR_DOWNLOAD, DOWNLOADED, INSTALLED, ENABLED ]
+      alias:
+        description: "Human readable optional alias for this subscription"
+        type: string
+    required:
+      - iccId
+      - activationCode
+      - status
 securityDefinitions:
   auth0_jwt:
     authorizationUrl: ""
     flow: "implicit"
     type: "oauth2"
-    x-google-issuer: "https://auth.oya.world/"
-    x-google-jwks_uri: "https://auth.oya.world/.well-known/jwks.json"
+    x-google-issuer: "https://auth-dev.oya.world/"
+    x-google-jwks_uri: "https://auth-dev.oya.world/.well-known/jwks.json"
     x-google-audiences: "http://google_api"
+  firebase:
+    authorizationUrl: ""
+    flow: "implicit"
+    type: "oauth2"
+    x-google-issuer: "https://securetoken.google.com/pi-ostelco-prod"
+    x-google-jwks_uri: "https://www.googleapis.com/service_accounts/v1/metadata/x509/securetoken@system.gserviceaccount.com"
+    x-google-audiences: "pi-ostelco-prod"

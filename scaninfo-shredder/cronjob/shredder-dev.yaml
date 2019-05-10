@@ -15,8 +15,6 @@ spec:
             env:
             - name: DATASET_PROJECT
               value: GCP_PROJECT_ID
-            - name: DATASTORE_NAMESPACE
-              value: dev
             - name: JUMIO_API_TOKEN
               valueFrom:
                 secretKeyRef:

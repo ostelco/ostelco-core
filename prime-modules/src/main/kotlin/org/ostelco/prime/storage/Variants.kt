@@ -113,8 +113,17 @@ interface ClientGraphStore {
     /**
      * Provision new SIM Profile for Customer
      */
-
     fun provisionSimProfile(identity: Identity, regionCode: String, profileType: String?): Either<StoreError, SimProfile>
+
+    /**
+     * Update SIM Profile for Customer
+     */
+    fun updateSimProfile(identity: Identity, regionCode: String, iccId: String, alias: String): Either<StoreError, SimProfile>
+
+    /**
+     * Provision new SIM Profile for Customer
+     */
+    fun sendEmailWithActivationQrCode(identity: Identity, regionCode: String, iccId: String): Either<StoreError, SimProfile>
 
     /**
      * Get balance for Client
@@ -201,7 +210,14 @@ interface AdminGraphStore {
      * Link Customer to MSISDN
      */
     @Deprecated(message = "Assigning MSISDN to Customer via Admin API will be removed in future.")
-    fun addSubscription(identity: Identity, msisdn: String): Either<StoreError, Unit>
+    fun addSubscription(
+            identity: Identity,
+            regionCode: String,
+            iccId: String,
+            alias: String,
+            msisdn: String): Either<StoreError, Unit>
+
+    fun deleteSimProfileWithSubscription(regionCode: String, iccId: String): Either<StoreError, Unit>
 
     // simple create
     fun createProductClass(productClass: ProductClass): Either<StoreError, Unit>
@@ -275,7 +291,7 @@ interface AdminGraphStore {
      * @param amount - Cost of the product/plan
      * @param currency - Currency used
      */
-    fun subscriptionPurchaseReport(invoiceId: String, customerId: String, sku: String, amount: Long, currency: String): Either<StoreError, Plan>
+    fun purchasedSubscription(invoiceId: String, customerId: String, sku: String, amount: Long, currency: String): Either<StoreError, Plan>
 
     // atomic import of Offer + Product + Segment
     fun atomicCreateOffer(

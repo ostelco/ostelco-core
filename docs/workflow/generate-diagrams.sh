@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-plantuml workflow.puml
+plantuml -tsvg workflow.puml
