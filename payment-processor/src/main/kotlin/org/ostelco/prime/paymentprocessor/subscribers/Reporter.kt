@@ -12,7 +12,11 @@ object Reporter {
     private val logger by getLogger()
 
     fun report(event: Event) {
-        val data = event.data
+        /* TODO: (kmm) The recommend way is:
+                     val data = event.dataObjectDeserializer.`object`
+                  but that don't work for some reason...
+                  Ref.: https://github.com/stripe/stripe-java/wiki/Migration-guide-for-v8----version-upgrade */
+        val data = event.data.`object`
 
         when (data) {
             is Balance -> report(event, data)

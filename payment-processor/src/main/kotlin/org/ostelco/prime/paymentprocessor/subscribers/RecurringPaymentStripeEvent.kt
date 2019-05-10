@@ -12,6 +12,7 @@ import org.ostelco.prime.module.getResource
 import org.ostelco.prime.paymentprocessor.ConfigRegistry
 import org.ostelco.prime.pubsub.PubSubSubscriber
 import org.ostelco.prime.storage.AdminDataSource
+import org.ostelco.prime.storage.ValidationError
 
 class RecurringPaymentStripeEvent : PubSubSubscriber(
         subscription = ConfigRegistry.config.stripeEventRecurringPaymentSubscriptionId,
@@ -30,7 +31,7 @@ class RecurringPaymentStripeEvent : PubSubSubscriber(
                     ifSuccess = { event ->
                         Try {
                             val eventType = event.type
-                            val data = event.data.`object`
+                            val data = event.data.`object`  /* See comment in 'Reporter.kt'. */
 
                             /* Only invoices are of interrest vs. recurring payment (I think). */
                             when (data) {
@@ -61,6 +62,10 @@ class RecurringPaymentStripeEvent : PubSubSubscriber(
             "invoice.payment_failed" -> {}
             "invoice.upcoming" -> {}
             "invoice.created" -> {}
+            // on canceled subsc. F.ex. with expired payment
+            "invoice.updated" -> {}
+            "invoice.voided" -> {}
+            "customer.subscription.updated" -> {}
         }
     }
 
@@ -69,8 +74,16 @@ class RecurringPaymentStripeEvent : PubSubSubscriber(
         val productDetails = Product.retrieve(productId)
         storage.purchasedSubscription(invoiceId, customerId, productDetails.name, plan.amount, plan.currency)
                 .mapLeft {
-                    logger.error("Adding subscription purchase report for invoice {} failed with error message: {}",
-                            invoiceId, it.message)
+                    when (it) {
+                        is ValidationError -> {
+                            /* Ignore as the purchase has already been registered (due to direct
+                               charge being done when purchasing a subscription). */
+                        }
+                        else -> {
+                            logger.error("Adding subscription purchase report for invoice {} failed with error message: {}",
+                                    invoiceId, it.message)
+                        }
+                    }
                 }
     }
 }
