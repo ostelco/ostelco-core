@@ -74,7 +74,6 @@ object OcsServer {
         try {
             val ccaSession = stack?.getSession(sessionContext?.sessionId, ServerCCASessionImpl::class.java)
             if (ccaSession != null && ccaSession.isValid) {
-                // TODO martin: Not sure why there are multiple sessions for one session Id.
                 for (session in ccaSession.sessions) {
                     if (session.isValid) {
                         val request = session.createRequest(258,
@@ -82,8 +81,10 @@ object OcsServer {
                                 sessionContext?.originRealm,
                                 sessionContext?.originHost
                         )
+                        request.isProxiable = true
                         val avps = request.avps
                         avps.addAvp(Avp.RE_AUTH_REQUEST_TYPE, ReAuthRequestType.AUTHORIZE_ONLY.ordinal, true, false)
+                        logger.debug("Sent RAR")
                         val reAuthRequest = ReAuthRequestImpl(request)
                         ccaSession.sendReAuthRequest(reAuthRequest)
                     } else {
