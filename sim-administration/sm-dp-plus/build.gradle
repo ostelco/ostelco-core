@@ -10,11 +10,9 @@ dependencies {
     implementation project(":sim-administration:es2plus4dropwizard")
     implementation project(":sim-administration:ostelco-dropwizard-utils")
 
-    compile group: 'javax.activation', name: 'javax.activation-api', version: '1.2.0'
-
     // https://mvnrepository.com/artifact/org.conscrypt/conscrypt-openjdk
     //  XXX Delete next line?
-    compile group: 'org.conscrypt', name: 'conscrypt-openjdk', version: '1.4.2'
+    compile group: 'org.conscrypt', name: 'conscrypt-openjdk', version: '2.1.0'
 
     implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
@@ -26,10 +24,10 @@ dependencies {
     implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
     implementation "io.dropwizard:dropwizard-jdbi:$dropwizardVersion"
 
-    implementation 'org.conscrypt:conscrypt-openjdk-uber:1.4.2'
-    
+    implementation "org.conscrypt:conscrypt-openjdk-uber:2.1.0"
+
     implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
-    implementation "org.apache.commons:commons-csv:1.6"
+    implementation "org.apache.commons:commons-csv:$csvVersion"
 
     testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
 }

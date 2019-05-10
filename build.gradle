@@ -47,6 +47,8 @@ subprojects {
     guavaVersion = "27.1-jre"
     jacksonVersion = "2.9.8"
     javaxActivationVersion = "1.1.1"
+    javaxActivationApiVersion = "1.2.0"
+    javaxAnnotationVersion = "1.3.2"
     // Keeping it version 1.16.1 to be consistent with grpc via PubSub client lib
     // Keeping it version 1.16.1 to be consistent with netty via Firebase lib
     jaxbVersion = "2.3.1"
@@ -55,6 +57,7 @@ subprojects {
     kotlinVersion = "1.3.31"
     kotlinXCoroutinesVersion = "1.2.1"
     mockitoVersion = "2.27.0"
+    mockitoKotlinVersion = "2.1.0"
     neo4jDriverVersion="1.7.4"
     neo4jVersion="3.5.5"
     protocVersion="3.7.1"
@@ -64,6 +67,10 @@ subprojects {
     swaggerCodegenVersion = "2.4.5"
     tinkVersion = "1.2.2"
     zxingVersion = "3.3.3"
+    jdbi3Version = "3.8.2"
+    postgresqlVersion = "42.2.5"  // See comment in ./sim-administration/simmanager/build.gradle
+    csvVersion = "1.6"
+    testcontainersVersion = "1.11.2"
   }
 }
 
