@@ -49,6 +49,7 @@ import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.BadGatewayError
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
 import org.ostelco.prime.paymentprocessor.core.PaymentError
+import org.ostelco.prime.paymentprocessor.core.PaymentStatus
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.sim.SimManager
@@ -1174,7 +1175,10 @@ object Neo4jStoreSingleton : GraphStore {
                             }
                         }
                     }, {
-                        ValidationError(type = purchaseRecordRelation.name, id = purchase.id, message = "").left()
+                        ValidationError(type = purchaseRecordRelation.name,
+                                id = purchase.id,
+                                message = "A purchase record for ${purchase.product} for customer ${customerId} alread exists")
+                                .left()
                     })
 
     private fun createPurchaseRecordRelation2(customerId: String,
@@ -1266,6 +1270,7 @@ object Neo4jStoreSingleton : GraphStore {
                 fromId = customerId,
                 toId = segmentName,
                 transaction = transaction).mapLeft { storeError ->
+
 
             if (storeError is NotCreatedError && storeError.type == customerToSegmentRelation.name) {
                 ValidationError(type = customerEntity.name, id = customerId, message = "Unsupported segment: $segmentName")
@@ -1825,6 +1830,15 @@ object Neo4jStoreSingleton : GraphStore {
                                     error = it)
                         }.bind()
 
+                /* Bail out if the subscription already exists. */
+                customerStore.getRelated(customer.id, subscribesToPlanRelation, transaction)
+                        .map {
+                            if (it.any { x -> x.id == planId }) {
+                                NotCreatedError(type = planEntity.name, id = "A subscription to ${plan.id} already exists")
+                                        .left().bind()
+                            }
+                        }
+
                 /* Lookup in payment backend will fail if no value found for 'planId'. */
                 val subscriptionInfo = paymentProcessor.createSubscription(plan.properties.getOrDefault("planId", "missing"),
                         profileInfo.id, trialEnd)
@@ -1834,6 +1848,31 @@ object Neo4jStoreSingleton : GraphStore {
                         }.linkReversalActionToTransaction(transaction) {
                             paymentProcessor.cancelSubscription(it.id)
                         }.bind()
+
+                val product = plansStore.getRelated(plan.id, planProductRelation, transaction)
+                        .flatMap {
+                            it[0].right()
+                        }.bind()
+
+                /* Dispatch according to the charge result. */
+                when (subscriptionInfo.status) {
+                    PaymentStatus.PAYMENT_SUCCEEDED -> {
+                        subscriptionPaymentSucceeded(customerId, subscriptionInfo.invoiceId, plan, product)
+                                .bind()
+                    }
+                    PaymentStatus.REQUIRES_PAYMENT_METHOD -> {
+                        NotCreatedError(type = planEntity.name, id = "Failed to subscribe $customerId to ${plan.id}",
+                                error = ForbiddenError("Payment method failed"))
+                                .left().bind()
+                    }
+                    PaymentStatus.REQUIRES_ACTION,
+                    PaymentStatus.TRIAL_START -> {
+                        /* No action required. Charge for the subscription will eventually
+                           be reported as a Stripe event. */
+                        logger.info(
+                                "Pending payment for subscription ${planId} for customer ${customerId} (${subscriptionInfo.status.name})")
+                    }
+                }
 
                 /* Store information from payment backend for later use. */
                 subscribesToPlanRelationStore.create(
@@ -1878,15 +1917,19 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
 
-    override fun purchasedSubscription(invoiceId: String, customerId: String, sku: String, amount: Long, currency: String): Either<StoreError, Plan> = writeTransaction {
+    override fun purchasedSubscription(invoiceId: String, customerId: String, sku: String, amount: Long, currency: String): Either<StoreError, Plan> = readTransaction {
+        productStore.get(sku, transaction)
+                .flatMap { product ->
+                    productStore.getRelatedFrom(id = sku, relationType = planProductRelation, transaction = transaction)
+                            .flatMap {
+                                subscriptionPaymentSucceeded(customerId, invoiceId, it.first(), product)
+                            }
+                }
+    }
+
+    private fun subscriptionPaymentSucceeded(customerId: String, invoiceId: String, plan: Plan, product: Product): Either<StoreError, Plan> = writeTransaction {
         IO {
             Either.monad<StoreError>().binding {
-                val product = productStore.get(sku, transaction)
-                        .bind()
-                val plan = productStore.getRelatedFrom(id = sku, relationType = planProductRelation, transaction = transaction)
-                        .flatMap {
-                            it[0].right()
-                        }.bind()
                 val purchaseRecord = PurchaseRecord(
                         id = invoiceId,
                         product = product,
@@ -1903,14 +1946,15 @@ object Neo4jStoreSingleton : GraphStore {
                 if (region == null) {
                     logger.error("Found no 'region' associated with plan {} for customer {}",
                             plan.id, customerId)
-                    NotFoundError("No region found found for plan", "${plan.id}")
+                    NotFoundError("No region found found for plan", plan.id)
                             .left()
                 } else {
                     assignCustomerToRegionSegment(
-                        customerId = customerId,
-                        segmentName = getSegmentNameFromCountryCode(region.id),
-                        transaction = transaction).bind()
+                            customerId = customerId,
+                            segmentName = getSegmentNameFromCountryCode(region.id),
+                            transaction = transaction).bind()
                 }
+                logger.info("Customer ${customerId} completed payment of invoice ${invoiceId} for subscription to plan ${plan.id}")
 
                 plan
             }.fix()

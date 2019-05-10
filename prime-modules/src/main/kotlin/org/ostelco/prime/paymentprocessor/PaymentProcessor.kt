@@ -7,6 +7,7 @@ import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
+import org.ostelco.prime.paymentprocessor.core.SubscriptionDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
 
 interface PaymentProcessor {
@@ -66,7 +67,7 @@ interface PaymentProcessor {
      * @param Epoch timestamp for when the trial period ends
      * @return Stripe SubscriptionId if subscribed
      */
-    fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long = 0L): Either<PaymentError, SubscriptionInfo>
+    fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long = 0L): Either<PaymentError, SubscriptionDetailsInfo>
 
     /**
      * @param Stripe Subscription Id

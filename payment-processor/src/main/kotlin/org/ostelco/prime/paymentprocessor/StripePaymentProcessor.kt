@@ -26,11 +26,13 @@ import org.ostelco.prime.paymentprocessor.core.BadGatewayError
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
 import org.ostelco.prime.paymentprocessor.core.NotFoundError
 import org.ostelco.prime.paymentprocessor.core.PaymentError
+import org.ostelco.prime.paymentprocessor.core.PaymentStatus
 import org.ostelco.prime.paymentprocessor.core.PlanInfo
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
+import org.ostelco.prime.paymentprocessor.core.SubscriptionDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
 import java.time.Instant
 import java.util.*
@@ -201,7 +203,7 @@ class StripePaymentProcessor : PaymentProcessor {
     /* The 'expand' part will cause an immediate attempt at charging for the
        subscription when creating it. For interpreting the result see:
        https://stripe.com/docs/billing/subscriptions/payment#signup-3b */
-    override fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long): Either<PaymentError, SubscriptionInfo> =
+    override fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long): Either<PaymentError, SubscriptionDetailsInfo> =
             either("Failed to subscribe customer $stripeCustomerId to plan $planId") {
                 val item =  mapOf("plan" to planId)
                 val subscriptionParams = mapOf(
@@ -214,28 +216,34 @@ class StripePaymentProcessor : PaymentProcessor {
                         "expand" to arrayOf("latest_invoice.payment_intent"))
                 val subscription = Subscription.create(subscriptionParams)
                 val status = subscriptionStatus(subscription)
-                SubscriptionInfo(id = subscription.id,
+                SubscriptionDetailsInfo(id = subscription.id,
                         status = status.first,
                         invoiceId = status.second,
                         created = subscription.created,
                         trialEnd = subscription.trialEnd ?: 0L)
             }
 
-    private fun subscriptionStatus(subscription: Subscription): Pair<String, String> {
+    private fun subscriptionStatus(subscription: Subscription): Pair<PaymentStatus, String> {
         val invoice = subscription.latestInvoiceObject
         val intent = invoice?.paymentIntentObject
 
         return when (subscription.status) {
             "active", "incomplete" -> {
                 if (intent != null)
-                    Pair(intent.status, invoice.id)
+                    Pair(when(intent.status) {
+                        "succeeded" -> PaymentStatus.PAYMENT_SUCCEEDED
+                        "requires_payment_method" -> PaymentStatus.REQUIRES_PAYMENT_METHOD
+                        "requires_action" -> PaymentStatus.REQUIRES_ACTION
+                        else -> throw RuntimeException(
+                                "Unexpected intent ${intent.status} for Stipe payment invoice ${invoice.id}")
+                    }, invoice.id)
                 else {
                     throw RuntimeException(
                             "'Intent' absent in response when creating subscription ${subscription.id} with status ${subscription.status}")
                 }
             }
             "trialing" -> {
-                Pair("trial_start", invoice.id)
+                Pair(PaymentStatus.TRIAL_START, invoice.id)
             }
             else -> {
                 throw RuntimeException(
