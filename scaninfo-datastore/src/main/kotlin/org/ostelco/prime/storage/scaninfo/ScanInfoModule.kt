@@ -17,7 +17,7 @@ class ScanInfoModule : PrimeModule {
     }
 
     override fun init(env: Environment) {
-        ScanInformationStoreSingleton.init(env, EnvironmentVars())
+        ScanInformationStoreSingleton.init(EnvironmentVars())
     }
 }
 

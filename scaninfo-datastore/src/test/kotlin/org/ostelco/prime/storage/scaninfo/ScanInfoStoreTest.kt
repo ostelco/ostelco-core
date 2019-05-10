@@ -1,5 +1,6 @@
 package org.ostelco.prime.storage.scaninfo
 
+import arrow.core.getOrElse
 import com.google.crypto.tink.CleartextKeysetHandle
 import com.google.crypto.tink.JsonKeysetWriter
 import com.google.crypto.tink.KeysetHandle
@@ -16,13 +17,12 @@ import java.time.Instant
 import java.util.zip.ZipInputStream
 import javax.ws.rs.core.MultivaluedHashMap
 import javax.ws.rs.core.MultivaluedMap
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+import kotlin.test.fail
 
 class ScanInfoStoreTest {
-    @BeforeTest
-    fun clear() {
-
-    }
 
     @Test
     fun `test - add check store`() {
@@ -60,13 +60,13 @@ class ScanInfoStoreTest {
             assertEquals("id_backside.png", imageBackside.name)
             File(filename).delete()
         }
-        val scanMetadata = ScanInformationStoreSingleton.__getScanMetaData(customerId, scanId)
-        assertNotEquals(null, scanMetadata)
-        if (scanMetadata != null) {
-            assertEquals(scanReference, scanMetadata.scanReference)
-            assertEquals("global", scanMetadata.countryCode)
-            assertTrue(scanMetadata.processedTime <= Instant.now().toEpochMilli())
-        }
+        val scanMetadata = ScanInformationStoreSingleton
+                .__getScanMetaData(customerId, scanId)
+                .getOrElse { fail("Failed to get ScanMetaData") }
+
+        assertEquals(scanReference, scanMetadata.scanReference)
+        assertEquals("global", scanMetadata.countryCode)
+        assertTrue(scanMetadata.processedTime <= Instant.now().toEpochMilli())
     }
 
     companion object {
@@ -82,7 +82,7 @@ class ScanInfoStoreTest {
             Mockito.`when`(testEnvVars.getVar("SCANINFO_STORAGE_BUCKET")).thenReturn("")
             ConfigRegistry.config = ScanInfoConfig()
                     .apply { this.storeType = "inmemory-emulator" }
-            ScanInformationStoreSingleton.init(null, testEnvVars)
+            ScanInformationStoreSingleton.init(testEnvVars)
             privateKeysetHandle = KeysetHandle.generateNew(HybridKeyTemplates.ECIES_P256_HKDF_HMAC_SHA256_AES128_GCM)
             val publicKeysetHandle = privateKeysetHandle.publicKeysetHandle
             val keysetFilename = "encrypt_key_global"
@@ -93,8 +93,7 @@ class ScanInfoStoreTest {
         @AfterClass
         fun cleanup() {
             File("encrypt_key_global").delete()
-            ScanInformationStoreSingleton.cleanup()
+            ScanInformationStoreSingleton.scanMetadataStore.close()
         }
-
     }
 }

@@ -17,6 +17,8 @@ repositories {
 dependencies {
 
   implementation project(":prime-modules")
+  implementation project(':data-store')
+  
   implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
 
   implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
