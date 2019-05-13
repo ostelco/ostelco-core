@@ -312,6 +312,29 @@ class SimInventoryUnitTests {
         assertNotNull(simEntry)
     }
 
+
+    @Test
+    fun testMockedOutImportSimsWithNonActicatedHssStatusSet() {
+        org.mockito.Mockito.`when`(dao.findSimVendorForHssPermissions(1L, 1L))
+                .thenReturn(listOf(0L).right())
+        org.mockito.Mockito.`when`(dao.simVendorIsPermittedForHlr(1L, 1L))
+                .thenReturn(true.right())
+        org.mockito.Mockito.`when`(dao.importSims(eq("importer"), eq(1L),
+                eq(1L), any(InputStream::class.java),
+                eq(HssState.NOT_ACTIVATED)))
+                .thenReturn(SimImportBatch(
+                        id = 0L,
+                        status = "SUCCESS",
+                        size = 4L,
+                        hssId = 1L,
+                        profileVendorId = 1L,
+                        importer = "Testroutine",
+                        endedAt = 999L).right())
+
+        val simEntry = importSimBatch(HssState.NOT_ACTIVATED)
+        assertNotNull(simEntry)
+    }
+
     private fun importSimBatch(hssState: HssState? = null): SimImportBatch {
         val sampleCsvIinput = """
                 ICCID, IMSI, MSISDN, PIN1, PIN2, PUK1, PUK2, PROFILE
