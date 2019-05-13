@@ -284,8 +284,6 @@ class SimInventoryUnitTests {
     }
 
 
-
-
     // XXX TODO:
     //  1. Make this pass [done]
     //  2. Add some validation to the test, so that it tests if the profiles are correctly read
