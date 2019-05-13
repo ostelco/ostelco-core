@@ -188,7 +188,8 @@ class PubSubDataSource(
                     .setType(CreditControlRequestType.NONE)
                     .setRequestId(UUID.randomUUID().toString())
                     .setTopicId(ccaTopicId)
-                    .build()
+                    .setMsisdn("keepalive")
+                    .buildPartial()
             sendRequest(ccrInfo)
         },
                 5,
