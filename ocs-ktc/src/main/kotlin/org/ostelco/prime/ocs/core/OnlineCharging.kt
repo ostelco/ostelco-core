@@ -27,18 +27,18 @@ object OnlineCharging : OcsAsyncRequestConsumer {
             request: CreditControlRequestInfo,
             returnCreditControlAnswer: (CreditControlAnswerInfo) -> Unit) {
 
-        val responseBuilder = CreditControlAnswerInfo.newBuilder()
+        val msisdn = request.msisdn
 
-        // these are keepalives to keep latency low
-        if (request.type == CreditControlRequestType.NONE) {
-            logger.debug("Got keepalive")
-            responseBuilder.setRequestId(request.requestId).setMsisdn("None").setResultCode(ResultCode.UNKNOWN)
-            returnCreditControlAnswer(responseBuilder.build())
-        } else {
+        if (msisdn != null) {
 
-            val msisdn = request.msisdn
+            val responseBuilder = CreditControlAnswerInfo.newBuilder()
 
-            if (msisdn != null) {
+            // these are keepalives to keep latency low
+            if (msisdn.equals("keepalive")) {
+                responseBuilder.setRequestId(request.requestId).setMsisdn("None").setResultCode(ResultCode.UNKNOWN)
+                returnCreditControlAnswer(responseBuilder.buildPartial())
+            } else {
+
                 CoroutineScope(Dispatchers.Default).launch {
 
                     responseBuilder.setRequestId(request.requestId)

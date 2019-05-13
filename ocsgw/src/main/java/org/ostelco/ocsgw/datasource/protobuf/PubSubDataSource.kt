@@ -125,7 +125,7 @@ class PubSubDataSource(
 
             override fun onSuccess(messageId: String) {
                 // Once published, returns server-assigned message ids (unique within the topic)
-                logger.debug("Submitted message with request-id: {} successfully", messageId)
+                // logger.debug("Submitted message with request-id: {} successfully", messageId)
             }
         }, singleThreadScheduledExecutor)
     }
@@ -188,7 +188,8 @@ class PubSubDataSource(
                     .setType(CreditControlRequestType.NONE)
                     .setRequestId(UUID.randomUUID().toString())
                     .setTopicId(ccaTopicId)
-                    .build()
+                    .setMsisdn("keepalive")
+                    .buildPartial()
             sendRequest(ccrInfo)
         },
                 5,
