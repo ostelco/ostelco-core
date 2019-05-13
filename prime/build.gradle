@@ -18,7 +18,7 @@ sourceSets {
   }
 }
 
-version = "1.39.0"
+version = "1.40.0"
 
 repositories {
   maven {
@@ -45,6 +45,7 @@ dependencies {
   runtimeOnly project(':slack')
   runtimeOnly project(':imei-lookup')
   runtimeOnly project(':jersey')
+  runtimeOnly project(':secure-archive')
   runtimeOnly project(':scaninfo-datastore')
   runtimeOnly project(':sim-administration:simmanager')
 

@@ -36,7 +36,9 @@ include ':prime-modules'
 include ':prime-customer-api'
 include ':scaninfo-datastore'
 include ':scaninfo-shredder'
+include ':secure-archive'
 include ':slack'
+
 include ':sim-administration:es2plus4dropwizard'
 include ':sim-administration:jersey-json-schema-validator'
 include ':sim-administration:hss-adapter'
@@ -44,6 +46,7 @@ include ':sim-administration:ostelco-dropwizard-utils'
 include ':sim-administration:simcard-utils'
 include ':sim-administration:simmanager'
 include ':sim-administration:sm-dp-plus'
+
 include ':imei-lookup'
 
 
@@ -83,6 +86,7 @@ project(':prime-modules').projectDir = "$rootDir/prime-modules" as File
 project(':prime-customer-api').projectDir = "$rootDir/prime-customer-api" as File
 project(':scaninfo-datastore').projectDir = "$rootDir/scaninfo-datastore" as File
 project(':scaninfo-shredder').projectDir = "$rootDir/scaninfo-shredder" as File
+project(':secure-archive').projectDir = "$rootDir/secure-archive" as File
 project(':slack').projectDir = "$rootDir/slack" as File
 
 project(':sim-administration:es2plus4dropwizard').projectDir = "$rootDir/sim-administration/es2plus4dropwizard" as File

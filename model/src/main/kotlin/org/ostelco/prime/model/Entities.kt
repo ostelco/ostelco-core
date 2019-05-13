@@ -111,17 +111,6 @@ data class ScanMetadata(
         val processedTime: Long         // The time when callback was processed.
 )
 
-enum class ScanMetadataEnum(val s: String) {
-    // Property names for Datastore
-    ID("id"),
-    SCAN_REFERENCE("scanReference"),
-    COUNTRY_CODE("countryCode"),
-    CUSTOMER_ID("customerId"),
-    PROCESSED_TIME("processedTime"),
-    // Type name of the Object
-    KIND("ScanMetaData")
-}
-
 enum class JumioScanData(val s: String) {
     // Property names in POST data from Jumio
     JUMIO_SCAN_ID("jumioIdScanReference"),
