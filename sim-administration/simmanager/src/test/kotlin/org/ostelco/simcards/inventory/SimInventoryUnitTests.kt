@@ -332,21 +332,13 @@ class SimInventoryUnitTests {
                         endedAt = 999L).right())
     }
 
-
-    // XXX TODO:
-    //  1. Make this pass [done]
-    //  2. Add some validation to the test, so that it tests if the profiles are correctly read
-    //     (state in datstorage)
-    //  3. Copy/modify/refactor to test that this will also work when setting the
-    //     initial hss state of the profile.
     @Test
     fun testMockedOutImportSims() {
         setUpMocksForMockedOutImportSims()
 
         importSimBatch()
     }
-
-
+    
     @Test
     fun testMockedOutImportSimsWithNonActicatedHssStatusSet() {
         setUpMocksForMockedOutImportSims()
