@@ -252,10 +252,10 @@ class StripePaymentProcessor : PaymentProcessor {
         }
     }
 
-    override fun cancelSubscription(subscriptionId: String, atIntervalEnd: Boolean): Either<PaymentError, SubscriptionInfo> =
-            either("Failed to unsubscribe subscription Id : $subscriptionId atIntervalEnd $atIntervalEnd") {
+    override fun cancelSubscription(subscriptionId: String, invoiceNow: Boolean): Either<PaymentError, SubscriptionInfo> =
+            either("Failed to unsubscribe subscription Id : $subscriptionId with 'invoice-now' set to $invoiceNow") {
                 val subscription = Subscription.retrieve(subscriptionId)
-                val subscriptionParams = mapOf("at_period_end" to atIntervalEnd)
+                val subscriptionParams = mapOf("invoice_now" to invoiceNow)
                 subscription.cancel(subscriptionParams)
                 SubscriptionInfo(id = subscription.id)
             }
