@@ -72,10 +72,10 @@ prime:
       secretName: stripe-secrets
       secretKey: stripeEndpointSecret
     - name: SCANINFO_STORAGE_BUCKET
-      secretName: scan-info-secrets
+      secretName: scaninfo-secrets
       secretKey:  bucketName
     - name: SCANINFO_MASTERKEY_URI
-      secretName: scan-info-keys
+      secretName: scaninfo-keys
       secretKey: masterKeyUri
     - name: JUMIO_API_TOKEN
       secretName: jumio-secrets
