@@ -10,41 +10,24 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.cloud.datastore.Blob
 import com.google.cloud.datastore.DatastoreException
-import com.google.cloud.storage.BlobId
-import com.google.cloud.storage.BlobInfo
-import com.google.cloud.storage.StorageException
-import com.google.cloud.storage.StorageOptions
-import com.google.crypto.tink.CleartextKeysetHandle
-import com.google.crypto.tink.JsonKeysetReader
 import com.google.crypto.tink.config.TinkConfig
-import com.google.crypto.tink.hybrid.HybridDecryptFactory
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.JumioScanData
 import org.ostelco.prime.model.ScanMetadata
-import org.ostelco.prime.model.VendorScanData
 import org.ostelco.prime.model.VendorScanInformation
-import org.ostelco.prime.storage.FileDeleteError
+import org.ostelco.prime.module.getResource
+import org.ostelco.prime.securearchive.SecureArchiveService
 import org.ostelco.prime.storage.FileDownloadError
 import org.ostelco.prime.storage.NotCreatedError
 import org.ostelco.prime.storage.ScanInformationStore
 import org.ostelco.prime.storage.StoreError
 import org.ostelco.prime.store.datastore.EntityStore
-import java.io.BufferedOutputStream
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.io.FileInputStream
-import java.io.FileNotFoundException
-import java.io.FileOutputStream
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import java.time.Instant
 import java.util.*
-import java.util.zip.ZipEntry
-import java.util.zip.ZipInputStream
-import java.util.zip.ZipOutputStream
 import javax.ws.rs.core.MultivaluedMap
-import kotlin.collections.HashMap
 
 
 class ScanInfoStore : ScanInformationStore by ScanInformationStoreSingleton
@@ -76,29 +59,7 @@ object ScanInformationStoreSingleton : ScanInformationStore {
     private lateinit var apiToken: String
     private lateinit var apiSecret: String
 
-    // Cloud storage bucket prefix for storing zip files
-    private lateinit var storageBucket: String
-
-    private var deleteScan: Boolean = false
-    private lateinit var deleteUrl: String
-
-    // Path name prefix for the keyset files.
-    private lateinit var keysetFilePathPrefix: String
-    // KMS key name for decrypting the public key set.
-    private var masterKeyUri: String? = null
-    // Encryptors for used for each country
-    private var encrypters:HashMap<String, ScanInfoEncrypt> = HashMap()
-
-    private fun getEncrypter(countryCode: String): ScanInfoEncrypt {
-        if (encrypters.containsKey(countryCode)) {
-            return encrypters[countryCode]!!
-        } else {
-            logger.info("Initializing ScanInfoEncrypt for country: $countryCode")
-            val encrypt = ScanInfoEncrypt("${keysetFilePathPrefix}_$countryCode", masterKeyUri)
-            encrypters.put(countryCode, encrypt)
-            return encrypt
-        }
-    }
+    private val secureArchiveService by lazy { getResource<SecureArchiveService>() }
 
     /**
      * Save the scan information in cloud storage.
@@ -108,32 +69,18 @@ object ScanInformationStoreSingleton : ScanInformationStore {
      *  1) <bucket>-global/<customer-id>/<scan-id>.zip.tk
      *  2) <bucket>-<country-code>/<customer-id>/<scan-id>.zip.tk
      */
-    override fun upsertVendorScanInformation(customerId: String, countryCode:String, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit> {
+    override fun upsertVendorScanInformation(customerId: String, countryCode: String, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit> {
         return IO {
             Either.monad<StoreError>().binding {
-                logger.info("Creating createVendorScanInformation for customerId = ${customerId}")
+                logger.info("Creating createVendorScanInformation for customerId = $customerId")
                 val vendorScanInformation = createVendorScanInformation(vendorData).bind()
-                val bucketName = storageBucket
-                logger.info("Generating Plain Zip data for customerId = ${customerId}")
-                val plainZipData = JumioHelper.generateZipFile(vendorScanInformation).bind()
-                logger.info("Encrypt for global customerId = ${customerId}")
-                val zipData = getEncrypter("global").encryptData(plainZipData)
-                if (bucketName.isEmpty()) {
-                    val fileName = "${countryCode}_${vendorScanInformation.id}.zip.tk"
-                    logger.info("No bucket set, saving file locally $fileName")
-                    JumioHelper.saveLocalFile(fileName, zipData).bind()
-                } else {
-                    val fileName = "${customerId}/${vendorScanInformation.id}.zip.tk"
-                    val globalBucket = "${bucketName}-global"
-                    val countryBucket = "${bucketName}-${countryCode.toLowerCase()}"
-                    logger.info("Saving in cloud storage $globalBucket --> $fileName")
-                    JumioHelper.uploadFileToCloudStorage(globalBucket, fileName, zipData).bind()
-                    if (countryBucket != globalBucket) {
-                        logger.info("Saving in cloud storage $countryBucket --> $fileName")
-                        val localZipData = getEncrypter(countryCode).encryptData(plainZipData)
-                        JumioHelper.uploadFileToCloudStorage(countryBucket, fileName, localZipData).bind()
-                    }
-                }
+                logger.info("Generating data map for customerId = $customerId")
+                val dataMap = JumioHelper.toDataMap(vendorScanInformation)
+                secureArchiveService.archiveEncrypted(
+                        customerId = customerId,
+                        regionCodes = listOf(countryCode),
+                        fileName = vendorScanInformation.id,
+                        dataMap = dataMap).bind()
                 saveScanMetaData(customerId, countryCode, vendorScanInformation).bind()
                 Unit
             }.fix()
@@ -148,7 +95,7 @@ object ScanInformationStoreSingleton : ScanInformationStore {
         return JumioHelper.generateVendorScanInformation(vendorData, apiToken, apiSecret)
     }
 
-    private fun saveScanMetaData(customerId: String, countryCode:String, vendorScanInformation:VendorScanInformation): Either<StoreError, Unit> {
+    private fun saveScanMetaData(customerId: String, countryCode: String, vendorScanInformation: VendorScanInformation): Either<StoreError, Unit> {
         val keyString = "$customerId-${vendorScanInformation.id}"
         try {
             val scanMetadata = ScanMetadata(
@@ -167,9 +114,10 @@ object ScanInformationStoreSingleton : ScanInformationStore {
     }
 
     // Internal function used by unit test to check the encrypted zip file
-    internal fun __getVendorScanInformationFile(customerId: String, countryCode:String, scanId: String): Either<StoreError, String> {
+    internal fun __getVendorScanInformationFile(countryCode: String, scanId: String): Either<StoreError, String> {
         return Either.right("${countryCode}_$scanId.zip.tk")
     }
+
     // Internal function used by unit test to check the scan meta data
     internal fun __getScanMetaData(customerId: String, scanId: String): Either<Throwable, ScanMetadata> {
         val keyString = "$customerId-$scanId"
@@ -184,23 +132,16 @@ object ScanInformationStoreSingleton : ScanInformationStore {
     // Initialize the object, get all the environment variables and initialize the encrypter library.
     fun init(environmentVars: EnvironmentVars) {
         TinkConfig.register()
-        keysetFilePathPrefix = ConfigRegistry.config.keysetFilePathPrefix
         val storeType = ConfigRegistry.config.storeType
         if (storeType != "emulator" && storeType != "inmemory-emulator") {
             apiToken = environmentVars.getVar("JUMIO_API_TOKEN")
                     ?: throw Error("Missing environment variable JUMIO_API_TOKEN")
             apiSecret = environmentVars.getVar("JUMIO_API_SECRET")
                     ?: throw Error("Missing environment variable JUMIO_API_SECRET")
-            storageBucket = environmentVars.getVar("SCANINFO_STORAGE_BUCKET")
-                    ?: throw Error("Missing environment variable SCANINFO_STORAGE_BUCKET")
-            masterKeyUri = environmentVars.getVar("SCANINFO_MASTERKEY_URI")
-                    ?: throw Error("Missing environment variable SCANINFO_MASTERKEY_URI")
         } else {
             // Don't throw error during local tests
             apiToken = ""
             apiSecret = ""
-            storageBucket = ""
-            masterKeyUri = null
         }
     }
 }
@@ -209,15 +150,17 @@ object ScanInformationStoreSingleton : ScanInformationStore {
  * A utility for downloading and creating the scan information for Jumio clients.
  */
 object JumioHelper {
+
     private val logger by getLogger()
+
     /**
      * Retrieves the contents of a file from a URL
      */
     private fun downloadFileAsBlob(fileURL: String, username: String, password: String): Either<StoreError, Pair<Blob, String>> {
         val url = URL(fileURL)
         val httpConn = url.openConnection() as HttpURLConnection
-        val userpass = "$username:$password"
-        val authHeader = "Basic ${Base64.getEncoder().encodeToString(userpass.toByteArray())}"
+        val userPassword = "$username:$password"
+        val authHeader = "Basic ${Base64.getEncoder().encodeToString(userPassword.toByteArray())}"
         httpConn.setRequestProperty("Authorization", authHeader)
 
         try {
@@ -256,14 +199,14 @@ object JumioHelper {
             if (list.size > 1) {
                 return list //already flattened.
             }
-            val jsonData:String = list[0]
+            val jsonData: String = list[0]
             if (isJSONArray(jsonData)) {
                 return ObjectMapper().readValue(jsonData)
             }
         } catch (e: IOException) {
             logger.error("Cannot flattenList Json Data $list", e)
         }
-        return list;
+        return list
     }
 
     /**
@@ -271,7 +214,7 @@ object JumioHelper {
      * - Downloads all the required images
      */
     fun generateVendorScanInformation(vendorData: MultivaluedMap<String, String>, apiToken: String, apiSecret: String): Either<StoreError, VendorScanInformation> {
-        val images:MutableMap<String, Blob> = mutableMapOf()
+        val images: MutableMap<String, Blob> = mutableMapOf()
 
         val scanId: String = vendorData.getFirst(JumioScanData.SCAN_ID.s)
         val scanReference: String = vendorData.getFirst(JumioScanData.JUMIO_SCAN_ID.s)
@@ -279,7 +222,7 @@ object JumioHelper {
         val scanImageUrl: String? = vendorData.getFirst(JumioScanData.SCAN_IMAGE.s)
         val scanImageBacksideUrl: String? = vendorData.getFirst(JumioScanData.SCAN_IMAGE_BACKSIDE.s)
         val scanImageFaceUrl: String? = vendorData.getFirst(JumioScanData.SCAN_IMAGE_FACE.s)
-        val scanlivenessImagesUrl: List<String>? = vendorData[JumioScanData.SCAN_LIVENESS_IMAGES.s]
+        val scanLivenessImagesUrl: List<String>? = vendorData[JumioScanData.SCAN_LIVENESS_IMAGES.s]
 
         return IO {
             Either.monad<StoreError>().binding {
@@ -302,8 +245,8 @@ object JumioHelper {
                     val filename = "face.${getFileExtFromType(result.second)}"
                     images.put(filename, result.first)
                 }
-                if(scanlivenessImagesUrl != null) {
-                    val urls = scanlivenessImagesUrl.toMutableList()
+                if (scanLivenessImagesUrl != null) {
+                    val urls = scanLivenessImagesUrl.toMutableList()
                     urls.sort() // The url list is not in sequence
                     val flattenedList = flattenList(urls)
                     var imageIndex = 0
@@ -334,7 +277,7 @@ object JumioHelper {
      * Constructs extended status information from Jumio callback data.
      */
     fun getExtendedStatusInformation(vendorData: MultivaluedMap<String, String>): Map<String, String> {
-        var extendedStatus = mutableMapOf<String, String>()
+        val extendedStatus = mutableMapOf<String, String>()
         val verificationStatus: String = vendorData.getFirst(JumioScanData.VERIFICATION_STATUS.s)
         val identityVerificationData: String? = vendorData.getFirst(JumioScanData.IDENTITY_VERIFICATION.s)
 
@@ -368,64 +311,13 @@ object JumioHelper {
         }
         return extendedStatus
     }
-    /**
-     * Deletes the scan information from Jumio database.
-     */
-    fun deleteScanInformation(vendorScanId: String, baserUrl:String, username: String, password: String): Either<StoreError, Unit> {
-        val url = URL("$baserUrl/$vendorScanId")
-        val httpConn = url.openConnection() as HttpURLConnection
-        val userpass = "$username:$password"
-        val authHeader = "Basic ${Base64.getEncoder().encodeToString(userpass.toByteArray())}"
-        httpConn.setRequestProperty("Authorization", authHeader)
-        httpConn.setRequestProperty("Accept", "application/json")
-        httpConn.setRequestProperty("User-Agent", "ScanInformationStore")
-        httpConn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-        httpConn.doOutput = true;
-        httpConn.setRequestMethod("DELETE");
 
-        try {
-            val responseCode = httpConn.responseCode
-            // always check HTTP response code first
-            if (responseCode != HttpURLConnection.HTTP_OK) {
-                val statusMessage = "$responseCode: ${httpConn.responseMessage}"
-                return Either.left(FileDeleteError(url.toString(), statusMessage));
-            }
-            return Unit.right()
-        } catch (e: IOException) {
-            val statusMessage = "IOException: $e"
-            return Either.left(FileDeleteError(url.toString(), statusMessage))
-        } finally {
-            httpConn.disconnect()
-        }
-    }
     /**
-     * Creates the zip file from VendorScanInformation.
+     * Creates the map of VendorScanInformation and Images.
      */
-    fun generateZipFile(vendorData: VendorScanInformation): Either<StoreError, ByteArray> {
-        val outputStream = ByteArrayOutputStream()
-        val zos = ZipOutputStream(BufferedOutputStream(outputStream))
-
-        try {
-            zos.putNextEntry(ZipEntry("postdata.json"))
-            zos.write(vendorData.details.toByteArray())
-            zos.closeEntry()
-            // Append all images
-            if (vendorData.images != null) {
-                vendorData.images?.map { (filename, data) ->
-                    zos.putNextEntry(ZipEntry(filename))
-                    zos.write(data.toByteArray())
-                    zos.closeEntry()
-                    Unit
-                }
-            }
-            zos.finish()
-        } catch (e: IOException) {
-            return Either.left(NotCreatedError(VendorScanData.TYPE_NAME.s, vendorData.id))
-        } finally {
-            zos.close()
-        }
-        return Either.right(outputStream.toByteArray())
-    }
+    fun toDataMap(vendorData: VendorScanInformation): Map<String, ByteArray> =
+            mapOf("postdata.json" to vendorData.details.toByteArray()) +
+                (vendorData.images?.mapValues { it.value.toByteArray() } ?: emptyMap())
 
     /**
      * Creates the file extension from  mime-type.
@@ -439,48 +331,6 @@ object JumioHelper {
         }
     }
 
-
-    /**
-     * Upload the byte array to the given cloud storage object.
-     */
-    fun uploadFileToCloudStorage(bucket: String, fileName: String, data: ByteArray): Either<StoreError, String> {
-        val storage = StorageOptions.getDefaultInstance().getService()
-        val blobId = BlobId.of(bucket, fileName)
-        val blobInfo = BlobInfo.newBuilder(blobId).setContentType("application/octet-stream").build()
-        var mediaLink: String
-        try {
-            val blob = storage.create(blobInfo, data)
-            mediaLink = blob.mediaLink
-        } catch (e: StorageException) {
-            return Either.left(NotCreatedError(VendorScanData.TYPE_NAME.s, "$bucket/$fileName"))
-        }
-        return Either.right(mediaLink)
-    }
-
-    /**
-     * Save byte array as local file, used only for testing
-     */
-    fun saveLocalFile(fileName: String, data: ByteArray): Either<StoreError, String> {
-        val fos = FileOutputStream(File(fileName))
-        try {
-            fos.write(data)
-            fos.close()
-        } catch (e: IOException) {
-            return Either.left(NotCreatedError(VendorScanData.TYPE_NAME.s, "$fileName"))
-        }
-        return Either.right(fileName)
-    }
-
-
-    fun loadLocalZipFile(fileName: String): Either<StoreError, ZipInputStream> {
-        try {
-            val fis = FileInputStream(File(fileName))
-            return Either.right(ZipInputStream(fis))
-        } catch (e: FileNotFoundException) {
-            return Either.left(NotCreatedError(VendorScanData.TYPE_NAME.s, "$fileName"))
-        }
-    }
-
     @JvmStatic
     fun main(args: Array<String>) {
         val fileURL = "https://jdbc.postgresql.org/download/postgresql-9.2-1002.jdbc4.jar"
@@ -490,25 +340,5 @@ object JumioHelper {
         } catch (ex: IOException) {
             ex.printStackTrace()
         }
-        __testDecryption()
-    }
-
-    private fun __testDecryption() {
-        // The files created during the acceptance tests can be verified using this function
-        // Download encrypted files created in the root folder of prime docker image
-        // Find files by logging into the docker image `docker exec -ti prime bash`
-        // Copy files from docker image using `docker cp prime:/global_f1a6a509-7998-405c-b186-08983c91b422.zip.tk .`
-        // Replace the path for the input files in the method & run.
-        TinkConfig.register()
-        val file = File("global_f1a6a509-7998-405c-b186-08983c91b422.zip.tk") // File downloaded form docker image after AT
-        val fis = FileInputStream(file)
-        val data = ByteArray(file.length().toInt())
-        fis.read(data)
-        fis.close()
-        val pvtKeysetFilename = "prime/config/test_keyset_pvt_cltxt" // The test private keys used in AT
-        val keysetHandle = CleartextKeysetHandle.read(JsonKeysetReader.withFile(File(pvtKeysetFilename)))
-        val hybridDecrypt = HybridDecryptFactory.getPrimitive(keysetHandle)
-        val decrypted = hybridDecrypt.decrypt(data, null)
-        saveLocalFile("decrypted.zip", decrypted)
     }
 }

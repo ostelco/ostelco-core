@@ -26,7 +26,7 @@ class ScanInfoStoreTest {
 
     @Test
     fun `test - add check store`() {
-        val customerId= "test@example.com"
+        val customerId = "test@example.com"
         val vendorData: MultivaluedMap<String, String> = MultivaluedHashMap<String, String>()
         val scanId = "scanid1"
         val scanReference = "scanidref1"
@@ -39,7 +39,7 @@ class ScanInfoStoreTest {
         vendorData.addAll(JumioScanData.SCAN_LIVENESS_IMAGES.s, listOf(imgUrl, imgUrl2))
 
         ScanInformationStoreSingleton.upsertVendorScanInformation(customerId, "global", vendorData)
-        val savedFile = ScanInformationStoreSingleton.__getVendorScanInformationFile(customerId, "global", scanId)
+        val savedFile = ScanInformationStoreSingleton.__getVendorScanInformationFile("global", scanId)
         assert(savedFile.isRight())
         savedFile.map { filename ->
             val file = File(filename)
@@ -70,7 +70,7 @@ class ScanInfoStoreTest {
     }
 
     companion object {
-        private lateinit var privateKeysetHandle:KeysetHandle
+        private lateinit var privateKeysetHandle: KeysetHandle
 
         @JvmStatic
         @BeforeClass
@@ -79,7 +79,6 @@ class ScanInfoStoreTest {
             val testEnvVars = Mockito.mock(EnvironmentVars::class.java)
             Mockito.`when`(testEnvVars.getVar("JUMIO_API_TOKEN")).thenReturn("")
             Mockito.`when`(testEnvVars.getVar("JUMIO_API_SECRET")).thenReturn("")
-            Mockito.`when`(testEnvVars.getVar("SCANINFO_STORAGE_BUCKET")).thenReturn("")
             ConfigRegistry.config = ScanInfoConfig()
                     .apply { this.storeType = "inmemory-emulator" }
             ScanInformationStoreSingleton.init(testEnvVars)

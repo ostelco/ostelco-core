@@ -4,12 +4,10 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonTypeName
 import io.dropwizard.Configuration
 import io.dropwizard.setup.Environment
-import org.ostelco.prime.getLogger
 import org.ostelco.prime.module.PrimeModule
 
 @JsonTypeName("scaninfo-store")
 class ScanInfoModule : PrimeModule {
-    private val logger by getLogger()
 
     @JsonProperty
     fun setConfig(config: ScanInfoConfig) {
@@ -27,7 +25,6 @@ class ScanInfoModule : PrimeModule {
 class ScanInfoConfig : Configuration() {
     var storeType = "default"
     var namespace = ""
-    var keysetFilePathPrefix = "encrypt_key"
 }
 
 object ConfigRegistry {

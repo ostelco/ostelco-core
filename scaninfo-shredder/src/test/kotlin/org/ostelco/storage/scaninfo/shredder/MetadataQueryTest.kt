@@ -61,7 +61,6 @@ class MetadataQueryTest {
             val testEnvVars = Mockito.mock(EnvironmentVars::class.java)
             Mockito.`when`(testEnvVars.getVar("JUMIO_API_TOKEN")).thenReturn("")
             Mockito.`when`(testEnvVars.getVar("JUMIO_API_SECRET")).thenReturn("")
-            Mockito.`when`(testEnvVars.getVar("SCANINFO_STORAGE_BUCKET")).thenReturn("")
             val config = ScanInfoShredderConfig()
                     .apply { storeType = "inmemory-emulator" }
             scanInfoShredder = ScanInfoShredder(config)

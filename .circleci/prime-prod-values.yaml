@@ -72,10 +72,10 @@ prime:
       secretName: stripe-secrets
       secretKey: stripeEndpointSecret
     - name: SCANINFO_STORAGE_BUCKET
-      secretName: scaninfo-secrets
+      secretName: scan-info-secrets
       secretKey:  bucketName
     - name: SCANINFO_MASTERKEY_URI
-      secretName: scaninfo-keys
+      secretName: scan-info-keys
       secretKey: masterKeyUri
     - name: JUMIO_API_TOKEN
       secretName: jumio-secrets
@@ -269,7 +269,7 @@ services:
     clientCert: true
     caCert: smdp-cacert.prod # secretname.namespace
 
-certs: 
+certs:
   enabled: true
   dnsProvider: dev-clouddns
   issuer: letsencrypt-production # or letsencrypt-staging
