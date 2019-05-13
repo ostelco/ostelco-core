@@ -21,7 +21,6 @@ import org.ostelco.simcards.admin.ProfileVendorConfig
 import org.ostelco.simcards.admin.SimAdministrationConfiguration
 import org.ostelco.simcards.hss.HssEntry
 import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
-import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.util.*
 import javax.ws.rs.client.Entity
@@ -286,19 +285,7 @@ class SimInventoryUnitTests {
 
 
 
-    private fun getSampleCsvInputAsByteArrayInputStream(): ByteArrayInputStream {
-        val sampleCsvIinput = """
-            ICCID, IMSI, MSISDN, PIN1, PIN2, PUK1, PUK2, PROFILE
-            123123, 123123, 4790000001, 1233, 1233, 1233, 1233, PROFILE_1
-            123123, 123123, 4790000002, 1233, 1233, 1233, 1233, PROFILE_1
-            123123, 123123, 4790000003, 1233, 1233, 1233, 1233, PROFILE_1
-            123123, 123123, 4790000004, 1233, 1233, 1233, 1233, PROFILE_1
-            """.trimIndent()
-        val data = ByteArrayInputStream(sampleCsvIinput.toByteArray(Charsets.UTF_8))
-        return data
-    }
 
-    
     // XXX TODO:
     //  1. Make this pass [done]
     //  2. Add some validation to the test, so that it tests if the profiles are correctly read
@@ -306,21 +293,11 @@ class SimInventoryUnitTests {
     //  3. Copy/modify/refactor to test that this will also work when setting the
     //     initial hss state of the profile.
     @Test
-    fun testMocedOutImportSims() {
+    fun testMockedOutImportSims() {
         org.mockito.Mockito.`when`(dao.findSimVendorForHssPermissions(1L, 1L))
                 .thenReturn(listOf(0L).right())
         org.mockito.Mockito.`when`(dao.simVendorIsPermittedForHlr(1L, 1L))
                 .thenReturn(true.right())
-
-        val sampleCsvIinput = """
-            ICCID, IMSI, MSISDN, PIN1, PIN2, PUK1, PUK2, PROFILE
-            123123, 123123, 4790000001, 1233, 1233, 1233, 1233, PROFILE_1
-            123123, 123123, 4790000002, 1233, 1233, 1233, 1233, PROFILE_1
-            123123, 123123, 4790000003, 1233, 1233, 1233, 1233, PROFILE_1
-            123123, 123123, 4790000004, 1233, 1233, 1233, 1233, PROFILE_1
-            """.trimIndent()
-        val data = ByteArrayInputStream(sampleCsvIinput.toByteArray(Charsets.UTF_8))
-
         org.mockito.Mockito.`when`(dao.importSims(eq("importer"), eq(1L),
                 eq(1L), any(InputStream::class.java),
                 eq(HssState.NOT_ACTIVATED)))
@@ -333,13 +310,26 @@ class SimInventoryUnitTests {
                         importer = "Testroutine",
                         endedAt = 999L).right())
 
+        val simEntry = importSimBatch()
+        assertNotNull(simEntry)
+    }
+
+    private fun importSimBatch(): SimImportBatch {
+        val sampleCsvIinput = """
+                ICCID, IMSI, MSISDN, PIN1, PIN2, PUK1, PUK2, PROFILE
+                123123, 123123, 4790000001, 1233, 1233, 1233, 1233, PROFILE_1
+                123123, 123123, 4790000002, 1233, 1233, 1233, 1233, PROFILE_1
+                123123, 123123, 4790000003, 1233, 1233, 1233, 1233, PROFILE_1
+                123123, 123123, 4790000004, 1233, 1233, 1233, 1233, PROFILE_1
+                """.trimIndent()
+
         val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/import-batch/profilevendor/$fakeProfileVendor")
                 .request(MediaType.APPLICATION_JSON)
                 .put(Entity.entity(sampleCsvIinput, MediaType.TEXT_PLAIN))
         assertEquals(200, response.status)
 
         val simEntry = response.readEntity(SimImportBatch::class.java)
-        assertNotNull(simEntry)
+        return simEntry
     }
 
     // TODO rmz: Move this to some utility class if they are needed again.
