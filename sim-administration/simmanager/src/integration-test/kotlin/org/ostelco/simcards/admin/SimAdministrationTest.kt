@@ -1,5 +1,6 @@
 package org.ostelco.simcards.admin
 
+import arrow.core.Either
 import com.codahale.metrics.health.HealthCheck
 import io.dropwizard.client.HttpClientBuilder
 import io.dropwizard.client.JerseyClientBuilder
@@ -11,11 +12,13 @@ import org.assertj.core.api.Assertions.assertThat
 import org.glassfish.jersey.client.ClientProperties
 import org.jdbi.v3.core.Jdbi
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Ignore
 import org.junit.Test
+import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.hss.DirectHssDispatcher
 import org.ostelco.simcards.hss.HealthCheckRegistrar
 import org.ostelco.simcards.hss.SimManagerToHssDispatcherAdapter
@@ -40,6 +43,11 @@ class SimAdministrationTest {
     companion object {
         private lateinit var jdbi: Jdbi
         private lateinit var client: Client
+
+        // ICCID of rirst SIM in sample-sim-batch.csv
+        //   ... we will be using this to check if the values for the
+        //       hss state is set right.
+        val FIRST_ICCID: String = "8901000000000000001"
 
         /* Port number exposed to host by the emulated HLR service. */
         private var HLR_PORT = (20_000..29_999).random()
@@ -220,6 +228,15 @@ class SimAdministrationTest {
     @Test
     fun testGetProfilesForHlr() {
         loadSimData()
+        val profiles = getProfilesForHlr0()
+        assertThat(profiles.isRight()).isTrue()
+        profiles.map {
+            assertEquals(1, it.size)
+            assertEquals(expectedProfile, it[0])
+        }
+    }
+
+    private fun getProfilesForHlr0(): Either<SimManagerError, List<String>> {
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
                 .getDAO()
         val hlrs = simDao.getHssEntries()
@@ -231,11 +248,7 @@ class SimAdministrationTest {
         }
 
         val profiles = simDao.getProfileNamesForHssById(hlrId)
-        assertThat(profiles.isRight()).isTrue()
-        profiles.map {
-            assertEquals(1, it.size)
-            assertEquals(expectedProfile, it[0])
-        }
+        return profiles
     }
 
     @Test
@@ -318,5 +331,43 @@ class SimAdministrationTest {
         assertEquals(
                 maxNoOfProfilesToAllocate.toLong(),
                 noOfAllocatedProfiles)
+    }
+
+
+    fun getFirstSimProfileFromLoadedBatch(): SimEntry? {
+
+        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
+                .getDAO()
+        val simProfile = simDao.getSimProfileByIccid(FIRST_ICCID)
+        return when {
+            simProfile is Either.Right -> simProfile.b
+            simProfile is Either.Left ->  null
+            else -> null
+        }
+    }
+
+    private fun assertHssActivationOfFirstIccid(state: HssState) {
+        val first = getFirstSimProfileFromLoadedBatch()
+        assertNotNull(first)
+        assertEquals(FIRST_ICCID, first?.iccid)
+        assertEquals(state, first?.hssState)
+    }
+
+    @Test
+    fun testSettingLoadedSimDataDefaultHssLoadValue() {
+        loadSimData()
+        assertHssActivationOfFirstIccid(HssState.NOT_ACTIVATED)
+    }
+
+    @Test
+    fun testSettingLoadedSimDataToNotHaveBeenLoadedIntoHSS() {
+        loadSimData(HssState.NOT_ACTIVATED)
+        assertHssActivationOfFirstIccid(HssState.NOT_ACTIVATED)
+    }
+
+    @Test
+    fun testSettingLoadedSimDataToHaveBeenLoadedIntoHSS() {
+        loadSimData(HssState.ACTIVATED)
+        assertHssActivationOfFirstIccid(HssState.ACTIVATED)
     }
 }
