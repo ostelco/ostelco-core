@@ -344,17 +344,20 @@ class SimInventoryUnitTests {
                 123123, 123123, 4790000004, 1233, 1233, 1233, 1233, PROFILE_1
                 """.trimIndent()
 
-        val hssActivationParam: String = if (hssState == null) "" else "?initialHssState=${hssState}"
+        val urlPath = "/ostelco/sim-inventory/$fakeHlr/import-batch/profilevendor/${fakeProfileVendor}"
 
+        var target = RULE.target(urlPath)
 
-        val response =
-                RULE.target("/ostelco/sim-inventory/$fakeHlr/import-batch/profilevendor/${fakeProfileVendor}${hssActivationParam}")
+        if (hssState != null) {
+            target = target.queryParam("initialHssState", hssState)
+        }
+
+        val response = target
                 .request(MediaType.APPLICATION_JSON)
                 .put(Entity.entity(sampleCsvIinput, MediaType.TEXT_PLAIN))
         assertEquals(200, response.status)
 
-        val simEntry = response.readEntity(SimImportBatch::class.java)
-        return simEntry
+        return response.readEntity(SimImportBatch::class.java)
     }
 
     // TODO rmz: Move this to some utility class if they are needed again.
