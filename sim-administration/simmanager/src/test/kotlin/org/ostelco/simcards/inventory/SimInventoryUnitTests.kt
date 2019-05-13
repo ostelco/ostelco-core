@@ -284,57 +284,6 @@ class SimInventoryUnitTests {
     }
 
 
-    // XXX TODO:
-    //  1. Make this pass [done]
-    //  2. Add some validation to the test, so that it tests if the profiles are correctly read
-    //     (state in datstorage)
-    //  3. Copy/modify/refactor to test that this will also work when setting the
-    //     initial hss state of the profile.
-    @Test
-    fun testMockedOutImportSims() {
-        org.mockito.Mockito.`when`(dao.findSimVendorForHssPermissions(1L, 1L))
-                .thenReturn(listOf(0L).right())
-        org.mockito.Mockito.`when`(dao.simVendorIsPermittedForHlr(1L, 1L))
-                .thenReturn(true.right())
-        org.mockito.Mockito.`when`(dao.importSims(eq("importer"), eq(1L),
-                eq(1L), any(InputStream::class.java),
-                eq(HssState.NOT_ACTIVATED)))
-                .thenReturn(SimImportBatch(
-                        id = 0L,
-                        status = "SUCCESS",
-                        size = 4L,
-                        hssId = 1L,
-                        profileVendorId = 1L,
-                        importer = "Testroutine",
-                        endedAt = 999L).right())
-
-        val simEntry = importSimBatch()
-        assertNotNull(simEntry)
-    }
-
-
-    @Test
-    fun testMockedOutImportSimsWithNonActicatedHssStatusSet() {
-        org.mockito.Mockito.`when`(dao.findSimVendorForHssPermissions(1L, 1L))
-                .thenReturn(listOf(0L).right())
-        org.mockito.Mockito.`when`(dao.simVendorIsPermittedForHlr(1L, 1L))
-                .thenReturn(true.right())
-        org.mockito.Mockito.`when`(dao.importSims(eq("importer"), eq(1L),
-                eq(1L), any(InputStream::class.java),
-                eq(HssState.NOT_ACTIVATED)))
-                .thenReturn(SimImportBatch(
-                        id = 0L,
-                        status = "SUCCESS",
-                        size = 4L,
-                        hssId = 1L,
-                        profileVendorId = 1L,
-                        importer = "Testroutine",
-                        endedAt = 999L).right())
-
-        val simEntry = importSimBatch(HssState.NOT_ACTIVATED)
-        assertNotNull(simEntry)
-    }
-
     private fun importSimBatch(hssState: HssState? = null): SimImportBatch {
         val sampleCsvIinput = """
                 ICCID, IMSI, MSISDN, PIN1, PIN2, PUK1, PUK2, PROFILE
@@ -362,5 +311,46 @@ class SimInventoryUnitTests {
 
     // TODO rmz: Move this to some utility class if they are needed again.
     private fun <T> any(type: Class<T>): T = Mockito.any<T>(type)
-    private fun <T> eq(obj : T): T = Mockito.eq<T>(obj)
+
+    private fun <T> eq(obj: T): T = Mockito.eq<T>(obj)
+
+    private fun setUpMocksForMockedOutImportSims() {
+        Mockito.`when`(dao.findSimVendorForHssPermissions(1L, 1L))
+                .thenReturn(listOf(0L).right())
+        Mockito.`when`(dao.simVendorIsPermittedForHlr(1L, 1L))
+                .thenReturn(true.right())
+        Mockito.`when`(dao.importSims(eq("importer"), eq(1L),
+                eq(1L), any(InputStream::class.java),
+                eq(HssState.NOT_ACTIVATED)))
+                .thenReturn(SimImportBatch(
+                        id = 0L,
+                        status = "SUCCESS",
+                        size = 4L,
+                        hssId = 1L,
+                        profileVendorId = 1L,
+                        importer = "Testroutine",
+                        endedAt = 999L).right())
+    }
+
+
+    // XXX TODO:
+    //  1. Make this pass [done]
+    //  2. Add some validation to the test, so that it tests if the profiles are correctly read
+    //     (state in datstorage)
+    //  3. Copy/modify/refactor to test that this will also work when setting the
+    //     initial hss state of the profile.
+    @Test
+    fun testMockedOutImportSims() {
+        setUpMocksForMockedOutImportSims()
+
+        importSimBatch()
+    }
+
+
+    @Test
+    fun testMockedOutImportSimsWithNonActicatedHssStatusSet() {
+        setUpMocksForMockedOutImportSims()
+
+        importSimBatch(HssState.NOT_ACTIVATED)
+    }
 }
