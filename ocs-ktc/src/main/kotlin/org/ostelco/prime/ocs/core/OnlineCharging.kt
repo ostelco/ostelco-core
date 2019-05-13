@@ -33,7 +33,9 @@ object OnlineCharging : OcsAsyncRequestConsumer {
         if (request.type == CreditControlRequestType.NONE) {
             logger.debug("Got keepalive")
             responseBuilder.setRequestId(request.requestId).setMsisdn("None").setResultCode(ResultCode.UNKNOWN)
-            returnCreditControlAnswer(responseBuilder.build())
+            synchronized(OnlineCharging) {
+                returnCreditControlAnswer(responseBuilder.build())
+            }
         } else {
 
             val msisdn = request.msisdn
