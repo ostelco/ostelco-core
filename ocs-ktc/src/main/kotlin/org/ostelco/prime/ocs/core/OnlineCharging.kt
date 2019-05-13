@@ -31,11 +31,8 @@ object OnlineCharging : OcsAsyncRequestConsumer {
 
         // these are keepalives to keep latency low
         if (request.type == CreditControlRequestType.NONE) {
-            logger.debug("Got keepalive")
             responseBuilder.setRequestId(request.requestId).setMsisdn("None").setResultCode(ResultCode.UNKNOWN)
-            synchronized(OnlineCharging) {
-                returnCreditControlAnswer(responseBuilder.build())
-            }
+            returnCreditControlAnswer(responseBuilder.buildPartial())
         } else {
 
             val msisdn = request.msisdn
