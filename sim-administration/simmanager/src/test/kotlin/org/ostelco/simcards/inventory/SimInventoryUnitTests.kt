@@ -312,7 +312,7 @@ class SimInventoryUnitTests {
         assertNotNull(simEntry)
     }
 
-    private fun importSimBatch(): SimImportBatch {
+    private fun importSimBatch(hssState: HssState? = null): SimImportBatch {
         val sampleCsvIinput = """
                 ICCID, IMSI, MSISDN, PIN1, PIN2, PUK1, PUK2, PROFILE
                 123123, 123123, 4790000001, 1233, 1233, 1233, 1233, PROFILE_1
@@ -321,7 +321,11 @@ class SimInventoryUnitTests {
                 123123, 123123, 4790000004, 1233, 1233, 1233, 1233, PROFILE_1
                 """.trimIndent()
 
-        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/import-batch/profilevendor/$fakeProfileVendor")
+        val hssActivationParam: String = if (hssState == null) "" else "?initialHssState=${hssState}"
+
+
+        val response =
+                RULE.target("/ostelco/sim-inventory/$fakeHlr/import-batch/profilevendor/${fakeProfileVendor}${hssActivationParam}")
                 .request(MediaType.APPLICATION_JSON)
                 .put(Entity.entity(sampleCsvIinput, MediaType.TEXT_PLAIN))
         assertEquals(200, response.status)
