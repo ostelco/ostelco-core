@@ -133,7 +133,6 @@ class SimAdministrationTest {
         SM_DP_PLUS_RULE.getApplication<SmDpPlusApplication>().reset()
         clearTables()
         presetTables()
-        loadSimData()
     }
 
     private fun clearTables() {
@@ -170,6 +169,7 @@ class SimAdministrationTest {
     @Test
     @Ignore
     fun testGetProfileStatus() {
+        loadSimData()
         val iccid = "8901000000000000001"
         val response = client.target("$simManagerEndpoint/$hssName/profileStatusList/$iccid")
                 .request()
@@ -179,6 +179,7 @@ class SimAdministrationTest {
 
     @Test
     fun testGetIccid() {
+        loadSimData()
         val iccid = "8901000000000000001"
         val response = client.target("$simManagerEndpoint/$hssName/iccid/$iccid")
                 .request()
@@ -193,6 +194,7 @@ class SimAdministrationTest {
        up as a ready to use eSIM. */
     @Test
     fun testNoReadyToUseEsimAvailable() {
+        loadSimData()
         val response = client.target("$simManagerEndpoint/$hssName/esim")
                 .request()
                 .get()
@@ -206,6 +208,7 @@ class SimAdministrationTest {
 
     @Test
     fun testGetListOfHlrs() {
+        loadSimData()
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
                 .getDAO()
         val hssEntries = simDao.getHssEntries()
@@ -216,6 +219,7 @@ class SimAdministrationTest {
 
     @Test
     fun testGetProfilesForHlr() {
+        loadSimData()
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
                 .getDAO()
         val hlrs = simDao.getHssEntries()
@@ -236,6 +240,7 @@ class SimAdministrationTest {
 
     @Test
     fun  testGetProfileStats() {
+        loadSimData()
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
                 .getDAO()
         val hlrs = simDao.getHssEntries()
@@ -257,6 +262,7 @@ class SimAdministrationTest {
 
     @Test
     fun testPeriodicProvisioningTask() {
+        loadSimData()
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
                 .getDAO()
 
