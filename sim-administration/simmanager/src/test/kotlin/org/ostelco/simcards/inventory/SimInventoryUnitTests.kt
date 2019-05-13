@@ -285,14 +285,28 @@ class SimInventoryUnitTests {
     }
 
 
+
+    private fun getSampleCsvInputAsByteArrayInputStream(): ByteArrayInputStream {
+        val sampleCsvIinput = """
+            ICCID, IMSI, MSISDN, PIN1, PIN2, PUK1, PUK2, PROFILE
+            123123, 123123, 4790000001, 1233, 1233, 1233, 1233, PROFILE_1
+            123123, 123123, 4790000002, 1233, 1233, 1233, 1233, PROFILE_1
+            123123, 123123, 4790000003, 1233, 1233, 1233, 1233, PROFILE_1
+            123123, 123123, 4790000004, 1233, 1233, 1233, 1233, PROFILE_1
+            """.trimIndent()
+        val data = ByteArrayInputStream(sampleCsvIinput.toByteArray(Charsets.UTF_8))
+        return data
+    }
+
+    
     // XXX TODO:
-    //  1. Make this pass
+    //  1. Make this pass [done]
     //  2. Add some validation to the test, so that it tests if the profiles are correctly read
     //     (state in datstorage)
     //  3. Copy/modify/refactor to test that this will also work when setting the
     //     initial hss state of the profile.
     @Test
-    fun testImport() {
+    fun testMocedOutImportSims() {
         org.mockito.Mockito.`when`(dao.findSimVendorForHssPermissions(1L, 1L))
                 .thenReturn(listOf(0L).right())
         org.mockito.Mockito.`when`(dao.simVendorIsPermittedForHlr(1L, 1L))
