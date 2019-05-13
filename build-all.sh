@@ -93,7 +93,7 @@ DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS=" \
   bq-metrics-extractor/config \
   auth-server/config prime/config"
 
-SERVICE_ACCOUNT_MD5="b8d22f87b55431ebfa4b68c16d7dc037"
+SERVICE_ACCOUNT_MD5="c54b903790340dd9365fa59fce3ad8e2"
 
 if [[ ! -f "prime-service-account.json" ]] ; then
     echo "$0 ERROR: Could not find master service-account file  prime-service-account.json, aborting."

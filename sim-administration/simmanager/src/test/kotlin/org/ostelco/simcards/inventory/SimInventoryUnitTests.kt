@@ -307,7 +307,9 @@ class SimInventoryUnitTests {
             """.trimIndent()
         val data = ByteArrayInputStream(sampleCsvIinput.toByteArray(Charsets.UTF_8))
 
-        org.mockito.Mockito.`when`(dao.importSims(eq("importer"), eq(1L), eq(1L), any(InputStream::class.java)))
+        org.mockito.Mockito.`when`(dao.importSims(eq("importer"), eq(1L),
+                eq(1L), any(InputStream::class.java),
+                eq(HssState.NOT_ACTIVATED)))
                 .thenReturn(SimImportBatch(
                         id = 0L,
                         status = "SUCCESS",
