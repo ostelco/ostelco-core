@@ -10,12 +10,18 @@ import io.dropwizard.testing.junit.DropwizardAppRule
 import org.assertj.core.api.Assertions.assertThat
 import org.glassfish.jersey.client.ClientProperties
 import org.jdbi.v3.core.Jdbi
-import org.junit.*
 import org.junit.Assert.assertEquals
+import org.junit.Before
+import org.junit.BeforeClass
+import org.junit.ClassRule
+import org.junit.Ignore
+import org.junit.Test
 import org.ostelco.simcards.hss.DirectHssDispatcher
 import org.ostelco.simcards.hss.HealthCheckRegistrar
 import org.ostelco.simcards.hss.SimManagerToHssDispatcherAdapter
-import org.ostelco.simcards.inventory.*
+import org.ostelco.simcards.inventory.HssState
+import org.ostelco.simcards.inventory.SimEntry
+import org.ostelco.simcards.inventory.SimProfileKeyStatistics
 import org.ostelco.simcards.smdpplus.SmDpPlusApplication
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.FixedHostPortGenericContainer
@@ -145,9 +151,15 @@ class SimAdministrationTest {
     }
 
     /* The SIM dataset is the same that is used by the SM-DP+ emulator. */
-    private fun loadSimData() {
+    private fun loadSimData(hssState: HssState? = null) {
         val entries = FileInputStream(SM_DP_PLUS_RULE.configuration.simBatchData)
-        val response = client.target("$simManagerEndpoint/$hssName/import-batch/profilevendor/$profileVendor")
+        var target = client.target("$simManagerEndpoint/$hssName/import-batch/profilevendor/$profileVendor")
+        if (hssState != null) {
+            target = target.queryParam("initialHssState", hssState)
+        }
+
+        val response =
+                target
                 .request()
                 .put(Entity.entity(entries, MediaType.TEXT_PLAIN))
         assertThat(response.status).isEqualTo(200)
