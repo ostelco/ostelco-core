@@ -314,14 +314,14 @@ class SimInventoryUnitTests {
 
     private fun <T> eq(obj: T): T = Mockito.eq<T>(obj)
 
-    private fun setUpMocksForMockedOutImportSims() {
+    private fun setUpMocksForMockedOutImportSims(initialHssState:HssState = HssState.NOT_ACTIVATED) {
         Mockito.`when`(dao.findSimVendorForHssPermissions(1L, 1L))
                 .thenReturn(listOf(0L).right())
         Mockito.`when`(dao.simVendorIsPermittedForHlr(1L, 1L))
                 .thenReturn(true.right())
         Mockito.`when`(dao.importSims(eq("importer"), eq(1L),
                 eq(1L), any(InputStream::class.java),
-                eq(HssState.NOT_ACTIVATED)))
+                eq(initialHssState)))
                 .thenReturn(SimImportBatch(
                         id = 0L,
                         status = "SUCCESS",
@@ -342,5 +342,11 @@ class SimInventoryUnitTests {
     fun testMockedOutImportSimsWithNonActicatedHssStatusSet() {
         setUpMocksForMockedOutImportSims()
         importSimBatch(HssState.NOT_ACTIVATED)
+    }
+
+    @Test
+    fun testMockedOutImportSimsWithActivatedHssStatusSet() {
+        setUpMocksForMockedOutImportSims(HssState.ACTIVATED)
+        importSimBatch(HssState.ACTIVATED)
     }
 }
