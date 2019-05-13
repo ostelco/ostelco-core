@@ -335,14 +335,12 @@ class SimInventoryUnitTests {
     @Test
     fun testMockedOutImportSims() {
         setUpMocksForMockedOutImportSims()
-
         importSimBatch()
     }
-    
+
     @Test
     fun testMockedOutImportSimsWithNonActicatedHssStatusSet() {
         setUpMocksForMockedOutImportSims()
-
         importSimBatch(HssState.NOT_ACTIVATED)
     }
 }
