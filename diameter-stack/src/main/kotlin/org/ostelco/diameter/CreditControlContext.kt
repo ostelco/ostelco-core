@@ -34,6 +34,8 @@ class CreditControlContext(
     // Set to true, when answer to not to be sent to P-GW.
     var skipAnswer: Boolean = false
 
+    var requestTime = System.currentTimeMillis()
+
     val creditControlRequest: CreditControlRequest = AvpParser().parse(
             CreditControlRequest::class,
             originalCreditControlRequest.message.avps)
@@ -127,5 +129,9 @@ class CreditControlContext(
                 }
             }
         }
+    }
+
+    fun logLatency() {
+        logger.info("Time from request to answer {} ms", System.currentTimeMillis() - requestTime)
     }
 }
