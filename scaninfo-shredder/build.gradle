@@ -10,6 +10,8 @@ version = "1.0.0"
 
 dependencies {
   api project(':model')
+  
+  implementation project(':data-store')
 
   implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
   implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
@@ -20,6 +22,11 @@ dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
   implementation "com.google.cloud:google-cloud-datastore:$googleCloudVersion"
 
+  implementation "io.arrow-kt:arrow-core:$arrowVersion"
+  implementation "io.arrow-kt:arrow-typeclasses:$arrowVersion"
+  implementation "io.arrow-kt:arrow-instances-core:$arrowVersion"
+  implementation "io.arrow-kt:arrow-effects:$arrowVersion"
+  
   runtimeOnly "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"
 
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"

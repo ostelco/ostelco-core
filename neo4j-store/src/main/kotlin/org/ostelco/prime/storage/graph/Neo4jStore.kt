@@ -52,6 +52,7 @@ import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.PaymentStatus
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import org.ostelco.prime.securearchive.SecureArchiveService
 import org.ostelco.prime.sim.SimManager
 import org.ostelco.prime.storage.AlreadyExistsError
 import org.ostelco.prime.storage.ConsumptionResult
@@ -1182,8 +1183,8 @@ object Neo4jStoreSingleton : GraphStore {
                     })
 
     private fun createPurchaseRecordRelation2(customerId: String,
-                                             purchase: PurchaseRecord,
-                                             transaction: Transaction): Either<StoreError, String> =
+                                              purchase: PurchaseRecord,
+                                              transaction: Transaction): Either<StoreError, String> =
             customerStore.get(customerId, transaction).flatMap { customer ->
                 productStore.get(purchase.product.sku, transaction).flatMap { product ->
                     purchaseRecordRelationStore.create(customer, purchase, product, transaction)
@@ -1413,37 +1414,49 @@ object Neo4jStoreSingleton : GraphStore {
 
     private val myInfoKycService by lazy { getResource<MyInfoKycService>() }
 
+    private val secureArchiveService by lazy { getResource<SecureArchiveService>() }
+
     override fun getCustomerMyInfoData(
             identity: org.ostelco.prime.model.Identity,
             authorisationCode: String): Either<StoreError, String> {
+        return IO {
+            Either.monad<StoreError>().binding {
 
-        return getCustomerId(identity = identity)
-                .flatMap { customerId ->
-                    // set MyInfo KYC Status to Pending
-                    setKycStatus(
-                            customerId = customerId,
-                            regionCode = "sg",
-                            kycType = MY_INFO,
-                            kycStatus = KycStatus.PENDING)
-                            .flatMap {
-                                try {
-                                    myInfoKycService.getPersonData(authorisationCode).right()
-                                } catch (e: Exception) {
-                                    logger.error("Failed to fetched MyInfo using authCode = $authorisationCode", e)
-                                    SystemError(
-                                            type = "MyInfo Auth Code",
-                                            id = authorisationCode,
-                                            message = "Failed to fetched MyInfo").left()
-                                }
-                            }.flatMap { personData ->
-                                // set MyInfo KYC Status to Approved
-                                setKycStatus(
-                                        customerId = customerId,
-                                        regionCode = "sg",
-                                        kycType = MY_INFO)
-                                        .map { personData }
-                            }
-                }
+                val customerId = getCustomerId(identity = identity).bind()
+
+                // set MY_INFO KYC Status to Pending
+                setKycStatus(
+                        customerId = customerId,
+                        regionCode = "sg",
+                        kycType = MY_INFO,
+                        kycStatus = KycStatus.PENDING).bind()
+
+                val personData = try {
+                    myInfoKycService.getPersonData(authorisationCode).right()
+                } catch (e: Exception) {
+                    logger.error("Failed to fetched MyInfo using authCode = $authorisationCode", e)
+                    SystemError(
+                            type = "MyInfo Auth Code",
+                            id = authorisationCode,
+                            message = "Failed to fetched MyInfo").left()
+                }.bind()
+
+                secureArchiveService.archiveEncrypted(
+                        customerId = customerId,
+                        fileName = "myInfoData",
+                        regionCodes = listOf("sg"),
+                        dataMap = mapOf("personData" to personData.toByteArray())
+                ).bind()
+
+                // set MY_INFO KYC Status to Approved
+                setKycStatus(
+                        customerId = customerId,
+                        regionCode = "sg",
+                        kycType = MY_INFO).bind()
+
+                personData
+            }.fix()
+        }.unsafeRunSync()
     }
 
     //
@@ -1454,28 +1467,43 @@ object Neo4jStoreSingleton : GraphStore {
 
     override fun checkNricFinIdUsingDave(
             identity: org.ostelco.prime.model.Identity,
-            nricFinId: String): Either<StoreError, Unit> = writeTransaction {
+            nricFinId: String): Either<StoreError, Unit> {
 
-        logger.info("checkNricFinIdUsingDave for ${nricFinId}")
+        return IO {
+            Either.monad<StoreError>().binding {
 
-        getCustomerId(identity = identity, transaction = transaction)
-                .flatMap { customerId ->
-                    setKycStatus(
-                            customerId = customerId,
-                            regionCode = "sg",
-                            kycType = NRIC_FIN,
-                            transaction = transaction)
+                logger.info("checkNricFinIdUsingDave for $nricFinId")
+
+                val customerId = getCustomerId(identity = identity).bind()
+
+                // set NRIC_FIN KYC Status to Pending
+                setKycStatus(
+                        customerId = customerId,
+                        regionCode = "sg",
+                        kycType = NRIC_FIN,
+                        kycStatus = KycStatus.PENDING).bind()
+
+                if (daveKycService.validate(nricFinId)) {
+                    logger.info("checkNricFinIdUsingDave validated $nricFinId")
+                } else {
+                    logger.info("checkNricFinIdUsingDave failed to validate $nricFinId")
+                    ValidationError(type = "NRIC/FIN ID", id = nricFinId, message = "Invalid NRIC/FIN ID").left().bind()
                 }
-                .flatMap {
-                    if (daveKycService.validate(nricFinId)) {
-                        logger.info("checkNricFinIdUsingDave validated ${nricFinId}")
-                        Unit.right()
-                    } else {
-                        logger.info("checkNricFinIdUsingDave failed to validate ${nricFinId}")
-                        ValidationError(type = "NRIC/FIN ID", id = nricFinId, message = "Invalid NRIC/FIN ID").left()
-                    }
-                }
-                .ifFailedThenRollback(transaction)
+
+                secureArchiveService.archiveEncrypted(
+                        customerId = customerId,
+                        fileName = "nricFin",
+                        regionCodes = listOf("sg"),
+                        dataMap = mapOf("nricFinId" to nricFinId.toByteArray())
+                ).bind()
+
+                // set NRIC_FIN KYC Status to Approved
+                setKycStatus(
+                        customerId = customerId,
+                        regionCode = "sg",
+                        kycType = NRIC_FIN).bind()
+            }.fix()
+        }.unsafeRunSync()
     }
 
     //
@@ -1484,17 +1512,36 @@ object Neo4jStoreSingleton : GraphStore {
     override fun saveAddressAndPhoneNumber(
             identity: org.ostelco.prime.model.Identity,
             address: String,
-            phoneNumber: String): Either<StoreError, Unit> = writeTransaction {
+            phoneNumber: String): Either<StoreError, Unit> {
 
-        getCustomerId(identity = identity, transaction = transaction)
-                .flatMap { customerId ->
-                    setKycStatus(
-                            customerId = customerId,
-                            regionCode = "sg",
-                            kycType = ADDRESS_AND_PHONE_NUMBER,
-                            transaction = transaction)
-                }
-                .ifFailedThenRollback(transaction)
+        return IO {
+            Either.monad<StoreError>().binding {
+
+                val customerId = getCustomerId(identity = identity).bind()
+
+                // set ADDRESS_AND_PHONE_NUMBER KYC Status to Pending
+                setKycStatus(
+                        customerId = customerId,
+                        regionCode = "sg",
+                        kycType = ADDRESS_AND_PHONE_NUMBER,
+                        kycStatus = KycStatus.PENDING).bind()
+
+                secureArchiveService.archiveEncrypted(
+                        customerId = customerId,
+                        fileName = "addressAndPhoneNumber",
+                        regionCodes = listOf("sg"),
+                        dataMap = mapOf(
+                                "address" to address.toByteArray(),
+                                "phoneNumber" to phoneNumber.toByteArray())
+                ).bind()
+
+                // set ADDRESS_AND_PHONE_NUMBER KYC Status to Approved
+                setKycStatus(
+                        customerId = customerId,
+                        regionCode = "sg",
+                        kycType = ADDRESS_AND_PHONE_NUMBER).bind()
+            }.fix()
+        }.unsafeRunSync()
     }
 
     //
