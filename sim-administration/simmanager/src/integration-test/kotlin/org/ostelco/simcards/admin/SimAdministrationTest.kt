@@ -44,7 +44,7 @@ class SimAdministrationTest {
         private lateinit var jdbi: Jdbi
         private lateinit var client: Client
 
-        // ICCID of rirst SIM in sample-sim-batch.csv
+        // ICCID of first SIM in sample-sim-batch.csv
         //   ... we will be using this to check if the values for the
         //       hss state is set right.
         val FIRST_ICCID: String = "8901000000000000001"

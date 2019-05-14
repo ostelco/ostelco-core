@@ -94,33 +94,34 @@ DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS=" \
   auth-server/config prime/config"
 
 SERVICE_ACCOUNT_MD5="c54b903790340dd9365fa59fce3ad8e2"
+SERVICE_ACCOUNT_JSON="prime-service-account.json"
 
-if [[ ! -f "prime-service-account.json" ]] ; then
-    echo "$0 ERROR: Could not find master service-account file  prime-service-account.json, aborting."
+if [[ ! -f "${SERVICE_ACCOUNT_JSON}" ]] ; then
+    echo "$0 ERROR: Could not find master service-account file  ${SERVICE_ACCOUNT_JSON}, aborting."
     exit 1    
 fi
 
-if [[ $(md5 -q "prime-service-account.json") != $SERVICE_ACCOUNT_MD5 ]] ; then
-    echo "$0 ERROR: MD5 checksum of service account file prime-service-account.json does not match expectation, aborting."
+if [[ $(md5 -q "${SERVICE_ACCOUNT_JSON}") != $SERVICE_ACCOUNT_MD5 ]] ; then
+    echo "$0 ERROR: MD5 checksum of service account file ${SERVICE_ACCOUNT_JSON} does not match expectation, aborting."
     exit 1
 fi
 
 for DIR in $DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS ; do
     echo "Checking $DIR"
-    FILE="$DIR/prime-service-account.json"
+    FILE="$DIR/${SERVICE_ACCOUNT_JSON}"
     if [[ ! -f $FILE ]] ; then
-	if [[ $(md5 -q "prime-service-account.json") = $SERVICE_ACCOUNT_MD5 ]] ; then
+	if [[ $(md5 -q "${SERVICE_ACCOUNT_JSON}") = $SERVICE_ACCOUNT_MD5 ]] ; then
 	    echo "$0 INFO: Couldn't find service account file '$FILE' so copying one from root directory"
-	    cp "prime-service-account.json" "$FILE"
+	    cp "${SERVICE_ACCOUNT_JSON}" "$FILE"
 	else
 	    echo "$0 ERROR: Could not find service account file $FILE, aborting."
 	    exit 1
 	fi
     fi
     if [[ $(md5 -q $FILE) != $SERVICE_ACCOUNT_MD5 ]] ; then
-	if [[ $(md5 -q "prime-service-account.json") = $SERVICE_ACCOUNT_MD5 ]] ; then
+	if [[ $(md5 -q "${SERVICE_ACCOUNT_JSON}") = $SERVICE_ACCOUNT_MD5 ]] ; then
 	    echo "$0 INFO: Service account  '$FILE'  has wrong MD5 checksum, but the one in the root directory has the right one, so we're copying that."
-	    cp "prime-service-account.json" "$FILE"
+	    cp "${SERVICE_ACCOUNT_JSON}" "$FILE"
 	else
 	    echo "$0 ERROR: MD5 checksum of service account file  '$FILE' is not $SERVICE_ACCOUNT_MD5, aborting."	
 	    exit 1
