@@ -158,18 +158,18 @@ class SimAdministrationTest {
     }
 
     /* The SIM dataset is the same that is used by the SM-DP+ emulator. */
-    private fun loadSimData(hssState: HssState? = null) {
+    private fun loadSimData(hssState: HssState? = null, queryParameterName: String = "initialHssState", expectedReturnCode:Int = 200) {
         val entries = FileInputStream(SM_DP_PLUS_RULE.configuration.simBatchData)
         var target = client.target("$simManagerEndpoint/$hssName/import-batch/profilevendor/$profileVendor")
         if (hssState != null) {
-            target = target.queryParam("initialHssState", hssState)
+            target = target.queryParam(queryParameterName, hssState)
         }
 
         val response =
                 target
                 .request()
                 .put(Entity.entity(entries, MediaType.TEXT_PLAIN))
-        assertThat(response.status).isEqualTo(200)
+        assertThat(response.status).isEqualTo(expectedReturnCode)
     }
 
     /* TODO: SM-DP+ emuluator must be extended to support the 'getProfileStatus'
@@ -369,5 +369,10 @@ class SimAdministrationTest {
     fun testSettingLoadedSimDataToHaveBeenLoadedIntoHSS() {
         loadSimData(HssState.ACTIVATED)
         assertHssActivationOfFirstIccid(HssState.ACTIVATED)
+    }
+
+    @Test
+    fun badQueryParameterTest() {
+        loadSimData(HssState.ACTIVATED, queryParameterName = "fooBarBaz", expectedReturnCode = 400)
     }
 }
