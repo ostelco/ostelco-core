@@ -20,6 +20,7 @@ COPY config/testDb.csv /config-data/imeiDb.csv
 COPY config/customer.graphqls /config/customer.graphqls
 COPY config/test.yaml /config/config.yaml
 COPY config/test_keyset_pub_cltxt /config/test_keyset_pub_cltxt_global
+COPY config/test_keyset_pub_cltxt /config/test_keyset_pub_cltxt_sg
 
 COPY build/libs/prime-uber.jar /prime.jar
 

@@ -265,10 +265,10 @@ services:
     clientCert: true
     caCert: smdp-cacert.dev # secretname.namespace
 
-certs: 
+certs:
   enabled: true
   dnsProvider: dev-clouddns
-  issuer: letsencrypt-production 
+  issuer: letsencrypt-production
   tlsSecretName: dev-oya-tls
   hosts:
     - '*.dev.oya.world'
