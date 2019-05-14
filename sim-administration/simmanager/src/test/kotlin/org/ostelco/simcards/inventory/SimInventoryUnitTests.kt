@@ -11,6 +11,8 @@ import org.junit.AfterClass
 import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Test
+import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mockito
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.reset
@@ -309,10 +311,6 @@ class SimInventoryUnitTests {
         return response.readEntity(SimImportBatch::class.java)
     }
 
-    // TODO rmz: Move this to some utility class if they are needed again.
-    private fun <T> any(type: Class<T>): T = Mockito.any<T>(type)
-
-    private fun <T> eq(obj: T): T = Mockito.eq<T>(obj)
 
     private fun setUpMocksForMockedOutImportSims(initialHssState:HssState = HssState.NOT_ACTIVATED) {
         Mockito.`when`(dao.findSimVendorForHssPermissions(1L, 1L))
