@@ -1003,6 +1003,13 @@ object Neo4jStoreSingleton : GraphStore {
                         .bind()
                 val paymentCustomerId = profileInfo.id
 
+                /* With recurring payments, the payment card (source) must be stored. The
+                   'saveCard' parameter is therefore ignored. */
+                if (!saveCard) {
+                    logger.warn("Ignoring request for deleting payment source after buying plan ${product.sku} for " +
+                            "customer ${customer.id} as stored payment source is required when purchasing a plan")
+                }
+
                 if (sourceId != null) {
                     val sourceDetails = paymentProcessor.getSavedSources(paymentCustomerId)
                             .mapLeft {
@@ -1011,11 +1018,10 @@ object Neo4jStoreSingleton : GraphStore {
                             }.bind()
                     if (!sourceDetails.any { sourceDetailsInfo -> sourceDetailsInfo.id == sourceId }) {
                         paymentProcessor.addSource(paymentCustomerId, sourceId)
-                                .finallyDo(transaction) {
-                                    removePaymentSource(saveCard, paymentCustomerId, it.id)
-                                }.bind().id
+                                .bind().id
                     }
                 }
+
                 subscribeToPlan(identity, product.id)
                         .mapLeft {
                             BadGatewayError("Failed to subscribe ${customer.id} to plan ${product.id}",
@@ -1877,12 +1883,24 @@ object Neo4jStoreSingleton : GraphStore {
                                     error = it)
                         }.bind()
 
-                /* Bail out if the subscription already exists. */
+                /* At this point, we have either:
+                     1) A new subscription to a plan is being created.
+                     2) An attempt at buying a previously subscribed to plan but which has not been
+                        paid for.
+                   Both are OK. But in order to handle the second case correctly, the previous incomplete
+                   subscription must be removed before we can proceed with creating the new subscription.
+
+                   (In the second case there will be a "SUBSCRIBES_TO_PLAN" link between the customer
+                   object and the plan object, but no "PURCHASED" link to the plans "product" object.)
+
+                   The motivation for supporting the second case, is that it allows the subscriber to
+                   reattempt to buy a plan using a different payment source.
+
+                   Remove existing incomplete subscription if any. */
                 customerStore.getRelated(customer.id, subscribesToPlanRelation, transaction)
                         .map {
                             if (it.any { x -> x.id == planId }) {
-                                NotCreatedError(type = planEntity.name, id = "A subscription to ${plan.id} already exists")
-                                        .left().bind()
+                                removeSubscription(customer.id, planId, invoiceNow = true)
                             }
                         }
 
@@ -1938,16 +1956,21 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
 
-    override fun unsubscribeFromPlan(identity: org.ostelco.prime.model.Identity, planId: String, atIntervalEnd: Boolean): Either<StoreError, Plan> = writeTransaction {
+    override fun unsubscribeFromPlan(identity: org.ostelco.prime.model.Identity, planId: String, invoiceNow: Boolean): Either<StoreError, Plan> = readTransaction {
+        getCustomerId(identity = identity, transaction = transaction)
+                .flatMap {
+                    removeSubscription(it, planId, invoiceNow)
+                }
+    }
+
+    private fun removeSubscription(customerId: String, planId: String, invoiceNow: Boolean): Either<StoreError, Plan> = writeTransaction {
         IO {
             Either.monad<StoreError>().binding {
                 val plan = plansStore.get(planId, transaction)
                         .bind()
-                val customerId = getCustomerId(identity = identity, transaction = transaction)
-                        .bind()
                 val planSubscription = subscribesToPlanRelationStore.get(customerId, planId, transaction)
                         .bind()
-                paymentProcessor.cancelSubscription(planSubscription.subscriptionId, atIntervalEnd)
+                paymentProcessor.cancelSubscription(planSubscription.subscriptionId, invoiceNow)
                         .mapLeft {
                             NotDeletedError(type = planEntity.name, id = "$customerId -> ${plan.id}",
                                     error = it)

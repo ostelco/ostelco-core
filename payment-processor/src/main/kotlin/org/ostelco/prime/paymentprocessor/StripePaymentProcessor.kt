@@ -205,15 +205,14 @@ class StripePaymentProcessor : PaymentProcessor {
        https://stripe.com/docs/billing/subscriptions/payment#signup-3b */
     override fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long): Either<PaymentError, SubscriptionDetailsInfo> =
             either("Failed to subscribe customer $stripeCustomerId to plan $planId") {
-                val item =  mapOf("plan" to planId)
+                val item = mapOf("plan" to planId)
                 val subscriptionParams = mapOf(
                         "customer" to stripeCustomerId,
                         "items" to mapOf("0" to item),
-                        *( if (trialEnd > Instant.now().epochSecond)
-                               arrayOf("trial_end" to trialEnd.toString())
-                           else
-                               arrayOf()),
-                        "expand" to arrayOf("latest_invoice.payment_intent"))
+                        *(if (trialEnd > Instant.now().epochSecond)
+                            arrayOf("trial_end" to trialEnd.toString())
+                        else
+                            arrayOf("expand" to arrayOf("latest_invoice.payment_intent"))))
                 val subscription = Subscription.create(subscriptionParams)
                 val status = subscriptionStatus(subscription)
                 SubscriptionDetailsInfo(id = subscription.id,
@@ -243,7 +242,7 @@ class StripePaymentProcessor : PaymentProcessor {
                 }
             }
             "trialing" -> {
-                Pair(PaymentStatus.TRIAL_START, invoice.id)
+                Pair(PaymentStatus.TRIAL_START, "")
             }
             else -> {
                 throw RuntimeException(
