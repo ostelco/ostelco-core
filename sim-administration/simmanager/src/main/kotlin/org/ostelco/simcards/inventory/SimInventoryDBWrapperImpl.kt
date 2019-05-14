@@ -5,13 +5,22 @@ import arrow.core.left
 import arrow.core.right
 import org.jdbi.v3.core.JdbiException
 import org.jdbi.v3.sqlobject.transaction.Transaction
-import org.ostelco.prime.simmanager.*
+import org.ostelco.prime.simmanager.DatabaseError
+import org.ostelco.prime.simmanager.ForbiddenError
+import org.ostelco.prime.simmanager.NotFoundError
+import org.ostelco.prime.simmanager.SimManagerError
+import org.ostelco.prime.simmanager.SystemError
 import org.ostelco.simcards.hss.HssEntry
 import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
 import org.postgresql.util.PSQLException
 
 
 class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDBWrapper {
+
+    override fun reserveGoldenNumbersForBatch(batchId: Long): Either<SimManagerError, Int> =
+            either(NotFoundError("Found no batch for batchId ${batchId}")) {
+                db.reserveGoldenNumbersForBatch(batchId)
+            }
 
     override fun getSimProfileById(id: Long): Either<SimManagerError, SimEntry> =
             either(NotFoundError("Found no SIM for id ${id}")) {

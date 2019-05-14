@@ -263,4 +263,14 @@ interface SimInventoryDB {
             smdpAllocatedState: String = SmDpPlusState.ALLOCATED.name,
             smdpDownloadedState: String = SmDpPlusState.DOWNLOADED.name,
             provisionedAvailableState: String = ProvisionState.AVAILABLE.name): List<KeyValuePair>
+
+
+    /**
+     * Golden numbers are numbers ending in either "0000" or "9999", and they have to be
+     * treated specially.
+     */
+    @SqlUpdate("""UPDATE sim_entries SET provisionState = :provisionReservedState
+                       WHERE batch = :batchId AND msisdn ~ '[0-9]*(0000|9999)$'
+                       """)
+    fun reserveGoldenNumbersForBatch(batchId: Long, provisionReservedState: ProvisionState = ProvisionState.RESERVED): Int
 }

@@ -268,8 +268,15 @@ class SimAdministrationTest {
         val stats = simDao.getProfileStats(hlrId, expectedProfile)
         assertThat(stats.isRight()).isTrue()
         stats.map {
+
+            // The full batch is 100 numbers
             assertEquals(100L, it.noOfEntries)
-            assertEquals(100L, it.noOfUnallocatedEntries)
+
+            // There are 2 "golden numbers" that are marked as "reserved" and are thus
+            // not allocated
+            assertEquals(98L, it.noOfUnallocatedEntries)
+
+            // But there are no released entries.
             assertEquals(0L, it.noOfReleasedEntries)
         }
     }
@@ -376,21 +383,22 @@ class SimAdministrationTest {
         loadSimData(HssState.ACTIVATED, queryParameterName = "fooBarBaz", expectedReturnCode = 400)
     }
 
-
     private fun assertProvisioningStateOfIccid(iccid: String, state: HssState) {
-        val first = getSimEntryByICCIDFromLoadedBatch()
-        assertNotNull(first)
-        assertEquals(FIRST_ICCID, first?.iccid)
-        assertEquals(state, first?.hssState)
+        val entry = getSimEntryByICCIDFromLoadedBatch(iccid)
+        assertNotNull(entry)
+        assertEquals(iccid, entry?.iccid)
+        assertEquals(state, entry?.hssState)
     }
 
     @Test
     fun testSpecialTreatmentOfGoldenNumbers() {
+        loadSimData(HssState.ACTIVATED)
         // This is an ordinary MSISDN, nothing special about it, should be available
-        assertEquals(ProvisionState.AVAILABLE, getSimEntryByICCIDFromLoadedBatch(FIRST_ICCID).provisionState)
-        // The next two numbers are "gold", ending in respecticely "9999" and "0000", so they
+        assertEquals(ProvisionState.AVAILABLE, getSimEntryByICCIDFromLoadedBatch(FIRST_ICCID)?.provisionState)
+        
+        // The next two numbers are "golden", ending in respecticely "9999" and "0000", so they
         // should be reserved, and thus not available.
-        assertEquals(ProvisionState.RESERVED, getSimEntryByICCIDFromLoadedBatch("8901000000000000985").provisionState)
-        assertEquals(ProvisionState.RESERVED, getSimEntryByICCIDFromLoadedBatch("8901000000000000993").provisionState)
+        assertEquals(ProvisionState.RESERVED, getSimEntryByICCIDFromLoadedBatch("8901000000000000985")?.provisionState)
+        assertEquals(ProvisionState.RESERVED, getSimEntryByICCIDFromLoadedBatch("8901000000000000993")?.provisionState)
     }
 }

@@ -11,8 +11,6 @@ import org.junit.AfterClass
 import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Test
-import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mockito
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.reset
@@ -268,7 +266,6 @@ class SimInventoryUnitTests {
         verify(dao).getSimProfileByMsisdn(fakeMsisdn2)
     }
 
-
     @Test
     fun testActivateEsim() {
         val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/esim")
@@ -284,7 +281,6 @@ class SimInventoryUnitTests {
         verify(dao).findNextReadyToUseSimProfileForHss(hssEntry.id, fakeProfile)
         verify(dao).setProvisionState(simEntry.id!!, ProvisionState.PROVISIONED)
     }
-
 
     private fun importSimBatch(hssState: HssState? = null): SimImportBatch {
         val sampleCsvIinput = """
@@ -311,15 +307,14 @@ class SimInventoryUnitTests {
         return response.readEntity(SimImportBatch::class.java)
     }
 
-
     private fun setUpMocksForMockedOutImportSims(initialHssState:HssState = HssState.NOT_ACTIVATED) {
         Mockito.`when`(dao.findSimVendorForHssPermissions(1L, 1L))
                 .thenReturn(listOf(0L).right())
         Mockito.`when`(dao.simVendorIsPermittedForHlr(1L, 1L))
                 .thenReturn(true.right())
-        Mockito.`when`(dao.importSims(eq("importer"), eq(1L),
-                eq(1L), any(InputStream::class.java),
-                eq(initialHssState)))
+        Mockito.`when`(dao.importSims(KotlinMockitoHelpers.eq("importer"), KotlinMockitoHelpers.eq(1L),
+                KotlinMockitoHelpers.eq(1L), KotlinMockitoHelpers.any(InputStream::class.java),
+                KotlinMockitoHelpers.eq(initialHssState)))
                 .thenReturn(SimImportBatch(
                         id = 0L,
                         status = "SUCCESS",

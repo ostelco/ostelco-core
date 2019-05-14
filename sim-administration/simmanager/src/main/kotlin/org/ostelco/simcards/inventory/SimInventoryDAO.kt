@@ -216,7 +216,10 @@ class SimInventoryDAO(private val db: SimInventoryDBWrapperImpl) : SimInventoryD
     //
 
     override fun insertAll(entries: Iterator<SimEntry>): Either<SimManagerError, Unit> =
-            db.insertAll(entries)
+            db.insertAll(entries.iterator())
+
+    override fun reserveGoldenNumbersForBatch(batchId: Long): Either<SimManagerError, Int> =
+            db.reserveGoldenNumbersForBatch(batchId)
 
     @Transaction
     fun importSims(importer: String,
@@ -240,6 +243,9 @@ class SimInventoryDAO(private val db: SimInventoryDBWrapperImpl) : SimInventoryD
                             csvInputStream = csvInputStream)
                     insertAll(values)
                             .bind()
+                    // Because "golden numbers" needs special handling, so we're simply marking them
+                    // as reserved.
+                    reserveGoldenNumbersForBatch(batchId)
                     updateBatchState(id = batchId,
                             size = values.count.get(),
                             status = "SUCCESS",  // TODO: Use enumeration, not naked string.
