@@ -112,10 +112,8 @@ class SimInventoryResource(private val api: SimInventoryApi) {
     fun importBatch(
             @NotEmpty @PathParam("hssVendors") hss: String,
             @NotEmpty @PathParam("simVendor") simVendor: String,
-            @QueryParam("initialHssState") initialHssStateArg: HssState?,
+            @QueryParam("initialHssState") @DefaultValue("NOT_ACTIVATED")  initialHssState: HssState,
             csvInputStream: InputStream): Response {
-
-        val initialHssState = if (initialHssStateArg==null) HssState.NOT_ACTIVATED else initialHssStateArg
 
         return api.importBatch(hss, simVendor, csvInputStream, initialHssState)
                 .fold(
