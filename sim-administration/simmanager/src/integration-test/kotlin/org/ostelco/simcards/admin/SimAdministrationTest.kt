@@ -384,7 +384,6 @@ class SimAdministrationTest {
         assertEquals(state, first?.hssState)
     }
 
-
     @Test
     fun testSpecialTreatmentOfGoldenNumbers() {
         // This is an ordinary MSISDN, nothing special about it, should be available
@@ -393,5 +392,5 @@ class SimAdministrationTest {
         // should be reserved, and thus not available.
         assertEquals(ProvisionState.RESERVED, getSimEntryByICCIDFromLoadedBatch("8901000000000000985").provisionState)
         assertEquals(ProvisionState.RESERVED, getSimEntryByICCIDFromLoadedBatch("8901000000000000993").provisionState)
-    }x''
+    }
 }
