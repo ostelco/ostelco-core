@@ -345,21 +345,20 @@ class StripePaymentProcessor : PaymentProcessor {
                         }
                     }
 
-
     private fun <RETURN> either(errorDescription: String, action: () -> RETURN): Either<PaymentError, RETURN> {
         return try {
             Either.right(action())
         } catch (e: CardException) {
             // If something is decline with a card purchase, CardException will be caught
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}", e)
+            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}")
             Either.left(ForbiddenError(errorDescription, e.message))
         } catch (e: RateLimitException) {
             // Too many requests made to the API too quickly
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}", e)
+            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}")
             Either.left(BadGatewayError(errorDescription, e.message))
         } catch (e: InvalidRequestException) {
             // Invalid parameters were supplied to Stripe's API
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}", e)
+            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}")
             Either.left(ForbiddenError(errorDescription, e.message))
         } catch (e: AuthenticationException) {
             // Authentication with Stripe's API failed
