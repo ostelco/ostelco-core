@@ -23,6 +23,7 @@ import org.ostelco.simcards.hss.DirectHssDispatcher
 import org.ostelco.simcards.hss.HealthCheckRegistrar
 import org.ostelco.simcards.hss.SimManagerToHssDispatcherAdapter
 import org.ostelco.simcards.inventory.HssState
+import org.ostelco.simcards.inventory.ProvisionState
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimProfileKeyStatistics
 import org.ostelco.simcards.smdpplus.SmDpPlusApplication
@@ -334,11 +335,10 @@ class SimAdministrationTest {
     }
 
 
-    fun getFirstSimProfileFromLoadedBatch(): SimEntry? {
-
+    fun getSimEntryByICCIDFromLoadedBatch(iccid: String): SimEntry? {
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
                 .getDAO()
-        val simProfile = simDao.getSimProfileByIccid(FIRST_ICCID)
+        val simProfile = simDao.getSimProfileByIccid(iccid)
         return when {
             simProfile is Either.Right -> simProfile.b
             simProfile is Either.Left ->  null
@@ -347,7 +347,7 @@ class SimAdministrationTest {
     }
 
     private fun assertHssActivationOfFirstIccid(state: HssState) {
-        val first = getFirstSimProfileFromLoadedBatch()
+        val first = getSimEntryByICCIDFromLoadedBatch(FIRST_ICCID)
         assertNotNull(first)
         assertEquals(FIRST_ICCID, first?.iccid)
         assertEquals(state, first?.hssState)
@@ -375,4 +375,23 @@ class SimAdministrationTest {
     fun badQueryParameterTest() {
         loadSimData(HssState.ACTIVATED, queryParameterName = "fooBarBaz", expectedReturnCode = 400)
     }
+
+
+    private fun assertProvisioningStateOfIccid(iccid: String, state: HssState) {
+        val first = getSimEntryByICCIDFromLoadedBatch()
+        assertNotNull(first)
+        assertEquals(FIRST_ICCID, first?.iccid)
+        assertEquals(state, first?.hssState)
+    }
+
+
+    @Test
+    fun testSpecialTreatmentOfGoldenNumbers() {
+        // This is an ordinary MSISDN, nothing special about it, should be available
+        assertEquals(ProvisionState.AVAILABLE, getSimEntryByICCIDFromLoadedBatch(FIRST_ICCID).provisionState)
+        // The next two numbers are "gold", ending in respecticely "9999" and "0000", so they
+        // should be reserved, and thus not available.
+        assertEquals(ProvisionState.RESERVED, getSimEntryByICCIDFromLoadedBatch("8901000000000000985").provisionState)
+        assertEquals(ProvisionState.RESERVED, getSimEntryByICCIDFromLoadedBatch("8901000000000000993").provisionState)
+    }x''
 }
