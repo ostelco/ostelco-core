@@ -32,7 +32,7 @@ interface SimInventoryDB {
                       WHERE msisdn = :msisdn""")
     fun getSimProfileByMsisdn(msisdn: String): SimEntry?
 
-    /*
+    /**
      * Find next available SIM card for a particular HLR ready
      * to be 'provisioned' with the SM-DP+ and HLR vendors.
      */
@@ -43,7 +43,7 @@ interface SimInventoryDB {
                                             WHEN hlrstate = 'NOT_ACTIVATED'
                                                  AND smdpplusstate = 'AVAILABLE' THEN 1
                                             WHEN hlrstate = 'NOT_ACTIVATED'
-                                                 AND smdpplusstate = 'RELEASED' THEN 2
+                                                 AND smdpplusstate = 'RELEASED'  THEN 2
                                             WHEN hlrstate = 'ACTIVATED'
                                                  AND smdpplusstate = 'AVAILABLE' THEN 3
                                             ELSE 9999
@@ -60,7 +60,7 @@ interface SimInventoryDB {
     fun findNextNonProvisionedSimProfileForHss(hssId: Long,
                                                profile: String): SimEntry?
 
-    /*
+    /**
      * Find next ready to use SIM card for a particular HLR
      * and profile (phone type).
      */
@@ -85,7 +85,7 @@ interface SimInventoryDB {
     fun updateEidOfSimProfile(id: Long,
                               eid: String): Int
 
-    /*
+    /**
      * State information.
      */
 
@@ -121,7 +121,7 @@ interface SimInventoryDB {
                                          smdpPlusState: SmDpPlusState,
                                          matchingId: String): Int
 
-    /*
+    /**
      * HLR and SM-DP+ 'adapters'.
      */
 
@@ -175,7 +175,7 @@ interface SimInventoryDB {
                       WHERE id = :id""")
     fun getProfileVendorAdapterById(id: Long): ProfileVendorAdapter?
 
-    /*
+    /**
      * Batch handling.
      */
 
@@ -215,7 +215,6 @@ interface SimInventoryDB {
      * Find all the different HLRs that are present.
      */
     @SqlQuery("SELECT * FROM hlr_adapters")
-    // TODO(RMZ): @RegisterMapper(HlrEntryMapper::class)
     @RegisterRowMapper(HlrEntryMapper::class)
     fun getHssEntries(): List<HssEntry>
 
@@ -264,4 +263,14 @@ interface SimInventoryDB {
             smdpAllocatedState: String = SmDpPlusState.ALLOCATED.name,
             smdpDownloadedState: String = SmDpPlusState.DOWNLOADED.name,
             provisionedAvailableState: String = ProvisionState.AVAILABLE.name): List<KeyValuePair>
+
+
+    /**
+     * Golden numbers are numbers ending in either "0000" or "9999", and they have to be
+     * treated specially.
+     */
+    @SqlUpdate("""UPDATE sim_entries SET provisionState = :provisionReservedState
+                       WHERE batch = :batchId AND msisdn ~ '[0-9]*(0000|9999)$'
+                       """)
+    fun reserveGoldenNumbersForBatch(batchId: Long, provisionReservedState: ProvisionState = ProvisionState.RESERVED): Int
 }

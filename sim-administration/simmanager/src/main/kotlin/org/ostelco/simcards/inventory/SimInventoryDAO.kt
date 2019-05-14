@@ -93,11 +93,12 @@ data class SimImportBatch(
 class SimEntryIterator(profileVendorId: Long,
                        hssId: Long,
                        batchId: Long,
+                       initialHssState: HssState,
                        csvInputStream: InputStream) : Iterator<SimEntry> {
 
     var count = AtomicLong(0)
     // TODO: The current implementation puts everything in a deque at startup.
-    //     This is correct, but inefficient, in partricular for large
+    //     This is correct, but inefficient, in particular for large
     //     batches.   Once proven to work, this thing should be rewritten
     //     to use coroutines, to let the "next" get the next available
     //     sim entry.  It may make sense to have a reader and writer thread
@@ -109,7 +110,7 @@ class SimEntryIterator(profileVendorId: Long,
         //     be some variation between  sim vendors, and that should be
         //     something we can adjust to given the parameters sent to the
         //     reader class on creation.   Should  be configurable in
-        //     a config file or other  config database.
+        //     a config file or other config database.
 
         val csvFileFormat = CSVFormat.DEFAULT
                 .withQuote(null)
@@ -144,7 +145,8 @@ class SimEntryIterator(profileVendorId: Long,
                             puk1 = puk1,
                             puk2 = puk2,
                             pin2 = pin2,
-                            profile = profile
+                            profile = profile,
+                            hssState =  initialHssState
                     )
 
                     values.add(value)
@@ -214,13 +216,17 @@ class SimInventoryDAO(private val db: SimInventoryDBWrapperImpl) : SimInventoryD
     //
 
     override fun insertAll(entries: Iterator<SimEntry>): Either<SimManagerError, Unit> =
-            db.insertAll(entries)
+            db.insertAll(entries.iterator())
+
+    override fun reserveGoldenNumbersForBatch(batchId: Long): Either<SimManagerError, Int> =
+            db.reserveGoldenNumbersForBatch(batchId)
 
     @Transaction
     fun importSims(importer: String,
                    hlrId: Long,
                    profileVendorId: Long,
-                   csvInputStream: InputStream): Either<SimManagerError, SimImportBatch> =
+                   csvInputStream: InputStream,
+                   initialHssState: HssState = HssState.NOT_ACTIVATED): Either<SimManagerError, SimImportBatch> =
             IO {
                 Either.monad<SimManagerError>().binding {
                     createNewSimImportBatch(importer = importer,
@@ -229,12 +235,17 @@ class SimInventoryDAO(private val db: SimInventoryDBWrapperImpl) : SimInventoryD
                             .bind()
                     val batchId = lastInsertedRowId()
                             .bind()
-                    val values = SimEntryIterator(profileVendorId = profileVendorId,
+                    val values = SimEntryIterator(
+                            profileVendorId = profileVendorId,
                             hssId = hlrId,
                             batchId = batchId,
+                            initialHssState = initialHssState,
                             csvInputStream = csvInputStream)
                     insertAll(values)
                             .bind()
+                    // Because "golden numbers" needs special handling, so we're simply marking them
+                    // as reserved.
+                    reserveGoldenNumbersForBatch(batchId)
                     updateBatchState(id = batchId,
                             size = values.count.get(),
                             status = "SUCCESS",  // TODO: Use enumeration, not naked string.

@@ -47,7 +47,7 @@ class SimAdministrationConfiguration : Configuration() {
     @JsonProperty("phoneTypes")
     lateinit var phoneTypes: List<PhoneTypeConfig>
 
-    /* XXX Ideally the regex should be buildt when the config file is loaded,
+    /* XXX Ideally the regex should be built when the config file is loaded,
            not when it is used. */
 
     /**

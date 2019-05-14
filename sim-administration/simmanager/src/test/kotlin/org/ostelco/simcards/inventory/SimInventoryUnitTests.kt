@@ -21,7 +21,6 @@ import org.ostelco.simcards.admin.ProfileVendorConfig
 import org.ostelco.simcards.admin.SimAdministrationConfiguration
 import org.ostelco.simcards.hss.HssEntry
 import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
-import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.util.*
 import javax.ws.rs.client.Entity
@@ -267,7 +266,6 @@ class SimInventoryUnitTests {
         verify(dao).getSimProfileByMsisdn(fakeMsisdn2)
     }
 
-
     @Test
     fun testActivateEsim() {
         val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/esim")
@@ -284,24 +282,39 @@ class SimInventoryUnitTests {
         verify(dao).setProvisionState(simEntry.id!!, ProvisionState.PROVISIONED)
     }
 
-
-    @Test
-    fun testImport() {
-        org.mockito.Mockito.`when`(dao.findSimVendorForHssPermissions(1L, 1L))
-                .thenReturn(listOf(0L).right())
-        org.mockito.Mockito.`when`(dao.simVendorIsPermittedForHlr(1L, 1L))
-                .thenReturn(true.right())
-
+    private fun importSimBatch(hssState: HssState? = null): SimImportBatch {
         val sampleCsvIinput = """
-            ICCID, IMSI, MSISDN, PIN1, PIN2, PUK1, PUK2, PROFILE
-            123123, 123123, 4790000001, 1233, 1233, 1233, 1233, PROFILE_1
-            123123, 123123, 4790000002, 1233, 1233, 1233, 1233, PROFILE_1
-            123123, 123123, 4790000003, 1233, 1233, 1233, 1233, PROFILE_1
-            123123, 123123, 4790000004, 1233, 1233, 1233, 1233, PROFILE_1
-            """.trimIndent()
-        val data = ByteArrayInputStream(sampleCsvIinput.toByteArray(Charsets.UTF_8))
+                ICCID, IMSI, MSISDN, PIN1, PIN2, PUK1, PUK2, PROFILE
+                123123, 123123, 4790000001, 1233, 1233, 1233, 1233, PROFILE_1
+                123123, 123123, 4790000002, 1233, 1233, 1233, 1233, PROFILE_1
+                123123, 123123, 4790000003, 1233, 1233, 1233, 1233, PROFILE_1
+                123123, 123123, 4790000004, 1233, 1233, 1233, 1233, PROFILE_1
+                """.trimIndent()
 
-        org.mockito.Mockito.`when`(dao.importSims(eq("importer"), eq(1L), eq(1L), any(InputStream::class.java)))
+        val urlPath = "/ostelco/sim-inventory/$fakeHlr/import-batch/profilevendor/${fakeProfileVendor}"
+
+        var target = RULE.target(urlPath)
+
+        if (hssState != null) {
+            target = target.queryParam("initialHssState", hssState)
+        }
+
+        val response = target
+                .request(MediaType.APPLICATION_JSON)
+                .put(Entity.entity(sampleCsvIinput, MediaType.TEXT_PLAIN))
+        assertEquals(200, response.status)
+
+        return response.readEntity(SimImportBatch::class.java)
+    }
+
+    private fun setUpMocksForMockedOutImportSims(initialHssState:HssState = HssState.NOT_ACTIVATED) {
+        Mockito.`when`(dao.findSimVendorForHssPermissions(1L, 1L))
+                .thenReturn(listOf(0L).right())
+        Mockito.`when`(dao.simVendorIsPermittedForHlr(1L, 1L))
+                .thenReturn(true.right())
+        Mockito.`when`(dao.importSims(KotlinMockitoHelpers.eq("importer"), KotlinMockitoHelpers.eq(1L),
+                KotlinMockitoHelpers.eq(1L), KotlinMockitoHelpers.any(InputStream::class.java),
+                KotlinMockitoHelpers.eq(initialHssState)))
                 .thenReturn(SimImportBatch(
                         id = 0L,
                         status = "SUCCESS",
@@ -310,17 +323,23 @@ class SimInventoryUnitTests {
                         profileVendorId = 1L,
                         importer = "Testroutine",
                         endedAt = 999L).right())
-
-        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/import-batch/profilevendor/$fakeProfileVendor")
-                .request(MediaType.APPLICATION_JSON)
-                .put(Entity.entity(sampleCsvIinput, MediaType.TEXT_PLAIN))
-        assertEquals(200, response.status)
-
-        val simEntry = response.readEntity(SimImportBatch::class.java)
-        assertNotNull(simEntry)
     }
 
-    // TODO rmz: Move this to some utility class if they are needed again.
-    private fun <T> any(type: Class<T>): T = Mockito.any<T>(type)
-    private fun <T> eq(obj : T): T = Mockito.eq<T>(obj)
+    @Test
+    fun testMockedOutImportSims() {
+        setUpMocksForMockedOutImportSims()
+        importSimBatch()
+    }
+
+    @Test
+    fun testMockedOutImportSimsWithNonActicatedHssStatusSet() {
+        setUpMocksForMockedOutImportSims()
+        importSimBatch(HssState.NOT_ACTIVATED)
+    }
+
+    @Test
+    fun testMockedOutImportSimsWithActivatedHssStatusSet() {
+        setUpMocksForMockedOutImportSims(HssState.ACTIVATED)
+        importSimBatch(HssState.ACTIVATED)
+    }
 }

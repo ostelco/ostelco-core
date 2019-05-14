@@ -15,6 +15,7 @@ import org.ostelco.prime.customer.model.BundleList
 import org.ostelco.prime.customer.model.Customer
 import org.ostelco.prime.customer.model.KycStatus
 import org.ostelco.prime.customer.model.KycType
+import org.ostelco.prime.customer.model.MyInfoConfig
 import org.ostelco.prime.customer.model.PaymentSource
 import org.ostelco.prime.customer.model.PaymentSourceList
 import org.ostelco.prime.customer.model.Person
@@ -1342,6 +1343,32 @@ class JumioKycTest {
 }
 
 class SingaporeKycTest {
+
+    @Test
+    fun `jersey test - GET myinfoConfig`() {
+
+        val email = "myinfo-${randomInt()}@test.com"
+        var customerId = ""
+        try {
+
+            customerId = createCustomer(name = "Test MyInfoConfig Customer", email = email).id
+
+            val myInfoConfig = get<MyInfoConfig> {
+                path = "/regions/sg/kyc/myInfoConfig"
+                this.email = email
+            }
+
+            assertEquals(
+                    "http://ext-myinfo-emulator:8080/authorise" +
+                            "?client_id=STG2-MYINFO-SELF-TEST" +
+                            "&attributes=name,sex,dob,residentialstatus,nationality,mobileno,email,regadd" +
+                            "&redirect_uri=http://localhost:3001/callback",
+                    myInfoConfig.url)
+
+        } finally {
+            StripePayment.deleteCustomer(customerId = customerId)
+        }
+    }
 
     @Test
     fun `jersey test - GET myinfo`() {
