@@ -2,13 +2,18 @@ package org.ostelco.prime.storage.graph
 
 import arrow.core.Either
 import org.neo4j.driver.v1.Transaction
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.storage.graph.ActionType.FINAL
 import org.ostelco.prime.storage.graph.ActionType.REVERSAL
 
 class PrimeTransaction(private val transaction: Transaction) : Transaction by transaction {
 
+    private val logger by getLogger()
+
     private val reversalActions = mutableListOf<() -> Unit>()
     private val finalActions = mutableListOf<() -> Unit>()
+
+    private var success = true
 
     private fun toActionList(actionType: ActionType) = when (actionType) {
         REVERSAL -> reversalActions
@@ -28,12 +33,14 @@ class PrimeTransaction(private val transaction: Transaction) : Transaction by tr
     }
 
     override fun failure() {
+        success = false
         transaction.failure()
-        doActions(REVERSAL)
     }
 
     override fun close() {
-        transaction.close()
+        if (!success) {
+            doActions(REVERSAL)
+        }
         finalActions.reverse()
         doActions(FINAL)
     }

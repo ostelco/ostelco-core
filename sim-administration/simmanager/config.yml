@@ -1,0 +1,48 @@
+logging:
+  level: INFO
+
+openApi:
+  name: SIM admin
+  description: SIM administration service
+  termsOfService: http://example.org
+  contactEmail: rmz@telenordigital.com
+  resourcePackage: org.ostelco
+
+hlrs:
+  - name: loltel
+    endpoint: ${WG2_ENDPOINT}
+    userId: ${WG2_USER}
+    apiKey: ${WG2_API_KEY}
+
+profileVendors:
+  - name: Idemia
+    es2plusEndpoint: ${ES2PLUS_ENDPOINT}
+    requesterIdentifier: ${FUNCTION_REQUESTER_IDENTIFIER}
+    es9plusEndpoint: ${ES9PLUS_ENDPOINT}
+
+# Note, list must end with a wildcard match
+phoneTypes:
+  - regex: "android.*"
+    profile: Loltel_ANDROID_1
+  - regex: "iphone.*"
+    profile: LOLTEL_IPHONE_1
+  - regex: ".*"
+    profile: LOLTEL_IPHONE_1
+
+database:
+  driverClass: org.postgresql.Driver
+  user: ${DB_USER}
+  password: ${DB_PASSWORD}
+  url: ${DB_URL}
+
+httpClient:
+  timeout: 10000ms
+  tls:
+    # Default is 500 milliseconds, we need more when debugging.
+    # protocol: TLSv1.2
+    keyStoreType: JKS
+    keyStorePath: /certs/idemia-client-cert.jks
+    keyStorePassword: foobar
+    verifyHostname: false
+    trustSelfSignedCertificates: true
+    

@@ -37,7 +37,7 @@ The config.yaml file contains specifications of queries and how they map to metr
           help: Number of active users
           resultColumn: count
           sql: >
-          SELECT count(distinct user_pseudo_id) AS count FROM `pantel-2decb.analytics_160712959.events_*`
+          SELECT count(distinct user_pseudo_id) AS count FROM `$GCP_PROJECT_ID.analytics_160712959.events_*`
           WHERE event_name = "first_open"
           LIMIT 1000
   
@@ -49,6 +49,9 @@ If not running in a google kubernetes cluster (e.g. in docker compose, or from t
 it's necessary to set the environment variable GOOGLE_APPLICATION_CREDENTIALS to point to 
 a credentials file that will provide access for the BigQuery library.
 
+Set the table name for analytics data from firebase
+
+    kubectl create secret generic analytics-secrets --from-literal=analyticsDatasetName='analytics_180820127' --namespace dev
 
 
 How to build and deploy the cronjob manually

@@ -1,13 +1,17 @@
 package org.ostelco.prime.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonProperty
+import com.google.cloud.datastore.Blob
 import com.google.firebase.database.Exclude
+import java.util.*
 
 interface HasId {
     val id: String
 }
+
+data class Region(
+        override val id: String,
+        val name: String) : HasId
 
 data class Offer(
         override val id: String,
@@ -23,22 +27,139 @@ data class ChangeSegment(
         val targetSegmentId: String,
         val subscribers: Collection<String>)
 
-data class Subscriber(
-        val email: String,
-        val name: String = "",
-        val address: String = "",
-        val postCode: String = "",
-        val city: String = "",
-        val country: String = "",
-        private val referralId: String = email) : HasId {
+data class Customer(
+        override val id: String = UUID.randomUUID().toString(),
+        val nickname: String,
+        val contactEmail: String,
+        val analyticsId: String = UUID.randomUUID().toString(),
+        val referralId: String = UUID.randomUUID().toString()) : HasId
 
-    constructor(email: String): this(email = email, referralId = email)
+data class Identity(
+        override val id: String,
+        val type: String,
+        val provider: String) : HasId
 
-    fun getReferralId() = email
+data class RegionDetails(
+        val region: Region,
+        val status: CustomerRegionStatus,
+        val kycStatusMap: Map<KycType, KycStatus> = emptyMap(),
+        val simProfiles: Collection<SimProfile> = emptyList())
+
+enum class CustomerRegionStatus {
+    PENDING,   // eKYC initiated, but not yet approved
+    APPROVED,  // eKYC approved
+}
+
+enum class KycType {
+    JUMIO,
+    MY_INFO,
+    NRIC_FIN,
+    ADDRESS_AND_PHONE_NUMBER
+}
+
+enum class KycStatus {
+    PENDING,   // eKYC initiated, but not yet approved or rejected
+    REJECTED,  // eKYC rejected
+    APPROVED   // eKYC approved
+}
+
+data class MyInfoConfig(val url: String)
+
+enum class ScanStatus {
+    PENDING,   // scan results are pending
+    REJECTED,  // scanned Id was rejected
+    APPROVED   // scanned Id was approved
+}
+
+data class ScanResult(
+        val vendorScanReference: String,
+        val verificationStatus: String,
+        val time: Long,
+        val type: String?,
+        val country: String?,
+        val firstName: String?,
+        val lastName: String?,
+        val dob: String?,
+        val rejectReason: String?)
+
+data class ScanInformation(
+        val scanId: String,
+        val countryCode: String,
+        val status: ScanStatus,
+        val scanResult: ScanResult?
+) : HasId {
 
     override val id: String
+        @Exclude
         @JsonIgnore
-        get() = email
+        get() = scanId
+}
+
+data class VendorScanInformation(
+        val id: String,                 // Id of the scan
+        val scanReference: String,      // Jumio transaction reference
+        val details: String,            // JSON string representation of all the information from vendor
+        val images: Map<String, Blob>?  // liveness images (JPEG or PNG) if available
+)
+
+
+data class ScanMetadata(
+        val id: String,                 // Id of the scan
+        val scanReference: String,      // Jumio transaction reference
+        val countryCode: String,        // The country for which the scan was done
+        val customerId: String,         // The owner of the scan
+        val processedTime: Long         // The time when callback was processed.
+)
+
+enum class JumioScanData(val s: String) {
+    // Property names in POST data from Jumio
+    JUMIO_SCAN_ID("jumioIdScanReference"),
+    SCAN_ID("merchantIdScanReference"),
+    SCAN_STATUS("idScanStatus"),
+    VERIFICATION_STATUS("verificationStatus"),
+    CALLBACK_DATE("callbackDate"),
+    ID_TYPE("idType"),
+    ID_COUNTRY("idCountry"),
+    ID_FIRSTNAME("idFirstName"),
+    ID_LASTNAME("idLastName"),
+    ID_DOB("idDob"),
+    SCAN_IMAGE("idScanImage"),
+    SCAN_IMAGE_FACE("idScanImageFace"),
+    SCAN_IMAGE_BACKSIDE("idScanImageBackside"),
+    SCAN_LIVENESS_IMAGES("livenessImages"),
+    REJECT_REASON("rejectReason"),
+    IDENTITY_VERIFICATION("identityVerification"),
+    SIMILARITY("similarity"),
+    VALIDITY("validity"),
+    REASON("reason"),
+    APPROVED_VERIFIED("APPROVED_VERIFIED"),
+    MATCH("MATCH"),
+    TRUE("TRUE"),
+    // Extended values from prime
+    PRIME_MISSING_IDENTITY_VERIFICATION("PRIME_MISSING_IDENTITY_VERIFICATION"),
+    PRIME_IDENTITY_VALID_SIMILAR("PRIME_IDENTITY_VALID_SIMILAR"),
+    PRIME_IDENTITY_VERIFICATION_FAILED("PRIME_IDENTITY_VERIFICATION_FAILED"),
+    PRIME_MISSING_IDENTITY_REASON("PRIME_MISSING_IDENTITY_REASON")
+}
+
+enum class VendorScanData(val s: String) {
+    // Property names in VendorScanInformation
+    ID("scanId"),
+    DETAILS("scanDetails"),
+    IMAGE("scanImage"),
+    IMAGE_TYPE("scanImageType"),
+    IMAGEBACKSIDE("scanImageBackside"),
+    IMAGEBACKSIDE_TYPE("scanImageBacksideType"),
+    IMAGEFACE("scanImageFace"),
+    IMAGEFACE_TYPE("scanImageFaceType"),
+    // Name of the datastore type
+    TYPE_NAME("VendorScanInformation")
+}
+
+enum class FCMStrings(val s: String) {
+    NOTIFICATION_TITLE("eKYC Status"),
+    JUMIO_IDENTITY_VERIFIED("Successfully verified the identity"),
+    JUMIO_IDENTITY_FAILED("Failed to verify the identity")
 }
 
 // TODO vihang: make ApplicationToken data class immutable
@@ -56,7 +177,7 @@ data class ApplicationToken(
 
 data class Subscription(
         val msisdn: String,
-        val alias: String = "") : HasId {
+        val analyticsId: String = UUID.randomUUID().toString()) : HasId {
 
     override val id: String
         @JsonIgnore
@@ -92,8 +213,8 @@ data class Plan(
         val price: Price,
         val interval: String,
         val intervalCount: Long = 1L,
-        val planId: String = "",
-        val productId: String = "") : HasId {
+        val properties: Map<String, String> = emptyMap(),
+        val presentation: Map<String, String> = emptyMap()) : HasId {
 
     override val id: String
         @JsonIgnore
@@ -107,7 +228,6 @@ data class RefundRecord(
 
 data class PurchaseRecord(
         override val id: String,
-        @Deprecated("Will be removed in future") val msisdn: String,
         val product: Product,
         val timestamp: Long,
         val refund: RefundRecord? = null) : HasId
@@ -125,12 +245,26 @@ data class PurchaseRecordInfo(override val id: String,
             status)
 }
 
-data class PseudonymEntity(
-        val sourceId: String,
-        val pseudonym: String,
-        val start: Long,
-        val end: Long)
+data class SimEntry(
+        val iccId: String,
+        val status: SimProfileStatus,
+        val eSimActivationCode: String,
+        val msisdnList: Collection<String>)
 
-data class ActivePseudonyms(
-        val current: PseudonymEntity,
-        val next: PseudonymEntity)
+data class SimProfile(
+        val iccId: String,
+        @JvmField val eSimActivationCode: String,
+        val status: SimProfileStatus,
+        val alias: String = "")
+
+enum class SimProfileStatus {
+    NOT_READY,
+    AVAILABLE_FOR_DOWNLOAD,
+    DOWNLOADED,
+    INSTALLED,
+    ENABLED,
+}
+
+data class Context(
+        val customer: Customer,
+        val regions: Collection<RegionDetails> = emptyList())

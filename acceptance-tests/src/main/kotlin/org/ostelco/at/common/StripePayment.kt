@@ -60,33 +60,49 @@ object StripePayment {
      * verify that the correspondng 'setDefaultSource' API works as
      * intended.
      */
-    fun getDefaultSourceForCustomer(customerId: String) : String {
+    fun getDefaultSourceForCustomer(stripeCustomerId: String) : String {
 
         // https://stripe.com/docs/api/java#create_source
         Stripe.apiKey = System.getenv("STRIPE_API_KEY")
 
-        val customer = Customer.retrieve(customerId)
+        val customer = Customer.retrieve(stripeCustomerId)
         return customer.defaultSource
     }
 
     /**
      * Obtains the Stripe 'customerId' directly from Stripe.
      */
-    fun getCustomerIdForEmail(email: String) : String {
-
+    fun getStripeCustomerId(customerId: String) : String {
         // https://stripe.com/docs/api/java#create_card_token
         Stripe.apiKey = System.getenv("STRIPE_API_KEY")
 
         val customers = Customer.list(emptyMap()).data
-
-        return customers.filter { it.email.equals(email) }.first().id
+        return customers.first { it.id == customerId }.id
     }
 
-    fun deleteCustomer(email: String) {
+    fun deleteCustomer(customerId: String) {
         // https://stripe.com/docs/api/java#create_card_token
         Stripe.apiKey = System.getenv("STRIPE_API_KEY")
         val customers = Customer.list(emptyMap()).data
-        customers.filter { it.email == email }
+        customers.filter { it.id == customerId }
                 .forEach { it.delete() }
     }
+
+    fun deleteAllCustomers() {
+        // https://stripe.com/docs/api/java#create_card_token
+        Stripe.apiKey = System.getenv("STRIPE_API_KEY")
+        while (true) {
+            val customers = Customer.list(emptyMap()).data
+            if (customers.isEmpty()) {
+                break
+            }
+            customers.forEach {
+                        println(it.email)
+                        it.delete()
+                    }
+        }
+    }
 }
+
+// use this just for cleanup
+fun main() = StripePayment.deleteAllCustomers()

@@ -1,0 +1,49 @@
+schema {
+  query: QueryType
+}
+
+type QueryType {
+  context(id: String): Context
+}
+
+type Context {
+  customer: Customer
+  bundles: [Bundle]
+  subscriptions: [Subscription]
+  products: [Product]
+  purchases: [Purchase]
+}
+
+type Customer {
+  id: String
+  contactEmail: String
+  nickname: String
+  referralId: String
+  analyticsId: String
+}
+
+type Bundle {
+  id: String
+  balance: Long
+}
+
+type Subscription {
+  msisdn: String
+  analyticsId: String
+}
+
+type Product {
+  sku: String
+  price: Price
+}
+
+type Price {
+  amount: Int
+  currency: String
+}
+
+type Purchase {
+  id: String
+  product: Product
+  timestamp: Long
+}

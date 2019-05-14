@@ -1,0 +1,14 @@
+logging:
+  level: INFO
+  loggers:
+    org.ostelco: DEBUG
+  appenders:
+    - type: console
+      layout:
+        type: json
+        customFieldNames:
+           level: severity
+
+deleteScan: true
+deleteUrl: "https://netverify.com/api/netverify/v2/scans/"
+namespace: ""

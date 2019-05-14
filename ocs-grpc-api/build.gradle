@@ -1,6 +1,6 @@
 plugins {
   id "java-library"
-  id "com.google.protobuf" version "0.8.7"
+  id "com.google.protobuf" version "0.8.8"
   id "idea"
 }
 
@@ -18,7 +18,7 @@ protobuf {
       artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion"
     }
   }
-  protoc { artifact = 'com.google.protobuf:protoc:3.6.1' }
+  protoc { artifact = "com.google.protobuf:protoc:$protocVersion" }
   generateProtoTasks {
     all()*.plugins {
       grpc {}

@@ -1,0 +1,56 @@
+logging:
+#  level: ALL
+   level: INFO
+
+
+server:
+  adminMinThreads: 1
+  adminMaxThreads: 64
+  adminContextPath: /
+  applicationContextPath: /
+  applicationConnectors:
+    - type: http
+      port: 8080
+    - type: https
+      port: 8443
+      # Enabling conscrypt blows the whole thing up, so don't do that.
+      #jceProvider: Conscrypt
+      keyStoreType: JKS
+      keyStorePath: src/test/resources/sk_keys.jks
+      keyStorePassword: superSecreet
+      validateCerts: false
+      needClientAuth: true
+      wantClientAuth: true
+      supportedProtocols: [TLSv1.1, TLSv1.2, TLSv1.3]
+      excludedProtocols: [SSLv2Hello, SSLv3]
+
+
+httpClient:
+  tls:
+    protocol: TLSv1.2
+    keyStoreType: JKS
+    keyStorePath: src/test/resources/sk_keys.jks
+    keyStorePassword: superSecreet
+    verifyHostname: false
+    trustSelfSignedCertificates: true
+
+
+#  CN=*.not-really-ostelco.org, O=Not really SMDP org, L=Oslo, ST=Oslo, C=NO
+certAuth:
+  certAuths:
+    - userId: MrFish
+      country: 'NO'
+      location: Oslo
+      state: ''
+      organization: Not really SMDP org
+      commonName: '*.not-really-ostelco.org'
+      roles:
+        - flyfisher
+
+roles:
+  definitions:
+    - name: flyfisher
+      description: Obviously just a dummy role
+
+
+

@@ -125,9 +125,9 @@ class PrimeEventProducerTest {
 
         private const val TIMEOUT = 10
 
-        private const val RATING_GROUP = 10L;
+        private const val RATING_GROUP = 10L
 
-        private const val SERVICE_IDENTIFIER = 1L;
+        private const val SERVICE_IDENTIFIER = 1L
 
         private const val TOPUP_REQUEST_ID = "req-id"
     }

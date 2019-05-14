@@ -2,7 +2,7 @@ type: google.api.Service
 
 config_version: 3
 
-name: metrics.ostelco.org
+name: metrics.oya.world
 
 title: Prime Metrics Reporter Service gRPC API
 
@@ -18,12 +18,12 @@ usage:
 authentication:
   providers:
   - id: google_service_account
-    issuer: prime-service-account@pantel-2decb.iam.gserviceaccount.com
-    jwks_uri: https://www.googleapis.com/robot/v1/metadata/x509/prime-service-account@pantel-2decb.iam.gserviceaccount.com
+    issuer: prime-service-account@GCP_PROJECT_ID.iam.gserviceaccount.com
+    jwks_uri: https://www.googleapis.com/robot/v1/metadata/x509/prime-service-account@GCP_PROJECT_ID.iam.gserviceaccount.com
     audiences: >
-      https://metrics.ostelco.org/org.ostelco.prime.metrics.api.OcsgwAnalyticsService,
-      metrics.ostelco.org/org.ostelco.prime.metrics.api.OcsgwAnalyticsService,
-      metrics.ostelco.org
+      https://metrics.oya.world/org.ostelco.prime.metrics.api.OcsgwAnalyticsService,
+      metrics.oya.world/org.ostelco.prime.metrics.api.OcsgwAnalyticsService,
+      metrics.oya.world
   rules:
   - selector: "*"
     requirements:

@@ -36,22 +36,22 @@ class FbStorageTest {
                 applicationID = applicationId,
                 tokenType = tokenType)
 
-        assertTrue(storage.addNotificationToken(MSISDN, applicationToken))
-        val reply = storage.getNotificationToken(MSISDN, applicationId)
+        assertTrue(storage.addNotificationToken(CUSTOMER_ID, applicationToken))
+        val reply = storage.getNotificationToken(CUSTOMER_ID, applicationId)
         Assert.assertNotNull(reply)
         Assert.assertEquals(reply?.token, token)
         Assert.assertEquals(reply?.applicationID, applicationId)
         Assert.assertEquals(reply?.tokenType, tokenType)
 
-        Assert.assertEquals(storage.getNotificationTokens(MSISDN).size, 1)
+        Assert.assertEquals(storage.getNotificationTokens(CUSTOMER_ID).size, 1)
 
-        assertTrue(storage.removeNotificationToken(MSISDN, applicationId))
-        Assert.assertEquals(storage.getNotificationTokens(MSISDN).size, 0)
+        assertTrue(storage.removeNotificationToken(CUSTOMER_ID, applicationId))
+        Assert.assertEquals(storage.getNotificationTokens(CUSTOMER_ID).size, 0)
     }
 
     companion object {
 
-        private const val MSISDN = "4747116996"
+        private val CUSTOMER_ID = UUID.randomUUID().toString()
 
         private const val MILLIS_TO_WAIT_WHEN_STARTING_UP = 3000
     }

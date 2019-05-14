@@ -1,82 +1,77 @@
 @startuml
 
-
-class Simcard {
-  + ICCID
-  + IMSI
+class Region {
+  + regionCode: String
+  + regionName: String
 }
-note left: Navigable
 
+class CustomerRegion {
+  + status: CustomerRegionStatus
+  + kycStatusMap: [KycType, KycStatus]
+}
+
+class Customer {
+  + customerId: UUID
+  + nickname: String
+  + contactEmail: Email
+  + analyticsId: UUID
+  + referralId: UUID
+--
+  getAvailableProducts():[ProductID]
+}
+
+class Bundle {
+  + balance: Long
+}
+
+class SimProfile {
+  + ICCID: String
+  + status: String
+  + alias: String
+}
 
 class Subscription {
- + MSISDN
+ + MSISDN: String
 }
-note left: Navigable
 
+class Segment
+note left: Visible to Admin Only
+
+class Offer
+note left: Visible to Admin Only
 
 class ProductClass {
   + id: UUID
   + path: String
 }
-note left: Navigable
-
-class ParameterType {
-  + name
-  + type
-}
-
-
-class ParameterInstance {
-  + name
-  + value
-}
 
 class Price {
-+ currency
-+ amount
+  + currency: String
+  + amount: Int
 }
-
 
 class Product {
- + SKU: UUID
- --
- getPresentation():Presentation
-}
-note left: Navigable
-
-class Validity {
- + start: Timestamp
- + end: Timestamp
+  + SKU: UUID
+  + price: Price
 }
 
-class Subscriber {
---
-  getAvailableProducts():[ProductID]
-}
-note left: Navigable
+Customer "1" -- "*" Customer
+Customer "1" -- "*" CustomerRegion
+Region "1" -- "*" CustomerRegion
+Customer "1" -- "*" Bundle
+SimProfile "*" -- "1" Region
+SimProfile "1" -- "*" Subscription
+Subscription "*" -- "1" Customer
+Subscription "*" -- "*" Bundle
 
-class Offer{
-}
-note left: Navigable
+Customer "*" -- "*" Segment
+Segment "*" -- "*" Offer
+Offer "*" -- "*" Product
+Product "1" -- "1" Price
+Product "*" -- "1" ProductClass
 
-
-
-
-
-
-Simcard "*" -- "1" Subscription
-Subscription "1" -- "1" Subscriber
-Subscriber "1" -- "*" Purchase
-Subscriber "*" -- "*" Segment
-Segment "1" -- "*" Offer
-Purchase "1" -- "*" Product
+Purchase "*" -- "1" Product
+Customer "1" -- "*" Purchase
 Purchase "1"  -- "1" Payment
-Offer "1" -- Validity
-Offer "1" -- Presentation
-Offer -- "1" Product
-Product -- "1" Price
-Product -- "1" ProductClass
-ProductClass "1" -- "*" ParameterType
-Product -- "*" ParameterInstance
-ParameterType "1" -- "1" ParameterInstance
+
 @enduml

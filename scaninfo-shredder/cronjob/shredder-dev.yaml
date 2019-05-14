@@ -1,0 +1,28 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: scaninfo-shredder
+spec:
+  schedule: "*/30 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name:  scaninfo-shredder
+            image: eu.gcr.io/GCP_PROJECT_ID/scaninfo-shredder:SHREDDER_VERSION
+            imagePullPolicy: Always
+            env:
+            - name: DATASET_PROJECT
+              value: GCP_PROJECT_ID
+            - name: JUMIO_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: jumio-secrets
+                  key: apiToken
+            - name: JUMIO_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: jumio-secrets
+                  key: apiSecret
+          restartPolicy: Never

@@ -1,0 +1,44 @@
+{
+  "key": "$API_KEY$",
+  "template_name": "esim-qr-code",
+  "template_content": [
+    {
+      "name": "customerName",
+      "content": "$RECEIVER_NAME$"
+    }
+  ],
+  "message": {
+    "to": [
+      {
+        "email": "$RECEIVER_EMAIL$",
+        "name": "$RECEIVER_NAME$",
+        "type": "to"
+      }
+    ],
+    "important": true,
+    "track_opens": true,
+    "track_clicks": true,
+    "tags": [
+      "esim-qr-code"
+    ],
+    "merge_vars": [
+      {
+        "rcpt": "$RECEIVER_EMAIL$",
+        "vars": [
+          {
+            "name": "customerName",
+            "content": "$RECEIVER_NAME$"
+          }
+        ]
+      }
+    ],
+    "images": [
+      {
+        "type": "image/png",
+        "name": "esim_qr_code_image",
+        "content": "$QR_CODE$"
+      }
+    ]
+  },
+  "async": false
+}

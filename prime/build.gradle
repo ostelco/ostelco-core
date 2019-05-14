@@ -1,7 +1,7 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.3.10"
+  id "org.jetbrains.kotlin.jvm"
   id "application"
-  id "com.github.johnrengelman.shadow" version "4.0.3"
+  id "com.github.johnrengelman.shadow" version "5.0.0"
   id "idea"
 }
 
@@ -18,7 +18,7 @@ sourceSets {
   }
 }
 
-version = "1.20.0"
+version = "1.40.1"
 
 repositories {
   maven {
@@ -31,19 +31,23 @@ dependencies {
   implementation project(':prime-modules')
 
   // prime-modules
-  runtimeOnly project(':ocs')
+  runtimeOnly project(':ocs-ktc')
   runtimeOnly project(':firebase-store')
   runtimeOnly project(':neo4j-store')
-  runtimeOnly project(':pseudonym-server')
-  runtimeOnly project(':client-api')
+  runtimeOnly project(':customer-endpoint')
+  runtimeOnly project(':ekyc')
   runtimeOnly project(':graphql')
   runtimeOnly project(':admin-api')
   runtimeOnly project(':app-notifier')
+  runtimeOnly project(':email-notifier')
   runtimeOnly project(':payment-processor')
   runtimeOnly project(':analytics-module')
   runtimeOnly project(':slack')
   runtimeOnly project(':imei-lookup')
   runtimeOnly project(':jersey')
+  runtimeOnly project(':secure-archive')
+  runtimeOnly project(':scaninfo-datastore')
+  runtimeOnly project(':sim-administration:simmanager')
 
   implementation "io.dropwizard:dropwizard-http2:$dropwizardVersion"
   runtimeOnly "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"
@@ -54,7 +58,7 @@ dependencies {
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation "org.mockito:mockito-core:$mockitoVersion"
   testImplementation 'com.lmax:disruptor:3.4.2'
-  testImplementation 'com.palantir.docker.compose:docker-compose-rule-junit4:0.34.0'
+  testImplementation "com.palantir.docker.compose:docker-compose-rule-junit4:$dockerComposeJunitRuleVersion"
   testImplementation 'org.dhatim:dropwizard-prometheus:2.2.0'
 }
 
@@ -67,7 +71,7 @@ configurations {
 }
 
 task integration(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
-  environment("GOOGLE_APPLICATION_CREDENTIALS", "config/pantel-prod.json")
+  environment("GOOGLE_APPLICATION_CREDENTIALS", "config/prime-service-account.json")
   testClassesDirs = sourceSets.integration.output.classesDirs
   classpath = sourceSets.integration.runtimeClasspath
 }

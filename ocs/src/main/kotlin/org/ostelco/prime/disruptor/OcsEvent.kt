@@ -26,7 +26,7 @@ class OcsEvent {
     var reservedBucketBytes: Long = 0
 
     /**
-     * Origin of word 'bundle' - Subscriber buys a 'bundle' of units of data/airtime/validity etc.
+     * Origin of word 'bundle' - Customer buys a 'bundle' of units of data/airtime/validity etc.
      * This field represent total balance bytes.
      */
     var bundleBytes: Long = 0
@@ -51,7 +51,7 @@ class OcsEvent {
         reservedBucketBytes = 0
         ocsgwStreamId = null
         request = null
-        topupContext = null;
+        topupContext = null
     }
 
     //FIXME vihang: We need to think about roaming

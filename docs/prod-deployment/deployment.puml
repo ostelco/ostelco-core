@@ -7,11 +7,11 @@ package "Handset" {
 
 
 package "Payment service" {
- [Payment]
+  [Payment]
 }
 
 package "Authentication service" {
- [AUTH]
+  [AUTH]
 }
 
 
@@ -20,24 +20,29 @@ package "Host Operator" {
   [PGW]
 }
 
-package "On Premise (MVNE)" {
- [Ocsgw]
+package "GCP - Compute Engine" {
+  [OCSGW]
 }
 
 
-package "GCP" {
+package "GCP - Kubernetes" {
 
- package "Cloud endpoints"{
-   [CEP1]
-   [CEP2]
- }
+  package "Cloud endpoints"{
+    [CEP1]
+    [CEP2]
+  }
 
- database DB
+  package "PubSub"{
+    [CCR]
+  }
+
+  database DB
+
   node "Pod" {
-   [ESP1]
-   [ESP2]
-   [Prime]
- }
+    [ESP1]
+    [ESP2]
+    [Prime]
+  }
 }
 
 [App] -- [AUTH]
@@ -49,10 +54,12 @@ package "GCP" {
 [CEP2] - [ESP2]: gRPC
 
 
-[PGW] - [Ocsgw]: diameter
-[Ocsgw] - [CEP2] : gRPC
+[PGW] - [OCSGW]: diameter
+[OCSGW] - [CEP2] : gRPC
 [ESP1] - [Prime] : http
 [ESP2] - [Prime] : gRPC
 [Prime] -  DB
+[OCSGW] - [CCR] : ccr-topic
+[CCR] - [Prime] : ccr-sub
 
 @enduml

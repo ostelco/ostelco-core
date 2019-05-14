@@ -30,7 +30,7 @@ object ImeiDdSingleton : ImeiLookup {
 
     private val logger by getLogger()
 
-    val db = HashMap<String, Imei>()
+    private val db = HashMap<String, Imei>()
 
     override fun getImeiInformation(imei: String): Either<ImeiLookupError, Imei> {
 
@@ -40,7 +40,7 @@ object ImeiDdSingleton : ImeiLookup {
 
         val tac = imei.substring(0, 8)
 
-        val imeiInformation = db.get(tac)
+        val imeiInformation = db[tac]
         if (imeiInformation != null) {
             return Either.right(imeiInformation)
         }

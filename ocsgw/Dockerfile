@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends netcat-openbsd 
 
 COPY script/start.sh /start.sh
 COPY script/start_dev.sh /start_dev.sh
+COPY script/wait_including_esps.sh /wait_including_esps.sh
 COPY script/wait.sh /wait.sh
 
 COPY config/dictionary.xml /config/dictionary.xml

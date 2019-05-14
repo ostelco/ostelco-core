@@ -4,11 +4,19 @@ jobs:
   build-test-repo:
     # machine is needed to run Gradle build and to run docker compose tests
     machine:
-      enabled: true
+      image: circleci/classic:201808-01
+    environment:
+      JAVA_HOME: /usr/lib/jvm/zulu11.31.11-ca-jdk11.0.3-linux_x64
 
     steps:
       - checkout
-      - run: 
+      - run:
+          name: upgrading Java to open-jdk-11
+          command: |
+            # sudo apt update; sudo apt install -y wget
+            sudo wget https://cdn.azul.com/zulu/bin/zulu11.31.11-ca-jdk11.0.3-linux_x64.tar.gz -O /tmp/zulu11.31.11-ca-jdk11.0.3-linux_x64.tar.gz
+            sudo tar -zxf /tmp/zulu11.31.11-ca-jdk11.0.3-linux_x64.tar.gz -C /usr/lib/jvm
+      - run:
           # checking for merge conflicts and merging locally if none exist
           name: merging ${CIRCLE_BRANCH} into develop locally
           command: |
@@ -18,8 +26,11 @@ jobs:
             git checkout develop 
             git merge ${CIRCLE_BRANCH} -m "Merging ${CIRCLE_BRANCH} into develop."
       # Show the javac version installed.
-      - run: javac -version
-
+      - run:
+          name: javac -version
+          command: |
+            export PATH=/usr/lib/jvm/zulu11.31.11-ca-jdk11.0.3-linux_x64/bin:$PATH
+            javac -version
       - run:
           name: Pulling Gradle cache
           command: |
@@ -30,11 +41,11 @@ jobs:
             gsutil cp gs://pi-ostelco-core-gradle-cache/caches.tar.gz ~/caches.tar.gz
             mkdir -p ~/.gradle/caches/
             tar -xzvf ~/caches.tar.gz -C ~/.gradle/caches/ .
-      # Copying pantel prod secret to locations where it is needed for docker compose tests.
+      # Copying prime-service-account secret file to locations where it is needed for docker compose tests.
       - run:
-          name: Distribute pantel-prod.json secret from env var.
+          name: Distribute prime-service-account.json secret from env var.
           command: |
-            scripts/distribute-pantel-secrets.sh
+            scripts/distribute-prime-service-account-secrets.sh
       # run gradle build. Skipping neo4j tests as they fail
       - run:
           name: Build entire repo
@@ -61,14 +72,14 @@ jobs:
             cp certs/ocs.dev.ostelco.org/nginx.crt ocsgw/cert/ocs.crt
             scripts/generate-selfsigned-ssl-certs.sh   metrics.dev.ostelco.org 
             cp certs/metrics.dev.ostelco.org/nginx.crt ocsgw/cert/metrics.crt
-      - run: 
+      - run:
           name: Acceptance Tests
           command: docker-compose up --build --abort-on-container-exit
-      
+
       - run:
-           name: notify slack on failure
-           when: on_fail
-           command: .circleci/notify-slack.sh on-feature-branch-commit false    
+          name: notify slack on failure
+          when: on_fail
+          command: .circleci/notify-slack.sh on-feature-branch-commit false
 
   code-coverage:
     environment:
@@ -76,20 +87,20 @@ jobs:
       CODACY_VERSION: 4.0.3
       CODACY_JAR_FILE: codacy-coverage-reporter-assembly-latest.jar
       CODACY_MODULE: com.codacy.CodacyCoverageReporter
-  
+
     docker:
       - image: circleci/openjdk:11.0.1-jdk-node-browsers
 
     steps:
-      - run:  
+      - run:
           name: Download codacy
           command: |
             wget -O ~/${CODACY_JAR_FILE} \
               ${CODACY_DOWNLOAD_URL}/${CODACY_VERSION}/codacy-coverage-reporter-${CODACY_VERSION}-assembly.jar
       - attach_workspace:
           # Must be absolute path or relative path from working_directory
-          at: ~/project  
-               
+          at: ~/project
+
       # the commands below need "CODACY_PROJECT_TOKEN" to be present as (circleci) ENV variable.            
       - run:
           name: Generate Codacy code-coverage report
@@ -97,17 +108,25 @@ jobs:
             scripts/generate-codacy-coverage.sh
 
       - run:
-           name: notify slack on failure
-           when: on_fail
-           command: .circleci/notify-slack.sh on-feature-branch-commit false       
-  
+          name: notify slack on failure
+          when: on_fail
+          command: .circleci/notify-slack.sh on-feature-branch-commit false
+
   ### JOBS FOR  on-PR-merge-to-dev PIPELINE 
   build-code:
     machine:
-      enabled: true
+      image: circleci/classic:201808-01
+    environment:
+      JAVA_HOME: /usr/lib/jvm/zulu11.31.11-ca-jdk11.0.3-linux_x64
 
     steps:
-      - checkout 
+      - checkout
+      - run:
+          name: upgrading Java to open-jdk-11
+          command: |
+            # sudo apt update; sudo apt install -y wget
+            sudo wget https://cdn.azul.com/zulu/bin/zulu11.31.11-ca-jdk11.0.3-linux_x64.tar.gz -O /tmp/zulu11.31.11-ca-jdk11.0.3-linux_x64.tar.gz
+            sudo tar -zxf /tmp/zulu11.31.11-ca-jdk11.0.3-linux_x64.tar.gz -C /usr/lib/jvm
       - run:
           name: Pulling Gradle cache
           command: |
@@ -118,6 +137,12 @@ jobs:
             gsutil cp gs://pi-ostelco-core-gradle-cache/caches.tar.gz ~/caches.tar.gz
             mkdir -p ~/.gradle/caches/
             tar -xzvf ~/caches.tar.gz -C ~/.gradle/caches/ .
+      # Show the javac version installed.
+      - run:
+          name: javac -version
+          command: |
+            export PATH=/usr/lib/jvm/zulu11.31.11-ca-jdk11.0.3-linux_x64/bin:$PATH
+            javac -version
       - run:
           name: Gradle Build Prime
           command:  ./gradlew clean prime:build -info -s -x test -x integration
@@ -132,17 +157,17 @@ jobs:
             rm -fr ~/.gradle/caches/*/plugin-resolution/
             tar -czvf  ~/caches.tar.gz  -C ~/.gradle/caches .
             gsutil cp  ~/caches.tar.gz gs://pi-ostelco-core-gradle-cache
-       
+
       - persist_to_workspace:
           root: ~/project/
           paths:
             - .
 
       - run:
-           name: notify slack on failure
-           when: on_fail
-           command: .circleci/notify-slack.sh on-PR-merge-to-dev false       
-      
+          name: notify slack on failure
+          when: on_fail
+          command: .circleci/notify-slack.sh on-PR-merge-to-dev false
+
   build-image:
     docker:
       - image: google/cloud-sdk:latest
@@ -159,7 +184,7 @@ jobs:
             gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
       - attach_workspace:
           # Must be absolute path or relative path from working_directory
-          at: ~/project    
+          at: ~/project
 
       # starts a remote docker environment to run docker commands
       - setup_remote_docker
@@ -172,7 +197,7 @@ jobs:
             cd prime
             docker build -t eu.gcr.io/pi-ostelco-dev/prime:$TAG .
             docker push eu.gcr.io/pi-ostelco-dev/prime:$TAG  
-      
+
       # - run:
       #     name: build OCSGW docker image and push image to GCR
       #     command: |
@@ -182,47 +207,52 @@ jobs:
       #       docker build -t eu.gcr.io/pi-ostelco-dev/ocsgw:$TAG .
       #       docker push eu.gcr.io/pi-ostelco-dev/ocsgw:$TAG   
       - run:
-           name: notify slack on failure
-           when: on_fail
-           command: .circleci/notify-slack.sh on-PR-merge-to-dev false    
-            
+          name: notify slack on failure
+          when: on_fail
+          command: .circleci/notify-slack.sh on-PR-merge-to-dev false
+
   update-dev-endpoints:
     docker:
-      - image: eu.gcr.io/pi-ostelco-dev/python-gcloud
-    steps: 
+      - image: eu.gcr.io/pi-ostelco-prod/python-gcloud
+    steps:
       - checkout
       - run:
           name: update endpoints spec
-          command: |  
+          command: |
             export CLOUDSDK_CORE_PROJECT=${DEV_PROJECT}
             echo $GOOGLE_DEV_ENDPOINTS_CREDENTIALS > ${HOME}/gcloud-service-key.json
             gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
-            
+
+            sed -i  's/GCP_PROJECT_ID/'${DEV_PROJECT}'/g' prime/infra/dev/ocs-api.yaml 
+            sed -i  's/GCP_PROJECT_ID/'${DEV_PROJECT}'/g' prime/infra/dev/metrics-api.yaml 
+
             python -m grpc_tools.protoc --include_imports --include_source_info --proto_path=ocs-grpc-api/src/main/proto --descriptor_set_out=ocs_descriptor.pb ocs.proto
             python -m grpc_tools.protoc --include_imports --include_source_info --proto_path=analytics-grpc-api/src/main/proto --descriptor_set_out=metrics_descriptor.pb prime_metrics.proto
-            gcloud endpoints services deploy ocs_descriptor.pb prime/infra/new-dev/ocs-api.yaml
-            gcloud endpoints services deploy metrics_descriptor.pb prime/infra/new-dev/metrics-api.yaml
-            gcloud endpoints services deploy prime/infra/new-dev/prime-client-api.yaml
-      
+            gcloud endpoints services deploy ocs_descriptor.pb prime/infra/dev/ocs-api.yaml
+            gcloud endpoints services deploy metrics_descriptor.pb prime/infra/dev/metrics-api.yaml
+            gcloud endpoints services deploy prime/infra/dev/prime-customer-api.yaml
+            gcloud endpoints services deploy prime/infra/dev/prime-webhooks.yaml
+            gcloud endpoints services deploy prime/infra/dev/prime-houston-api.yaml
+
       - run:
-           name: notify slack on failure
-           when: on_fail
-           command: .circleci/notify-slack.sh on-PR-merge-to-dev false       
-            
+          name: notify slack on failure
+          when: on_fail
+          command: .circleci/notify-slack.sh on-PR-merge-to-dev false
+
   deploy-to-dev:
 
     working_directory: ~/project
 
     docker:
-    - image: praqma/gcloud-kubectl-helm:v2.8.1
-      environment: 
-        PROJECT: pi-ostelco-dev
-        CLUSTER: pi-dev
-        ZONE: europe-west1-c
-        SERVICE_ACCOUNT: terraform-dev-cluster@pi-ostelco-dev.iam.gserviceaccount.com
+      - image: praqma/gcloud-kubectl-helm:v2.11.0
+        environment:
+          PROJECT: pi-ostelco-dev
+          CLUSTER: pi-dev
+          ZONE: europe-west1-c
+          SERVICE_ACCOUNT: terraform-dev-cluster@pi-ostelco-dev.iam.gserviceaccount.com
     steps:
       - checkout
-      
+
       - run:
           name: deploy prime to the dev cluster
           command: |
@@ -230,75 +260,52 @@ jobs:
             /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
             helm repo update
-            helm upgrade prime ostelco/prime --install --namespace dev \
+            helm upgrade prime ostelco/prime --version 0.6.2 --install --namespace dev \
              -f .circleci/prime-dev-values.yaml \
-             --set prime.env.STRIPE_API_KEY=${STRIPE_API_KEY} \
-             --set prime.tag=${CIRCLE_SHA1:0:9} \
-             --set firebaseServiceAccount=${PANTEL_SECRETS_FILE}
-       
-      - run:
-           name: notify slack on failure
-           when: on_fail
-           command: .circleci/notify-slack.sh on-PR-merge-to-dev false        
-           
-  create-PR-to-master:
-    working_directory: ~/project
+             --set prime.tag=${CIRCLE_SHA1:0:9} 
 
-    docker:
-    - image: eu.gcr.io/pi-ostelco-dev/github-hub:2.5.0
-
-    steps:
-      - checkout
       - run:
-          name: create PR to merge develop into master
-          command: |
-            export PRIME_TAG=${CIRCLE_SHA1:0:9}
-            cd .circleci 
-            ./substitute_prime_tag.sh
-            git config --global user.email "${GIT_USER_EMAIL}"
-            git config --global user.name "${GIT_USER_NAME}"
-            git add prime-prod-values.yaml
-            git commit -m "[ci skip] updating prime image tag to the latest built image."
-            git push https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/ostelco/ostelco-core.git develop
-            hub pull-request -m "merging develop into master" -b master
-      
-      - run:
-           name: notify slack on failure
-           when: on_fail
-           command: .circleci/notify-slack.sh on-PR-merge-to-dev false 
+          name: notify slack on failure
+          when: on_fail
+          command: .circleci/notify-slack.sh on-PR-merge-to-dev false
 
   ### JOBS FOR  on-PR-merge-to-master PIPELINE
   update-prod-endpoints:
     docker:
-      - image: eu.gcr.io/pi-ostelco-dev/python-gcloud
-    steps: 
+      - image: eu.gcr.io/pi-ostelco-prod/python-gcloud
+    steps:
       - checkout
       - run:
           name: update endpoints spec
-          command: |  
+          command: |
             export CLOUDSDK_CORE_PROJECT=${PROD_PROJECT}
             echo $GOOGLE_PROD_ENDPOINTS_CREDENTIALS > ${HOME}/gcloud-service-key.json
             gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
-            
+
+            sed -i 's/GCP_PROJECT_ID/'${PROD_PROJECT}'/g' prime/infra/prod/ocs-api.yaml 
+            sed -i 's/GCP_PROJECT_ID/'${PROD_PROJECT}'/g' prime/infra/prod/metrics-api.yaml 
+
             python -m grpc_tools.protoc --include_imports --include_source_info --proto_path=ocs-grpc-api/src/main/proto --descriptor_set_out=ocs_descriptor.pb ocs.proto
             python -m grpc_tools.protoc --include_imports --include_source_info --proto_path=analytics-grpc-api/src/main/proto --descriptor_set_out=metrics_descriptor.pb prime_metrics.proto
-            gcloud endpoints services deploy ocs_descriptor.pb prime/infra/new-prod/ocs-api.yaml
-            gcloud endpoints services deploy metrics_descriptor.pb prime/infra/new-prod/metrics-api.yaml
-            gcloud endpoints services deploy prime/infra/new-prod/prime-client-api.yaml
-      
+            gcloud endpoints services deploy ocs_descriptor.pb prime/infra/prod/ocs-api.yaml
+            gcloud endpoints services deploy metrics_descriptor.pb prime/infra/prod/metrics-api.yaml
+            gcloud endpoints services deploy prime/infra/prod/prime-customer-api.yaml
+            gcloud endpoints services deploy prime/infra/prod/prime-webhooks.yaml
+            gcloud endpoints services deploy prime/infra/prod/prime-houston-api.yaml
+
       - run:
-           name: notify slack on failure
-           when: on_fail
-           command: .circleci/notify-slack.sh on-PR-merge-to-master false       
-  
+          name: notify slack on failure
+          when: on_fail
+          command: .circleci/notify-slack.sh on-PR-merge-to-master false
+
   deploy-to-prod:
     docker:
-    - image: praqma/gcloud-kubectl-helm:v2.8.1
-      environment: 
-        PROJECT: pi-ostelco-prod
-        CLUSTER: pi-prod
-        ZONE: europe-west1-c
-        SERVICE_ACCOUNT: terraform-manage-cluster-from@pi-ostelco-prod.iam.gserviceaccount.com
+      - image: praqma/gcloud-kubectl-helm:v2.11.0
+        environment:
+          PROJECT: pi-ostelco-prod
+          CLUSTER: pi-prod
+          ZONE: europe-west1-c
+          SERVICE_ACCOUNT: terraform-manage-cluster-from@pi-ostelco-prod.iam.gserviceaccount.com
 
     steps:
       - checkout
@@ -306,20 +313,17 @@ jobs:
           name: deploy prime to the prod cluster
           command: |
             export GOOGLE_CREDENTIALS=${PI_PROD_CLUSTER_CREDENTIALS}
-            #export TAG=$(git rev-parse --short=9 origin/circleci-dev) # fragile, gives latest develop commit but that may not be the correct tag!
             /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
             helm repo update
-            helm upgrade prime ostelco/prime --version 0.3.1 --install --namespace prod \
-             -f .circleci/prime-prod-values.yaml \
-             --set prime.env.STRIPE_API_KEY=${STRIPE_API_KEY} \
-             --set firebaseServiceAccount=${PANTEL_SECRETS_FILE}
+            helm upgrade prime ostelco/prime --version 0.6.2 --install --namespace prod \
+             -f .circleci/prime-prod-values.yaml  --set-string canary.tag=${CIRCLE_SHA1:0:9}
 
       - run:
-           name: notify slack on failure
-           when: on_fail
-           command: .circleci/notify-slack.sh on-PR-merge-to-master false        
- 
+          name: notify slack on failure
+          when: on_fail
+          command: .circleci/notify-slack.sh on-PR-merge-to-master false
+
 workflows:
   version: 2
   on-feature-branch-commit:
@@ -327,38 +331,35 @@ workflows:
       - build-test-repo:
           filters:
             branches:
-              only: /feature/.*/
+              only:  /feature/.*/
       - code-coverage:
-         requires:
-           - build-test-repo
+          requires:
+            - build-test-repo
 
   on-PR-merge-to-dev:
     jobs:
-    - build-code:
-        filters:
-          branches:
-            only:
-            - develop
-    - build-image:
-        requires:
-          - build-code
-    - update-dev-endpoints:
-        requires:
-          - build-image        
-    - deploy-to-dev:
-        requires:
-          - update-dev-endpoints
-#    - create-PR-to-master:
-#        requires:
-#          - deploy-to-dev
+      - build-code:
+          filters:
+            branches:
+              only:
+                - develop
+      - build-image:
+          requires:
+            - build-code
+      - update-dev-endpoints:
+          requires:
+            - build-image
+      - deploy-to-dev:
+          requires:
+            - update-dev-endpoints
 
   deploy-to-prod:
     jobs:
-    - update-prod-endpoints:
-        filters:
-          branches:
-            only: 
-            - master
-    - deploy-to-prod:
-        requires:
-          - update-prod-endpoints
+      - update-prod-endpoints:
+          filters:
+            branches:
+              only:
+                - master
+      - deploy-to-prod:
+          requires:
+            - update-prod-endpoints

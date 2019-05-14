@@ -1,0 +1,2723 @@
+openapi: 3.0.0
+servers:
+  - url: 'https://myinfosgstg.api.gov.sg/dev'
+    description: Sandbox
+  - url: 'https://myinfosgstg.api.gov.sg/test'
+    description: Staging
+  - url: 'https://myinfosg.api.gov.sg/'
+    description: Production
+info:
+  version: 2.1.1
+  title: MyInfo API
+  x-logo:
+    url: 'https://s3-ap-southeast-1.amazonaws.com/myinfobiz-apispecs/myinfo-logo.jpg'
+  description: >-
+    MyInfo REST APIs for retrieving Person data.
+
+
+    **Note - this specification is subject to changes based on evolution of the
+    APIs.**
+
+    # Release Notes
+
+    * **2.1.1 (21 September 2018)**
+      - updated error codes and descriptions for `token` and `person` APIs for better clarity when troubleshooting.
+
+    * **2.1.0 (01 July 2018)**
+      - "relationship" data item is deprecated
+      - New data items available:
+        - childrenbirthrecords
+        - marriagecertno
+        - countryofmarriage
+        - workpassstatus
+        - workpassexpirydate
+
+    * **2.0.0 (20 April 2018)**
+      - Base URL changed from:
+        - myinfo.api.gov.sg to myinfosg.api.gov.sg (Production) and myinfosgstg.api.gov.sg (Staging)
+      - APIs updated to v2:
+        - Staging:
+          - /test/v2/authorise
+          - /test/v2/token
+          - /test/v2/person/{uinfin}/
+        - Production:
+          - /v2/authorise
+          - /v2/token
+          - /v2/person/{uinfin}/
+      - Updated responses for v2 Person APIs:
+        - Response format will be JSON Web Encryption (JWE) instead of JSON Web Signature (JWS).
+
+
+
+    ## Releases and Compatibility
+
+    The RESTful API adopts __Semantic Versioning 2.0.0__ for releases, and every
+    new release of the API increments the version numbers in the following
+    format:
+
+    ```
+
+    {MAJOR}.{MINOR}.{PATCH}
+
+    ```
+
+
+    1. `{MAJOR}` number introduces incompatible API changes with previous
+    `{MAJOR}` number also resets `{MINOR}` to `0`,
+
+    2. `{MINOR}` number introduces new functionalities or information that are
+    backward compatible also resets `{PATCH}` to `0`, and
+
+    3. `{PATCH}` number introduces bug fixes and remains backward compatible.
+
+
+    Pre-release or draft versions, when provided, are denoted by appended hypen
+    `-` with a series of separate identifiers `{LABEL}-{VERSION}` following the
+    `{PATCH}` number. Such releases are unstable and may not provide the
+    intended compatibility with the specification in draft status.
+
+
+    Serving as notice, the RESTful API in version `2.X.X` are incompatible with
+    version `1.X.X` releases.
+
+
+    Despite backward compatibility in `{MINOR}` or `{PATCH}` releases, API
+    consumers are best to evaluate and determine their implementation does not
+    disrupt use-case requirements.
+
+
+    # Overview
+
+    The following diagram illustrates how the integration with MyInfo APIs work:
+
+    ![Overview](https://www.ndi-api.gov.sg/assets/lib/trusted-data/myinfo/img/myinfo-logical-architecture.png
+    "MyInfo API Overview")
+
+
+    As shown above, your application will be interfacing with our Government API
+    Gateway (APEX) to integrate successfully with MyInfo.
+
+
+    # Environments
+
+
+    The RESTful APIs are provided in both testing and live environments, and are
+    accessible over the __Internet__ via HTTPS.
+
+
+    Consumers are to ensure firewall clearance on their edge network nodes for
+    connecting to the APIs.
+
+
+    The convention used by API endpoints' URLs is in the following format:
+
+
+    ```
+
+    https://{ENV_DOMAIN_NAME}/{VERSION}/{RESOURCE}
+
+    ```
+
+
+    * `{ENV_DOMAIN_NAME}` indicates MyInfo's API gateway __Internet__
+      domain names - respectively:
+      * `myinfosg.api.gov.sg/`, or
+      * `myinfosgstg.api.gov.sg/test`, or
+      * `myinfosgstg.api.gov.sg/dev`, following
+    * `/{VERSION}` indicates the endpoint's release `{MAJOR}` version number
+    path - for this release:
+      * `/v2`, and
+    * `/{RESOURCE}` indicates the API resource path name.
+
+    Any additional query string parameters are appended as needed.
+
+
+    ## Available Environments
+
+    * **Sandbox/Dev**: `https://myinfosgstg.api.gov.sg/dev/`
+
+    * **Staging**: `https://myinfosgstg.api.gov.sg/test/`
+
+    * **Production**:  `https://myinfosg.api.gov.sg/`
+
+
+    ## Scheduled Downtimes
+
+    The following are the scheduled downtimes for the various environments:
+
+
+    ### Production Environment
+
+    * **CPFB data** - Everyday 5:00am to 5:30am
+
+    * **IRAS data** - Every Wed, 2:00am to 6:00am, Every Sun, 2:00am to 8:30am
+
+    * **Once a month**, Sunday 12:00 am to 8:00 am (date to be advised)
+
+
+    ### Sandbox & Staging Environments
+
+    * Every Wednesday 3pm to 12am.
+
+
+    # Security
+
+    ## HTTPS Interface
+
+
+    At time of writing, MyInfo's API gateway supports accessing of APIs via the
+    following interfaces:
+
+
+    * HTTP version 1.1 connection over __TLS__ (Transport Layer Security)
+    version __1.1__ or __1.2__ standards, and ciphersuites:
+      * using __AES__ (Advanced Encryption Standard) and __SHA__ (Secure Hash Algorithm),
+      * on either __GCM__ (Galois/Counter Mode) or __CBC__ (Cipher Block Chaining) mode.
+    * Below is the list of recommended cipher suites that you may use:
+
+      * TLS_RSA_WITH_AES_256_GCM_SHA384
+      * TLS_RSA_WITH_AES_128_GCM_SHA256
+      * TLS_RSA_WITH_AES_256_CBC_SHA256
+      * TLS_RSA_WITH_AES_256_CBC_SHA
+      * TLS_RSA_WITH_AES_128_CBC_SHA256
+      * TLS_RSA_WITH_AES_128_CBC_SHA
+
+    > **IMPORTANT:** ensure your server supports **TLS 1.1 or 1.2** and supports
+    a cipher suite in the list above.
+
+
+    Accessing the RESTful APIs using prior versions of TLS and/or unsupported
+    ciphersuites will result in connectivity errors. MyInfo's API gateway does
+    not support 2-way TLS client nor mutual authentication.
+
+
+    API HTTP interface features:
+
+
+    1. __JSON__ (JavaScript Object Notation) is the supported data media format
+    and indicated in `Content-Type` header `application/json`, also
+
+    2. `Content-Length` header is omitted by having `Transfer-Encoding` header
+    `chunked` emitted for streaming data, and
+
+    3. __GZip__ (GNU Zip) response compression is supported by opt-in
+    `Accept-Encoding: gzip` and indicated in `Content-Encoding` header `gzip`.
+
+
+    ## OAuth2.0
+
+    MyInfo APIs use OAuth2.0 authorisation code flow to perform authentication &
+    authorisation.
+
+
+    The sequence diagram below illustrates the steps involved in integrating
+    your application with our APIs:
+
+
+    ![OAuth](https://www.ndi-api.gov.sg/assets/lib/trusted-data/myinfo/img/myinfo-oauth2-sequence.png)
+
+
+    The flow consists of 3 APIs:
+
+    1. **Authorise**
+        * This will trigger the SingPass login and consent page. Once successful, your application will receive the **authorisation code** via your callback url.
+
+    2. **Token**
+        * Call this server-to-server API with a valid **authorisation code** to get the **access token**.
+
+    3. **Protected Resource (Person)**
+        * Call this server-to-server API with a valid  **access token** to get the  person data.
+
+
+    ## Application Authentication
+
+
+    Access to all server-to-server APIs will be authenticated by MyInfo's API
+    gateway.
+
+    Prior to calling the APIs, respective consumers are required to have:
+
+
+    * approval of access, onboarding process for the required API resources will
+    be provisioned, and
+
+    * authentication credentials are then supplied and exchanged.
+
+
+    Authentication methods provided by MyInfo's API gateway on internet:
+
+
+    * L2 - OAuth 2.0 using `SHA256withRSA` digital signature (see "**Request
+    Signing**" section below)
+
+    * Digital signature should be produced using a RSA private key with
+    corresponding public certificate issued by one of the following compatible
+    CAs:
+      * digiCert
+      * Entrust
+      * Comodo
+      * VeriSign
+      * GlobalSign
+      * GeoTrust
+      * Thawte
+
+
+
+    ## Request Signing
+
+
+    All server-to-server API requests are to be digitally signed, by including
+    the following parameters and values in the `Authorization` header:
+
+
+    ```
+
+    Apex_L2_Eg realm="{realm}",
+
+    apex_l2_eg_app_id="{app_id}",
+
+    apex_l2_eg_nonce="{random_nonce}",
+
+    apex_l2_eg_signature_method="SHA256withRSA",
+
+    apex_l2_eg_signature="{base64_url_percent_encoded_signature}",
+
+    apex_l2_eg_timestamp="{unix_epoch_in_milliseconds}",
+
+    apex_l2_eg_version="1.0"
+
+    ```
+
+
+    *__Note__: Above sample is separated by lines for ease-of-reading, and
+    new-line denotations are to be omitted in the actual request.*
+
+
+    * `{realm}` is the logical name of your application.
+
+    * `{app_id}` is the APP ID credential supplied upon onboarding,
+
+    * `{random_nonce}` is an unique randomly generated text used for replay
+    prevention,
+
+    * `{signature_algorithm}` is the signature algorithm of the authenticating
+    APEX gateway.
+
+      * Value of __signature_algorithm__ = `SHA256withRSA`
+
+    * `{base64_url_percent_encoded_signature}` is the binary of the generated
+    signature encoded in __Base64__ URL-safe format,
+
+    * `{unix_epoch_in_milliseconds}` is the UNIX epoch time in milliseconds, and
+
+    * `apex_l2_eg_version="1.0"` parameter is optional, and when emitted the
+    value has to be `1.0`.
+
+
+    ### Sample Code in `NodeJS`
+
+    ```
+      // generates the security headers for calling APEX
+      function generateAuthorizationHeader(url, params, method, strContentType, authType, appId, keyCertContent, passphrase, realm) {
+        // NOTE: need to include the ".e." in order for the security authorisation header to work
+        url = _.replace(url, ".api.gov.sg", ".e.api.gov.sg");
+
+        if (authType == "L2") {
+          return generateSHA256withRSAHeader(url, params, method, strContentType, appId, keyCertContent, passphrase, realm);
+        } else {
+          return "";
+        }
+      };
+
+      // Signing Your Requests
+      function generateSHA256withRSAHeader(url, params, method, strContentType, appId, keyCertContent, keyCertPassphrase, realm) {
+        var nonceValue = nonce();
+        var timestamp = (new Date).getTime();
+
+        // A) Construct the Authorisation Token Parameters
+        var defaultApexHeaders = {
+          "apex_l2_eg_app_id": appId, // App ID assigned to your application
+          "apex_l2_eg_nonce": nonceValue, // secure random number
+          "apex_l2_eg_signature_method": "SHA256withRSA",
+          "apex_l2_eg_timestamp": timestamp, // Unix epoch time
+          "apex_l2_eg_version": "1.0"
+        };
+
+        // B) Forming the Base String
+        // Base String is a representation of the entire request (ensures message integrity)
+
+        // i) Normalize request parameters
+        var baseParams = sortJSON(_.merge(defaultApexHeaders, params));
+
+        var baseParamsStr = qs.stringify(baseParams);
+        baseParamsStr = qs.unescape(baseParamsStr); // url safe
+
+        // ii) construct request URL ---> url is passed in to this function
+        // NOTE: need to include the ".e." in order for the security authorisation header to work
+        //myinfosgstg.api.gov.sg -> myinfosgstg.e.api.gov.sg
+        url = _.replace(url, ".api.gov.sg", ".e.api.gov.sg");
+
+        // iii) concatenate request elements (HTTP method + url + base string parameters)
+        var baseString = method.toUpperCase() + "&" + url + "&" + baseParamsStr;
+
+        // C) Signing Base String to get Digital Signature
+        var signWith = {
+          key: fs.readFileSync(keyCertContent, 'utf8')
+        }; // Provides private key
+
+        // Load pem file containing the x509 cert & private key & sign the base string with it to produce the Digital Signature
+        var signature = crypto.createSign('RSA-SHA256')
+          .update(baseString)
+          .sign(signWith, 'base64');
+
+        // D) Assembling the Authorization Header
+        var strApexHeader = "apex_l2_eg realm=\"" + realm + // Defaults to 1st part of incoming request hostname
+          "\",apex_l2_eg_timestamp=\"" + timestamp +
+          "\",apex_l2_eg_nonce=\"" + nonceValue +
+          "\",apex_l2_eg_app_id=\"" + appId +
+          "\",apex_l2_eg_signature_method=\"SHA256withRSA\"" +
+          ",apex_l2_eg_version=\"1.0\"" +
+          ",apex_l2_eg_signature=\"" + signature +
+          "\"";
+
+        return strApexHeader;
+      };
+
+
+    ```
+
+    ## Token Validation
+
+    Access Tokens are in JWT format. This JWT complies to the standard 'JSON Web
+    Token (JWT) Profile for OAuth 2.0 Client Authentication and Authorization
+    Grants' (https://tools.ietf.org/html/rfc7523). You will need to verify the
+    token with our public cert (provided during application onboarding).
+
+    ### Sample Code in `NodeJS`
+
+    ```
+      // Sample Code for Verifying & Decoding JWS or JWT
+      function verifyJWS(jws, publicCert) {
+        // verify token
+        // ignore notbefore check because it gives errors sometimes if the call is too fast.
+        try {
+          var decoded = jwt.verify(jws, fs.readFileSync(publicCert, 'utf8'), {
+            algorithms: ['RS256'],
+            ignoreNotBefore: true
+          });
+          return decoded;
+        }
+        catch(error) {
+          throw("Error with verifying and decoding JWS");
+        }
+      }
+
+    ```
+
+
+    ## Payload Encryption (Person)
+
+    The response payload for the **Person** API (for staging and production
+    environments) is encrypted in [**JWE (JSON Web Encryption) Compact
+    Serialization**](https://tools.ietf.org/html/rfc7516) format.
+
+    * Encryption is done using your application's public key that you provided
+    during onboarding. Decryption of the payload should be using the private key
+    of that key-pair.
+
+    * Current encryption algorithms used:
+      * **RSA-OAEP** (for content key wrapping)
+      * **AES256GCM** (for content encrytion)
+
+
+    ### Sample Code in `NodeJS`
+
+    ```
+      // Sample Code for decrypting JWE
+      // Decrypt JWE using private key
+      function decryptJWE(header, encryptedKey, iv, cipherText, tag, privateKey) {
+
+        return new Promise((resolve, reject) => {
+
+          var keystore = jose.JWK.createKeyStore();
+
+          var data = {
+            "type": "compact",
+            "ciphertext": cipherText,
+            "protected": header,
+            "encrypted_key": encryptedKey,
+            "tag": tag,
+            "iv": iv,
+            "header": JSON.parse(jose.util.base64url.decode(header).toString())
+          };
+          keystore.add(fs.readFileSync(privateKey, 'utf8'), "pem")
+            .then(function(jweKey) {
+              // {result} is a jose.JWK.Key
+              jose.JWE.createDecrypt(jweKey)
+                .decrypt(data)
+                .then(function(result) {
+                  resolve(JSON.parse(result.payload.toString()));
+                })
+                .catch(function(error) {
+                  reject(error);
+                });
+            });
+
+        })
+        .catch (error => {
+          throw "Error with decrypting JWE";
+        })
+      }
+
+    ```
+
+    # Error Handling
+
+
+    The RESTful APIs used HTTP specification standard status codes to indicate
+    the success or failure of each request. Except gateway errors, the response
+    content will be in the following JSON format:
+
+
+    ```
+
+    {
+        "code": "integer (int32)",
+        "message": "string"
+    }
+
+    ```
+
+    > **Refer to the individual API definitions for the error codes you might
+    encounter for each API.**
+
+
+
+    # Support
+
+    Please refer to the [MyInfo Developer and Partner
+    Portal](https://www.ndi-api.gov.sg/) for the following supporting materials
+    where relevant:
+
+    - [Code reference
+    tables](https://www.ndi-api.gov.sg/assets/lib/trusted-data/myinfo/downloads/myinfo-api-code-tables.xlsx)
+
+    - [Test accounts for sandbox/staging
+    environments](https://www.ndi-api.gov.sg/library/trusted-data/myinfo/resources-personas)
+
+    - [Reference user journey
+    templates](https://www.ndi-api.gov.sg/library/trusted-data/myinfo/implementation-reference-journey)
+
+
+
+    For technical queries, contact
+    [support@myinfo.gov.sg](mailto:support@myinfo.gov.sg).
+
+
+    For business queries, contact
+    [partner@myinfo.gov.sg](mailto:partner@myinfo.gov.sg).
+
+
+    # Authentication
+
+
+    <!-- ReDoc-Inject: <security-definitions> -->
+tags:
+  - name: MyInfo
+    description: RESTful API Definitions
+x-tagGroups:
+  - name: API Definitions
+    tags:
+      - MyInfo
+paths:
+  '/v2/person-sample/{uinfin}/':
+    get:
+      tags:
+        - MyInfo
+      summary: Person-Sample
+      description: >-
+        Retrieves a sample Person data from MyInfo based on UIN/FIN. This API
+        does not require authorisation token.
+
+
+        **Note:** Null value indicates that an attribute is unavailable.
+      servers:
+        - url: 'https://myinfosgstg.api.gov.sg/dev'
+          description: Sandbox
+      operationId: getpersonsample
+      parameters:
+        - in: path
+          name: uinfin
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: attributes
+          description: >-
+            Comma separated list of attributes requested.
+
+
+            Possible attributes are listed in the Person object definition
+            below.
+          style: form
+          schema:
+            type: array
+            items:
+              type: string
+              minimum: 1
+      x-code-samples:
+        - lang: Shell
+          source: 'curl https://myinfosgstg.api.gov.sg/dev/v2/person-sample/S9203266C/'
+      responses:
+        '200':
+          description: |-
+            OK.
+
+            **Note:**
+            - Response will be a JSON object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+  /v2/authorise:
+    get:
+      tags:
+        - MyInfo
+      summary: Authorise
+      description: >-
+        This API triggers SingPass login and obtain consent for the user to
+        retrieve user's data from MyInfo.
+
+        Once the user has authenticated and consented, an authorisation code
+        (authcode) will be returned together with the state for verification via
+        the callback URL defined.
+
+        The authcode can then be used to retrieve an access token via the Token
+        API.
+
+
+        **Note:** This API is public and should be implemented as a link or
+        button on your online webpage.
+      operationId: getauthorise
+      parameters:
+        - in: query
+          name: authmode
+          description: >-
+            Mode of authentication used to obtain user consent. Default is
+            "SINGPASS".
+          required: false
+          schema:
+            type: string
+            enum:
+              - SINGPASS
+              - MOBILEID
+            default: SINGPASS
+        - in: query
+          name: purpose
+          description: >-
+            State the purpose for requesting the data. This will be shown to the
+            user for his consent.
+          allowEmptyValue: false
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: response_type
+          description: Response type for authorisation code flow - must be "code".
+          allowEmptyValue: false
+          required: false
+          schema:
+            type: string
+            default: code
+        - in: query
+          name: attributes
+          description: >-
+            Comma separated list of attributes requested. Possible attributes
+            are listed in the scopes of the OAuth2 Security Schema above.
+          required: true
+          style: form
+          schema:
+            type: array
+            items:
+              type: string
+              minimum: 1
+        - in: query
+          name: state
+          description: >-
+            Identifier to reconcile query and response. This will be sent back
+            to you via the callback URL. Use a unique system generated number
+            for each and every call.
+          allowEmptyValue: false
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: redirect_uri
+          description: Your callback URL for MyInfo to return with the authorisation code.
+          allowEmptyValue: false
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: client_id
+          description: Unique ID for your application.
+          allowEmptyValue: false
+          required: true
+          schema:
+            type: string
+      responses:
+        '302':
+          description: >-
+            Service will redirect all responses to 'redirect_uri' with
+            additional parameters added as response results. Expected parameters
+            include:
+
+            - **code**: this is the authorisation code you will use when calling
+            the token endpoint
+
+            - **state**: this should be the same state passed in your initial
+            URL.
+
+            - **error**: if there are any errors encountered, the error code
+            will be given in this parameter. If user did not give consent, error
+            value will be 'access_denied', and refer to error_description
+            parameter for the reason.
+              - **'404'** - User not found or not registered with MyInfo.
+              - **'428'** - Profile Incomplete. User registered for MyInfo less than 1 working day.
+              - **'500'** - Unknown or other server side errors.
+              - **'503'** - MyInfo under maintenance. Error description will also be given in error_description parameter.
+            - **error_description**: if error is 'access_denied' i.e. user did
+            not give consent, the description will be 'Resource Owner did not
+            authorize the request'.
+
+
+
+            **Note:** If user closes the browser window prematurely, there will
+            be no callback to the 'redirect_uri'. Therefore it is important for
+            you to check the 'state' to verify that the transaction is the same.
+      x-code-samples:
+        - lang: JavaScript
+          source: |
+            function callAuthoriseApi() {
+              var authoriseUrl = authApiUrl + "?client_id=" + clientId +
+                "&attributes=" + attributes +
+                "&purpose=" + purpose +
+                "&state=" + state +
+                "&redirect_uri=" + redirectUrl;
+
+              window.location = authoriseUrl;
+            }
+  /v2/token:
+    post:
+      tags:
+        - MyInfo
+      summary: Token
+      description: >-
+        This API generates an access token when presented with a valid authcode
+        obtained from the Authorise API. This token can then be used to request
+        for the user's data that were consented.
+      operationId: gettoken
+      parameters:
+        - in: header
+          name: Authorization
+          description: >-
+            Add authorization token constructed containing the RSA digital
+            signature of the base string. Refer to
+            https://www.ndi-api.gov.sg/library/trusted-data/myinfo/tutorial3 on
+            how this token should be generated.
+
+
+            **Note:** This header is not required when calling Sandbox API.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: >-
+            OK. returning a JSON object which contains the authorisation access
+            token (JWT) that will be used to retrieve the data from MyInfo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokenResponse'
+        '400':
+          description: 'AuthCode error - missing, invalid, expired, revoked'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenError'
+        '401':
+          description: |-
+            Possible scenarios:
+              - No security header given
+              - Invalid App ID used. Digital service is not registered with MyInfo
+              - The timestamp of server is not synchronised. Check timestamp of server
+              - The value of the nonce in the authorisation header was deemed to be repeated. Check that the nonce is not re-used
+              - Ensure Apex header to be 'apex_l2_eg' and not 'apex', resulting in 'No security header' error message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenError'
+        '404':
+          description: |-
+            Possible scenarios:
+              - Wrong Token API URL used. Refer to tutorial for the correct Token API URL(staging/production)
+              - Same authcode in the body is being used. We do not allow same authcode being used in multiple calls. Ensure that authcode is not repeated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenError'
+        '500':
+          description: |-
+            Unexpected error. Error message will be in the response body.
+
+            Possible scenarios:
+              - Error message: Signature length incorrect. Issue is due to error in digital signature. - Verify your signature by using our signature verifier tool. - Ensure correct key is used to sign the base string.
+              - Ensure there is a slash (/) after UINFIN in the request URL. E.g. `https://myinfosg.api.gov.sg/v2/person/S9812381D/`
+              - Attributes should be ordered in lexicographical byte value
+              - Ensure API URL in the base string include '.e' - `https://myinfosg.e.api.gov.sg`
+              - Ensure attributes in base string are separate by comma(,), and not %2C
+              - Signature generated is incorrect. Ensure the correct private key used to produce the signature, and base string is UTF-8 encoded.
+              - Ensure UIN/FIN is specified in the Person API URL. E.g. `https://myinfosg.e.api.gov.sg/v2/person/`
+              - Ensure the base string contains the following:
+                  1. HTTP GET method(in uppcase)
+                  2. API (e.g. https://..)
+                  3. These 6 APEX parameters:
+                    * apex_l2_eg_app_id
+                    * apex_l2_eg_nonce
+                    * apex_l2_eg_signature
+                    * apex_l2_eg_signature_method
+                    * apex_l2_eg_timestamp
+                    * apex_l2_eg_version
+      requestBody:
+        $ref: '#/components/requestBodies/gettoken'
+      x-code-samples:
+        - lang: NodeJS
+          source: |
+            // function to prepare request for TOKEN API
+            function createTokenRequest(code) {
+              var cacheCtl = "no-cache";
+              var contentType = "application/x-www-form-urlencoded";
+              var method = "POST";
+              var request = null;
+
+              // preparing the request with header and parameters
+              // assemble params for Token API
+              var strParams = "grant_type=authorization_code" +
+                "&code=" + code +
+                "&redirect_uri=" + _redirectUrl +
+                "&client_id=" + _clientId +
+                "&client_secret=" + _clientSecret;
+              var params = querystring.parse(strParams);
+
+
+              // assemble headers for Token API
+              var strHeaders = "Content-Type=" + contentType + "&Cache-Control=" + cacheCtl;
+              var headers = querystring.parse(strHeaders);
+
+              // Sign request and add Authorization Headers
+              var authHeaders = generateAuthorizationHeader(
+                _tokenApiUrl,
+                params,
+                method,
+                contentType,
+                _authLevel,
+                _clientId,
+                _privateKeyContent,
+                _clientSecret,
+                _realm
+              );
+
+              if (!_.isEmpty(authHeaders)) {
+                _.set(headers, "Authorization", authHeaders);
+              }
+
+              var request = restClient.post(_tokenApiUrl);
+
+              // Set headers
+              if (!_.isUndefined(headers) && !_.isEmpty(headers))
+                request.set(headers);
+
+              // Set Params
+              if (!_.isUndefined(params) && !_.isEmpty(params))
+                request.send(params);
+
+              return request;
+            }
+  '/v2/person/{uinfin}/':
+    get:
+      tags:
+        - MyInfo
+      summary: Person
+      description: >-
+        This API returns user's data from MyInfo when presented with a valid
+        access token obtained from the Token API.
+
+
+        **Note:** Null value indicates that an attribute is unavailable.
+      operationId: getperson
+      parameters:
+        - in: header
+          name: Authorization
+          description: >-
+            Add authorization token constructed containing the RSA digital
+            signature of the base string. Refer to
+            https://www.ndi-api.gov.sg/library/trusted-data/myinfo/tutorial3 on
+            how this token should be generated. Also include the access token
+            (JWT) from /token API in your header prefixed with 'Bearer'.
+
+
+            **Note:** Only the Bearer token is required when calling Sandbox
+            API.
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: txnNo
+          description: >-
+            Transaction ID from requesting digital services for cross
+            referencing.
+          required: false
+          schema:
+            type: string
+        - in: path
+          name: uinfin
+          description: UIN/FIN of user
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: attributes
+          required: true
+          description: >-
+            Comma separated list of attributes requested. Possible attributes
+            are listed in the scopes of the OAuth2 Security Schema above.
+          style: form
+          schema:
+            type: array
+            items:
+              type: string
+              minimum: 1
+        - in: query
+          name: client_id
+          description: Unique ID for your application.
+          allowEmptyValue: false
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: >-
+            OK.
+
+
+            **Note:**
+
+            - Response Content-Encoding will be 'gzip'.
+
+            - Response Content-Type will be 'application/jose', which is a JSON
+            object conforming to the JWE standard
+            (https://tools.ietf.org/html/rfc7516).
+
+            - Your application should decrypt the signature with your
+            application's private key.
+
+            - After decrypting the signature, your application will be able to
+            extract the payload in JSON format.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+        '401':
+          description: |-
+            Unauthorized. This could be due to the scenarios below:
+              - No security header given
+              - Invalid App ID used. Digital service is not registered with MyInfo
+              - The timestamp of server is not synchronised. Check timestamp of server
+              - The value of the nonce in the authorisation header was deemed to be repeated. Check that the nonce is not re-used
+              - Ensure Apex header to be 'apex_l2_eg' and not 'apex', resulting in 'No security header' error message
+              - The requested UIN/FIN does not match the UIN/FIN of the person who logged in
+              - Request contains attributes not allowable for the digital service.
+
+            Details will be given in the error object returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: |-
+            Possible scenarios:
+
+              - Forbidden. Digital service is not registered with MyInfo.
+              - Requested attributes does not match the attributes consented by person.
+                This happens if the list of attributes in your request are different from the attributes specified when calling the token API.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: |-
+            Not Found. UIN/FIN does not exist in MyInfo.
+
+            **MESSAGE:** 'UIN/FIN is invalid.'
+
+            Possible scenarios:
+              - Wrong Person API URL used. Refer to tutorial for the correct Person API URL(staging/production)
+              - UIN/FIN has a SingPass account, but does not have a MyInfo profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: >-
+            Error with request parameters or headers. Error details will be
+            provided in the response body.
+
+            Possible scenarios:
+              - Error message: Signature length incorrect. Issue is due to error in digital signature. - Verify your signature by using our signature verifier tool. - Ensure correct key is used to sign the base string.
+              - Ensure there is a slash (/) after UINFIN in the request URL. E.g. `https://myinfosg.api.gov.sg/v2/person/S9812381D/`
+              - Attributes should be ordered in lexicographical byte value
+              - Ensure API URL in the base string include '.e' - `https://myinfosg.e.api.gov.sg`
+              - Ensure attributes in base string are separate by comma(,), and not %2C
+              - Signature generated is incorrect. Ensure the correct private key used to produce the signature, and base string is UTF-8 encoded.
+              - Ensure UIN/FIN is specified in the Person API URL. E.g. `https://myinfosg.e.api.gov.sg/v2/person/`
+              - Ensure the base string contains the following:
+                  1. HTTP GET method(in uppcase)
+                  2. API (e.g. https://..)
+                  3. These 6 APEX parameters:
+                    * apex_l2_eg_app_id
+                    * apex_l2_eg_nonce
+                    * apex_l2_eg_signature
+                    * apex_l2_eg_signature_method
+                    * apex_l2_eg_timestamp
+                    * apex_l2_eg_version
+      x-code-samples:
+        - lang: NodeJS
+          source: |
+            // function to prepare request for PERSON API
+            function createPersonRequest(uinfin, validToken) {
+              var url = _personApiUrl + "/" + uinfin + "/";
+              var cacheCtl = "no-cache";
+              var method = "GET";
+              var request = null;
+              // assemble params for Person API
+              var strParams = "client_id=" + _clientId +
+                "&attributes=" + _attributes;
+              var params = querystring.parse(strParams);
+
+              // assemble headers for Person API
+              var strHeaders = "Cache-Control=" + cacheCtl;
+              var headers = querystring.parse(strHeaders);
+              var authHeaders;
+
+              // Sign request and add Authorization Headers
+              authHeaders = generateAuthorizationHeader(
+                url,
+                params,
+                method,
+                "", // no content type needed for GET
+                _authLevel,
+                _clientId,
+                _privateKeyContent,
+                _clientSecret,
+                _realm
+              );
+
+              if (!_.isEmpty(authHeaders)) {
+                _.set(headers, "Authorization", authHeaders + ",Bearer " + validToken);
+              }
+              else {
+                // NOTE: include access token in Authorization header as "Bearer " (with space behind)
+                  _.set(headers, "Authorization", "Bearer " + validToken);
+              }
+
+              // invoke token API
+              var request = restClient.get(url);
+
+              // Set headers
+              if (!_.isUndefined(headers) && !_.isEmpty(headers))
+                request.set(headers);
+
+              // Set Params
+              if (!_.isUndefined(params) && !_.isEmpty(params))
+                request.query(params);
+
+              return request;
+            }
+      security: []
+components:
+  requestBodies:
+    gettoken:
+      content:
+        application/x-www-form-urlencoded:
+          schema:
+            type: object
+            properties:
+              code:
+                description: The authcode given by the authorise API.
+                type: string
+              grant_type:
+                description: Grant type for getting token (default "authorization_code")
+                type: string
+                default: authorization_code
+              client_secret:
+                description: Secret key given to your application during onboarding.
+                type: string
+              client_id:
+                description: Unique ID for your application.
+                type: string
+              redirect_uri:
+                description: Your callback URL for MyInfo to validate.
+                type: string
+            required:
+              - code
+              - client_secret
+              - client_id
+              - redirect_uri
+  securitySchemes:
+    oauth2:
+      description: |
+        The following are the available OAuth2 scopes for MyInfo APIs
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: /authorise
+          tokenUrl: /token
+          scopes:
+            name: Full Name
+            hanyupinyinname: Han Yu Pin Yin name
+            aliasname: Alias name
+            hanyupinyinaliasname: Han Yu Pin Yin Alias name
+            marriedname: Married name
+            sex: Sex
+            race: Race
+            secondaryrace: Secondary Race
+            dialect: Dialect
+            nationality: Nationality
+            dob: Date of Birth
+            birthcountry: Country of Birth
+            residentialstatus: Residential Status
+            passportnumber: Passport Number
+            passportexpirydate: Passport Expiry Date
+            regadd: Registered Address
+            mailadd: Mailing Address
+            billadd: Billing Address
+            housingtype: Housing Type
+            hdbtype: HDB Type
+            ownerprivate: Ownership of Private Property Status
+            email: Email Address
+            homeno: Home Contact Number
+            mobileno: Mobile Number
+            marital: Marital Status
+            marriagecertno: Certificate number of the latest marriage
+            countryofmarriage: Country of the latest marriage
+            marriagedate: Latest Marriage Date
+            divorcedate: Last Divorce Date
+            childrenbirthrecords: Details of Children Birth Records
+            relationships: Details of Relationships
+            edulevel: Highest Education Level
+            gradyear: Year of Graduation
+            schoolname: Name of School
+            occupation: Occupation
+            employment: Employer's Name
+            workpassstatus: Work pass status of a FIN holder
+            workpassexpirydate: Work pass expiry of a foreigner
+            householdincome: Household Income
+            assessableincome: Latest Assessable Income
+            assessyear: Year of Assessment (for Assessable Income)
+            cpfcontributions: Employer CPF Contributions
+            cpfbalances: CPF Balances
+            vehno: Vehicle Number
+  schemas:
+    AuthTokenResponse:
+      description: Authentication Token Response JSON
+      type: object
+      properties:
+        token_type:
+          type: string
+          description: Type of token (Bearer)
+          default: Bearer
+        id_token:
+          type: string
+          description: >-
+            Id token of the person who logged in. This is in the form of  JWT
+            (JSON web token).
+
+
+            **Note:** This is not used.
+        access_token:
+          $ref: '#/components/schemas/JWTAccessToken'
+    JWTAccessToken:
+      title: JWTAccessToken
+      description: >-
+        Access token to be used in the subsequent 'person' endpoint call. This
+        is in the form of  JWT (JSON web token). Include this in your header as
+        'Bearer' when invoking the 'person' API. This JWT complies to the
+        standard 'JSON Web Token (JWT) Profile for OAuth 2.0 Client
+        Authentication and Authorization Grants'
+        (https://tools.ietf.org/html/rfc7523).
+
+
+        **Note:** This token is returned in the form of a compact serialized
+        string. Decode and verify the signature before use.
+      type: object
+      properties:
+        tokenName:
+          type: string
+          description: Name of Token. This will be 'access_token'.
+          default: access_token
+        sub:
+          type: string
+          description: (subject) This is the 'uinfin' of the user who logged in.
+        scope:
+          type: array
+          description: Scopes allowed. This is the list attributes user consented to share.
+          items:
+            type: string
+        nbf:
+          type: string
+          description: >-
+            (not before) - the time before which the token MUST NOT be accepted
+            for processing
+        iss:
+          type: string
+          description: (issuer) Issuer of the JWT.
+        expires_in:
+          type: string
+          description: The remaining lifetime of the access token.
+        iat:
+          type: string
+          description: (issued at) Time which JWT was issued at.
+        exp:
+          type: string
+          description: (expiration time) time which JWT will expire
+        realm:
+          type: string
+          description: Realm for OAuth process. Default "/myinfo"
+        aud:
+          type: string
+          description: Audience for JWT. Default "myinfo".
+        jti:
+          type: string
+          description: (JWT ID) unique identifier for the JWT token.
+        token_type:
+          type: string
+          description: 'type of token, which is "Bearer".'
+          default: Bearer
+        authGrantId:
+          type: string
+          description: Internal system id for auth grant. Not used.
+        auditTrackingId:
+          type: string
+          description: Internal Id for audit tracking. not used.
+    Person:
+      type: object
+      properties:
+        name:
+          type: object
+          title: Name
+          description: Full Name of the Person.
+          properties:
+            value:
+              type: string
+              maxLength: 66
+              description: 'value of the field, should be displayed as it is.'
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        hanyupinyinname:
+          type: object
+          title: HanYuPinYin
+          description: >-
+            Han Yu Pin Yin name of the Person.
+
+
+            *Presentation Logic - If there is a value to `hanyupinyinname` (i.e.
+            not empty), then `hanyupinyinname` should be displayed in a new line
+            below `name`, and formatted with round brackets i.e.
+            "(`hanyupinyinname`)"'*
+          properties:
+            value:
+              type: string
+              maxLength: 66
+              description: value of the field.
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        aliasname:
+          type: object
+          title: Alias
+          description: >-
+            Alias name of the Person.
+
+
+            *Presentation Logic - If there is a value to `aliasname` (i.e. not
+            empty), then `aliasname` should be displayed in a new line below
+            `hanyupinyinname`, and prefixed with the ''@'' symbol i.e.
+            "@`aliasname`".'*
+          properties:
+            value:
+              type: string
+              maxLength: 66
+              description: value of the field.
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        hanyupinyinaliasname:
+          type: object
+          title: HanYuPinYinAlias
+          description: >-
+            Han Yu Pin Yin Alias name of the Person.
+
+
+            *Presentation Logic - If there is a value to `hanyupinyinaliasname`
+            (i.e. not empty), then `hanyupinyinaliasname` should be displayed in
+            a new line below `aliasname`, and prefixed with the ''@'' symbol
+            i.e. "@`hanyupinyinaliasname`".*
+          properties:
+            value:
+              type: string
+              maxLength: 66
+              description: value of the field
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        marriedname:
+          type: object
+          title: MarriedName
+          description: >-
+            Married name of the Person.
+
+
+            *Presentation Logic - If there is a value to `marriedname` (i.e. not
+            empty), then `marriedname` should be displayed in a new line below
+            `hanyupinyinaliasname`.*
+          properties:
+            value:
+              type: string
+              maxLength: 66
+              description: 'value of the field, should be displayed as it is.'
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        sex:
+          type: object
+          title: Sex
+          description: |-
+            Sex of Person.
+            * 'F' - Female
+            * 'M' - Male
+            * 'U' - Unknown
+          properties:
+            value:
+              type: string
+              enum:
+                - F
+                - M
+                - U
+              maxLength: 1
+              description: Value of data field.
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        race:
+          type: object
+          title: Race
+          description: >-
+            Race of Person.
+
+
+            Refer to the [Code reference tables](#section/Support) for list of
+            possible values.
+          properties:
+            value:
+              type: string
+              pattern: '[a-zA-Z]{2}'
+              maxLength: 2
+              description: Value of data field.
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        secondaryrace:
+          type: object
+          title: SecondaryRace
+          description: >-
+            Secondary Race of Person.
+
+
+            Refer to the [Code reference tables](#section/Support) for list of
+            possible values.
+          properties:
+            value:
+              type: string
+              pattern: '[a-zA-Z]{2}'
+              maxLength: 2
+              description: Value of data field.
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        dialect:
+          type: object
+          title: Dialect
+          description: >-
+            Dialect of Person.
+
+
+            Refer to the [Code reference tables](#section/Support) for list of
+            possible values.
+          properties:
+            value:
+              type: string
+              pattern: '[a-zA-Z]{2}'
+              maxLength: 2
+              description: Value of data field.
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        nationality:
+          type: object
+          title: Nationality
+          description: >-
+            Nationality of Person.
+
+
+            Refer to the [Code reference tables](#section/Support) for list of
+            possible values.
+          properties:
+            value:
+              type: string
+              pattern: '[a-zA-Z]{2}'
+              maxLength: 2
+              description: Value of data field.
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        dob:
+          type: object
+          title: DOB
+          description: Date of Birth of Person.
+          properties:
+            value:
+              type: string
+              format: date
+              description: >-
+                Value of data field. See "full-date" in
+                http://xml2rfc.ietf.org/public/rfc/html/rfc3339.html#anchor14
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        birthcountry:
+          type: object
+          title: BirthCountry
+          description: >-
+            Country of Birth of Person.
+
+
+            Refer to the [Code reference tables](#section/Support) for list of
+            possible values.
+          properties:
+            value:
+              type: string
+              pattern: '[a-zA-Z]{2}'
+              maxLength: 2
+              description: Value of data field.
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        residentialstatus:
+          type: object
+          title: ResidentialStatus
+          description: >-
+            Residential Status of Person.
+
+
+            Refer to the [Code reference tables](#section/Support) for list of
+            possible values.
+          properties:
+            code:
+              type: string
+              pattern: '[a-zA-Z]{1}'
+              maxLength: 1
+              description: Value of data field.
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        passportnumber:
+          type: object
+          title: PassportNumber
+          description: >-
+            Passport Number of Person.
+
+
+            Refer to the [Code reference tables](#section/Support) for list of
+            possible values.
+          properties:
+            code:
+              type: string
+              maxLength: 25
+              description: Value of data field.
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        passportexpirydate:
+          type: object
+          title: PassportExpiryDate
+          description: >-
+            Passport Expiry Date of Person.
+
+
+            Refer to the [Code reference tables](#section/Support) for list of
+            possible values.
+          properties:
+            code:
+              type: string
+              format: date
+              description: >-
+                Value of data field. See "full-date" in
+                http://xml2rfc.ietf.org/public/rfc/html/rfc3339.html#anchor14
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        regadd:
+          type: object
+          title: RegAdd
+          description: Registered Address of Person
+          allOf:
+            - $ref: '#/components/schemas/AddressLocal'
+            - $ref: '#/components/schemas/DataFieldProperties'
+        mailadd:
+          type: object
+          title: MailAdd
+          description: Mailing Address of Person
+          allOf:
+            - $ref: '#/components/schemas/AddressLocal'
+            - $ref: '#/components/schemas/DataFieldProperties'
+        billadd:
+          type: object
+          title: BillAdd
+          description: Billing Address of Person
+          allOf:
+            - $ref: '#/components/schemas/AddressLocal'
+            - $ref: '#/components/schemas/DataFieldProperties'
+        housingtype:
+          type: object
+          title: HousingType
+          description: |-
+            Housing Type of Person (non-HDB only).
+
+            **Note:** This value will be null if housing type is HDB;
+
+            Refer to `hdbtype` for detailed HDB type.
+
+            * '121' - DETACHED HOUSE
+            * '122' - SEMI-DETACHED HOUSE
+            * '123' - TERRACE HOUSE
+            * '131' - CONDOMINIUM
+            * '132' - EXECUTIVE CONDOMINIUM
+            * '139' - APARTMENT
+          properties:
+            value:
+              type: string
+              description: value of data field
+              enum:
+                - 121
+                - 122
+                - 123
+                - 131
+                - 132
+                - 139
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        hdbtype:
+          type: object
+          title: HDBType
+          description: |-
+            HDB Type of Person (HDB only).
+
+            **Note:** This value will be null if housing type is not HDB.
+
+            * '111' - 1-ROOM FLAT (HDB)
+            * '112' - 2-ROOM FLAT (HDB)
+            * '113' - 3-ROOM FLAT (HDB)
+            * '114' - 4-ROOM FLAT (HDB)
+            * '115' - 5-ROOM FLAT (HDB)
+            * '116' - EXECUTIVE FLAT (HDB)
+            * '118' - STUDIO APARTMENT (HDB)
+          properties:
+            value:
+              type: string
+              description: Value of data field
+              enum:
+                - 111
+                - 112
+                - 113
+                - 114
+                - 115
+                - 116
+                - 118
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        ownerprivate:
+          type: object
+          title: OwnerPrivate
+          description: >-
+            Ownership of Private Property Status of Person (based on IRAS
+            information).
+
+
+            * true
+
+            * false
+
+            * null (data not available)
+          properties:
+            value:
+              type: boolean
+              description: Value of data field.
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        email:
+          type: object
+          title: Email
+          description: Email Address of Person.
+          properties:
+            value:
+              type: string
+              maxLength: 320
+              description: Value of data field.
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        homeno:
+          type: object
+          title: HomeNo
+          description: Home Contact Number of Person.
+          allOf:
+            - $ref: '#/components/schemas/PhoneNumLocal'
+            - $ref: '#/components/schemas/DataFieldProperties'
+        mobileno:
+          type: object
+          title: MobileNo
+          description: Mobile Number of Person.
+          allOf:
+            - $ref: '#/components/schemas/PhoneNumLocal'
+            - $ref: '#/components/schemas/DataFieldProperties'
+        marital:
+          type: object
+          title: Marital
+          description: >-
+            Marital Status of Person.
+
+
+            * '1' - SINGLE
+
+            * '2' - MARRIED
+
+            * '3' - WIDOWED
+
+            * '5' - DIVORCED
+
+
+            **Note:** This field must be made **editable** on your digital
+            service form even though `source` is '1' (Government Verified).
+          properties:
+            value:
+              type: string
+              description: value of data field
+              enum:
+                - 1
+                - 2
+                - 3
+                - 5
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        marriagecertno:
+          type: object
+          title: MarriageCertNo
+          description: >-
+            Certificate number of the latest marriage.
+
+
+
+            **Note:** This field must be made **editable** on your digital
+            service form even though `source` is '1' (Government Verified).
+          properties:
+            value:
+              type: string
+              maxLength: 15
+              description: Value of data field.
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        countryofmarriage:
+          type: object
+          title: CountryOfMarriage
+          description: >-
+            Country of the latest marriage.
+
+
+
+            **Note:** This field must be made **editable** on your digital
+            service form even though `source` is '1' (Government Verified).
+          properties:
+            value:
+              type: string
+              maxLength: 2
+              description: Value of data field.
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        marriagedate:
+          type: object
+          title: MarriageDate
+          description: >
+            Latest Marriage Date of Person.
+
+
+
+            **Note:** This field must be made **editable** on your digital
+            service form even though `source` is '1' (Government Verified).
+          properties:
+            value:
+              type: string
+              format: date
+              description: >-
+                Value of data field.
+
+
+                See "full-date" in
+                http://xml2rfc.ietf.org/public/rfc/html/rfc3339.html#anchor14
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        divorcedate:
+          type: object
+          title: DivorceDate
+          description: >
+            Last Divorce Date of Person.
+
+
+
+            **Note:** This field must be made **editable** on your digital
+            service form even though `source` is '1' (Government Verified).
+          properties:
+            value:
+              type: string
+              format: date
+              description: >-
+                Value of data field.
+
+
+                See "full-date" in
+                http://xml2rfc.ietf.org/public/rfc/html/rfc3339.html#anchor14
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        childrenbirthrecords:
+          type: object
+          title: ChildrenBirthRecords
+          description: >-
+            This refers to only local registered birth records(based on ICA’s
+            electronic Birth Certificate Records from 1985 onwards).
+
+
+            This includes adoption of locally registered child.
+
+
+            For child below 21, the child’s Birth Cert No, Name, Sex, Race,
+            Dialect, Date of Birth and Time of Birth will be shown.
+
+
+            For child above 21, only the child’s Birth Cert Number will be
+            shown.
+          properties:
+            birthrecords:
+              type: array
+              items:
+                $ref: '#/components/schemas/ChildBirthRecord'
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        relationships:
+          type: array
+          deprecated: true
+          title: Relationships
+          items:
+            $ref: '#/components/schemas/Relationship'
+          description: Details of Relationships of Person
+        edulevel:
+          type: object
+          title: EduLevel
+          description: >-
+            Highest Education Level of Person.
+
+
+            * '0' - NO FORMAL QUALIFICATION / PRE-PRIMARY / LOWER PRIMARY
+
+            * '1' - PRIMARY
+
+            * '2' - LOWER SECONDARY
+
+            * '3' - SECONDARY
+
+            * '4' - POST-SECONDARY (NON-TERTIARY): GENERAL & VOCATION
+
+            * '5' - POLYTECHNIC DIPLOMA
+
+            * '6' - PROFESSIONAL QUALIFICATION AND OTHER DIPLOMA
+
+            * '7' - BACHELOR'S OR EQUIVALENT
+
+            * '8' - POSTGRADUATE DIPLOMA / CERTIFICATE (EXCLUDING MASTER'S AND
+            DOCTORATE)
+
+            * '9' - MASTER'S AND DOCTORATE OR EQUIVALENT
+
+            * 'N' - MODULAR CERTIFICATION (NON-AWARD COURSES / NON-FULL
+            QUALIFICATIONS)
+          properties:
+            value:
+              type: string
+              description: value of data field
+              enum:
+                - '0'
+                - '1'
+                - '2'
+                - '3'
+                - '4'
+                - '5'
+                - '6'
+                - '7'
+                - '8'
+                - '9'
+                - 'N'
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        gradyear:
+          type: object
+          title: GradYear
+          description: 'Year of Graduation of Person. Format: YYYY'
+          properties:
+            value:
+              type: string
+              pattern: '[0-9]{4}'
+              maxLength: 4
+              description: value of data field
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        schoolname:
+          type: object
+          title: SchoolName
+          description: 'Name of School of Person. '
+          properties:
+            type:
+              type: string
+              maxLength: 10
+              description: >-
+                Code value of school name.
+
+
+                Refer to the [Code reference tables](#section/Support) for list
+                of possible school names.
+
+
+                **Note:** Code and desc are mutually exclusive.
+            desc:
+              type: string
+              maxLength: 100
+              description: |-
+                Free text value of school name.
+                **Note:** Code and desc are mutually exclusive.
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        occupation:
+          type: object
+          title: Occupation
+          description: 'Occupation of Person. '
+          properties:
+            value:
+              type: string
+              maxLength: 5
+              pattern: '[0-9]{5}'
+              description: >-
+                Code value of occupation based on SSOC 2015.
+
+
+                For full list, refer to SSOC 2015 at
+                https://www.singstat.gov.sg/standards/standards-and-classifications/ssoc.
+
+
+                For FIN holders, blank will be returned.
+
+
+                **Note:** Value and desc are mutually exclusive.
+            desc:
+              type: string
+              maxLength: 100
+              description: |-
+                Free text value of occupation.
+
+                **Note:** Value and desc are mutually exclusive.
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        employment:
+          type: object
+          title: Employment
+          description: Employer's Name of Person.
+          properties:
+            value:
+              type: string
+              maxLength: 124
+              description: Value of data field.
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        workpassstatus:
+          type: object
+          title: WorkPassStatus
+          description: "Work pass status of a FIN holder. <br/>**Note:** Only applies to a foreigner with a valid work pass. \n*\tLive\n*\tApproved\n"
+          properties:
+            value:
+              type: string
+              enum:
+                - Live
+                - Approved
+              description: Value of data field.
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        workpassexpirydate:
+          type: object
+          title: WorkPassExpiryDate
+          description: >-
+            Work pass expiry of a foreigner. <br/>**Note:** Only applies to a
+            foreigner with a valid work pass.
+          properties:
+            value:
+              type: string
+              format: date
+              description: >-
+                Value of data field. See "full-date" in
+                http://xml2rfc.ietf.org/public/rfc/html/rfc3339.html#anchor14
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        householdincome:
+          type: object
+          title: HouseholdIncome
+          description: Household Income of Person in SGD.
+          properties:
+            high:
+              type: number
+              format: double
+              description: upper bound of the range of household income bracket
+            low:
+              type: number
+              format: double
+              description: lower bound of the range of household income bracket
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        assessableincome:
+          type: object
+          title: AssessableIncome
+          description: Latest Assessable Income of Person in SGD.
+          properties:
+            value:
+              type: number
+              format: double
+              description: Value of data field.
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        assessyear:
+          type: object
+          title: AssessYear
+          description: 'Year of Assessment (for Assessable Income). Format: YYYY'
+          properties:
+            value:
+              type: string
+              pattern: '[0-9]{4}'
+              maxLength: 4
+              description: value of data field
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        cpfcontributions:
+          type: object
+          title: CPFContributions
+          description: >-
+            Employer CPF Contributions of Person in SGD. Does not include any
+            non-employer contributions. Maximum past 14 months' of
+            contributions.
+          properties:
+            contributions:
+              type: array
+              items:
+                $ref: '#/components/schemas/CPFContribution'
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        cpfbalances:
+          type: object
+          title: CPFBalances
+          description: CPF Balances of Person in SGD.
+          properties:
+            ma:
+              type: number
+              format: double
+              description: Amount Balance in CPF-MA
+            oa:
+              type: number
+              format: double
+              description: Amount Balance in CPF-OA
+            sa:
+              type: number
+              format: double
+              description: Amount Balance in CPF-SA
+            ra:
+              type: number
+              format: double
+              description: Amount Balance in CPF-RA
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+        vehno:
+          type: object
+          title: VehNo
+          description: Vehicle Number of Person.
+          properties:
+            value:
+              type: string
+              maxLength: 12
+              description: Value of data field.
+          allOf:
+            - $ref: '#/components/schemas/DataFieldProperties'
+      example:
+        name:
+          lastupdated: '2015-06-01'
+          source: '1'
+          classification: C
+          value: TAN XIAO HUI
+        hanyupinyinname:
+          lastupdated: '2015-06-01'
+          source: '1'
+          classification: C
+          value: CHEN XIAO HUI
+        aliasname:
+          lastupdated: '2015-06-01'
+          source: '1'
+          classification: C
+          value: TRICIA TAN XIAO HUI
+        hanyupinyinaliasname:
+          lastupdated: '2015-06-01'
+          source: '1'
+          classification: C
+          value: ''
+        marriedname:
+          lastupdated: '2015-06-01'
+          source: '1'
+          classification: C
+          value: ''
+        sex:
+          lastupdated: '2016-03-11'
+          source: '1'
+          classification: C
+          value: F
+        race:
+          lastupdated: '2016-03-11'
+          source: '1'
+          classification: C
+          value: CN
+        secondaryrace:
+          lastupdated: '2017-08-25'
+          source: '1'
+          classification: C
+          value: EU
+        dialect:
+          lastupdated: '2016-03-11'
+          source: '1'
+          classification: C
+          value: SG
+        nationality:
+          lastupdated: '2016-03-11'
+          source: '1'
+          classification: C
+          value: SG
+        dob:
+          lastupdated: '2016-03-11'
+          source: '1'
+          classification: C
+          value: '1958-05-17'
+        birthcountry:
+          lastupdated: '2016-03-11'
+          source: '1'
+          classification: C
+          value: SG
+        residentialstatus:
+          lastupdated: '2017-08-25'
+          source: '1'
+          classification: C
+          value: C
+        passportnumber:
+          lastupdated: '2017-08-25'
+          source: '1'
+          classification: C
+          value: E35463874W
+        passportexpirydate:
+          lastupdated: '2017-08-25'
+          source: '1'
+          classification: C
+          value: '2020-01-01'
+        regadd:
+          country: SG
+          unit: '128'
+          street: BEDOK NORTH AVENUE 1
+          lastupdated: '2016-03-11'
+          block: '548'
+          source: '1'
+          postal: '460548'
+          classification: C
+          floor: 09
+          building: ''
+        mailadd:
+          country: SG
+          unit: '128'
+          street: BEDOK NORTH AVENUE 1
+          lastupdated: '2016-03-11'
+          block: '548'
+          source: '2'
+          postal: '460548'
+          classification: C
+          floor: 09
+          building: ''
+        billadd:
+          country: SG
+          unit: ''
+          street: ''
+          lastupdated: ''
+          block: ''
+          source: ''
+          postal: ''
+          classification: ''
+          floor: ''
+          building: ''
+        housingtype:
+          lastupdated: '2015-12-23'
+          source: '1'
+          classification: C
+          value: ''
+        hdbtype:
+          lastupdated: '2015-12-23'
+          source: '1'
+          classification: C
+          value: '111'
+        ownerprivate:
+          lastupdated: '2015-12-23'
+          source: '1'
+          classification: C
+          value: 'N'
+        email:
+          lastupdated: '2017-12-13'
+          source: '4'
+          classification: C
+          value: test@gmail.com
+        homeno:
+          code: '65'
+          prefix: +
+          lastupdated: '2017-11-20'
+          source: '2'
+          classification: C
+          nbr: '66132665'
+        mobileno:
+          code: '65'
+          prefix: +
+          lastupdated: '2017-12-13'
+          source: '4'
+          classification: C
+          nbr: '97324992'
+        marital:
+          lastupdated: '2017-03-29'
+          source: '1'
+          classification: C
+          value: '1'
+        marriagecertno:
+          lastupdated: '2018-03-02'
+          source: '1'
+          classification: C
+          value: '123456789012345'
+        countryofmarriage:
+          lastupdated: '2018-03-02'
+          source: '1'
+          classification: C
+          value: SG
+        marriagedate:
+          lastupdated: ''
+          source: '1'
+          classification: C
+          value: ''
+        divorcedate:
+          lastupdated: ''
+          source: '1'
+          classification: C
+          value: ''
+        childrenbirthrecords:
+          - dialect: HK
+            race: CN
+            tob: 0901
+            sex: F
+            source: '1'
+            classification: C
+            birthcertno: S5562882C
+            hanyupinyinname: Cheng Pei Ni
+            hanyupinyinaliasname: ''
+            marriedname: ''
+            aliasname: ''
+            dob: '2011-09-10'
+            name: Jo Tan Pei Ni
+            lastupdated: '2018-05-16'
+            secondaryrace: ''
+          - dialect: HK
+            race: CN
+            tob: '2021'
+            sex: F
+            source: '1'
+            classification: C
+            birthcertno: S8816582I
+            hanyupinyinname: Cheng Wei Ling
+            hanyupinyinaliasname: ''
+            marriedname: ''
+            aliasname: ''
+            dob: '2015-07-18'
+            name: Joyce Tan Wei Ling
+            lastupdated: '2018-05-16'
+            secondaryrace: ''
+          - dialect: HK
+            race: CN
+            tob: 0901
+            sex: F
+            source: '1'
+            classification: C
+            birthcertno: T0202564C
+            hanyupinyinname: Cheng Shu Hui
+            hanyupinyinaliasname: ''
+            marriedname: ''
+            aliasname: ''
+            dob: '2012-09-10'
+            name: Joycelyn Tan Shu Hui
+            lastupdated: '2018-05-16'
+            secondaryrace: ''
+        relationships:
+          - passportno: ''
+            name: TAN AH MUI
+            lastupdated: '2017-10-11'
+            source: '2'
+            classification: C
+            type: REL201
+            idno: S9999999C
+          - passportno: ''
+            name: TAN CHIN SOON
+            lastupdated: '2017-10-11'
+            source: '2'
+            classification: C
+            type: REL202
+            idno: S9999998E
+        edulevel:
+          lastupdated: '2017-10-11'
+          source: '2'
+          classification: C
+          value: '3'
+        gradyear:
+          lastupdated: '2017-10-11'
+          source: '2'
+          classification: C
+          value: '1978'
+        schoolname:
+          lastupdated: '2017-10-11'
+          source: '2'
+          classification: C
+          value: T07GS3011J
+          desc: SIGLAP SECONDARY SCHOOL
+        occupation:
+          lastupdated: '2017-10-11'
+          source: '2'
+          classification: C
+          value: '53201'
+          desc: HEALTHCARE ASSISTANT
+        employment:
+          lastupdated: '2017-10-11'
+          source: '2'
+          classification: C
+          value: ALPHA
+        workpassstatus:
+          lastupdated: '2018-03-02'
+          source: '1'
+          classification: C
+          value: Live
+        workpassexpirydate:
+          lastupdated: '2018-03-02'
+          source: '1'
+          classification: C
+          value: '2018-12-31'
+        householdincome:
+          high: '5999'
+          low: '5000'
+          lastupdated: '2017-10-24'
+          source: '2'
+          classification: C
+        assessableincome:
+          lastupdated: '2015-12-23'
+          source: '1'
+          classification: C
+          value: '1456789.00'
+        assessyear:
+          lastupdated: '2015-12-23'
+          source: '1'
+          classification: C
+          value: '2015'
+        cpfcontributions:
+          cpfcontribution:
+            - date: '2016-12-01'
+              amount: '500.00'
+              month: 2016-11
+              employer: Crystal Horse Invest Pte Ltd
+            - date: '2016-12-12'
+              amount: '500.00'
+              month: 2016-12
+              employer: Crystal Horse Invest Pte Ltd
+            - date: '2016-12-21'
+              amount: '500.00'
+              month: 2016-12
+              employer: Crystal Horse Invest Pte Ltd
+            - date: '2017-01-01'
+              amount: '500.00'
+              month: 2016-12
+              employer: Crystal Horse Invest Pte Ltd
+            - date: '2017-01-12'
+              amount: '500.00'
+              month: 2017-01
+              employer: Crystal Horse Invest Pte Ltd
+            - date: '2017-01-21'
+              amount: '500.00'
+              month: 2017-01
+              employer: Crystal Horse Invest Pte Ltd
+            - date: '2017-02-01'
+              amount: '500.00'
+              month: 2017-01
+              employer: Crystal Horse Invest Pte Ltd
+            - date: '2017-02-12'
+              amount: '500.00'
+              month: 2017-02
+              employer: Crystal Horse Invest Pte Ltd
+            - date: '2017-02-21'
+              amount: '500.00'
+              month: 2017-02
+              employer: Crystal Horse Invest Pte Ltd
+            - date: '2017-03-01'
+              amount: '500.00'
+              month: 2017-02
+              employer: Crystal Horse Invest Pte Ltd
+            - date: '2017-03-12'
+              amount: '500.00'
+              month: 2017-03
+              employer: Crystal Horse Invest Pte Ltd
+            - date: '2017-03-21'
+              amount: '500.00'
+              month: 2017-03
+              employer: Crystal Horse Invest Pte Ltd
+            - date: '2017-04-01'
+              amount: '500.00'
+              month: 2017-03
+              employer: Crystal Horse Invest Pte Ltd
+            - date: '2017-04-12'
+              amount: '500.00'
+              month: 2017-04
+              employer: Crystal Horse Invest Pte Ltd
+            - date: '2017-04-21'
+              amount: '500.00'
+              month: 2017-04
+              employer: Crystal Horse Invest Pte Ltd
+            - date: '2017-05-01'
+              amount: '500.00'
+              month: 2017-04
+              employer: Crystal Horse Invest Pte Ltd
+            - date: '2017-05-12'
+              amount: '500.00'
+              month: 2017-05
+              employer: Crystal Horse Invest Pte Ltd
+            - date: '2017-05-21'
+              amount: '500.00'
+              month: 2017-05
+              employer: Crystal Horse Invest Pte Ltd
+            - date: '2017-06-01'
+              amount: '500.00'
+              month: 2017-05
+              employer: Crystal Horse Invest Pte Ltd
+            - date: '2017-06-12'
+              amount: '500.00'
+              month: 2017-06
+              employer: Crystal Horse Invest Pte Ltd
+            - date: '2017-06-21'
+              amount: '500.00'
+              month: 2017-06
+              employer: Crystal Horse Invest Pte Ltd
+            - date: '2017-07-01'
+              amount: '500.00'
+              month: 2017-06
+              employer: Crystal Horse Invest Pte Ltd
+            - date: '2017-07-12'
+              amount: '500.00'
+              month: 2017-07
+              employer: Crystal Horse Invest Pte Ltd
+            - date: '2017-07-21'
+              amount: '500.00'
+              month: 2017-07
+              employer: Crystal Horse Invest Pte Ltd
+            - date: '2017-08-01'
+              amount: '500.00'
+              month: 2017-07
+              employer: Crystal Horse Invest Pte Ltd
+            - date: '2017-08-12'
+              amount: '750.00'
+              month: 2017-08
+              employer: Delta Marine Consultants PL
+            - date: '2017-08-21'
+              amount: '750.00'
+              month: 2017-08
+              employer: Delta Marine Consultants PL
+            - date: '2017-09-01'
+              amount: '750.00'
+              month: 2017-08
+              employer: Delta Marine Consultants PL
+            - date: '2017-09-12'
+              amount: '750.00'
+              month: 2017-09
+              employer: Delta Marine Consultants PL
+            - date: '2017-09-21'
+              amount: '750.00'
+              month: 2017-09
+              employer: Delta Marine Consultants PL
+            - date: '2017-10-01'
+              amount: '750.00'
+              month: 2017-09
+              employer: Delta Marine Consultants PL
+            - date: '2017-10-12'
+              amount: '750.00'
+              month: 2017-10
+              employer: Delta Marine Consultants PL
+            - date: '2017-10-21'
+              amount: '750.00'
+              month: 2017-10
+              employer: Delta Marine Consultants PL
+            - date: '2017-11-01'
+              amount: '750.00'
+              month: 2017-10
+              employer: Delta Marine Consultants PL
+            - date: '2017-11-12'
+              amount: '750.00'
+              month: 2017-11
+              employer: Delta Marine Consultants PL
+            - date: '2017-11-21'
+              amount: '750.00'
+              month: 2017-11
+              employer: Delta Marine Consultants PL
+            - date: '2017-12-01'
+              amount: '750.00'
+              month: 2017-11
+              employer: Delta Marine Consultants PL
+            - date: '2017-12-12'
+              amount: '750.00'
+              month: 2017-12
+              employer: Delta Marine Consultants PL
+            - date: '2017-12-21'
+              amount: '750.00'
+              month: 2017-12
+              employer: Delta Marine Consultants PL
+            - date: '2018-01-01'
+              amount: '750.00'
+              month: 2017-12
+              employer: Delta Marine Consultants PL
+            - date: '2018-01-12'
+              amount: '750.00'
+              month: 2018-01
+              employer: Delta Marine Consultants PL
+            - date: '2018-01-21'
+              amount: '750.00'
+              month: 2018-01
+              employer: Delta Marine Consultants PL
+          lastupdated: '2015-12-23'
+          source: '1'
+          classification: C
+        cpfbalances:
+          oa: '1581.48'
+          ma: '11470.70'
+          lastupdated: '2015-12-23'
+          source: '1'
+          classification: C
+          sa: '21967.09'
+        vehno:
+          lastupdated: ''
+          source: '2'
+          classification: C
+          value: ''
+    DataFieldProperties:
+      type: object
+      properties:
+        classification:
+          type: string
+          maxLength: 1
+          enum:
+            - C
+          default: C
+          description: Data classification of data field. Default 'C' - Confidential.
+        source:
+          type: string
+          maxLength: 1
+          enum:
+            - '1'
+            - '2'
+            - '3'
+            - '4'
+          description: >-
+            Source of data.
+
+
+            * '1' - Government-verified
+
+            * '2' - User provided
+
+            * '3' - Field is Not Applicable to Person
+
+            * '4' - Verified by SingPass
+
+
+            **Note:** All Government-verified fields must be **non-editable** on
+            your digital service form (some exceptions apply - see individual
+            field descriptions).
+        lastupdated:
+          type: string
+          format: date
+          description: >-
+            Last updated date of data field. See "full-date" in
+            http://xml2rfc.ietf.org/public/rfc/html/rfc3339.html#anchor14
+    AddressLocal:
+      type: object
+      properties:
+        block:
+          type: string
+          maxLength: 10
+          description: Block of Address
+        building:
+          type: string
+          maxLength: 32
+          description: Building of Address
+        floor:
+          type: string
+          maxLength: 3
+          description: Floor of Address
+        unit:
+          type: string
+          maxLength: 5
+          description: Unit of Address
+        street:
+          type: string
+          maxLength: 32
+          description: Street of Address
+        postal:
+          type: string
+          minLength: 6
+          maxLength: 6
+          description: Postal Code of Address
+        country:
+          type: string
+          minLength: 2
+          maxLength: 2
+          default: SG
+          description: Country of Address. For AddressLocal this will always be "SG".
+    CPFContribution:
+      type: object
+      description: CPF contribution
+      properties:
+        employer:
+          type: string
+          maxLength: 80
+          description: Employer who paid the Contribution.
+        date:
+          type: string
+          format: date
+          description: >-
+            Date of Contribution Paid. See "full-date" in
+            http://xml2rfc.ietf.org/public/rfc/htm
+        month:
+          type: string
+          maxLength: 7
+          description: 'Month for which CPF Contribution was paid. Format: YYYY-MM'
+        amount:
+          type: number
+          format: double
+          description: Amount of contribution in SGD
+    Relationship:
+      type: object
+      properties:
+        type:
+          type: string
+          maxLength: 6
+          description: |
+            Type of Relationship.
+            * REL101 - HUSBAND
+            * REL102 - WIFE
+            * REL201 - MOTHER
+            * REL202 - FATHER
+            * REL401 - SON
+            * REL402 - DAUGHTER
+            * REL601 - BROTHER
+            * REL602 - SISTER
+          enum:
+            - REL101
+            - REL102
+            - REL201
+            - REL202
+            - REL401
+            - REL402
+            - REL601
+            - REL602
+        name:
+          type: string
+          maxLength: 66
+          description: Name of family member.
+        idno:
+          type: string
+          maxLength: 9
+          description: >-
+            ID Number (NRIC/FIN) of family member. <br/>**Note:** 'idno' and
+            'passportno' are mutually exclusive.
+        passportno:
+          type: string
+          maxLength: 9
+          description: >-
+            Passport Number of family member. <br/>**Note:** 'idno' and
+            'passportno' are mutually exclusive.
+      allOf:
+        - $ref: '#/components/schemas/DataFieldProperties'
+    ChildBirthRecord:
+      type: object
+      properties:
+        birthcertno:
+          type: string
+          maxLength: 15
+          description: Birth certificate number
+        name:
+          type: string
+          maxLength: 66
+          description: Full Name of child
+        hanyupinyinname:
+          type: string
+          maxLength: 66
+          description: >-
+            Han Yu Pin Yin name of child.
+
+
+            *Presentation Logic - If there is a value to `hanyupinyinname` (i.e.
+            not empty), then `hanyupinyinname` should be displayed in a new line
+            below `name`, and formatted with round brackets i.e.
+            \"(`hanyupinyinname`)\".*
+        aliasname:
+          type: string
+          maxLength: 66
+          description: >-
+            Alias name of child.
+
+
+            *Presentation Logic - If there is a value to `aliasname` (i.e. not
+            empty), then `aliasname` should be displayed in a new line below
+            `hanyupinyinname`, and prefixed with the ''@'' symbol i.e.
+            \"@`aliasname`\".*
+        hanyupinyinaliasname:
+          type: string
+          maxLength: 66
+          description: >-
+            Han Yu Pin Yin Alias name of child.
+
+
+            *Presentation Logic - If there is a value to `hanyupinyinaliasname`
+            (i.e. not empty), then `hanyupinyinaliasname` should be displayed in
+            a new line below `aliasname`, and prefixed with the ''@'' symbol
+            i.e. \"@`hanyupinyinaliasname`\".*
+        marriedname:
+          type: string
+          maxLength: 66
+          title: MarriedName
+          description: >-
+            Married name of child.
+
+
+            *Presentation Logic - If there is a value to `marriedname` (i.e. not
+            empty), then `marriedname` should be displayed in a new line below
+            `hanyupinyinaliasname`.*
+        sex:
+          type: string
+          maxLength: 1
+          enum:
+            - F
+            - M
+            - U
+          description: |-
+            Sex of child.
+            * F - Female
+            * M - Male
+            * U - Unknown
+        race:
+          type: string
+          maxLength: 2
+          pattern: '[a-zA-Z]{2}'
+          description: >-
+            Race of child.
+
+
+            Refer to the [Code reference tables](#section/Support) for list of
+            possible values.
+        secondaryrace:
+          type: string
+          maxLength: 2
+          pattern: '[a-zA-Z]{2}'
+          description: >-
+            Secondary Race of child.
+
+
+            Refer to the [Code reference tables](#section/Support) for list of
+            possible values.
+        dialect:
+          type: string
+          maxLength: 2
+          pattern: '[a-zA-Z]{2}'
+          description: >-
+            Dialect of child.
+
+
+            Refer to the [Code reference tables](#section/Support) for list of
+            possible values.
+        dob:
+          type: string
+          format: date
+          description: >-
+            Date of Birth of child.
+
+
+            See "full-date" in
+            http://xml2rfc.ietf.org/public/rfc/html/rfc3339.html#anchor14
+        tob:
+          type: string
+          maxLength: 4
+          description: |-
+            Time of Birth of child.
+
+            Format: HHMM
+    PhoneNumLocal:
+      type: object
+      properties:
+        prefix:
+          type: string
+          default: +
+          maxLength: 1
+          description: >-
+            Prefix of Phone Number. Defaults to '+'. If phone number is blank,
+            prefix will be returned as blank.
+        code:
+          type: string
+          default: '065'
+          maxLength: 3
+          description: >-
+            Area Code of Phone Number. Default to '065'. If phone number is
+            blank, code will be returned as blank.
+        nbr:
+          type: string
+          maxLength: 12
+          description: Phone Number.
+    TokenError:
+      type: object
+      properties:
+        error_description:
+          type: string
+        error:
+          type: string
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        fields:
+          type: string

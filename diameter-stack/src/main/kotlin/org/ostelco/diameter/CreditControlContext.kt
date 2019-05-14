@@ -4,7 +4,6 @@ import org.jdiameter.api.Avp
 import org.jdiameter.api.AvpSet
 import org.jdiameter.api.InternalException
 import org.jdiameter.api.Request
-import org.jdiameter.api.ResultCode
 import org.jdiameter.api.cca.events.JCreditControlRequest
 import org.jdiameter.common.impl.app.cca.JCreditControlAnswerImpl
 import org.ostelco.diameter.model.CreditControlAnswer
@@ -25,13 +24,17 @@ import org.ostelco.diameter.util.DiameterUtilities
 class CreditControlContext(
         val sessionId: String,
         val originalCreditControlRequest: JCreditControlRequest,
-        val originHost: String,
-        val originRealm: String) {
+        private val originHost: String,
+        private val originRealm: String) {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
-    // Set to true, when answer to not to be sent to PGw. Default value is false.
+    private val VENDOR_ID_3GPP = 10415L
+
+    // Set to true, when answer to not to be sent to P-GW.
     var skipAnswer: Boolean = false
+
+    var requestTime = System.currentTimeMillis()
 
     val creditControlRequest: CreditControlRequest = AvpParser().parse(
             CreditControlRequest::class,
@@ -43,10 +46,9 @@ class CreditControlContext(
 
     fun createCCA(creditControlAnswer: CreditControlAnswer): JCreditControlAnswerImpl? {
         var answer: JCreditControlAnswerImpl? = null
-        val resultCode = ResultCode.SUCCESS
 
         try {
-            answer = JCreditControlAnswerImpl(originalCreditControlRequest.message as Request, ResultCode.SUCCESS.toLong())
+            answer = JCreditControlAnswerImpl(originalCreditControlRequest.message as Request, creditControlAnswer.resultCode.value.toLong())
 
             val ccaAvps = answer.message.avps
 
@@ -56,37 +58,9 @@ class CreditControlContext(
             ccaAvps.addAvp(Avp.ORIGIN_HOST, originHost, true, false, true)
             ccaAvps.addAvp(Avp.ORIGIN_REALM, originRealm, true, false, true)
 
-            val multipleServiceCreditControls = creditControlAnswer.multipleServiceCreditControls
+            addMultipleServiceCreditControls(ccaAvps, creditControlAnswer)
 
-            for (mscc in multipleServiceCreditControls) {
-
-                val answerMSCC = ccaAvps.addGroupedAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL, true, false)
-                if (mscc.ratingGroup > 0) {
-                    answerMSCC.addAvp(Avp.RATING_GROUP, mscc.ratingGroup, true, false, true)
-                }
-
-                if (mscc.serviceIdentifier > 0) {
-                    // This is a bug in jDiameter due to which this unsigned32 field has to be set as Int and not Long.
-                    answerMSCC.addAvp(Avp.SERVICE_IDENTIFIER_CCA, mscc.serviceIdentifier.toInt(), true, false)
-                }
-
-                if (originalCreditControlRequest.requestTypeAVPValue != RequestType.TERMINATION_REQUEST) {
-
-                    if (mscc.finalUnitIndication != null) {
-                        addFinalUnitAction(answerMSCC, mscc)
-                    }
-
-                    if (mscc.granted.total > -1) {
-                        val gsuAvp = answerMSCC.addGroupedAvp(Avp.GRANTED_SERVICE_UNIT, true, false)
-                        gsuAvp.addAvp(Avp.CC_INPUT_OCTETS, 0L, true, false)
-                        gsuAvp.addAvp(Avp.CC_OUTPUT_OCTETS, 0L, true, false)
-                        gsuAvp.addAvp(Avp.CC_TOTAL_OCTETS, mscc.granted.total, true, false)
-                    }
-                }
-                answerMSCC.addAvp(Avp.RESULT_CODE, resultCode, true, false)
-                answerMSCC.addAvp(Avp.VALIDITY_TIME, mscc.validityTime, true, false)
-            }
-            logger.info("Credit-Control-Answer")
+            logger.info("Created Credit-Control-Answer")
             DiameterUtilities().printAvps(ccaAvps)
 
         } catch (e: InternalException) {
@@ -94,6 +68,43 @@ class CreditControlContext(
         }
 
         return answer
+    }
+
+    private fun addMultipleServiceCreditControls(ccaAvps: AvpSet, creditControlAnswer: CreditControlAnswer) {
+        for (mscc in creditControlAnswer.multipleServiceCreditControls) {
+
+            val answerMSCC = ccaAvps.addGroupedAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL, true, false)
+            if (mscc.ratingGroup > 0) {
+                answerMSCC.addAvp(Avp.RATING_GROUP, mscc.ratingGroup, true, false, true)
+            }
+
+            if (mscc.serviceIdentifier > 0) {
+                // This is a bug in jDiameter due to which this unsigned32 field has to be set as Int and not Long.
+                answerMSCC.addAvp(Avp.SERVICE_IDENTIFIER_CCA, mscc.serviceIdentifier.toInt(), true, false)
+            }
+
+            if (originalCreditControlRequest.requestTypeAVPValue != RequestType.TERMINATION_REQUEST) {
+
+                if (mscc.finalUnitIndication != null) {
+                    addFinalUnitAction(answerMSCC, mscc)
+                }
+
+                if (mscc.granted.total > -1) {
+                    val gsuAvp = answerMSCC.addGroupedAvp(Avp.GRANTED_SERVICE_UNIT, true, false)
+                    //gsuAvp.addAvp(Avp.CC_INPUT_OCTETS, 0L, true, false)
+                    //gsuAvp.addAvp(Avp.CC_OUTPUT_OCTETS, 0L, true, false)
+                    gsuAvp.addAvp(Avp.CC_TOTAL_OCTETS, mscc.granted.total, true, false)
+                }
+            }
+
+            answerMSCC.addAvp(Avp.RESULT_CODE, mscc.resultCode.value, true, false)
+            answerMSCC.addAvp(Avp.VALIDITY_TIME, mscc.validityTime, true, false)
+
+            if (mscc.granted.total > 0) {
+                answerMSCC.addAvp(Avp.QUOTA_HOLDING_TIME, mscc.quotaHoldingTime, VENDOR_ID_3GPP, true, false, true)
+                answerMSCC.addAvp(Avp.VOLUME_QUOTA_THRESHOLD, mscc.volumeQuotaThreshold, VENDOR_ID_3GPP,true, false, true)
+            }
+        }
     }
 
     private fun addFinalUnitAction(answerMSCC: AvpSet, mscc: MultipleServiceCreditControl) {
@@ -118,5 +129,9 @@ class CreditControlContext(
                 }
             }
         }
+    }
+
+    fun logLatency() {
+        logger.info("Time from request to answer {} ms", System.currentTimeMillis() - requestTime)
     }
 }

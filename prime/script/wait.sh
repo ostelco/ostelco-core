@@ -33,15 +33,40 @@ done
 
 echo "Pubsub emulator launched"
 
-echo "Creating topics and subscriptions...."
+echo "Creating topics...."
 
-curl  -X PUT pubsub-emulator:8085/v1/projects/pantel-2decb/topics/data-traffic
-curl  -X PUT pubsub-emulator:8085/v1/projects/pantel-2decb/topics/pseudo-traffic
-curl -X PUT -H "Content-Type: application/json" -d '{"topic":"projects/pantel-2decb/topics/data-traffic","ackDeadlineSeconds":10}' pubsub-emulator:8085/v1/projects/pantel-2decb/subscriptions/test-pseudo
-curl  -X PUT pubsub-emulator:8085/v1/projects/pantel-2decb/topics/purchase-info
-curl -X PUT -H "Content-Type: application/json" -d '{"topic":"projects/pantel-2decb/topics/purchase-info","ackDeadlineSeconds":10}' pubsub-emulator:8085/v1/projects/pantel-2decb/subscriptions/purchase-info-sub
+# For Analytics
+curl  -X PUT pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/topics/active-users
+curl  -X PUT pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/topics/data-traffic
+curl  -X PUT pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/topics/purchase-info
 
-echo "Done creating topics and subscriptions"
+# For Stripe
+curl -X PUT pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/topics/stripe-event
+
+# For OCS API
+curl  -X PUT pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/topics/ocs-ccr
+curl  -X PUT pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/topics/ocs-cca
+curl  -X PUT pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/topics/ocs-activate
+
+echo "Done creating topics"
+
+echo "Creating subscriptions...."
+
+# For Analytics
+curl -X PUT -H "Content-Type: application/json" -d '{"topic":"projects/'${GCP_PROJECT_ID}'/topics/data-traffic","ackDeadlineSeconds":10}' pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/test-pseudo
+curl -X PUT -H "Content-Type: application/json" -d '{"topic":"projects/'${GCP_PROJECT_ID}'/topics/purchase-info","ackDeadlineSeconds":10}' pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/purchase-info-sub
+
+# For Stripe
+curl -X PUT -H "Content-Type: application/json" -d '{"topic":"projects/'${GCP_PROJECT_ID}'/topics/stripe-event","ackDeadlineSeconds":10}' pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/stripe-event-store-sub
+curl -X PUT -H "Content-Type: application/json" -d '{"topic":"projects/'${GCP_PROJECT_ID}'/topics/stripe-event","ackDeadlineSeconds":10}' pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/stripe-event-report-sub
+curl -X PUT -H "Content-Type: application/json" -d '{"topic":"projects/'${GCP_PROJECT_ID}'/topics/stripe-event","ackDeadlineSeconds":10}' pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/stripe-event-recurring-payment-sub
+
+# For OCS API
+curl -X PUT -H "Content-Type: application/json" -d '{"topic":"projects/'${GCP_PROJECT_ID}'/topics/ocs-ccr","ackDeadlineSeconds":10}' pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/ocs-ccr-sub
+curl -X PUT -H "Content-Type: application/json" -d '{"topic":"projects/'${GCP_PROJECT_ID}'/topics/ocs-cca","ackDeadlineSeconds":10}' pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/ocsgw-cca-sub
+curl -X PUT -H "Content-Type: application/json" -d '{"topic":"projects/'${GCP_PROJECT_ID}'/topics/ocs-activate","ackDeadlineSeconds":10}' pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/ocsgw-activate-sub
+ 
+echo "Done creating subscriptions"
 
 # Forward the local port 9090 to datastore-emulator:8081
 if ! hash socat 2>/dev/null

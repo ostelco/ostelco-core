@@ -1,5 +1,5 @@
 
-[![Kotlin version badge](https://img.shields.io/badge/kotlin-1.3.10-blue.svg)](http://kotlinlang.org/)
+[![Kotlin version badge](https://img.shields.io/badge/kotlin-1.3.31-blue.svg)](http://kotlinlang.org/)
 [![Prime version](https://img.shields.io/github/tag/ostelco/ostelco-core.svg)](https://github.com/ostelco/ostelco-core/tags)
 [![GitHub license](https://img.shields.io/github/license/ostelco/ostelco-core.svg)](https://github.com/ostelco/ostelco-core/blob/master/LICENSE)
 
@@ -11,6 +11,7 @@
 [![CircleCI](https://circleci.com/gh/ostelco/ostelco-core/tree/develop.svg?style=svg&circle-token=f6bf824c3910dcf1551bf3b2776715dabfc7dc41)](https://circleci.com/gh/ostelco/ostelco-core/tree/develop)
 
 # ostelco-core
+
 
 Mono Repository for core protocols and services around a OCS/BSS for packet data. For each service please see the individual Readme.md files.
 
@@ -29,9 +30,9 @@ Mono Repository for core protocols and services around a OCS/BSS for packet data
  * [ocsgw](./ocsgw/README.md)
  * [ostelco-lib](./ostelco-lib/README.md)
  * [payment-processor](./payment-processor/README.md)
- * [prime-client-api](./prime-client-api/README.md)
  * [prime](./prime/README.md)
  * [infra](./prime/infra/README.md)
  * [pseudonym-server](./pseudonym-server/README.md)
  * [seagull](./seagull/README.md)
  * [neo4j-admin-tools](./tools/neo4j-admin-tools/README.md)
+

@@ -6,10 +6,11 @@ import io.jsonwebtoken.SignatureAlgorithm
 private const val JWT_SIGNING_KEY = "jwt_secret"
 
 object Auth {
-    fun generateAccessToken(subject: String): String = Jwts.builder()
+    fun generateAccessToken(email: String): String = Jwts.builder()
             .setClaims(mapOf(
+                    "https://ostelco/email" to email,
                     "aud" to "http://ext-auth-provider:8080/userinfo",
-                    "sub" to subject))
+                    "sub" to email))
             .signWith(SignatureAlgorithm.HS512, JWT_SIGNING_KEY.toByteArray())
             .compact()
 }

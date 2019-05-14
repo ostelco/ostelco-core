@@ -1,0 +1,6 @@
+myInfoApiClientId: ${MYINFO_API_CLIENT_ID}
+myInfoApiClientSecret: ${MYINFO_API_CLIENT_SECRET}
+myInfoRedirectUri: ${MYINFO_REDIRECT_URI}
+myInfoServerPublicKey: ${MYINFO_SERVER_PUBLIC_KEY}
+myInfoServerPrivateKey: ${MYINFO_SERVER_PRIVATE_KEY}
+myInfoClientPublicKey: ${MYINFO_CLIENT_PUBLIC_KEY}

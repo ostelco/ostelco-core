@@ -1,6 +1,7 @@
 package org.ostelco.importer
 
 import arrow.core.Either
+import arrow.core.right
 import io.dropwizard.testing.FixtureHelpers.fixture
 import io.dropwizard.testing.junit.ResourceTestRule
 import org.junit.Assert.assertEquals
@@ -33,29 +34,19 @@ class ImporterResourceTest {
 
         private val processor: ImportProcessor = object : ImportProcessor {
             override fun createOffer(createOffer: CreateOffer): Either<ApiError, Unit> {
-                Companion.offer = createOffer.createOffer
-                return Either.right(Unit)
+                offer = createOffer.createOffer
+                return Unit.right()
             }
 
-            override fun createSegments(createSegments: CreateSegments): Either<ApiError, Unit> {
-                return Either.right(Unit)
-            }
+            override fun createSegments(createSegments: CreateSegments): Either<ApiError, Unit> = Unit.right()
 
-            override fun updateSegments(updateSegments: UpdateSegments): Either<ApiError, Unit> {
-                return Either.right(Unit)
-            }
+            override fun updateSegments(updateSegments: UpdateSegments): Either<ApiError, Unit> = Unit.right()
 
-            override fun addToSegments(addToSegments: AddToSegments): Either<ApiError, Unit> {
-                return Either.right(Unit)
-            }
+            override fun addToSegments(addToSegments: AddToSegments): Either<ApiError, Unit> = Unit.right()
 
-            override fun removeFromSegments(removeFromSegments: RemoveFromSegments): Either<ApiError, Unit> {
-                return Either.right(Unit)
-            }
+            override fun removeFromSegments(removeFromSegments: RemoveFromSegments): Either<ApiError, Unit> = Unit.right()
 
-            override fun changeSegments(changeSegments: ChangeSegments): Either<ApiError, Unit> {
-                return Either.right(Unit)
-            }
+            override fun changeSegments(changeSegments: ChangeSegments): Either<ApiError, Unit> = Unit.right()
         }
 
         @ClassRule

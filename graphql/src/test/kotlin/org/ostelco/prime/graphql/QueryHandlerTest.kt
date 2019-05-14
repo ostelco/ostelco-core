@@ -2,39 +2,40 @@ package org.ostelco.prime.graphql
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.ostelco.prime.model.Identity
 import java.io.File
 
 class QueryHandlerTest {
 
-    private val queryHandler = QueryHandler(File("src/test/resources/subscriber.graphqls"))
+    private val queryHandler = QueryHandler(File("src/test/resources/customer.graphqls"))
 
     private val email = "foo@test.com"
 
     private fun execute(query: String): Map<String, Any> = queryHandler
-            .execute(subscriberId = email, query = query)
+            .execute(identity = Identity(id = email, type = "EMAIL", provider = "email"), query = query)
             .getData<Map<String, Any>>()
 
     @Test
     fun `test get profile`() {
-        val result = execute("""{ subscriber(id: "invalid@test.com") { profile { email } } }""".trimIndent())
-        assertEquals("{subscriber={profile={email=foo@test.com}}}", "$result")
+        val result = execute("""{ context(id: "invalid@test.com") { customer { nickname, contactEmail } } }""".trimIndent())
+        assertEquals("{context={customer={nickname=foo, contactEmail=$email}}}", "$result")
     }
 
     @Test
     fun `test get bundles and products`() {
-        val result = execute("""{ subscriber(id: "invalid@test.com") { bundles { id, balance } products { sku, price { amount, currency } } } }""".trimIndent())
-        assertEquals("{subscriber={bundles=[{id=foo@test.com, balance=1000000000}], products=[{sku=SKU, price={amount=10000, currency=NOK}}]}}", "$result")
+        val result = execute("""{ context(id: "invalid@test.com") { bundles { id, balance } products { sku, price { amount, currency } } } }""".trimIndent())
+        assertEquals("{context={bundles=[{id=$email, balance=1000000000}], products=[{sku=SKU, price={amount=10000, currency=NOK}}]}}", "$result")
     }
 
     @Test
     fun `test get subscriptions`() {
-        val result = execute("""{ subscriber(id: "invalid@test.com") { subscriptions { msisdn, alias } } }""".trimIndent())
-        assertEquals("{subscriber={subscriptions=[{msisdn=4790300123, alias=}]}}", "$result")
+        val result = execute("""{ context(id: "invalid@test.com") { subscriptions { msisdn } } }""".trimIndent())
+        assertEquals("{context={subscriptions=[{msisdn=4790300123}]}}", "$result")
     }
 
     @Test
     fun `test get purchase history`() {
-        val result = execute("""{ subscriber(id: "invalid@test.com") { purchases { id, product { sku, price { amount, currency } } } } }""".trimIndent())
-        assertEquals("{subscriber={purchases=[{id=PID, product={sku=SKU, price={amount=10000, currency=NOK}}}]}}", "$result")
+        val result = execute("""{ context(id: "invalid@test.com") { purchases { id, product { sku, price { amount, currency } } } } }""".trimIndent())
+        assertEquals("{context={purchases=[{id=PID, product={sku=SKU, price={amount=10000, currency=NOK}}}]}}", "$result")
     }
 }

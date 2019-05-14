@@ -10,7 +10,7 @@ import java.io.File
 class GraphQLModule : PrimeModule {
 
     @JsonProperty
-    var config: Config = Config(schemaFile = "/config/subscriber.graphqls")
+    var config: Config = Config(schemaFile = "/config/customer.graphqls")
 
     override fun init(env: Environment) {
         env.jersey().register(

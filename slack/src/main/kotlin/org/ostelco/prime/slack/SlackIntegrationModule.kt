@@ -19,7 +19,7 @@ class SlackIntegrationModule : PrimeModule {
 
             val httpClient = HttpClientBuilder(env)
                     .using(this.httpClientConfiguration)
-                    .build("slack");
+                    .build("slack")
 
             Registry.slackWebHookClient = SlackWebHookClient(
                     webHookUri = this.webHookUri,
@@ -39,10 +39,9 @@ object Registry {
     lateinit var userName: String
 }
 
-class Config {
+data class Config(
     @JsonProperty("notifications")
-    lateinit var notificationsConfig: NotificationsConfig
-}
+    val notificationsConfig: NotificationsConfig)
 
 class NotificationsConfig {
 

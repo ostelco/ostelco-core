@@ -1,0 +1,101 @@
+{
+  "type": "object",
+  "properties": {
+    "header": {
+      "type": "object",
+      "properties": {
+        "functionRequesterIdentifier": {
+          "type": "string",
+          "description": "identification of the function requester"
+        },
+        "functionCallIdentifier": {
+          "type": "string",
+          "description": "identification of the function call"
+        }
+      },
+      "required": [
+        "functionRequesterIdentifier",
+        "functionCallIdentifier"
+      ]
+    },
+    "eid": {
+      "type": "string",
+      "pattern": "^[0-9]{32}$",
+      "description": "EID as described in SGP.02"
+    },
+    "tac": {
+      "type": "string",
+      "pattern": "^[0-9]*$",
+      "description": "Unknown ID sent by some SM-DP+ vendors"
+    },
+    "iccid": {
+      "type": "string",
+      "pattern": "^[0-9]{19,20}F?$",
+      "description": "ICCID as described in ITU-T E.118"
+    },
+    "profileType": {
+      "type": "string",
+      "description": "Content free information defined by the Operator (e.g.‘P9054-2’)"
+    },
+    "timestamp": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[T,D,Z]{1}$",
+      "description": "String format as specified by W3C: YYYY-MM-DDThh:mm:ssTZD (E.g.2001-12-17T09:30:47Z)"
+    },
+    "notificationPointId": {
+      "type": "integer",
+      "description": "Identification of the step reached in the procedure"
+    },
+    "notificationPointStatus": {
+      "type": "object",
+      "description": "ExecutionStatus Common Data Type",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "Executed-Success, Executed-WithWarning, Failed or Expired"
+        },
+        "statusCodeData": {
+          "type": "object",
+          "properties": {
+            "subjectCode": {
+              "type": "string",
+              "description": "OID of the subject code"
+            },
+            "reasonCode": {
+              "type": "string",
+              "description": "OID of the reason code"
+            },
+            "subjectIdentifier": {
+              "type": "string",
+              "description": "Identifier of the subject"
+            },
+            "message": {
+              "type": "string",
+              "description": "Textual and human readable explanation"
+            }
+          },
+          "required": [
+            "subjectCode",
+            "reasonCode"
+          ]
+        }
+      },
+      "required": [
+        "status"
+      ]
+    },
+    "resultData": {
+      "type": "string",
+      "format": "base64",
+      "description": "base64 encoded binary data containing the Result data contained in the ProfileInstallationResult"
+    }
+  },
+  "required": [
+    "iccid",
+    "profileType",
+    "timestamp",
+    "notificationPointId",
+    "notificationPointStatus"
+  ]
+}
+

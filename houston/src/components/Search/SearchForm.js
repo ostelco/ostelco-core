@@ -32,7 +32,7 @@ function useFormInput(initialValue, submit) {
 }
 
 export default function SearchForm(props) {
-  const input = useFormInput('martin.cederlof@telenordigital.com', props.onSubmit)
+  const input = useFormInput('prasanth@redotter.sg', props.onSubmit)
   return (
     <div className="container">
       <Form onSubmit={input.onSubmit}>

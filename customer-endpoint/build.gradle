@@ -1,0 +1,23 @@
+plugins {
+    id "org.jetbrains.kotlin.jvm"
+    id "java-library"
+}
+
+dependencies {
+    implementation project(":prime-modules")
+
+    testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
+    testImplementation "org.mockito:mockito-core:$mockitoVersion"
+    testImplementation "org.assertj:assertj-core:$assertJVersion"
+
+    testImplementation "io.jsonwebtoken:jjwt:$jjwtVersion"
+    testImplementation "com.nhaarman:mockito-kotlin:1.6.0"
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+
+apply from: '../gradle/jacoco.gradle'

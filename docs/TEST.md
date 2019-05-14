@@ -2,13 +2,13 @@
 
 ### Setup
 
- * Configure firebase project - `pantel-2decb`
+ * Configure firebase project - `GCP_PROJECT_ID`
  
- * Save `pantel-prod.json` in all folders where this file is added in `.gitignore`.  You can find these directories by
+ * Save `prime-service-account.json` in all folders where this file is added in `.gitignore`.  You can find these directories by
    executing the command:
 
 ```bash
-grep -i pantel $(find . -name '.gitignore') | awk -F: '{print $1}' | sort | uniq | sed 's/.gitignore//g'
+grep -i prime-service-account $(find . -name '.gitignore') | awk -F: '{print $1}' | sort | uniq | sed 's/.gitignore//g'
 ```     
  
  * Create self-signed certificate for nginx with domain as `ocs.dev.ostelco.org` and place them at following location:
@@ -30,7 +30,8 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./nginx.key -out ./n
 cp nginx.crt ../../ocsgw/cert/metrics.crt
 ```
 
- * Set Stripe API key as env variable - `STRIPE_API_KEY`
+ * Set Stripe API key as env variable - `STRIPE_API_KEY`.   Note: It is the key denoted as "Secret key" that shuld
+   be set in this env variable.
 
  * Set Stripe Enpoint Secret (for Stripe events) as env variable - `STRIPE_ENDPOINT_SECRET`
  
@@ -50,6 +51,16 @@ cp nginx.crt ../../ocsgw/cert/metrics.crt
 ### Test acceptance-tests
 
 ```bash
+cd acceptance-tests
 gradlew clean build  
 docker-compose up --build --abort-on-container-exit
 ```    
+
+#### Verify Scan information data
+
+Acceptance tests will create few encrypted zip files, these can be verified by running the `__testDecryption()` method in `ScanInfostore.kt`.
+- Download encrypted files created in the root folder of prime docker image.
+- Find files by logging into the docker image `docker exec -ti prime bash`.
+- Copy files from docker image using `docker cp prime:/global_f1a6a509-7998-405c-b186-08983c91b422 .`
+- Replace the path for the input files in the method & run. It will create a `decrypted.zip` output file.
+- Manually decompress and verify the contents.
