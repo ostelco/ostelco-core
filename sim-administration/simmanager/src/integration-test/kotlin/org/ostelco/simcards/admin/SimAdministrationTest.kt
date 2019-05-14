@@ -1,5 +1,6 @@
 package org.ostelco.simcards.admin
 
+import arrow.core.Either
 import com.codahale.metrics.health.HealthCheck
 import io.dropwizard.client.HttpClientBuilder
 import io.dropwizard.client.JerseyClientBuilder
@@ -10,12 +11,21 @@ import io.dropwizard.testing.junit.DropwizardAppRule
 import org.assertj.core.api.Assertions.assertThat
 import org.glassfish.jersey.client.ClientProperties
 import org.jdbi.v3.core.Jdbi
-import org.junit.*
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Before
+import org.junit.BeforeClass
+import org.junit.ClassRule
+import org.junit.Ignore
+import org.junit.Test
+import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.hss.DirectHssDispatcher
 import org.ostelco.simcards.hss.HealthCheckRegistrar
 import org.ostelco.simcards.hss.SimManagerToHssDispatcherAdapter
-import org.ostelco.simcards.inventory.*
+import org.ostelco.simcards.inventory.HssState
+import org.ostelco.simcards.inventory.ProvisionState
+import org.ostelco.simcards.inventory.SimEntry
+import org.ostelco.simcards.inventory.SimProfileKeyStatistics
 import org.ostelco.simcards.smdpplus.SmDpPlusApplication
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.FixedHostPortGenericContainer
@@ -34,6 +44,11 @@ class SimAdministrationTest {
     companion object {
         private lateinit var jdbi: Jdbi
         private lateinit var client: Client
+
+        // ICCID of first SIM in sample-sim-batch.csv
+        //   ... we will be using this to check if the values for the
+        //       hss state is set right.
+        val FIRST_ICCID: String = "8901000000000000001"
 
         /* Port number exposed to host by the emulated HLR service. */
         private var HLR_PORT = (20_000..29_999).random()
@@ -127,7 +142,6 @@ class SimAdministrationTest {
         SM_DP_PLUS_RULE.getApplication<SmDpPlusApplication>().reset()
         clearTables()
         presetTables()
-        loadSimData()
     }
 
     private fun clearTables() {
@@ -145,12 +159,18 @@ class SimAdministrationTest {
     }
 
     /* The SIM dataset is the same that is used by the SM-DP+ emulator. */
-    private fun loadSimData() {
+    private fun loadSimData(hssState: HssState? = null, queryParameterName: String = "initialHssState", expectedReturnCode:Int = 200) {
         val entries = FileInputStream(SM_DP_PLUS_RULE.configuration.simBatchData)
-        val response = client.target("$simManagerEndpoint/$hssName/import-batch/profilevendor/$profileVendor")
+        var target = client.target("$simManagerEndpoint/$hssName/import-batch/profilevendor/$profileVendor")
+        if (hssState != null) {
+            target = target.queryParam(queryParameterName, hssState)
+        }
+
+        val response =
+                target
                 .request()
                 .put(Entity.entity(entries, MediaType.TEXT_PLAIN))
-        assertThat(response.status).isEqualTo(200)
+        assertThat(response.status).isEqualTo(expectedReturnCode)
     }
 
     /* TODO: SM-DP+ emuluator must be extended to support the 'getProfileStatus'
@@ -158,6 +178,7 @@ class SimAdministrationTest {
     @Test
     @Ignore
     fun testGetProfileStatus() {
+        loadSimData()
         val iccid = "8901000000000000001"
         val response = client.target("$simManagerEndpoint/$hssName/profileStatusList/$iccid")
                 .request()
@@ -167,6 +188,7 @@ class SimAdministrationTest {
 
     @Test
     fun testGetIccid() {
+        loadSimData()
         val iccid = "8901000000000000001"
         val response = client.target("$simManagerEndpoint/$hssName/iccid/$iccid")
                 .request()
@@ -181,6 +203,7 @@ class SimAdministrationTest {
        up as a ready to use eSIM. */
     @Test
     fun testNoReadyToUseEsimAvailable() {
+        loadSimData()
         val response = client.target("$simManagerEndpoint/$hssName/esim")
                 .request()
                 .get()
@@ -194,6 +217,7 @@ class SimAdministrationTest {
 
     @Test
     fun testGetListOfHlrs() {
+        loadSimData()
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
                 .getDAO()
         val hssEntries = simDao.getHssEntries()
@@ -204,6 +228,16 @@ class SimAdministrationTest {
 
     @Test
     fun testGetProfilesForHlr() {
+        loadSimData()
+        val profiles = getProfilesForHlr0()
+        assertThat(profiles.isRight()).isTrue()
+        profiles.map {
+            assertEquals(1, it.size)
+            assertEquals(expectedProfile, it[0])
+        }
+    }
+
+    private fun getProfilesForHlr0(): Either<SimManagerError, List<String>> {
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
                 .getDAO()
         val hlrs = simDao.getHssEntries()
@@ -215,15 +249,12 @@ class SimAdministrationTest {
         }
 
         val profiles = simDao.getProfileNamesForHssById(hlrId)
-        assertThat(profiles.isRight()).isTrue()
-        profiles.map {
-            assertEquals(1, it.size)
-            assertEquals(expectedProfile, it[0])
-        }
+        return profiles
     }
 
     @Test
     fun  testGetProfileStats() {
+        loadSimData()
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
                 .getDAO()
         val hlrs = simDao.getHssEntries()
@@ -237,14 +268,22 @@ class SimAdministrationTest {
         val stats = simDao.getProfileStats(hlrId, expectedProfile)
         assertThat(stats.isRight()).isTrue()
         stats.map {
+
+            // The full batch is 100 numbers
             assertEquals(100L, it.noOfEntries)
-            assertEquals(100L, it.noOfUnallocatedEntries)
+
+            // There are 2 "golden numbers" that are marked as "reserved" and are thus
+            // not allocated
+            assertEquals(98L, it.noOfUnallocatedEntries)
+
+            // But there are no released entries.
             assertEquals(0L, it.noOfReleasedEntries)
         }
     }
 
     @Test
     fun testPeriodicProvisioningTask() {
+        loadSimData()
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
                 .getDAO()
 
@@ -300,5 +339,66 @@ class SimAdministrationTest {
         assertEquals(
                 maxNoOfProfilesToAllocate.toLong(),
                 noOfAllocatedProfiles)
+    }
+
+
+    fun getSimEntryByICCIDFromLoadedBatch(iccid: String): SimEntry? {
+        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
+                .getDAO()
+        val simProfile = simDao.getSimProfileByIccid(iccid)
+        return when {
+            simProfile is Either.Right -> simProfile.b
+            simProfile is Either.Left ->  null
+            else -> null
+        }
+    }
+
+    private fun assertHssActivationOfFirstIccid(state: HssState) {
+        val first = getSimEntryByICCIDFromLoadedBatch(FIRST_ICCID)
+        assertNotNull(first)
+        assertEquals(FIRST_ICCID, first?.iccid)
+        assertEquals(state, first?.hssState)
+    }
+
+    @Test
+    fun testSettingLoadedSimDataDefaultHssLoadValue() {
+        loadSimData()
+        assertHssActivationOfFirstIccid(HssState.NOT_ACTIVATED)
+    }
+
+    @Test
+    fun testSettingLoadedSimDataToNotHaveBeenLoadedIntoHSS() {
+        loadSimData(HssState.NOT_ACTIVATED)
+        assertHssActivationOfFirstIccid(HssState.NOT_ACTIVATED)
+    }
+
+    @Test
+    fun testSettingLoadedSimDataToHaveBeenLoadedIntoHSS() {
+        loadSimData(HssState.ACTIVATED)
+        assertHssActivationOfFirstIccid(HssState.ACTIVATED)
+    }
+
+    @Test
+    fun badQueryParameterTest() {
+        loadSimData(HssState.ACTIVATED, queryParameterName = "fooBarBaz", expectedReturnCode = 400)
+    }
+
+    private fun assertProvisioningStateOfIccid(iccid: String, state: HssState) {
+        val entry = getSimEntryByICCIDFromLoadedBatch(iccid)
+        assertNotNull(entry)
+        assertEquals(iccid, entry?.iccid)
+        assertEquals(state, entry?.hssState)
+    }
+
+    @Test
+    fun testSpecialTreatmentOfGoldenNumbers() {
+        loadSimData(HssState.ACTIVATED)
+        // This is an ordinary MSISDN, nothing special about it, should be available
+        assertEquals(ProvisionState.AVAILABLE, getSimEntryByICCIDFromLoadedBatch(FIRST_ICCID)?.provisionState)
+        
+        // The next two numbers are "golden", ending in respecticely "9999" and "0000", so they
+        // should be reserved, and thus not available.
+        assertEquals(ProvisionState.RESERVED, getSimEntryByICCIDFromLoadedBatch("8901000000000000985")?.provisionState)
+        assertEquals(ProvisionState.RESERVED, getSimEntryByICCIDFromLoadedBatch("8901000000000000993")?.provisionState)
     }
 }

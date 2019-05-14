@@ -1,6 +1,10 @@
 package org.ostelco.simcards.hss
 
-import arrow.core.*
+import arrow.core.Either
+import arrow.core.Left
+import arrow.core.Right
+import arrow.core.flatMap
+import arrow.core.right
 import com.codahale.metrics.health.HealthCheck
 import io.grpc.ManagedChannelBuilder
 import org.apache.http.impl.client.CloseableHttpClient
@@ -168,6 +172,7 @@ class SimManagerToHssDispatcherAdapter(
 
     private fun fetchHssEntriesFromDatabase(): List<HssEntry> {
         val returnValue = mutableListOf<HssEntry>()
+        // XXX This doesn't look kosher.  Anyone with deep insight into Arrow please suggest a fix.
         val entries = simInventoryDAO.getHssEntries()
                 .mapLeft { err ->
                     log.error("No HSS entries to be found by the DAO.")
