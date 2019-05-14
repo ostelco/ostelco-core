@@ -69,11 +69,7 @@ class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(regionCo
     @GET
     @Path("/myInfoConfig")
     @Produces(MediaType.APPLICATION_JSON)
-    fun getMyInfoConfig(
-            @Auth token: AccessTokenPrincipal?,
-            @NotNull
-            @PathParam("authorisationCode")
-            authorisationCode: String): Response {
+    fun getMyInfoConfig(@Auth token: AccessTokenPrincipal?): Response {
 
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
