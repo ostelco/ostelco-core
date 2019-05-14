@@ -15,8 +15,10 @@ import javax.ws.rs.Path
 import javax.ws.rs.PathParam
 import javax.ws.rs.Produces
 import javax.ws.rs.QueryParam
+import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
+import javax.ws.rs.core.UriInfo
 
 
 /**
@@ -112,8 +114,20 @@ class SimInventoryResource(private val api: SimInventoryApi) {
     fun importBatch(
             @NotEmpty @PathParam("hssVendors") hss: String,
             @NotEmpty @PathParam("simVendor") simVendor: String,
+            @Context  context: UriInfo,
             @QueryParam("initialHssState") @DefaultValue("NOT_ACTIVATED")  initialHssState: HssState,
             csvInputStream: InputStream): Response {
+
+        // Check for illegal query parameters.  We don't want _anything_ to be inexact when importing
+        // sim profiles.  Typos have consequences, such as using a default value, when an override was
+        // intended.
+        val unknownQueryParameters = context.queryParameters.keys.subtract(listOf("initialHssState"))
+        if (unknownQueryParameters.isNotEmpty()) {
+            return Response.status(
+                    Response.Status.BAD_REQUEST)
+                    .entity("Unknown query parameter(s): \"${unknownQueryParameters.joinToString(separator = ", ")}\"")
+                    .build()
+        }
 
         return api.importBatch(hss, simVendor, csvInputStream, initialHssState)
                 .fold(
