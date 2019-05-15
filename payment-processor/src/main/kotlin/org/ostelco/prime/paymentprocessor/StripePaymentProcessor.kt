@@ -3,6 +3,7 @@ package org.ostelco.prime.paymentprocessor
 import arrow.core.Either
 import arrow.core.Try
 import arrow.core.flatMap
+import arrow.core.left
 import arrow.core.right
 import com.stripe.exception.ApiConnectionException
 import com.stripe.exception.AuthenticationException
@@ -20,6 +21,7 @@ import com.stripe.model.Product
 import com.stripe.model.Refund
 import com.stripe.model.Source
 import com.stripe.model.Subscription
+import com.stripe.model.TaxRate
 import com.stripe.net.RequestOptions
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.paymentprocessor.core.BadGatewayError
@@ -34,6 +36,7 @@ import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
+import org.ostelco.prime.paymentprocessor.core.TaxRateInfo
 import java.time.Instant
 import java.util.*
 
@@ -344,6 +347,33 @@ class StripePaymentProcessor : PaymentProcessor {
                                     .rawJson
                         }
                     }
+
+    /* TODO: (kmm) Will have to come up with a "scheme" for finding the correct 'tax' entry
+             given the where the customer is residing. Currently the 'region' code is used
+             for finding the correct 'tax' entries, matching on "region-code" stored in
+             the 'TaxRate' metadata. */
+    override fun getTaxRateForRegion(region: String): Either<PaymentError, List<TaxRateInfo>> =
+            getTaxRates()
+                    .flatMap {
+                        val lst = it.filter { x -> !x.metadata["region-code"].isNullOrEmpty() &&
+                                x.metadata["region-code"].equals(region, true) }
+                        if (lst.isEmpty())
+                            NotFoundError("No Stripe tax-rate found for region ${region}")
+                                    .left()
+                        else {
+                            lst.map { TaxRateInfo(id = it.id) }
+                                    .right()
+                        }
+                    }
+
+    private fun getTaxRates(): Either<PaymentError, List<TaxRate>> =
+            either("Failed to fetch list with tax-rates from Stripe") {
+                val taxRateParameters = mapOf(
+                        "active" to true
+                )
+                TaxRate.list(taxRateParameters)
+                        .data
+            }
 
     private fun <RETURN> either(errorDescription: String, action: () -> RETURN): Either<PaymentError, RETURN> {
         return try {

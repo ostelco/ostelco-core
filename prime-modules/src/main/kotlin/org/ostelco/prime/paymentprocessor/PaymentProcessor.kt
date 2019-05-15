@@ -9,6 +9,7 @@ import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
+import org.ostelco.prime.paymentprocessor.core.TaxRateInfo
 
 interface PaymentProcessor {
 
@@ -138,4 +139,10 @@ interface PaymentProcessor {
     fun removeSource(stripeCustomerId: String, sourceId: String): Either<PaymentError, SourceInfo>
 
     fun getStripeEphemeralKey(customerId: String, email: String, apiVersion: String): Either<PaymentError, String>
+
+    /**
+     * @param region Region code
+     * @return List with tax rates to apply for region if any found
+     */
+    fun getTaxRateForRegion(region: String): Either<PaymentError, List<TaxRateInfo>>
 }

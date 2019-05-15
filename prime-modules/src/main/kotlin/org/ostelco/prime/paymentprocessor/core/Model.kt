@@ -21,3 +21,5 @@ data class SourceDetailsInfo(val id: String, val type: String, val details: Map<
 data class SubscriptionInfo(val id: String)
 
 data class SubscriptionDetailsInfo(val id: String, val status: PaymentStatus, val invoiceId: String, val chargeId: String, val created: Long, val trialEnd: Long = 0L)
+
+data class TaxRateInfo(val id: String)
