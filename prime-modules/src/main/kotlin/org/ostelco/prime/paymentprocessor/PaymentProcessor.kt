@@ -71,10 +71,10 @@ interface PaymentProcessor {
 
     /**
      * @param Stripe Subscription Id
-     * @param Stripe atIntervalEnd set to true if the subscription shall remain active until the end of the Plan interval
+     * @param Stripe invoiceNow set to true if a final invoice should be generated
      * @return Stripe SubscriptionId if unsubscribed
      */
-    fun cancelSubscription(subscriptionId: String, atIntervalEnd: Boolean = true): Either<PaymentError, SubscriptionInfo>
+    fun cancelSubscription(subscriptionId: String, invoiceNow: Boolean = false): Either<PaymentError, SubscriptionInfo>
 
     /**
      * @param sku Prime product SKU

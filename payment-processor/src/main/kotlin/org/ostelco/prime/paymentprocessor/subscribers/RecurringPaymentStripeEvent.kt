@@ -56,16 +56,33 @@ class RecurringPaymentStripeEvent : PubSubSubscriber(
             return
 
         when (eventType) {
-            "invoice.payment_succeeded" -> invoice.lines.data.forEach{
-                purchasedSubscriptionEvent(invoice.id, invoice.customer, it.plan)
+            "invoice.payment_succeeded" -> {
+                /* The first time a subscription is created and the payment is not done immediately,
+                   f.ex. due to 3D secure handlig or because a trial period is used, Stripe will issue
+                   a "dummy" invoice with billing-reason: subscription_update
+                   This check will ensure that only actual (or real) invoices are acted upon.
+                   TODO: Has been checked with trials but it remains to check if this is also the
+                          case with 3D secure payment sources. */
+                if (invoice.billingReason == "subscription_cycle")
+                    invoice.lines.data.forEach {
+                        purchasedSubscriptionEvent(invoice.id, invoice.customer, it.plan)
+                    }
+                else
+                    logger.debug("Invoice ${invoice.id} successfully paid with billing reason: ${invoice.billingReason}")
             }
-            "invoice.payment_failed" -> {}
-            "invoice.upcoming" -> {}
-            "invoice.created" -> {}
+            "invoice.payment_failed" -> {
+            }
+            "invoice.upcoming" -> {
+            }
+            "invoice.created" -> {
+            }
             // on canceled subsc. F.ex. with expired payment
-            "invoice.updated" -> {}
-            "invoice.voided" -> {}
-            "customer.subscription.updated" -> {}
+            "invoice.updated" -> {
+            }
+            "invoice.voided" -> {
+            }
+            "customer.subscription.updated" -> {
+            }
         }
     }
 
