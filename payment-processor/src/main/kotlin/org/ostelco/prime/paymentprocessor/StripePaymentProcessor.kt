@@ -205,15 +205,14 @@ class StripePaymentProcessor : PaymentProcessor {
        https://stripe.com/docs/billing/subscriptions/payment#signup-3b */
     override fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long): Either<PaymentError, SubscriptionDetailsInfo> =
             either("Failed to subscribe customer $stripeCustomerId to plan $planId") {
-                val item =  mapOf("plan" to planId)
+                val item = mapOf("plan" to planId)
                 val subscriptionParams = mapOf(
                         "customer" to stripeCustomerId,
                         "items" to mapOf("0" to item),
-                        *( if (trialEnd > Instant.now().epochSecond)
-                               arrayOf("trial_end" to trialEnd.toString())
-                           else
-                               arrayOf()),
-                        "expand" to arrayOf("latest_invoice.payment_intent"))
+                        *(if (trialEnd > Instant.now().epochSecond)
+                            arrayOf("trial_end" to trialEnd.toString())
+                        else
+                            arrayOf("expand" to arrayOf("latest_invoice.payment_intent"))))
                 val subscription = Subscription.create(subscriptionParams)
                 val status = subscriptionStatus(subscription)
                 SubscriptionDetailsInfo(id = subscription.id,
@@ -243,7 +242,7 @@ class StripePaymentProcessor : PaymentProcessor {
                 }
             }
             "trialing" -> {
-                Pair(PaymentStatus.TRIAL_START, invoice.id)
+                Pair(PaymentStatus.TRIAL_START, "")
             }
             else -> {
                 throw RuntimeException(
@@ -252,10 +251,10 @@ class StripePaymentProcessor : PaymentProcessor {
         }
     }
 
-    override fun cancelSubscription(subscriptionId: String, atIntervalEnd: Boolean): Either<PaymentError, SubscriptionInfo> =
-            either("Failed to unsubscribe subscription Id : $subscriptionId atIntervalEnd $atIntervalEnd") {
+    override fun cancelSubscription(subscriptionId: String, invoiceNow: Boolean): Either<PaymentError, SubscriptionInfo> =
+            either("Failed to unsubscribe subscription Id : $subscriptionId with 'invoice-now' set to $invoiceNow") {
                 val subscription = Subscription.retrieve(subscriptionId)
-                val subscriptionParams = mapOf("at_period_end" to atIntervalEnd)
+                val subscriptionParams = mapOf("invoice_now" to invoiceNow)
                 subscription.cancel(subscriptionParams)
                 SubscriptionInfo(id = subscription.id)
             }
@@ -345,21 +344,20 @@ class StripePaymentProcessor : PaymentProcessor {
                         }
                     }
 
-
     private fun <RETURN> either(errorDescription: String, action: () -> RETURN): Either<PaymentError, RETURN> {
         return try {
             Either.right(action())
         } catch (e: CardException) {
             // If something is decline with a card purchase, CardException will be caught
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}", e)
+            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}")
             Either.left(ForbiddenError(errorDescription, e.message))
         } catch (e: RateLimitException) {
             // Too many requests made to the API too quickly
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}", e)
+            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}")
             Either.left(BadGatewayError(errorDescription, e.message))
         } catch (e: InvalidRequestException) {
             // Invalid parameters were supplied to Stripe's API
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}", e)
+            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}")
             Either.left(ForbiddenError(errorDescription, e.message))
         } catch (e: AuthenticationException) {
             // Authentication with Stripe's API failed

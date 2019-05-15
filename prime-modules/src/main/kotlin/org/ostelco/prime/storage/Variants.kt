@@ -277,10 +277,10 @@ interface AdminGraphStore {
      * Remove the subscription to a plan for a specific subscrber.
      * @param identity - The identity of the customer
      * @param planId - The name/id of the plan
-     * @param atIntervalEnd - Remove at end of curren subscription period
+     * @param invoiceNow - Set to true if a final invoice should be generated now
      * @return Unit value if the subscription was removed successfully
      */
-    fun unsubscribeFromPlan(identity: Identity, planId: String, atIntervalEnd: Boolean = false): Either<StoreError, Plan>
+    fun unsubscribeFromPlan(identity: Identity, planId: String, invoiceNow: Boolean = true): Either<StoreError, Plan>
 
     /**
      * Adds a purchase record to customer on start of or renewal
