@@ -1188,17 +1188,6 @@ object Neo4jStoreSingleton : GraphStore {
                                 .left()
                     })
 
-    private fun createPurchaseRecordRelation2(customerId: String,
-                                              purchase: PurchaseRecord,
-                                              transaction: Transaction): Either<StoreError, String> =
-            customerStore.get(customerId, transaction).flatMap { customer ->
-                productStore.get(purchase.product.sku, transaction).flatMap { product ->
-                    purchaseRecordRelationStore.create(customer, purchase, product, transaction)
-                            .map { purchase.id }
-                }
-            }
-
-
     /* As Stripes invoice-id is used as the 'id' of a purchase record, this method
        allows for detecting double charges etc. */
     private fun getPurchaseRecordUsingInvoiceId(customerId: String,
