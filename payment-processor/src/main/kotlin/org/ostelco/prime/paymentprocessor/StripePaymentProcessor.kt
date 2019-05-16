@@ -218,31 +218,32 @@ class StripePaymentProcessor : PaymentProcessor {
                 SubscriptionDetailsInfo(id = subscription.id,
                         status = status.first,
                         invoiceId = status.second,
+                        chargeId = status.third,
                         created = subscription.created,
                         trialEnd = subscription.trialEnd ?: 0L)
             }
 
-    private fun subscriptionStatus(subscription: Subscription): Pair<PaymentStatus, String> {
+    private fun subscriptionStatus(subscription: Subscription): Triple<PaymentStatus, String, String> {
         val invoice = subscription.latestInvoiceObject
         val intent = invoice?.paymentIntentObject
 
         return when (subscription.status) {
             "active", "incomplete" -> {
                 if (intent != null)
-                    Pair(when(intent.status) {
+                    Triple(when(intent.status) {
                         "succeeded" -> PaymentStatus.PAYMENT_SUCCEEDED
                         "requires_payment_method" -> PaymentStatus.REQUIRES_PAYMENT_METHOD
                         "requires_action" -> PaymentStatus.REQUIRES_ACTION
                         else -> throw RuntimeException(
                                 "Unexpected intent ${intent.status} for Stipe payment invoice ${invoice.id}")
-                    }, invoice.id)
+                    }, invoice.id, invoice.charge)
                 else {
                     throw RuntimeException(
                             "'Intent' absent in response when creating subscription ${subscription.id} with status ${subscription.status}")
                 }
             }
             "trialing" -> {
-                Pair(PaymentStatus.TRIAL_START, "")
+                Triple(PaymentStatus.TRIAL_START, "", "")
             }
             else -> {
                 throw RuntimeException(

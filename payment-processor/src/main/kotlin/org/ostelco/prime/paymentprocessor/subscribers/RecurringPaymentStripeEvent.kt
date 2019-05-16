@@ -65,7 +65,7 @@ class RecurringPaymentStripeEvent : PubSubSubscriber(
                           case with 3D secure payment sources. */
                 if (invoice.billingReason == "subscription_cycle")
                     invoice.lines.data.forEach {
-                        purchasedSubscriptionEvent(invoice.id, invoice.customer, it.plan)
+                        purchasedSubscriptionEvent(invoice.customer, invoice.id, invoice.charge, it.plan)
                     }
                 else
                     logger.debug("Invoice ${invoice.id} successfully paid with billing reason: ${invoice.billingReason}")
@@ -86,10 +86,10 @@ class RecurringPaymentStripeEvent : PubSubSubscriber(
         }
     }
 
-    private fun purchasedSubscriptionEvent(invoiceId: String, customerId: String, plan: Plan) {
+    private fun purchasedSubscriptionEvent(customerId: String, invoiceId: String, chargeId: String, plan: Plan) {
         val productId = plan.product
         val productDetails = Product.retrieve(productId)
-        storage.purchasedSubscription(invoiceId, customerId, productDetails.name, plan.amount, plan.currency)
+        storage.purchasedSubscription(customerId, invoiceId, chargeId, productDetails.name, plan.amount, plan.currency)
                 .mapLeft {
                     when (it) {
                         is ValidationError -> {

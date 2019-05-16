@@ -343,7 +343,11 @@ object Neo4jStoreSingleton : GraphStore {
                 val product = productStore.get(productId, transaction).bind()
                 createPurchaseRecordRelation(
                         customer.id,
-                        PurchaseRecord(id = UUID.randomUUID().toString(), product = product, timestamp = Instant.now().toEpochMilli()),
+                        PurchaseRecord(
+                                id = UUID.randomUUID().toString(),
+                                product = product,
+                                timestamp = Instant.now().toEpochMilli()
+                        ),
                         transaction)
                 customerToBundleStore.create(customer.id, bundleId, transaction).bind()
             }.fix()
@@ -1172,8 +1176,16 @@ object Neo4jStoreSingleton : GraphStore {
 
     private fun createPurchaseRecordRelation(customerId: String,
                                              purchase: PurchaseRecord,
-                                             transaction: Transaction): Either<StoreError, String> =
-            getPurchaseRecordUsingInvoiceId(customerId, purchase.id, transaction)
+                                             transaction: Transaction): Either<StoreError, String> {
+        val invoiceId = if (purchase.properties.containsKey("invoiceId") && !purchase.properties["invoiceId"].isNullOrEmpty())
+            purchase.properties["invoiceId"]
+        else
+            null
+
+        /* Avoid charging for the same invoice twice if invoice information
+           is present. */
+        return if (invoiceId != null) {
+            getPurchaseRecordUsingInvoiceId(customerId, invoiceId, transaction)
                     .fold({
                         customerStore.get(customerId, transaction).flatMap { customer ->
                             productStore.get(purchase.product.sku, transaction).flatMap { product ->
@@ -1187,6 +1199,15 @@ object Neo4jStoreSingleton : GraphStore {
                                 message = "A purchase record for ${purchase.product} for customer ${customerId} alread exists")
                                 .left()
                     })
+        } else {
+            customerStore.get(customerId, transaction).flatMap { customer ->
+                productStore.get(purchase.product.sku, transaction).flatMap { product ->
+                    purchaseRecordRelationStore.create(customer, purchase, product, transaction)
+                            .map { purchase.id }
+                }
+            }
+        }
+    }
 
     /* As Stripes invoice-id is used as the 'id' of a purchase record, this method
        allows for detecting double charges etc. */
@@ -1196,7 +1217,7 @@ object Neo4jStoreSingleton : GraphStore {
             customerStore.getRelations(customerId, purchaseRecordRelation, transaction)
                     .map { records ->
                         records.find {
-                            it.id == invoiceId
+                            it.properties.containsKey("invoiceId") && it.properties["invoiceId"] == invoiceId
                         }
                     }.leftIfNull { NotFoundError(type = purchaseRecordRelation.name, id = invoiceId) }
 
@@ -1911,7 +1932,7 @@ object Neo4jStoreSingleton : GraphStore {
                 /* Dispatch according to the charge result. */
                 when (subscriptionInfo.status) {
                     PaymentStatus.PAYMENT_SUCCEEDED -> {
-                        subscriptionPaymentSucceeded(customerId, subscriptionInfo.invoiceId, plan, product)
+                        subscriptionPaymentSucceeded(customerId, subscriptionInfo.invoiceId, subscriptionInfo.chargeId, plan, product)
                                 .bind()
                     }
                     PaymentStatus.REQUIRES_PAYMENT_METHOD -> {
@@ -1976,23 +1997,25 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
 
-    override fun purchasedSubscription(invoiceId: String, customerId: String, sku: String, amount: Long, currency: String): Either<StoreError, Plan> = readTransaction {
+    override fun purchasedSubscription(customerId: String, invoiceId: String, chargeId: String, sku: String, amount: Long, currency: String): Either<StoreError, Plan> = readTransaction {
         productStore.get(sku, transaction)
                 .flatMap { product ->
                     productStore.getRelatedFrom(id = sku, relationType = planProductRelation, transaction = transaction)
                             .flatMap {
-                                subscriptionPaymentSucceeded(customerId, invoiceId, it.first(), product)
+                                subscriptionPaymentSucceeded(customerId, invoiceId, chargeId, it.first(), product)
                             }
                 }
     }
 
-    private fun subscriptionPaymentSucceeded(customerId: String, invoiceId: String, plan: Plan, product: Product): Either<StoreError, Plan> = writeTransaction {
+    private fun subscriptionPaymentSucceeded(customerId: String, invoiceId: String, chargeId: String, plan: Plan, product: Product): Either<StoreError, Plan> = writeTransaction {
         IO {
             Either.monad<StoreError>().binding {
                 val purchaseRecord = PurchaseRecord(
-                        id = invoiceId,
+                        id = chargeId,
                         product = product,
-                        timestamp = Instant.now().toEpochMilli())
+                        timestamp = Instant.now().toEpochMilli(),
+                        properties = mapOf("invoiceId" to invoiceId)
+                )
 
                 createPurchaseRecordRelation(customerId, purchaseRecord, transaction)
                         .bind()
@@ -2058,17 +2081,17 @@ object Neo4jStoreSingleton : GraphStore {
                             org.ostelco.prime.paymentprocessor.core.NotFoundError("Purchase Record unavailable",
                                     error = it)
                         }.bind()
-                checkPurchaseRecordForRefund(purchaseRecord).bind()
+                checkPurchaseRecordForRefund(purchaseRecord)
+                        .bind()
                 val refundId = paymentProcessor.refundCharge(
                         purchaseRecord.id,
                         purchaseRecord.product.price.amount,
-                        purchaseRecord.product.price.currency).bind()
+                        purchaseRecord.product.price.currency)
+                        .bind()
                 val refund = RefundRecord(refundId, reason, Instant.now().toEpochMilli())
-                val changedPurchaseRecord = PurchaseRecord(
-                        id = purchaseRecord.id,
-                        product = purchaseRecord.product,
-                        timestamp = purchaseRecord.timestamp,
-                        refund = refund)
+                val changedPurchaseRecord = purchaseRecord.copy(
+                        refund = refund
+                )
                 updatePurchaseRecord(changedPurchaseRecord, transaction)
                         .mapLeft {
                             logger.error("failed to update purchase record, for refund $refund.id, chargeId $purchaseRecordId, payment has been refunded in Stripe")
