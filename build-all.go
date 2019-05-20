@@ -10,6 +10,14 @@
 //                 very prestigious.  On the other hand, the script does contain
 //                 sufficient complexity to be a worthy target
 
+package main
+
+import "log"
+
+func main() {
+	log.Printf("About to get started\n")
+}
+
 
 // #!/bin/bash
 // 
