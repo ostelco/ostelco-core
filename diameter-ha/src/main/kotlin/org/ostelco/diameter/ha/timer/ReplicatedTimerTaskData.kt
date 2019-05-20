@@ -76,7 +76,7 @@ class ReplicatedTimerTask(val data: ReplicatedTimerTaskData, private val session
                 return
             } else {
                 try {
-                    if (bSession.isAppSession) {
+                    if (!bSession.isAppSession) {
                         val impl = bSession as BaseSessionImpl
                         impl.onTimer(data.timerName)
                     } else {
