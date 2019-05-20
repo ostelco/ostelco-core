@@ -285,13 +285,14 @@ interface AdminGraphStore {
     /**
      * Adds a purchase record to customer on start of or renewal
      * of a subscription.
-     * @param invoiceId - The reference to the invoice that has been paid
      * @param customerId - The customer that got charged
+     * @param invoiceId - The reference to the invoice that has been paid
+     * @param chargeId - The reference to the charge (used on refunds)
      * @param sku - The product/plan bought
      * @param amount - Cost of the product/plan
      * @param currency - Currency used
      */
-    fun purchasedSubscription(invoiceId: String, customerId: String, sku: String, amount: Long, currency: String): Either<StoreError, Plan>
+    fun purchasedSubscription(customerId: String, invoiceId: String, chargeId: String, sku: String, amount: Long, currency: String): Either<StoreError, Plan>
 
     // atomic import of Offer + Product + Segment
     fun atomicCreateOffer(

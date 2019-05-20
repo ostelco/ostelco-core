@@ -227,10 +227,12 @@ data class RefundRecord(
         val timestamp: Long) : HasId
 
 data class PurchaseRecord(
-        override val id: String,
+        override val id: String,           /* 'charge' id. */
         val product: Product,
         val timestamp: Long,
-        val refund: RefundRecord? = null) : HasId
+        val refund: RefundRecord? = null,
+        /* For storing 'invoice-id' when purchasing a plan. */
+        val properties: Map<String, String> = emptyMap()) : HasId
 
 data class PurchaseRecordInfo(override val id: String,
                               val subscriberId: String,
