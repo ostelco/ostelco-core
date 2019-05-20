@@ -255,12 +255,6 @@ class OcsTest {
         assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
         assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
         assertEquals(RequestType.TERMINATION_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
-        val resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
-        assertEquals(DIAMETER_SUCCESS, resultMSCC.grouped.getAvp(Avp.RESULT_CODE).integer32.toLong())
-        assertEquals(serviceIdentifier.toLong(), resultMSCC.grouped.getAvp(Avp.SERVICE_IDENTIFIER_CCA).unsigned32)
-        assertEquals(ratingGroup.toLong(), resultMSCC.grouped.getAvp(Avp.RATING_GROUP).unsigned32)
-        val validTime = resultMSCC.grouped.getAvp(Avp.VALIDITY_TIME)
-        assertEquals(86400L, validTime.unsigned32)
 
         assertEquals(INITIAL_BALANCE - 2 * BUCKET_SIZE, getBalance(email = email), message = "Incorrect balance after terminate")
     }
@@ -330,12 +324,6 @@ class OcsTest {
             assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
             assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
             assertEquals(RequestType.UPDATE_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
-            val resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
-            assertEquals(DIAMETER_SUCCESS, resultMSCC.grouped.getAvp(Avp.RESULT_CODE).integer32.toLong())
-            assertEquals(serviceIdentifier.toLong(), resultMSCC.grouped.getAvp(Avp.SERVICE_IDENTIFIER_CCA).integer32.toLong())
-            assertEquals(ratingGroup.toLong(), resultMSCC.grouped.getAvp(Avp.RATING_GROUP).integer32.toLong())
-            val validTime = resultMSCC.grouped.getAvp(Avp.VALIDITY_TIME)
-            assertEquals(86400L, validTime.unsigned32)
         }
 
         // Last step is P-GW sending CCR-Terminate
@@ -496,8 +484,6 @@ class OcsTest {
         assertEquals(DIAMETER_SUCCESS, client.resultCodeAvp!!.integer32.toLong())
         val resultAvps = client.resultAvps
         assertEquals(RequestType.TERMINATION_REQUEST.toLong(), resultAvps!!.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
-        val resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
-        assertEquals(DIAMETER_SUCCESS, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).integer32.toLong())
     }
 
 
