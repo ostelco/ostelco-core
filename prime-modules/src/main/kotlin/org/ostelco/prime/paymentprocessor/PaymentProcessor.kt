@@ -1,6 +1,8 @@
 package org.ostelco.prime.paymentprocessor
 
 import arrow.core.Either
+import org.ostelco.prime.paymentprocessor.core.InvoiceInfo
+import org.ostelco.prime.paymentprocessor.core.InvoiceItemInfo
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.PlanInfo
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
@@ -141,8 +143,45 @@ interface PaymentProcessor {
     fun getStripeEphemeralKey(customerId: String, email: String, apiVersion: String): Either<PaymentError, String>
 
     /**
+     * @param customerId ID of the customer to which the invoice item will be assigned to
+     * @param amount Amount to pay (an integer multiplied by 100)
+     * @param currency The currency to use for the payment (ISO code)
+     * @param description Short description of what the invoice item is for
+     * @return ID of the invoice item
+     */
+    fun createInvoiceItem(customerId: String, amount: Int, currency: String, description: String): Either<PaymentError, InvoiceItemInfo>
+
+    /**
+     * @param customerId ID of the customer to which the invoice will be assigned to
+     * @param taxRates List of tax-rates to apply
+     * @return ID of the invoice
+     */
+    fun createInvoice(customerId: String, taxRates: List<TaxRateInfo>): Either<PaymentError, InvoiceInfo>
+
+    /**
+     * @param customerId ID of the customer to which the invoice will be assigned to
+     * @return ID of the invoice
+     */
+    fun createInvoice(customerId: String): Either<PaymentError, InvoiceInfo>
+
+    /**
+     * @param customerId ID of the customer to which the invoice will be assigned to
+     * @param amount Amount to pay (an integer multiplied by 100)
+     * @param currency The currency to use for the payment (ISO code)
+     * @param description Short description of what the invoice is for
+     * @return ID of the invoice
+     */
+    fun createInvoice(customerId: String, region: String, amount: Int, currency: String, description: String): Either<PaymentError, InvoiceInfo>
+
+    /**
+     * @param invoice ID of the invoice to be paid
+     * @return ID of the invoice
+     */
+    fun payInvoice(invoice: InvoiceInfo): Either<PaymentError, InvoiceInfo>
+
+    /**
      * @param region Region code
      * @return List with tax rates to apply for region if any found
      */
-    fun getTaxRateForRegion(region: String): Either<PaymentError, List<TaxRateInfo>>
+    fun getTaxRatesForRegion(region: String): Either<PaymentError, List<TaxRateInfo>>
 }

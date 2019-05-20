@@ -15,6 +15,8 @@ import com.stripe.model.Card
 import com.stripe.model.Charge
 import com.stripe.model.Customer
 import com.stripe.model.EphemeralKey
+import com.stripe.model.Invoice
+import com.stripe.model.InvoiceItem
 import com.stripe.model.PaymentSource
 import com.stripe.model.Plan
 import com.stripe.model.Product
@@ -26,6 +28,8 @@ import com.stripe.net.RequestOptions
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.paymentprocessor.core.BadGatewayError
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
+import org.ostelco.prime.paymentprocessor.core.InvoiceInfo
+import org.ostelco.prime.paymentprocessor.core.InvoiceItemInfo
 import org.ostelco.prime.paymentprocessor.core.NotFoundError
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.PaymentStatus
@@ -233,7 +237,7 @@ class StripePaymentProcessor : PaymentProcessor {
         return when (subscription.status) {
             "active", "incomplete" -> {
                 if (intent != null)
-                    Triple(when(intent.status) {
+                    Triple(when (intent.status) {
                         "succeeded" -> PaymentStatus.PAYMENT_SUCCEEDED
                         "requires_payment_method" -> PaymentStatus.REQUIRES_PAYMENT_METHOD
                         "requires_action" -> PaymentStatus.REQUIRES_ACTION
@@ -348,18 +352,57 @@ class StripePaymentProcessor : PaymentProcessor {
                         }
                     }
 
+    override fun createInvoiceItem(customerId: String, amount: Int, currency: String, description: String): Either<PaymentError, InvoiceItemInfo> =
+            either("Failed to create an invoice item for customer ${customerId} with Stripe") {
+                val params = mapOf(
+                        "customer" to customerId,
+                        "amount" to amount,
+                        "currency" to currency,
+                        "description" to description)
+                InvoiceItemInfo(InvoiceItem.create(params).id)
+            }
+
+    override fun createInvoice(customerId: String, taxRates: List<TaxRateInfo>): Either<PaymentError, InvoiceInfo> =
+            either("Failed to create an invoice for ${customerId} with Stripe") {
+                val params = mapOf(
+                        "customer" to customerId,
+                        "billing" to "charge_automatically",
+                        "auto_advance" to true,
+                        *(if (taxRates.isNotEmpty())
+                            arrayOf("default_tax_rates" to arrayOf(taxRates))
+                        else arrayOf())
+                )
+                InvoiceInfo(Invoice.create(params).id)
+            }
+
+    override fun createInvoice(customerId: String): Either<PaymentError, InvoiceInfo> =
+            createInvoice(customerId, listOf<TaxRateInfo>())
+
+    override fun createInvoice(customerId: String, region: String, amount: Int, currency: String, description: String): Either<PaymentError, InvoiceInfo> =
+            createInvoiceItem(customerId, amount, currency, description)
+                    .flatMap {
+                        getTaxRatesForRegion(region)
+                                .flatMap { lst -> createInvoice(customerId, lst) }
+                    }
+
+    override fun payInvoice(invoice: InvoiceInfo): Either<PaymentError, InvoiceInfo> =
+            either("Failed to complete payment of invoice ${invoice.id}") {
+                InvoiceInfo(Invoice.retrieve(invoice.id).pay()
+                        .id)
+            }
+
     /* TODO: (kmm) Will have to come up with a "scheme" for finding the correct 'tax' entry
              given the where the customer is residing. Currently the 'region' code is used
              for finding the correct 'tax' entries, matching on "region-code" stored in
              the 'TaxRate' metadata. */
-    override fun getTaxRateForRegion(region: String): Either<PaymentError, List<TaxRateInfo>> =
+    override fun getTaxRatesForRegion(region: String): Either<PaymentError, List<TaxRateInfo>> =
             getTaxRates()
                     .flatMap {
                         val lst = it.filter { x -> !x.metadata["region-code"].isNullOrEmpty() &&
                                 x.metadata["region-code"].equals(region, true) }
                         if (lst.isEmpty())
-                            NotFoundError("No Stripe tax-rate found for region ${region}")
-                                    .left()
+                            emptyList<TaxRateInfo>()
+                                    .right()
                         else {
                             lst.map { TaxRateInfo(id = it.id) }
                                     .right()
