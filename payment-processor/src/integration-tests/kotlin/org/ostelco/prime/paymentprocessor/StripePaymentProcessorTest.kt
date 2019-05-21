@@ -1,5 +1,6 @@
 package org.ostelco.prime.paymentprocessor
 
+import arrow.core.Either
 import arrow.core.getOrElse
 import com.stripe.Stripe
 import com.stripe.model.Source
@@ -8,6 +9,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.ostelco.prime.module.getResource
+import org.ostelco.prime.paymentprocessor.core.PaymentError
 import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.fail
@@ -72,6 +74,20 @@ class StripePaymentProcessorTest {
     fun cleanUp() {
         val resultDelete = paymentProcessor.deletePaymentProfile(stripeCustomerId)
         assertEquals(true, resultDelete.isRight())
+    }
+
+    /* Flag to ensure that tax rates for tests are only added once. */
+    var taxesAdded = false
+
+    /* Note! No corresponding delete, as this can't be doneusing the API. */
+    @Before
+    fun addTaxRates() {
+        if (!taxesAdded) {
+            val addedTaxRate = paymentProcessor.createTaxRateForRegion("sg", 7.0.toBigDecimal(), "GSD")
+            assertEquals(true, addedTaxRate.isRight())
+
+            taxesAdded = true
+        }
     }
 
     @Test
@@ -267,4 +283,49 @@ class StripePaymentProcessorTest {
         val resultDeleteSource = paymentProcessor.removeSource(stripeCustomerId, resultAddSource.fold({ "" }, { it.id }))
         assertEquals(true, resultDeleteSource.isRight())
     }
+
+    @Test
+    fun createAndDeleteInvoiceItem() {
+        val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentTokenId())
+        assertEquals(true, resultAddSource.isRight())
+
+        val amount = 5000
+        val currency = "SGD"
+
+        val addedInvoiceItem = paymentProcessor.createInvoiceItem(stripeCustomerId, amount, currency, "SGD")
+        assertEquals(true, addedInvoiceItem.isRight())
+
+        val removedInvoiceItem = paymentProcessor.removeInvoiceItem(right(addedInvoiceItem).id)
+        assertEquals(true, removedInvoiceItem.isRight())
+    }
+
+    @Test
+    fun createAndDeleteInvoiceWithTaxes() {
+        val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentTokenId())
+        assertEquals(true, resultAddSource.isRight())
+
+        val amount = 5000
+        val currency = "SGD"
+
+        val addedInvoiceItem = paymentProcessor.createInvoiceItem(stripeCustomerId, amount, currency, "SGD")
+        assertEquals(true, addedInvoiceItem.isRight())
+
+        val regionCode = "sg"
+
+        val taxRates = paymentProcessor.getTaxRatesForRegion(regionCode)
+        assertEquals(true, taxRates.isRight())
+
+        val addedInvoice = paymentProcessor.createInvoice(stripeCustomerId, right(taxRates))
+        assertEquals(true, addedInvoice.isRight())
+
+        val payedInvoice = paymentProcessor.payInvoice(right(addedInvoice).id)
+        assertEquals(true, payedInvoice.isRight())
+
+        val removedInvoice = paymentProcessor.removeInvoice(right(payedInvoice).id)
+        assertEquals(true, removedInvoice.isRight())
+    }
+
+    /* Helper function to unpack the 'right' part of an 'either'. */
+    private fun <T> right(arg: Either<PaymentError, T>): T =
+        arg.fold({ fail("Invalid argument, expected a 'right' value but was ${it}") }, { it })
 }

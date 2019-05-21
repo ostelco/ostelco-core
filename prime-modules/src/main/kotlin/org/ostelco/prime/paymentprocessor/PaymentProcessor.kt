@@ -12,6 +12,7 @@ import org.ostelco.prime.paymentprocessor.core.SourceInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
 import org.ostelco.prime.paymentprocessor.core.TaxRateInfo
+import java.math.BigDecimal
 
 interface PaymentProcessor {
 
@@ -152,6 +153,12 @@ interface PaymentProcessor {
     fun createInvoiceItem(customerId: String, amount: Int, currency: String, description: String): Either<PaymentError, InvoiceItemInfo>
 
     /**
+     * @param invoiceItemId ID of invoice item to delete
+     * @return ID of the deleted invoice item
+     */
+    fun removeInvoiceItem(invoiceItemId: String): Either<PaymentError, InvoiceItemInfo>
+
+    /**
      * @param customerId ID of the customer to which the invoice will be assigned to
      * @param taxRates List of tax-rates to apply
      * @return ID of the invoice
@@ -174,10 +181,18 @@ interface PaymentProcessor {
     fun createInvoice(customerId: String, region: String, amount: Int, currency: String, description: String): Either<PaymentError, InvoiceInfo>
 
     /**
-     * @param invoice ID of the invoice to be paid
+     * @param invoiceId ID of the invoice to be paid
      * @return ID of the invoice
      */
-    fun payInvoice(invoice: InvoiceInfo): Either<PaymentError, InvoiceInfo>
+    fun payInvoice(invoiceId: String): Either<PaymentError, InvoiceInfo>
+
+    /**
+     * @param invoiceId ID of the invoice to be paid
+     * @return ID of the invoice
+     */
+    fun removeInvoice(invoiceId: String): Either<PaymentError, InvoiceInfo>
+
+    fun createTaxRateForRegion(regionCode: String, percentage: BigDecimal, displayName: String, inclusive: Boolean = true): Either<PaymentError, TaxRateInfo>
 
     /**
      * @param region Region code

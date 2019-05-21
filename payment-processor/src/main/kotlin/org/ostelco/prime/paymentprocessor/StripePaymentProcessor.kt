@@ -3,7 +3,6 @@ package org.ostelco.prime.paymentprocessor
 import arrow.core.Either
 import arrow.core.Try
 import arrow.core.flatMap
-import arrow.core.left
 import arrow.core.right
 import com.stripe.exception.ApiConnectionException
 import com.stripe.exception.AuthenticationException
@@ -25,6 +24,7 @@ import com.stripe.model.Source
 import com.stripe.model.Subscription
 import com.stripe.model.TaxRate
 import com.stripe.net.RequestOptions
+import jdk.jfr.Percentage
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.paymentprocessor.core.BadGatewayError
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
@@ -41,6 +41,7 @@ import org.ostelco.prime.paymentprocessor.core.SourceInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
 import org.ostelco.prime.paymentprocessor.core.TaxRateInfo
+import java.math.BigDecimal
 import java.time.Instant
 import java.util.*
 
@@ -362,14 +363,19 @@ class StripePaymentProcessor : PaymentProcessor {
                 InvoiceItemInfo(InvoiceItem.create(params).id)
             }
 
+    override fun removeInvoiceItem(invoiceItemId: String): Either<PaymentError, InvoiceItemInfo> =
+            either("Failed to remove invoice item ${invoiceItemId} with Stripe") {
+                val invoiceItem = InvoiceItem.retrieve(invoiceItemId).delete()
+                InvoiceItemInfo(invoiceItem.id)
+            }
+
     override fun createInvoice(customerId: String, taxRates: List<TaxRateInfo>): Either<PaymentError, InvoiceInfo> =
             either("Failed to create an invoice for ${customerId} with Stripe") {
                 val params = mapOf(
                         "customer" to customerId,
-                        "billing" to "charge_automatically",
                         "auto_advance" to true,
                         *(if (taxRates.isNotEmpty())
-                            arrayOf("default_tax_rates" to arrayOf(taxRates))
+                            arrayOf("default_tax_rates" to taxRates.map { it.id })
                         else arrayOf())
                 )
                 InvoiceInfo(Invoice.create(params).id)
@@ -385,11 +391,62 @@ class StripePaymentProcessor : PaymentProcessor {
                                 .flatMap { lst -> createInvoice(customerId, lst) }
                     }
 
-    override fun payInvoice(invoice: InvoiceInfo): Either<PaymentError, InvoiceInfo> =
-            either("Failed to complete payment of invoice ${invoice.id}") {
-                InvoiceInfo(Invoice.retrieve(invoice.id).pay()
+    override fun payInvoice(invoiceId: String): Either<PaymentError, InvoiceInfo> =
+            either("Failed to complete payment of invoice ${invoiceId}") {
+                InvoiceInfo(Invoice.retrieve(invoiceId).pay()
                         .id)
             }
+
+    override fun removeInvoice(invoiceId: String): Either<PaymentError, InvoiceInfo> =
+            either("Failed to remove invoice ${invoiceId} with Stripe") {
+                val invoice = Invoice.retrieve(invoiceId)
+
+                /* Wether an invoice can be deleted or not, depends on what
+                   status the invoice has.
+                   Ref.: https://stripe.com/docs/billing/invoices/workflow */
+                when (invoice.status) {
+                    "draft" -> {
+                        val items = invoice.lines.list(emptyMap()).data
+
+                        items.forEach {
+                            InvoiceItem.retrieve(it.id).delete()
+                        }
+                        invoice.delete()
+                    }
+                    "open", "uncollectible" -> {
+                        invoice.voidInvoice()
+                    }
+                    "paid", "void" -> {
+                        /* Nothing to do. */
+                    }
+                    else -> {
+                        logger.error("Unexpected invoice status {} when attempting to delete invoice {}",
+                                invoice.status, invoice.id)
+                    }
+                }
+                InvoiceInfo(invoice.id)
+            }
+
+    /* NOTE! This method creates a 'tax rate' with Stipe, unless there already
+             exists a 'tax-rate' with the same information. */
+    override fun createTaxRateForRegion(regionCode: String, percentage: BigDecimal, displayName: String, inclusive: Boolean): Either<PaymentError, TaxRateInfo> =
+            getTaxRatesForRegion(regionCode)
+                    .flatMap { taxRates ->
+                        val match = taxRates.find {
+                            it.percentage == percentage && it.displayName == displayName && it.inclusive == inclusive
+                        }
+
+                        if (match == null) {
+                            val param = mapOf(
+                                    "percentage" to percentage,
+                                    "display_name" to displayName,
+                                    "inclusive" to inclusive,
+                                    "metadata" to mapOf("region-code" to regionCode))
+                            TaxRateInfo(TaxRate.create(param).id, percentage, displayName, inclusive)
+                        } else {
+                            match
+                        }.right()
+                    }
 
     /* TODO: (kmm) Will have to come up with a "scheme" for finding the correct 'tax' entry
              given the where the customer is residing. Currently the 'region' code is used
@@ -407,7 +464,7 @@ class StripePaymentProcessor : PaymentProcessor {
                             lst.map {
                                 TaxRateInfo(id = it.id,
                                         percentage = it.percentage,
-                                        displayName = it.displayName,   /* NOK, GST, etc. */
+                                        displayName = it.displayName,   /* VAT, GST, etc. */
                                         inclusive = it.inclusive)
                             }.right()
                         }
