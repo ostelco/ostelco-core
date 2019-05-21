@@ -5,6 +5,7 @@ import com.google.api.core.ApiFutures.addCallback
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.messaging.FirebaseMessagingException
 import com.google.firebase.messaging.Message
 import com.google.firebase.messaging.Notification
 import org.ostelco.prime.getLogger
@@ -64,7 +65,16 @@ class FirebaseAppNotifier: AppNotifier {
                     }
 
                     override fun onFailure(t: Throwable) {
-                        logger.warn("Notification for $customerId  with appId: ${applicationToken.applicationID} failed with error: $t")
+                        if (t is FirebaseMessagingException) {
+                            val errorCode = t.errorCode
+                            logger.warn("Notification for $customerId  with appId: ${applicationToken.applicationID} failed with errorCode: $errorCode")
+                            if (listOfFailureCodes.contains(errorCode)) {
+                                logger.warn("Removing failed token for $customerId with appId: ${applicationToken.applicationID} token: $applicationToken.token")
+                                store.removeNotificationToken(customerId, applicationToken.applicationID)
+                            }
+                        } else {
+                            logger.warn("Notification for $customerId  with appId: ${applicationToken.applicationID} failed with error: $t")
+                        }
                     }
                 }
                 addCallback(future, apiFutureCallback, directExecutor())

@@ -28,9 +28,9 @@ class App extends Component {
           <NavItem>
             <NavLink tag={Link} href="/" to="/">Search</NavLink>
           </NavItem>
-          <NavItem>
+          {/* <NavItem>
             <NavLink tag={Link} href="/notifications" to="/notifications">Notifications</NavLink>
-          </NavItem>
+          </NavItem> */}
           <NavItem>
             <NavLink tag={Link} href="" to="/" onClick={(e) => { e.preventDefault(); props.logout(); }}>Logout</NavLink>
           </NavItem>
