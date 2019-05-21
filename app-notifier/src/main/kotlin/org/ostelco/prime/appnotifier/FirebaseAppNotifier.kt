@@ -26,7 +26,7 @@ class FirebaseAppNotifier: AppNotifier {
     }
 
     override fun notify(customerId: String, title: String, body: String, data: Map<String, String>) {
-        logger.info("Will try to notify-with-data customer with Id : $customerId")
+        logger.info("Will try to notify-with-data customer with Id : $customerId $body, $data")
         sendNotification(customerId, title, body, data)
     }
 
@@ -57,14 +57,14 @@ class FirebaseAppNotifier: AppNotifier {
 
                 val apiFutureCallback = object : ApiFutureCallback<String> {
                     override fun onSuccess(result: String) {
-                        logger.info("Notification completed with result: $result")
+                        logger.info("Notification for $customerId completed with result: $result")
                         if (listOfFailureCodes.contains(result)) {
                             store.removeNotificationToken(customerId, applicationToken.applicationID)
                         }
                     }
 
                     override fun onFailure(t: Throwable) {
-                        logger.warn("Notification failed with error: $t")
+                        logger.warn("Notification for $customerId failed with error: $t")
                     }
                 }
                 addCallback(future, apiFutureCallback, directExecutor())
