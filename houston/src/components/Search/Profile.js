@@ -31,8 +31,8 @@ class Profile extends React.Component {
             <Col xs={12} md={8}>{`${props.profile.contactEmail}`}</Col>
           </Row>
           <Row>
-            <Col xs={2} md={2}>{'Address:'}</Col>
-            <Col xs={12} md={8}>{`${props.profile.address}`}</Col>
+            <Col xs={2} md={2}>{'ID:'}</Col>
+            <Col xs={12} md={8}>{`${props.profile.id}`}</Col>
           </Row>
           <hr />
           {listItems}
