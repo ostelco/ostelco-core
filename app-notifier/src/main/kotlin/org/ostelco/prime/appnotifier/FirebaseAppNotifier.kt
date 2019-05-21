@@ -57,14 +57,14 @@ class FirebaseAppNotifier: AppNotifier {
 
                 val apiFutureCallback = object : ApiFutureCallback<String> {
                     override fun onSuccess(result: String) {
-                        logger.info("Notification for $customerId completed with result: $result")
+                        logger.info("Notification for $customerId with appId: ${applicationToken.applicationID} completed with result: $result")
                         if (listOfFailureCodes.contains(result)) {
                             store.removeNotificationToken(customerId, applicationToken.applicationID)
                         }
                     }
 
                     override fun onFailure(t: Throwable) {
-                        logger.warn("Notification for $customerId failed with error: $t")
+                        logger.warn("Notification for $customerId  with appId: ${applicationToken.applicationID} failed with error: $t")
                     }
                 }
                 addCallback(future, apiFutureCallback, directExecutor())

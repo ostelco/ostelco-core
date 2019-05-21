@@ -409,7 +409,7 @@ class NotifyResource {
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { customerId ->
                     logger.info("${token.name} Sending notification to $decodedEmail customerId: $customerId")
-                    val data = mapOf<String, String>("timestamp" to "${System.currentTimeMillis()}")
+                    val data = mapOf("timestamp" to "${System.currentTimeMillis()}")
                     notifier.notify(customerId, title, message, data)
                     Response.status(Response.Status.OK).entity("Message Sent")
                 })
