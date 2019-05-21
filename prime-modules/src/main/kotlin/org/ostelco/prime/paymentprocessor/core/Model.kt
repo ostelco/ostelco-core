@@ -1,5 +1,7 @@
 package org.ostelco.prime.paymentprocessor.core
 
+import java.math.BigDecimal
+
 /* Intended for reporting status for payment operations. */
 enum class PaymentStatus {
     PAYMENT_SUCCEEDED,
@@ -22,7 +24,7 @@ data class SubscriptionInfo(val id: String)
 
 data class SubscriptionDetailsInfo(val id: String, val status: PaymentStatus, val invoiceId: String, val chargeId: String, val created: Long, val trialEnd: Long = 0L)
 
-data class TaxRateInfo(val id: String)
+data class TaxRateInfo(val id: String, val percentage: BigDecimal, val displayName: String, val inclusive: Boolean)
 
 data class InvoiceItemInfo(val id: String)
 

@@ -404,8 +404,12 @@ class StripePaymentProcessor : PaymentProcessor {
                             emptyList<TaxRateInfo>()
                                     .right()
                         else {
-                            lst.map { TaxRateInfo(id = it.id) }
-                                    .right()
+                            lst.map {
+                                TaxRateInfo(id = it.id,
+                                        percentage = it.percentage,
+                                        displayName = it.displayName,   /* NOK, GST, etc. */
+                                        inclusive = it.inclusive)
+                            }.right()
                         }
                     }
 
