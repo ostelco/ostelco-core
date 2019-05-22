@@ -13,23 +13,36 @@ const DEPLOYED_DEV_AUTH_CONFIG = {
   homeUrl: 'https://redotter-admin-dev.firebaseapp.com'
 };
 
+const DEPLOYED_PROD_AUTH_CONFIG = {
+  domain: 'redotter-admin.eu.auth0.com',
+  clientId: 'kD1KTanjQlpBUPwB0jiYq4kqWBdOa7AZ',
+  callbackUrl: 'https://redotter-admin.firebaseapp.com/callback',
+  homeUrl: 'https://redotter-admin.firebaseapp.com'
+};
+
 export function getAuthConfig() {
-  if (process.env.REACT_APP_DEPLOYMENT_ENV === "development") {
+  if (process.env.REACT_APP_DEPLOYMENT_ENV === "development" ||
+    process.env.NODE_ENV === "development") {
     return DEPLOYED_DEV_AUTH_CONFIG;
-  } else if (process.env.NODE_ENV === "development") {
-    return DEV_AUTH_CONFIG;
+  } else if (process.env.REACT_APP_DEPLOYMENT_ENV === "production" ||
+    process.env.NODE_ENV === "production") {
+    return DEPLOYED_PROD_AUTH_CONFIG;
   } else {
     return DEV_AUTH_CONFIG;
   }
 }
 
 export function getAPIRoot() {
-  const API_ROOT = 'https://houston-api.dev.oya.world/';
-  if (process.env.REACT_APP_DEPLOYMENT_ENV === "development") {
-    return API_ROOT;
-  } else if (process.env.NODE_ENV === "development") {
-    return API_ROOT;
+  const DEV_API_ROOT = 'https://houston-api.dev.oya.world/';
+  const PROD_API_ROOT = 'https://houston-api.oya.world/';
+
+  if (process.env.REACT_APP_DEPLOYMENT_ENV === "development" ||
+    process.env.NODE_ENV === "development") {
+    return DEV_API_ROOT;
+  } else if (process.env.REACT_APP_DEPLOYMENT_ENV === "production" ||
+    process.env.NODE_ENV === "production") {
+    return PROD_API_ROOT;
   } else {
-    return API_ROOT;
+    return DEV_API_ROOT;
   }
 }

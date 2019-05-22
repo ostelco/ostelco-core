@@ -518,9 +518,9 @@ definitions:
       - status
 securityDefinitions:
   auth0_jwt:
-    authorizationUrl: "https://redotter-admin-dev.eu.auth0.com/authorize"
+    authorizationUrl: "https://redotter-admin.eu.auth0.com/authorize"
     flow: "implicit"
     type: "oauth2"
-    x-google-issuer: "https://redotter-admin-dev.eu.auth0.com/"
-    x-google-jwks_uri: "https://redotter-admin-dev.eu.auth0.com/.well-known/jwks.json"
+    x-google-issuer: "https://redotter-admin.eu.auth0.com/"
+    x-google-jwks_uri: "https://redotter-admin.eu.auth0.com/.well-known/jwks.json"
     x-google-audiences: "http://google_api"
