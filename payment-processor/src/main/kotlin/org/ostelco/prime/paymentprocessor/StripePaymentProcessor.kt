@@ -388,7 +388,7 @@ class StripePaymentProcessor : PaymentProcessor {
             createInvoiceItem(customerId, amount, currency, description)
                     .flatMap {
                         getTaxRatesForRegion(region)
-                                .flatMap { lst -> createInvoice(customerId, lst) }
+                                .flatMap { taxRates -> createInvoice(customerId, taxRates) }
                     }
 
     override fun payInvoice(invoiceId: String): Either<PaymentError, InvoiceInfo> =
