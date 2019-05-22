@@ -113,8 +113,17 @@ interface ClientGraphStore {
     /**
      * Provision new SIM Profile for Customer
      */
-
     fun provisionSimProfile(identity: Identity, regionCode: String, profileType: String?): Either<StoreError, SimProfile>
+
+    /**
+     * Update SIM Profile for Customer
+     */
+    fun updateSimProfile(identity: Identity, regionCode: String, iccId: String, alias: String): Either<StoreError, SimProfile>
+
+    /**
+     * Provision new SIM Profile for Customer
+     */
+    fun sendEmailWithActivationQrCode(identity: Identity, regionCode: String, iccId: String): Either<StoreError, SimProfile>
 
     /**
      * Get balance for Client
@@ -201,7 +210,14 @@ interface AdminGraphStore {
      * Link Customer to MSISDN
      */
     @Deprecated(message = "Assigning MSISDN to Customer via Admin API will be removed in future.")
-    fun addSubscription(identity: Identity, msisdn: String): Either<StoreError, Unit>
+    fun addSubscription(
+            identity: Identity,
+            regionCode: String,
+            iccId: String,
+            alias: String,
+            msisdn: String): Either<StoreError, Unit>
+
+    fun deleteSimProfileWithSubscription(regionCode: String, iccId: String): Either<StoreError, Unit>
 
     // simple create
     fun createProductClass(productClass: ProductClass): Either<StoreError, Unit>
@@ -261,21 +277,22 @@ interface AdminGraphStore {
      * Remove the subscription to a plan for a specific subscrber.
      * @param identity - The identity of the customer
      * @param planId - The name/id of the plan
-     * @param atIntervalEnd - Remove at end of curren subscription period
+     * @param invoiceNow - Set to true if a final invoice should be generated now
      * @return Unit value if the subscription was removed successfully
      */
-    fun unsubscribeFromPlan(identity: Identity, planId: String, atIntervalEnd: Boolean = false): Either<StoreError, Plan>
+    fun unsubscribeFromPlan(identity: Identity, planId: String, invoiceNow: Boolean = true): Either<StoreError, Plan>
 
     /**
      * Adds a purchase record to customer on start of or renewal
      * of a subscription.
-     * @param invoiceId - The reference to the invoice that has been paid
      * @param customerId - The customer that got charged
+     * @param invoiceId - The reference to the invoice that has been paid
+     * @param chargeId - The reference to the charge (used on refunds)
      * @param sku - The product/plan bought
      * @param amount - Cost of the product/plan
      * @param currency - Currency used
      */
-    fun subscriptionPurchaseReport(invoiceId: String, customerId: String, sku: String, amount: Long, currency: String): Either<StoreError, Plan>
+    fun purchasedSubscription(customerId: String, invoiceId: String, chargeId: String, sku: String, amount: Long, currency: String): Either<StoreError, Plan>
 
     // atomic import of Offer + Product + Segment
     fun atomicCreateOffer(

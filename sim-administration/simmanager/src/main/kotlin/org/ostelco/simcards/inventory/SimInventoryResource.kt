@@ -15,13 +15,16 @@ import javax.ws.rs.Path
 import javax.ws.rs.PathParam
 import javax.ws.rs.Produces
 import javax.ws.rs.QueryParam
+import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
+import javax.ws.rs.core.UriInfo
 
 
-///
-///  The web resource using the protocol domain model.
-///
+/**
+ * Web resource used for administrating SIM profiles from misc. vendors
+ * for misc. HSSes.
+ */
 
 @Path("/ostelco/sim-inventory/{hssVendors}")
 class SimInventoryResource(private val api: SimInventoryApi) {
@@ -111,15 +114,31 @@ class SimInventoryResource(private val api: SimInventoryApi) {
     fun importBatch(
             @NotEmpty @PathParam("hssVendors") hss: String,
             @NotEmpty @PathParam("simVendor") simVendor: String,
-            csvInputStream: InputStream): Response =
-            api.importBatch(hss, simVendor, csvInputStream)
-                    .fold(
-                            {
-                                error("Failed to upload batch with SIM profiles for HSS ${hss} and SIM profile vendor ${simVendor}",
-                                        ApiErrorCode.FAILED_TO_IMPORT_BATCH, it)
-                            },
-                            { Response.status(Response.Status.OK).entity(asJson(it)) }
-                    ).build()
+            @Context  context: UriInfo,
+            @QueryParam("initialHssState") @DefaultValue("NOT_ACTIVATED")  initialHssState: HssState,
+            csvInputStream: InputStream): Response {
+
+        // Check for illegal query parameters.  We don't want _anything_ to be inexact when importing
+        // sim profiles.  Typos have consequences, such as using a default value, when an override was
+        // intended.
+        val unknownQueryParameters = context.queryParameters.keys.subtract(listOf("initialHssState"))
+        if (unknownQueryParameters.isNotEmpty()) {
+            return Response.status(
+                    Response.Status.BAD_REQUEST)
+                    .entity("Unknown query parameter(s): \"${unknownQueryParameters.joinToString(separator = ", ")}\"")
+                    .build()
+        }
+
+        return api.importBatch(hss, simVendor, csvInputStream, initialHssState)
+                .fold(
+                        {
+                            error("Failed to upload batch with SIM profiles for HSS ${hss} and SIM profile vendor ${simVendor}",
+                                    ApiErrorCode.FAILED_TO_IMPORT_BATCH, it)
+                        },
+                        { Response.status(Response.Status.OK).entity(asJson(it)) }
+                ).build()
+    }
+
 
     /* Maps internal errors to format suitable for HTTP/REST. */
     private fun error(description: String, code: ApiErrorCode, error: SimManagerError): Response.ResponseBuilder {

@@ -58,15 +58,19 @@ modules:
       stripeEventTopicId: ${STRIPE_EVENT_TOPIC}
       stripeEventStoreSubscriptionId: ${STRIPE_EVENT_STORE_SUBSCRIPTION}
       stripeEventReportSubscriptionId: ${STRIPE_EVENT_REPORT_SUBSCRIPTION}
+      stripeEventRecurringPaymentSubscriptionId: ${STRIPE_EVENT_RECURRING_PAYMENT_SUBSCRIPTION}
   - type: firebase-app-notifier
     config:
       configFile: /secret/prime-service-account.json
   - type: admin
   - type: graphql
-  - type: scaninfo-store
+  - type: secure-archive
     config:
-      keysetFilePathPrefix: /scaninfo-keysets/encrypt_key
-      namespace: ""
+      storageBucket: ${SCANINFO_STORAGE_BUCKET}
+      masterKeyUri: ${SCANINFO_MASTERKEY_URI}
+      keySetFilePathPrefix: /scaninfo-keysets/encrypt_key
+      regions: [ "sg" ]
+  - type: scaninfo-store
   - type: sim-manager
     config:
       openApi:

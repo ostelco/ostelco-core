@@ -34,6 +34,8 @@ class CreditControlContext(
     // Set to true, when answer to not to be sent to P-GW.
     var skipAnswer: Boolean = false
 
+    var requestTime = System.currentTimeMillis()
+
     val creditControlRequest: CreditControlRequest = AvpParser().parse(
             CreditControlRequest::class,
             originalCreditControlRequest.message.avps)
@@ -89,8 +91,8 @@ class CreditControlContext(
 
                 if (mscc.granted.total > -1) {
                     val gsuAvp = answerMSCC.addGroupedAvp(Avp.GRANTED_SERVICE_UNIT, true, false)
-                    gsuAvp.addAvp(Avp.CC_INPUT_OCTETS, 0L, true, false)
-                    gsuAvp.addAvp(Avp.CC_OUTPUT_OCTETS, 0L, true, false)
+                    //gsuAvp.addAvp(Avp.CC_INPUT_OCTETS, 0L, true, false)
+                    //gsuAvp.addAvp(Avp.CC_OUTPUT_OCTETS, 0L, true, false)
                     gsuAvp.addAvp(Avp.CC_TOTAL_OCTETS, mscc.granted.total, true, false)
                 }
             }
@@ -127,5 +129,9 @@ class CreditControlContext(
                 }
             }
         }
+    }
+
+    fun logLatency() {
+        logger.info("Time from request to answer {} ms", System.currentTimeMillis() - requestTime)
     }
 }

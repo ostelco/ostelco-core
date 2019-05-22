@@ -47,15 +47,19 @@ modules:
       stripeEventTopicId: stripe-event
       stripeEventStoreSubscriptionId: stripe-event-store-sub
       stripeEventReportSubscriptionId: stripe-event-report-sub
+      stripeEventRecurringPaymentSubscriptionId: stripe-event-recurring-payment-sub
   - type: firebase-app-notifier
     config:
       configFile: /secret/prime-service-account.json
   - type: admin
   - type: graphql
+  - type: secure-archive
+    config:
+      keySetFilePathPrefix: /config/test_keyset_pub_cltxt
+      regions: [ "sg" ]
   - type: scaninfo-store
     config:
       storeType: emulator
-      keysetFilePathPrefix: /config/test_keyset_pub_cltxt
 server:
   applicationConnectors:
     - type: h2c

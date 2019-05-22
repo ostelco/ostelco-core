@@ -2,6 +2,7 @@ package org.ostelco.ocsgw.datasource.protobuf
 
 import com.google.api.core.ApiFutureCallback
 import com.google.api.core.ApiFutures
+import com.google.api.gax.batching.BatchingSettings
 import com.google.api.gax.core.NoCredentialsProvider
 import com.google.api.gax.grpc.GrpcTransportChannel
 import com.google.api.gax.rpc.ApiException
@@ -18,12 +19,13 @@ import com.google.pubsub.v1.PubsubMessage
 import io.grpc.ManagedChannelBuilder
 import org.ostelco.diameter.CreditControlContext
 import org.ostelco.diameter.getLogger
-import org.ostelco.ocs.api.ActivateResponse
-import org.ostelco.ocs.api.CreditControlAnswerInfo
+import org.ostelco.ocs.api.*
 import org.ostelco.ocsgw.datasource.DataSource
+import org.threeten.bp.Duration
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 
 
 class PubSubDataSource(
@@ -58,8 +60,10 @@ class PubSubDataSource(
         setupPubSubSubscriber(projectId, ccaSubscriptionId) { message, consumer ->
             // handle incoming message, then ack/nack the received message
             val ccaInfo = CreditControlAnswerInfo.parseFrom(message)
-            logger.info("[<<] CreditControlAnswer for {}", ccaInfo.msisdn)
-            protobufDataSource.handleCcrAnswer(ccaInfo)
+            if (ccaInfo.resultCode != ResultCode.UNKNOWN) {
+                logger.info("[<<] CreditControlAnswer for msisdn {} sessionId [{}]", ccaInfo.msisdn, ccaInfo.requestId)
+                protobufDataSource.handleCcrAnswer(ccaInfo)
+            }
             consumer.ack()
         }
 
@@ -69,6 +73,8 @@ class PubSubDataSource(
                     ActivateResponse.parseFrom(message))
             consumer.ack()
         }
+
+        initKeepAlive()
     }
 
     override fun init() {
@@ -77,51 +83,57 @@ class PubSubDataSource(
 
     override fun handleRequest(context: CreditControlContext) {
 
-        logger.info("[>>] creditControlRequest for {}", context.creditControlRequest.msisdn)
+        logger.info("[>>] creditControlRequest for msisdn {} session id [{}] request number [{}]", context.creditControlRequest.msisdn, context.sessionId, context.creditControlRequest.ccRequestNumber?.integer32)
 
         val creditControlRequestInfo = protobufDataSource.handleRequest(context, ccaTopicId)
 
         if (creditControlRequestInfo != null) {
-            val base64String = Base64.getEncoder().encodeToString(
-                    creditControlRequestInfo.toByteArray())
-            logger.debug("[>>] base64String: {}", base64String)
-            val byteString = ByteString.copyFromUtf8(base64String)
-
-            if (!byteString.isValidUtf8) {
-                logger.warn("Could not convert creditControlRequestInfo to UTF-8")
-                return
-            }
-            val pubsubMessage = PubsubMessage.newBuilder()
-                    .setMessageId(creditControlRequestInfo.requestId)
-                    .setData(byteString)
-                    .build()
-
-            //schedule a message to be published, messages are automatically batched
-            val future = publisher.publish(pubsubMessage)
-
-            // add an asynchronous callback to handle success / failure
-            ApiFutures.addCallback(future, object : ApiFutureCallback<String> {
-
-                override fun onFailure(throwable: Throwable) {
-                    if (throwable is ApiException) {
-                        // details on the API exception
-                        logger.warn("Status code: {}", throwable.statusCode.code)
-                        logger.warn("Retrying: {}", throwable.isRetryable)
-                    }
-                    logger.warn("Error sending CCR Request to PubSub")
-                }
-
-                override fun onSuccess(messageId: String) {
-                    // Once published, returns server-assigned message ids (unique within the topic)
-                    logger.debug("Submitted message with request-id: {} successfully", messageId)
-                }
-            }, singleThreadScheduledExecutor)
+            sendRequest(creditControlRequestInfo)
         }
     }
 
     override fun isBlocked(msisdn: String): Boolean = protobufDataSource.isBlocked(msisdn)
 
+    private fun sendRequest(creditControlRequestInfo : CreditControlRequestInfo) {
+        val base64String = Base64.getEncoder().encodeToString(
+                creditControlRequestInfo.toByteArray())
+        val byteString = ByteString.copyFromUtf8(base64String)
+
+        if (!byteString.isValidUtf8) {
+            logger.warn("Could not convert creditControlRequestInfo to UTF-8")
+            return
+        }
+        val pubsubMessage = PubsubMessage.newBuilder()
+                .setMessageId(creditControlRequestInfo.requestId)
+                .setData(byteString)
+                .build()
+
+        //schedule a message to be published, messages are automatically batched
+        val future = publisher.publish(pubsubMessage)
+
+        // add an asynchronous callback to handle success / failure
+        ApiFutures.addCallback(future, object : ApiFutureCallback<String> {
+
+            override fun onFailure(throwable: Throwable) {
+                if (throwable is ApiException) {
+                    // details on the API exception
+                    logger.warn("Status code: {}", throwable.statusCode.code)
+                    logger.warn("Retrying: {}", throwable.isRetryable)
+                }
+                logger.warn("Error sending CCR Request to PubSub")
+            }
+
+            override fun onSuccess(messageId: String) {
+                // Once published, returns server-assigned message ids (unique within the topic)
+                // logger.debug("Submitted message with request-id: {} successfully", messageId)
+            }
+        }, singleThreadScheduledExecutor)
+    }
+
     private fun setupPublisherToTopic(projectId: String, topicId: String): Publisher {
+
+        val batchingSettings = BatchingSettings.newBuilder().setIsEnabled(false).build()
+
         logger.info("Setting up Publisher for topic: {}", topicId)
         val topicName = ProjectTopicName.of(projectId, topicId)
         return pubSubChannelProvider
@@ -129,9 +141,10 @@ class PubSubDataSource(
                     Publisher.newBuilder(topicName)
                             .setChannelProvider(channelProvider)
                             .setCredentialsProvider(NoCredentialsProvider())
+                            .setBatchingSettings(batchingSettings)
                             .build()
                 }
-                ?: Publisher.newBuilder(topicName).build()
+                ?: Publisher.newBuilder(topicName).setBatchingSettings(batchingSettings).build()
     }
 
     private fun setupPubSubSubscriber(projectId: String, subscriptionId: String, handler: (ByteString, AckReplyConsumer) -> Unit) {
@@ -142,7 +155,6 @@ class PubSubDataSource(
 
         val receiver = MessageReceiver { message, consumer ->
             val base64String = message.data.toStringUtf8()
-            logger.debug("[<<] base64String: {}", base64String)
             handler(ByteString.copyFrom(Base64.getDecoder().decode(base64String)), consumer)
         }
 
@@ -163,5 +175,25 @@ class PubSubDataSource(
             // stop receiving messages
             // subscriber?.stopAsync()
         }
+    }
+
+    /**
+     * The keep alive messages are sent so the stream is always active-
+     * This to keep latency low.
+     */
+    private fun initKeepAlive() {
+        // this is used to keep low latency on the connection
+        singleThreadScheduledExecutor.scheduleWithFixedDelay({
+            val ccrInfo = CreditControlRequestInfo.newBuilder()
+                    .setType(CreditControlRequestType.NONE)
+                    .setRequestId(UUID.randomUUID().toString())
+                    .setTopicId(ccaTopicId)
+                    .setMsisdn("keepalive")
+                    .buildPartial()
+            sendRequest(ccrInfo)
+        },
+                5,
+                2,
+                TimeUnit.SECONDS)
     }
 }

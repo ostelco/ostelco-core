@@ -17,6 +17,8 @@ repositories {
 dependencies {
 
   implementation project(":prime-modules")
+  implementation project(':data-store')
+  
   implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
 
   implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
@@ -29,6 +31,8 @@ dependencies {
   testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
 
+  testImplementation project(':secure-archive')
+  
   testImplementation "org.mockito:mockito-core:$mockitoVersion"
 }
 

@@ -16,6 +16,7 @@ import org.ostelco.prime.simmanager.NotUpdatedError
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.sim.es2plus.*
 import org.ostelco.simcards.admin.ProfileVendorConfig
+import org.ostelco.simcards.inventory.HssState
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SmDpPlusState
@@ -23,7 +24,7 @@ import java.util.*
 import javax.ws.rs.core.MediaType
 
 /**
- * An profilevendors that can connect to SIM profile vendors and activate
+ * An profile vendors that can connect to SIM profile vendors and activate
  * the requested SIM profile.
  *
  * Will connect to the SM-DP+  and then activate the profile, so that when

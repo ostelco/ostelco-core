@@ -59,6 +59,7 @@ curl -X PUT -H "Content-Type: application/json" -d '{"topic":"projects/'${GCP_PR
 # For Stripe
 curl -X PUT -H "Content-Type: application/json" -d '{"topic":"projects/'${GCP_PROJECT_ID}'/topics/stripe-event","ackDeadlineSeconds":10}' pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/stripe-event-store-sub
 curl -X PUT -H "Content-Type: application/json" -d '{"topic":"projects/'${GCP_PROJECT_ID}'/topics/stripe-event","ackDeadlineSeconds":10}' pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/stripe-event-report-sub
+curl -X PUT -H "Content-Type: application/json" -d '{"topic":"projects/'${GCP_PROJECT_ID}'/topics/stripe-event","ackDeadlineSeconds":10}' pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/stripe-event-recurring-payment-sub
 
 # For OCS API
 curl -X PUT -H "Content-Type: application/json" -d '{"topic":"projects/'${GCP_PROJECT_ID}'/topics/ocs-ccr","ackDeadlineSeconds":10}' pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/ocs-ccr-sub

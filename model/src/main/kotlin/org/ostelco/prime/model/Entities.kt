@@ -63,6 +63,8 @@ enum class KycStatus {
     APPROVED   // eKYC approved
 }
 
+data class MyInfoConfig(val url: String)
+
 enum class ScanStatus {
     PENDING,   // scan results are pending
     REJECTED,  // scanned Id was rejected
@@ -108,17 +110,6 @@ data class ScanMetadata(
         val customerId: String,         // The owner of the scan
         val processedTime: Long         // The time when callback was processed.
 )
-
-enum class ScanMetadataEnum(val s: String) {
-    // Property names for Datastore
-    ID("id"),
-    SCAN_REFERENCE("scanReference"),
-    COUNTRY_CODE("countryCode"),
-    CUSTOMER_ID("customerId"),
-    PROCESSED_TIME("processedTime"),
-    // Type name of the Object
-    KIND("ScanMetaData")
-}
 
 enum class JumioScanData(val s: String) {
     // Property names in POST data from Jumio
@@ -236,10 +227,12 @@ data class RefundRecord(
         val timestamp: Long) : HasId
 
 data class PurchaseRecord(
-        override val id: String,
+        override val id: String,           /* 'charge' id. */
         val product: Product,
         val timestamp: Long,
-        val refund: RefundRecord? = null) : HasId
+        val refund: RefundRecord? = null,
+        /* For storing 'invoice-id' when purchasing a plan. */
+        val properties: Map<String, String> = emptyMap()) : HasId
 
 data class PurchaseRecordInfo(override val id: String,
                               val subscriberId: String,

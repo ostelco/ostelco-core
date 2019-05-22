@@ -240,7 +240,9 @@ class BundlesAndPurchasesTest {
             val freeProduct = Product()
                     .sku("2GB_FREE_ON_JOINING")
                     .price(Price().amount(0).currency(""))
-                    .properties(mapOf("noOfBytes" to "2_147_483_648"))
+                    .properties(mapOf(
+                            "noOfBytes" to "2_147_483_648",
+                            "productClass" to "SIMPLE_DATA"))
                     .presentation(emptyMap<String, String>())
 
             val purchaseRecords = client.purchaseHistory
@@ -586,6 +588,31 @@ class PurchaseTest {
 class SingaporeKycTest {
 
     @Test
+    fun `okhttp test - GET myinfoConfig`() {
+
+        val email = "myinfo-${randomInt()}@test.com"
+        var customerId = ""
+        try {
+
+            customerId = createCustomer(name = "Test MyInfoConfig Customer", email = email).id
+
+            val client = clientForSubject(subject = email)
+
+            val myInfoConfig = client.myInfoConfig
+
+            assertEquals(
+                    "http://ext-myinfo-emulator:8080/authorise" +
+                            "?client_id=STG2-MYINFO-SELF-TEST" +
+                            "&attributes=name,sex,dob,residentialstatus,nationality,mobileno,email,regadd" +
+                            "&redirect_uri=http://localhost:3001/callback",
+                    myInfoConfig.url)
+
+        } finally {
+            StripePayment.deleteCustomer(customerId = customerId)
+        }
+    }
+
+    @Test
     fun `okhttp test - GET myinfo`() {
 
         val email = "myinfo-${randomInt()}@test.com"
@@ -810,7 +837,9 @@ class ReferralTest {
             val freeProductForReferred = Product()
                     .sku("1GB_FREE_ON_REFERRED")
                     .price(Price().amount(0).currency("NOK"))
-                    .properties(mapOf("noOfBytes" to "1_000_000_000"))
+                    .properties(mapOf(
+                            "noOfBytes" to "1_000_000_000",
+                            "productClass" to "SIMPLE_DATA"))
                     .presentation(emptyMap<String, String>())
 
             assertEquals(listOf(freeProductForReferred), secondEmailClient.purchaseHistory.map { it.product })

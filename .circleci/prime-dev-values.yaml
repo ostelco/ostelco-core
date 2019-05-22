@@ -42,6 +42,7 @@ prime:
     STRIPE_EVENT_TOPIC: stripe-event
     STRIPE_EVENT_STORE_SUBSCRIPTION: stripe-event-store-sub
     STRIPE_EVENT_REPORT_SUBSCRIPTION: stripe-event-report-sub
+    STRIPE_EVENT_RECURRING_PAYMENT_SUBSCRIPTION: stripe-event-recurring-payment-sub
     GCP_PROJECT_ID: pi-ostelco-dev
     ACTIVATE_TOPIC_ID: ocs-activate
     CCR_SUBSCRIPTION_ID: ocs-ccr-sub
@@ -264,10 +265,10 @@ services:
     clientCert: true
     caCert: smdp-cacert.dev # secretname.namespace
 
-certs: 
+certs:
   enabled: true
   dnsProvider: dev-clouddns
-  issuer: letsencrypt-production 
+  issuer: letsencrypt-production
   tlsSecretName: dev-oya-tls
   hosts:
     - '*.dev.oya.world'

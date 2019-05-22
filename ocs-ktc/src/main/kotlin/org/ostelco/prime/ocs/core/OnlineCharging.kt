@@ -3,14 +3,8 @@ package org.ostelco.prime.ocs.core
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.ostelco.ocs.api.CreditControlAnswerInfo
-import org.ostelco.ocs.api.CreditControlRequestInfo
-import org.ostelco.ocs.api.FinalUnitAction
-import org.ostelco.ocs.api.FinalUnitIndication
-import org.ostelco.ocs.api.MultipleServiceCreditControl
-import org.ostelco.ocs.api.ReportingReason
-import org.ostelco.ocs.api.ResultCode
-import org.ostelco.ocs.api.ServiceUnit
+import org.ostelco.ocs.api.*
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.ocs.analytics.AnalyticsReporter
 import org.ostelco.prime.ocs.consumption.OcsAsyncRequestConsumer
@@ -27,6 +21,8 @@ object OnlineCharging : OcsAsyncRequestConsumer {
 
     private val storage: ClientDataSource = getResource()
 
+    private val logger by getLogger()
+
     override fun creditControlRequestEvent(
             request: CreditControlRequestInfo,
             returnCreditControlAnswer: (CreditControlAnswerInfo) -> Unit) {
@@ -34,42 +30,53 @@ object OnlineCharging : OcsAsyncRequestConsumer {
         val msisdn = request.msisdn
 
         if (msisdn != null) {
-            CoroutineScope(Dispatchers.Default).launch {
 
-                val response = CreditControlAnswerInfo.newBuilder()
-                        .setRequestId(request.requestId)
-                        .setMsisdn(msisdn)
-                        .setResultCode(ResultCode.DIAMETER_SUCCESS)
+            val responseBuilder = CreditControlAnswerInfo.newBuilder()
 
-                val doneSignal = CountDownLatch(request.msccList.size)
+            // these are keepalives to keep latency low
+            if (msisdn.equals("keepalive")) {
+                responseBuilder.setRequestId(request.requestId).setMsisdn("keepalive").setResultCode(ResultCode.UNKNOWN)
+                returnCreditControlAnswer(responseBuilder.buildPartial())
+            } else {
 
-                request.msccList.forEach { mscc ->
+                CoroutineScope(Dispatchers.Default).launch {
 
-                    val requested = mscc.requested?.totalOctets ?: 0
-                    val used = mscc.used?.totalOctets ?: 0
-                    if (shouldConsume(mscc.ratingGroup, mscc.serviceIdentifier)) {
-                        storage.consume(msisdn, used, requested) { storeResult ->
-                            storeResult.fold(
-                                    {
-                                        response.resultCode = ResultCode.DIAMETER_USER_UNKNOWN
-                                        doneSignal.countDown()
-                                    },
-                                    {
-                                        consumptionResult -> addGrantedQuota(consumptionResult.granted, mscc, response)
-                                        reportAnalytics(consumptionResult, request)
-                                        doneSignal.countDown()
-                                    }
-                            )
+                    responseBuilder.setRequestId(request.requestId)
+                            .setMsisdn(msisdn).setResultCode(ResultCode.DIAMETER_SUCCESS)
+
+                    val doneSignal = CountDownLatch(request.msccList.size)
+
+                    request.msccList.forEach { mscc ->
+
+                        val requested = mscc.requested?.totalOctets ?: 0
+                        val used = mscc.used?.totalOctets ?: 0
+                        if (shouldConsume(mscc.ratingGroup, mscc.serviceIdentifier)) {
+                            storage.consume(msisdn, used, requested) { storeResult ->
+                                storeResult.fold(
+                                        {
+                                            responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN
+                                            doneSignal.countDown()
+                                        },
+                                        { consumptionResult ->
+                                            if (requested > 0) {
+                                                addGrantedQuota(consumptionResult.granted, mscc, responseBuilder)
+                                            }
+                                            reportAnalytics(consumptionResult, request)
+                                            doneSignal.countDown()
+                                        }
+                                )
+                            }
+                        } else { // zeroRate
+                            if (requested > 0) {
+                                addGrantedQuota(requested, mscc, responseBuilder)
+                            }
+                            doneSignal.countDown()
                         }
-                    } else { // zeroRate
-
-                        addGrantedQuota(requested, mscc, response)
-                        doneSignal.countDown()
                     }
-                }
-                doneSignal.await(2, TimeUnit.SECONDS)
-                synchronized(OnlineCharging) {
-                    returnCreditControlAnswer(response.build())
+                    doneSignal.await(2, TimeUnit.SECONDS)
+                    synchronized(OnlineCharging) {
+                        returnCreditControlAnswer(responseBuilder.build())
+                    }
                 }
             }
         }
@@ -124,9 +131,12 @@ object OnlineCharging : OcsAsyncRequestConsumer {
             } else {
                 responseMscc.volumeQuotaThreshold = (grantedTotalOctets * 0.2).toLong() // When client has 20% left
             }
+            responseMscc.resultCode = ResultCode.DIAMETER_SUCCESS
+        } else if (mscc.requested.totalOctets > 0) {
+            responseMscc.resultCode = ResultCode.DIAMETER_CREDIT_LIMIT_REACHED
+        } else {
+            responseMscc.resultCode = ResultCode.DIAMETER_SUCCESS
         }
-
-        responseMscc.resultCode = ResultCode.DIAMETER_SUCCESS
 
         synchronized(OnlineCharging) {
             response.addMscc(responseMscc.build())

@@ -34,9 +34,10 @@ class Neo4jStorageTest {
 
         sleep(MILLIS_TO_WAIT_WHEN_STARTING_UP.toLong())
         storage.removeCustomer(IDENTITY)
+        storage.deleteSimProfileWithSubscription("no", "ICC_ID")
         storage.addCustomer(IDENTITY, Customer(contactEmail = EPHERMERAL_EMAIL, nickname = NAME), referredBy = null)
                 .mapLeft { fail(it.message) }
-        storage.addSubscription(IDENTITY, MSISDN)
+        storage.addSubscription(IDENTITY, "no", "ICC_ID", "ALIAS", MSISDN)
                 .mapLeft { fail(it.message) }
     }
 

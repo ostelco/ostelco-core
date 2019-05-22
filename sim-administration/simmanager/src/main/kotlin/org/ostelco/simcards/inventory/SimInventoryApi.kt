@@ -84,7 +84,10 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                 }.fix()
             }.unsafeRunSync()
 
-    fun importBatch(hlrName: String, simVendor: String, csvInputStream: InputStream): Either<SimManagerError, SimImportBatch> =
+    fun importBatch(hlrName: String,
+                    simVendor: String,
+                    csvInputStream: InputStream,
+                    initialHssState: HssState): Either<SimManagerError, SimImportBatch> =
             IO {
                 Either.monad<SimManagerError>().binding {
                     val profileVendorAdapter = dao.getProfileVendorAdapterByName(simVendor)
@@ -98,7 +101,8 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                     dao.importSims(importer = "importer", // TODO: This is a very strange name for an importer .-)
                             hlrId = hlrAdapter.id,
                             profileVendorId = profileVendorAdapter.id,
-                            csvInputStream = csvInputStream).bind()
+                            csvInputStream = csvInputStream,
+                            initialHssState = initialHssState).bind()
                 }.fix()
             }.unsafeRunSync()
 

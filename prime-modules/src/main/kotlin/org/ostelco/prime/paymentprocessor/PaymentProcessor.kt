@@ -7,6 +7,7 @@ import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
+import org.ostelco.prime.paymentprocessor.core.SubscriptionDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
 
 interface PaymentProcessor {
@@ -66,14 +67,14 @@ interface PaymentProcessor {
      * @param Epoch timestamp for when the trial period ends
      * @return Stripe SubscriptionId if subscribed
      */
-    fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long = 0L): Either<PaymentError, SubscriptionInfo>
+    fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long = 0L): Either<PaymentError, SubscriptionDetailsInfo>
 
     /**
      * @param Stripe Subscription Id
-     * @param Stripe atIntervalEnd set to true if the subscription shall remain active until the end of the Plan interval
+     * @param Stripe invoiceNow set to true if a final invoice should be generated
      * @return Stripe SubscriptionId if unsubscribed
      */
-    fun cancelSubscription(subscriptionId: String, atIntervalEnd: Boolean = true): Either<PaymentError, SubscriptionInfo>
+    fun cancelSubscription(subscriptionId: String, invoiceNow: Boolean = false): Either<PaymentError, SubscriptionInfo>
 
     /**
      * @param sku Prime product SKU

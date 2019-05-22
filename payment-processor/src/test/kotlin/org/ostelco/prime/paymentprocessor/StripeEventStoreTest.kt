@@ -1,7 +1,6 @@
 package org.ostelco.prime.paymentprocessor
 
 import arrow.core.getOrElse
-import com.google.cloud.datastore.StringValue
 import com.stripe.model.Event
 import com.stripe.net.ApiResource
 import org.junit.Test
@@ -29,9 +28,7 @@ class StripeEventStoreTest {
     }
 
     companion object {
-        val entityStore = EntityStore(StripeEvent::class.java,
-                type = "inmemory-emulator",
-                namespace = "test")
+        val entityStore = EntityStore(StripeEvent::class.java)
         val payload = """
               {
                 "id": "charge.captured_00000000000000",

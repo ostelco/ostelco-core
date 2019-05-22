@@ -10,18 +10,29 @@ import com.stripe.exception.CardException
 import com.stripe.exception.InvalidRequestException
 import com.stripe.exception.RateLimitException
 import com.stripe.exception.StripeException
-import com.stripe.model.*
+import com.stripe.model.Card
+import com.stripe.model.Charge
+import com.stripe.model.Customer
+import com.stripe.model.EphemeralKey
+import com.stripe.model.PaymentSource
+import com.stripe.model.Plan
+import com.stripe.model.Product
+import com.stripe.model.Refund
+import com.stripe.model.Source
+import com.stripe.model.Subscription
 import com.stripe.net.RequestOptions
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.paymentprocessor.core.BadGatewayError
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
 import org.ostelco.prime.paymentprocessor.core.NotFoundError
 import org.ostelco.prime.paymentprocessor.core.PaymentError
+import org.ostelco.prime.paymentprocessor.core.PaymentStatus
 import org.ostelco.prime.paymentprocessor.core.PlanInfo
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
+import org.ostelco.prime.paymentprocessor.core.SubscriptionDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
 import java.time.Instant
 import java.util.*
@@ -189,26 +200,64 @@ class StripePaymentProcessor : PaymentProcessor {
                 ProfileInfo(customer.delete().id)
             }
 
-    override fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long): Either<PaymentError, SubscriptionInfo> =
+    /* The 'expand' part will cause an immediate attempt at charging for the
+       subscription when creating it. For interpreting the result see:
+       https://stripe.com/docs/billing/subscriptions/payment#signup-3b */
+    override fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long): Either<PaymentError, SubscriptionDetailsInfo> =
             either("Failed to subscribe customer $stripeCustomerId to plan $planId") {
-                val item =  mapOf("plan" to planId)
+                val item = mapOf("plan" to planId)
                 val subscriptionParams = mapOf(
                         "customer" to stripeCustomerId,
                         "items" to mapOf("0" to item),
-                        *( if (trialEnd > Instant.now().epochSecond)
-                               arrayOf("trial_end" to trialEnd.toString())
-                           else
-                               arrayOf()) )
+                        *(if (trialEnd > Instant.now().epochSecond)
+                            arrayOf("trial_end" to trialEnd.toString())
+                        else
+                            arrayOf("expand" to arrayOf("latest_invoice.payment_intent"))))
                 val subscription = Subscription.create(subscriptionParams)
-                SubscriptionInfo(subscription.id, subscription.created, subscription.trialEnd ?: 0L)
+                val status = subscriptionStatus(subscription)
+                SubscriptionDetailsInfo(id = subscription.id,
+                        status = status.first,
+                        invoiceId = status.second,
+                        chargeId = status.third,
+                        created = subscription.created,
+                        trialEnd = subscription.trialEnd ?: 0L)
             }
 
-    override fun cancelSubscription(subscriptionId: String, atIntervalEnd: Boolean): Either<PaymentError, SubscriptionInfo> =
-            either("Failed to unsubscribe subscription Id : $subscriptionId atIntervalEnd $atIntervalEnd") {
+    private fun subscriptionStatus(subscription: Subscription): Triple<PaymentStatus, String, String> {
+        val invoice = subscription.latestInvoiceObject
+        val intent = invoice?.paymentIntentObject
+
+        return when (subscription.status) {
+            "active", "incomplete" -> {
+                if (intent != null)
+                    Triple(when(intent.status) {
+                        "succeeded" -> PaymentStatus.PAYMENT_SUCCEEDED
+                        "requires_payment_method" -> PaymentStatus.REQUIRES_PAYMENT_METHOD
+                        "requires_action" -> PaymentStatus.REQUIRES_ACTION
+                        else -> throw RuntimeException(
+                                "Unexpected intent ${intent.status} for Stipe payment invoice ${invoice.id}")
+                    }, invoice.id, invoice.charge)
+                else {
+                    throw RuntimeException(
+                            "'Intent' absent in response when creating subscription ${subscription.id} with status ${subscription.status}")
+                }
+            }
+            "trialing" -> {
+                Triple(PaymentStatus.TRIAL_START, "", "")
+            }
+            else -> {
+                throw RuntimeException(
+                        "Got unexpected status ${subscription.status} when creating subscription ${subscription.id}")
+            }
+        }
+    }
+
+    override fun cancelSubscription(subscriptionId: String, invoiceNow: Boolean): Either<PaymentError, SubscriptionInfo> =
+            either("Failed to unsubscribe subscription Id : $subscriptionId with 'invoice-now' set to $invoiceNow") {
                 val subscription = Subscription.retrieve(subscriptionId)
-                val subscriptionParams = mapOf("at_period_end" to atIntervalEnd)
+                val subscriptionParams = mapOf("invoice_now" to invoiceNow)
                 subscription.cancel(subscriptionParams)
-                SubscriptionInfo(subscription.id, subscription.created, subscription.trialEnd ?: 0L)
+                SubscriptionInfo(id = subscription.id)
             }
 
     override fun authorizeCharge(customerId: String, sourceId: String?, amount: Int, currency: String): Either<PaymentError, String> {
@@ -296,21 +345,20 @@ class StripePaymentProcessor : PaymentProcessor {
                         }
                     }
 
-
     private fun <RETURN> either(errorDescription: String, action: () -> RETURN): Either<PaymentError, RETURN> {
         return try {
             Either.right(action())
         } catch (e: CardException) {
             // If something is decline with a card purchase, CardException will be caught
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}", e)
+            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}")
             Either.left(ForbiddenError(errorDescription, e.message))
         } catch (e: RateLimitException) {
             // Too many requests made to the API too quickly
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}", e)
+            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}")
             Either.left(BadGatewayError(errorDescription, e.message))
         } catch (e: InvalidRequestException) {
             // Invalid parameters were supplied to Stripe's API
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}", e)
+            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}")
             Either.left(ForbiddenError(errorDescription, e.message))
         } catch (e: AuthenticationException) {
             // Authentication with Stripe's API failed
