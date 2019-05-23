@@ -211,16 +211,24 @@ class StripePaymentProcessor : PaymentProcessor {
     /* The 'expand' part will cause an immediate attempt at charging for the
        subscription when creating it. For interpreting the result see:
        https://stripe.com/docs/billing/subscriptions/payment#signup-3b */
-    override fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long): Either<PaymentError, SubscriptionDetailsInfo> =
+    override fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long, regionId: String): Either<PaymentError, SubscriptionDetailsInfo> =
             either("Failed to subscribe customer $stripeCustomerId to plan $planId") {
                 val item = mapOf("plan" to planId)
+                val taxRates = getTaxRatesForRegion(regionId)
+                        .fold(
+                                { emptyList<TaxRateInfo>() },
+                                { it }
+                        )
                 val subscriptionParams = mapOf(
                         "customer" to stripeCustomerId,
                         "items" to mapOf("0" to item),
                         *(if (trialEnd > Instant.now().epochSecond)
                             arrayOf("trial_end" to trialEnd.toString())
                         else
-                            arrayOf("expand" to arrayOf("latest_invoice.payment_intent"))))
+                            arrayOf("expand" to arrayOf("latest_invoice.payment_intent"))),
+                        *(if (taxRates.isNotEmpty())
+                            arrayOf("default_tax_rates" to taxRates.map { it.id })
+                        else arrayOf()))
                 val subscription = Subscription.create(subscriptionParams)
                 val status = subscriptionStatus(subscription)
                 SubscriptionDetailsInfo(id = subscription.id,
@@ -384,10 +392,10 @@ class StripePaymentProcessor : PaymentProcessor {
     override fun createInvoice(customerId: String): Either<PaymentError, InvoiceInfo> =
             createInvoice(customerId, listOf<TaxRateInfo>())
 
-    override fun createInvoice(customerId: String, region: String, amount: Int, currency: String, description: String): Either<PaymentError, InvoiceInfo> =
+    override fun createInvoice(customerId: String, amount: Int, currency: String, description: String, regionId: String): Either<PaymentError, InvoiceInfo> =
             createInvoiceItem(customerId, amount, currency, description)
                     .flatMap {
-                        getTaxRatesForRegion(region)
+                        getTaxRatesForRegion(regionId)
                                 .flatMap { taxRates -> createInvoice(customerId, taxRates) }
                     }
 

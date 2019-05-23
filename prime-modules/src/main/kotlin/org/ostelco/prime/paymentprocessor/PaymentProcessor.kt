@@ -69,9 +69,10 @@ interface PaymentProcessor {
      * @param Stripe Plan Id
      * @param stripeCustomerId Stripe Customer Id
      * @param Epoch timestamp for when the trial period ends
+     * @param Region code
      * @return Stripe SubscriptionId if subscribed
      */
-    fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long = 0L): Either<PaymentError, SubscriptionDetailsInfo>
+    fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long = 0L, regionId: String = ""): Either<PaymentError, SubscriptionDetailsInfo>
 
     /**
      * @param Stripe Subscription Id
@@ -178,7 +179,7 @@ interface PaymentProcessor {
      * @param description Short description of what the invoice is for
      * @return ID of the invoice
      */
-    fun createInvoice(customerId: String, region: String, amount: Int, currency: String, description: String): Either<PaymentError, InvoiceInfo>
+    fun createInvoice(customerId: String, amount: Int, currency: String, description: String, regionId: String): Either<PaymentError, InvoiceInfo>
 
     /**
      * @param invoiceId ID of the invoice to be paid

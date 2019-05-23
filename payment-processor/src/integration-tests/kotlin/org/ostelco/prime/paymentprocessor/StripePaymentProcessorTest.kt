@@ -10,6 +10,7 @@ import org.junit.Before
 import org.junit.Test
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.paymentprocessor.core.PaymentError
+import org.ostelco.prime.paymentprocessor.core.TaxRateInfo
 import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.fail

@@ -52,6 +52,7 @@ import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.PaymentStatus
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import org.ostelco.prime.paymentprocessor.core.TaxRateInfo
 import org.ostelco.prime.securearchive.SecureArchiveService
 import org.ostelco.prime.sim.SimManager
 import org.ostelco.prime.storage.AlreadyExistsError
@@ -1893,6 +1894,15 @@ object Neo4jStoreSingleton : GraphStore {
                                     error = it)
                         }.bind()
 
+                /* TODO: (kmm) The logic behind using region-code to fetch 'tax-rates' will fail
+                         when customers are linked to multiple regions. Currently it is assumed
+                         that a customer belongs to only one region. */
+                val region = customerStore.getRelated(customerId, customerRegionRelation, transaction)
+                        .mapLeft {
+                            NotFoundError(type = customerEntity.name, id = "No region found for ${customer.id}")
+                        }
+                        .bind().first()
+
                 /* At this point, we have either:
                      1) A new subscription to a plan is being created.
                      2) An attempt at buying a previously subscribed to plan but which has not been
@@ -1916,7 +1926,7 @@ object Neo4jStoreSingleton : GraphStore {
 
                 /* Lookup in payment backend will fail if no value found for 'planId'. */
                 val subscriptionInfo = paymentProcessor.createSubscription(plan.properties.getOrDefault("planId", "missing"),
-                        profileInfo.id, trialEnd)
+                        region.id, profileInfo.id, trialEnd)
                         .mapLeft {
                             NotCreatedError(type = planEntity.name, id = "Failed to subscribe $customerId to ${plan.id}",
                                     error = it)
