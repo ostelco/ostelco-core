@@ -1054,70 +1054,70 @@ object Neo4jStoreSingleton : GraphStore {
                                     error = it)
                         }
                         .bind()
-                val customer = getCustomer(identity = identity, transaction = transaction)
-                        .mapLeft {
-                            org.ostelco.prime.paymentprocessor.core.NotFoundError(
-                                    "Failed to get customer data for customer with identity - $identity",
-                                    error = it)
-                        }
-                        .bind()
-                val profileInfo = fetchOrCreatePaymentProfile(customer).bind()
-                val paymentCustomerId = profileInfo.id
                 var addedSourceId: String? = null
+
+                /* Add source if set and if it has not already been added to the customer. */
                 if (sourceId != null) {
-                    // First fetch all existing saved sources
-                    val sourceDetails = paymentProcessor.getSavedSources(paymentCustomerId)
+                    val sourceDetails = paymentProcessor.getSavedSources(customerId)
                             .mapLeft {
                                 BadGatewayError("Failed to fetch sources for user",
                                         error = it)
                             }.bind()
                     addedSourceId = sourceId
-                    // If the sourceId is not found in existing list of saved sources,
-                    // then save the source
+
                     if (!sourceDetails.any { sourceDetailsInfo -> sourceDetailsInfo.id == sourceId }) {
-                        addedSourceId = paymentProcessor.addSource(paymentCustomerId, sourceId)
-                                // For success case, saved source is removed after "capture charge" is saveCard == false.
-                                // Making sure same happens even for failure case by linking reversal action to transaction
-                                .finallyDo(transaction) { removePaymentSource(saveCard, paymentCustomerId, it.id) }
+                        addedSourceId = paymentProcessor.addSource(customerId, sourceId)
+                                /* For the success case, saved source is removed after the invoice has been
+                                   paid if 'saveCard == false'. Make sure same happens even for failure
+                                   case by linking reversal action to transaction */
+                                .finallyDo(transaction) { removePaymentSource(saveCard, customerId, it.id) }
                                 .bind().id
                     }
                 }
-                //TODO: If later steps fail, then refund the authorized charge
-                val chargeId = paymentProcessor.authorizeCharge(paymentCustomerId, addedSourceId, product.price.amount, product.price.currency)
+
+                val invoice = paymentProcessor.createInvoice(customerId, product.price.amount, product.price.currency, product.sku, "sg")
                         .mapLeft {
-                            logger.error("Failed to authorize purchase for paymentCustomerId $paymentCustomerId, sourceId $addedSourceId, sku ${product.sku}")
+                            logger.error("Failed to create invoice for customer $customerId, source $addedSourceId, sku ${product.sku}")
                             it
-                        }.linkReversalActionToTransaction(transaction) { chargeId ->
-                            paymentProcessor.refundCharge(chargeId, product.price.amount, product.price.currency)
+                        }.linkReversalActionToTransaction(transaction) {
+                            paymentProcessor.removeInvoice(it.id)
                             logger.error(NOTIFY_OPS_MARKER,
-                                    "Failed to refund charge for paymentCustomerId $paymentCustomerId, chargeId $chargeId.\nFix this in Stripe dashboard.")
+                                    """Failed to create or pay invoice for customer $customerId, invoice-id: ${it.id}.
+                                       Verify that the invoice has been voided in Stripe dashboard.
+                                    """.trimIndent())
                         }.bind()
 
                 val purchaseRecord = PurchaseRecord(
-                        id = chargeId,
+                        id = invoice.id,
                         product = product,
                         timestamp = Instant.now().toEpochMilli())
+
+                /* If this step fails, the previously added 'removeInvoice' call added to the transaction
+                   will ensure that the invoice will be voided. */
                 createPurchaseRecordRelation(customerId, purchaseRecord, transaction)
                         .mapLeft {
-                            logger.error("Failed to save purchase record, for paymentCustomerId $paymentCustomerId, chargeId $chargeId, payment will be unclaimed in Stripe")
+                            logger.error("Failed to save purchase record for customer $customerId, invoice-id ${invoice.id}, invoice will be voided in Stripe")
                             BadGatewayError("Failed to save purchase record",
                                     error = it)
                         }.bind()
 
-                //TODO: While aborting transactions, send a record with "reverted" status
-                analyticsReporter.reportPurchaseInfo(purchaseRecord = purchaseRecord, customerAnalyticsId = customerAnalyticsId, status = "success")
+                /* TODO: While aborting transactions, send a record with "reverted" status. */
+                analyticsReporter.reportPurchaseInfo(purchaseRecord = purchaseRecord,
+                        customerAnalyticsId = customerAnalyticsId,
+                        status = "success")
 
-                // Topup
+                /* Topup. */
                 val bytes = product.properties["noOfBytes"]?.replace("_", "")?.toLongOrNull() ?: 0L
 
                 if (bytes == 0L) {
                     logger.error("Product with 0 bytes: sku = ${product.sku}")
                 }
 
-                write("""
-                    MATCH (cr:${customerEntity.name} { id:'$customerId' })-[:${customerToBundleRelation.name}]->(bundle:${bundleEntity.name})
-                    SET bundle.balance = toString(toInteger(bundle.balance) + $bytes)
-                    """.trimIndent(), transaction) {
+                /* Update balance with bought data. */
+                /* TODO: Add rollback in case of errors later on. */
+                write("""MATCH (cr:${customerEntity.name} { id:'$customerId' })-[:${customerToBundleRelation.name}]->(bundle:${bundleEntity.name})
+                         SET bundle.balance = toString(toInteger(bundle.balance) + $bytes)
+                      """.trimIndent(), transaction) {
                     Either.cond(
                             test = it.summary().counters().containsUpdates(),
                             ifTrue = {},
@@ -1129,15 +1129,13 @@ object Neo4jStoreSingleton : GraphStore {
                             })
                 }.bind()
 
-                // Even if the "capture charge operation" failed, we do not want to rollback.
-                // In that case, we just want to log it at error level.
-                // These transactions can then me manually changed before they are auto rollback'ed in 'X' days.
-                paymentProcessor.captureCharge(chargeId, paymentCustomerId, product.price.amount, product.price.currency)
+                /* Force immediate payment of the invoice. */
+                paymentProcessor.payInvoice(invoice.id)
                         .mapLeft {
-                            // TODO payment: retry capture charge
-                            logger.error(NOTIFY_OPS_MARKER, "Capture failed for paymentCustomerId $paymentCustomerId, chargeId $chargeId.\nFix this in Stripe Dashboard")
-                        }
-                // Ignore failure to capture charge, by not calling bind()
+                            logger.error("Payment of invoice ${invoice.id} failed for customer $customerId.")
+                            it
+                        }.bind()
+
                 ProductInfo(product.sku)
             }.fix()
         }.unsafeRunSync()
