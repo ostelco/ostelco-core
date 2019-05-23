@@ -68,11 +68,11 @@ interface PaymentProcessor {
     /**
      * @param Stripe Plan Id
      * @param stripeCustomerId Stripe Customer Id
-     * @param Epoch timestamp for when the trial period ends
-     * @param Region code
+     * @param trielEnd Epoch timestamp for when the trial period ends
+     * @param taxRegion An identifier representing the taxes to be applied to a region
      * @return Stripe SubscriptionId if subscribed
      */
-    fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long = 0L, regionId: String = ""): Either<PaymentError, SubscriptionDetailsInfo>
+    fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long = 0L, taxRegion: String = ""): Either<PaymentError, SubscriptionDetailsInfo>
 
     /**
      * @param Stripe Subscription Id
@@ -161,7 +161,7 @@ interface PaymentProcessor {
 
     /**
      * @param customerId ID of the customer to which the invoice will be assigned to
-     * @param taxRates List of tax-rates to apply
+     * @param taxRates List of tax-rates to apply for a tax region
      * @return ID of the invoice
      */
     fun createInvoice(customerId: String, taxRates: List<TaxRateInfo>): Either<PaymentError, InvoiceInfo>
@@ -177,9 +177,10 @@ interface PaymentProcessor {
      * @param amount Amount to pay (an integer multiplied by 100)
      * @param currency The currency to use for the payment (ISO code)
      * @param description Short description of what the invoice is for
+     * @param taxRegion An identifier representing the taxes to be applied to a region
      * @return ID of the invoice
      */
-    fun createInvoice(customerId: String, amount: Int, currency: String, description: String, regionId: String): Either<PaymentError, InvoiceInfo>
+    fun createInvoice(customerId: String, amount: Int, currency: String, description: String, taxRegion: String): Either<PaymentError, InvoiceInfo>
 
     /**
      * @param invoiceId ID of the invoice to be paid
@@ -193,11 +194,11 @@ interface PaymentProcessor {
      */
     fun removeInvoice(invoiceId: String): Either<PaymentError, InvoiceInfo>
 
-    fun createTaxRateForRegion(regionCode: String, percentage: BigDecimal, displayName: String, inclusive: Boolean = true): Either<PaymentError, TaxRateInfo>
+    fun createTaxRateForTaxRegion(taxRegion: String, percentage: BigDecimal, displayName: String, inclusive: Boolean = true): Either<PaymentError, TaxRateInfo>
 
     /**
      * @param region Region code
      * @return List with tax rates to apply for region if any found
      */
-    fun getTaxRatesForRegion(region: String): Either<PaymentError, List<TaxRateInfo>>
+    fun getTaxRatesForTaxRegion(taxRegion: String): Either<PaymentError, List<TaxRateInfo>>
 }

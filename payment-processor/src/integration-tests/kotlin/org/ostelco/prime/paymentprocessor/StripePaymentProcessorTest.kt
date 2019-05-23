@@ -10,7 +10,6 @@ import org.junit.Before
 import org.junit.Test
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.paymentprocessor.core.PaymentError
-import org.ostelco.prime.paymentprocessor.core.TaxRateInfo
 import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.fail
@@ -80,11 +79,11 @@ class StripePaymentProcessorTest {
     /* Flag to ensure that tax rates for tests are only added once. */
     var taxesAdded = false
 
-    /* Note! No corresponding delete, as this can't be doneusing the API. */
+    /* Note! No corresponding delete, as this can't be done using the API. */
     @Before
     fun addTaxRates() {
         if (!taxesAdded) {
-            val addedTaxRate = paymentProcessor.createTaxRateForRegion("sg", 7.0.toBigDecimal(), "GSD")
+            val addedTaxRate = paymentProcessor.createTaxRateForTaxRegion("sg", 7.0.toBigDecimal(), "GSD")
             assertEquals(true, addedTaxRate.isRight())
 
             taxesAdded = true
@@ -311,9 +310,9 @@ class StripePaymentProcessorTest {
         val addedInvoiceItem = paymentProcessor.createInvoiceItem(stripeCustomerId, amount, currency, "SGD")
         assertEquals(true, addedInvoiceItem.isRight())
 
-        val regionCode = "sg"
+        val taxRegion = "sg"
 
-        val taxRates = paymentProcessor.getTaxRatesForRegion(regionCode)
+        val taxRates = paymentProcessor.getTaxRatesForTaxRegion(taxRegion)
         assertEquals(true, taxRates.isRight())
 
         val addedInvoice = paymentProcessor.createInvoice(stripeCustomerId, right(taxRates))

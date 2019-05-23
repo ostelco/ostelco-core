@@ -24,7 +24,6 @@ import com.stripe.model.Source
 import com.stripe.model.Subscription
 import com.stripe.model.TaxRate
 import com.stripe.net.RequestOptions
-import jdk.jfr.Percentage
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.paymentprocessor.core.BadGatewayError
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
@@ -211,10 +210,10 @@ class StripePaymentProcessor : PaymentProcessor {
     /* The 'expand' part will cause an immediate attempt at charging for the
        subscription when creating it. For interpreting the result see:
        https://stripe.com/docs/billing/subscriptions/payment#signup-3b */
-    override fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long, regionId: String): Either<PaymentError, SubscriptionDetailsInfo> =
+    override fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long, taxRegion: String): Either<PaymentError, SubscriptionDetailsInfo> =
             either("Failed to subscribe customer $stripeCustomerId to plan $planId") {
                 val item = mapOf("plan" to planId)
-                val taxRates = getTaxRatesForRegion(regionId)
+                val taxRates = getTaxRatesForTaxRegion(taxRegion)
                         .fold(
                                 { emptyList<TaxRateInfo>() },
                                 { it }
@@ -392,10 +391,10 @@ class StripePaymentProcessor : PaymentProcessor {
     override fun createInvoice(customerId: String): Either<PaymentError, InvoiceInfo> =
             createInvoice(customerId, listOf<TaxRateInfo>())
 
-    override fun createInvoice(customerId: String, amount: Int, currency: String, description: String, regionId: String): Either<PaymentError, InvoiceInfo> =
+    override fun createInvoice(customerId: String, amount: Int, currency: String, description: String, taxRegion: String): Either<PaymentError, InvoiceInfo> =
             createInvoiceItem(customerId, amount, currency, description)
                     .flatMap {
-                        getTaxRatesForRegion(regionId)
+                        getTaxRatesForTaxRegion(taxRegion)
                                 .flatMap { taxRates -> createInvoice(customerId, taxRates) }
                     }
 
@@ -435,10 +434,16 @@ class StripePaymentProcessor : PaymentProcessor {
                 InvoiceInfo(invoice.id)
             }
 
+    /* Metadata key used to assoiciate a specific tax rate with a specific
+       regional area. Typically such a region will be a country. */
+    companion object {
+        val TAX_REGION = "tax-region"
+    }
+
     /* NOTE! This method creates a 'tax rate' with Stipe, unless there already
              exists a 'tax-rate' with the same information. */
-    override fun createTaxRateForRegion(regionCode: String, percentage: BigDecimal, displayName: String, inclusive: Boolean): Either<PaymentError, TaxRateInfo> =
-            getTaxRatesForRegion(regionCode)
+    override fun createTaxRateForTaxRegion(taxRegion: String, percentage: BigDecimal, displayName: String, inclusive: Boolean): Either<PaymentError, TaxRateInfo> =
+            getTaxRatesForTaxRegion(taxRegion)
                     .flatMap { taxRates ->
                         val match = taxRates.find {
                             it.percentage == percentage && it.displayName == displayName && it.inclusive == inclusive
@@ -449,22 +454,18 @@ class StripePaymentProcessor : PaymentProcessor {
                                     "percentage" to percentage,
                                     "display_name" to displayName,
                                     "inclusive" to inclusive,
-                                    "metadata" to mapOf("region-code" to regionCode))
+                                    "metadata" to mapOf(TAX_REGION to taxRegion))
                             TaxRateInfo(TaxRate.create(param).id, percentage, displayName, inclusive)
                         } else {
                             match
                         }.right()
                     }
 
-    /* TODO: (kmm) Will have to come up with a "scheme" for finding the correct 'tax' entry
-             given the where the customer is residing. Currently the 'region' code is used
-             for finding the correct 'tax' entries, matching on "region-code" stored in
-             the 'TaxRate' metadata. */
-    override fun getTaxRatesForRegion(region: String): Either<PaymentError, List<TaxRateInfo>> =
+    override fun getTaxRatesForTaxRegion(taxRegion: String): Either<PaymentError, List<TaxRateInfo>> =
             getTaxRates()
                     .flatMap {
-                        val lst = it.filter { x -> !x.metadata["region-code"].isNullOrEmpty() &&
-                                x.metadata["region-code"].equals(region, true) }
+                        val lst = it.filter { x -> !x.metadata[TAX_REGION].isNullOrEmpty() &&
+                                x.metadata[TAX_REGION].equals(taxRegion, true) }
                         if (lst.isEmpty())
                             emptyList<TaxRateInfo>()
                                     .right()

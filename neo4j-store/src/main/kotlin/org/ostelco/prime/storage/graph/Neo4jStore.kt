@@ -1926,7 +1926,7 @@ object Neo4jStoreSingleton : GraphStore {
 
                 /* Lookup in payment backend will fail if no value found for 'planId'. */
                 val subscriptionInfo = paymentProcessor.createSubscription(plan.properties.getOrDefault("planId", "missing"),
-                        region.id, profileInfo.id, trialEnd)
+                        profileInfo.id, trialEnd, region.id)
                         .mapLeft {
                             NotCreatedError(type = planEntity.name, id = "Failed to subscribe $customerId to ${plan.id}",
                                     error = it)
