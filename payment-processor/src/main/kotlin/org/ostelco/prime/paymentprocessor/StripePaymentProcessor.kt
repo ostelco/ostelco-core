@@ -3,6 +3,7 @@ package org.ostelco.prime.paymentprocessor
 import arrow.core.Either
 import arrow.core.Try
 import arrow.core.flatMap
+import arrow.core.left
 import arrow.core.right
 import com.stripe.exception.ApiConnectionException
 import com.stripe.exception.AuthenticationException
@@ -25,6 +26,7 @@ import com.stripe.model.Subscription
 import com.stripe.model.TaxRate
 import com.stripe.net.RequestOptions
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.core.BadGatewayError
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
 import org.ostelco.prime.paymentprocessor.core.InvoiceInfo
@@ -377,16 +379,10 @@ class StripePaymentProcessor : PaymentProcessor {
             }
 
     override fun createInvoice(customerId: String, taxRates: List<TaxRateInfo>): Either<PaymentError, InvoiceInfo> =
-            either("Failed to create an invoice for ${customerId} with Stripe") {
-                val params = mapOf(
-                        "customer" to customerId,
-                        "auto_advance" to true,
-                        *(if (taxRates.isNotEmpty())
-                            arrayOf("default_tax_rates" to taxRates.map { it.id })
-                        else arrayOf())
-                )
-                InvoiceInfo(Invoice.create(params).id)
-            }
+            createAndGetInvoiceDetails(customerId, taxRates)
+                    .flatMap {
+                        InvoiceInfo(it.id).right()
+                    }
 
     override fun createInvoice(customerId: String): Either<PaymentError, InvoiceInfo> =
             createInvoice(customerId, listOf<TaxRateInfo>())
@@ -395,8 +391,51 @@ class StripePaymentProcessor : PaymentProcessor {
             createInvoiceItem(customerId, amount, currency, description)
                     .flatMap {
                         getTaxRatesForTaxRegion(taxRegion)
-                                .flatMap { taxRates -> createInvoice(customerId, taxRates) }
+                                .flatMap { taxRates ->
+                                    createAndGetInvoiceDetails(customerId, taxRates)
+                                            .flatMap { invoice ->
+                                                /* If there are more than one line item in the invoice, then line item(s)
+                                                   added by the (same) customer has accidentally been picked up by this
+                                                   invoice (can happen if the customer uses multiple clients or because of
+                                                   network/infrastructure issues).
+                                                   In this icase the invoice is invalid and can't be processed. */
+                                                val items = invoice.lines.list(emptyMap()).data
+
+                                                if (items.size > 1) {
+                                                    /* Deletes the invoice. Strictly speaking it is enough to just
+                                                       delete the invoice itself. */
+                                                    logger.error(NOTIFY_OPS_MARKER,
+                                                            "Unexpected number of line items got added to invoice ${invoice.id}, " +
+                                                                    "when attempting to create the invoice - expected one but was ${items.size}")
+
+                                                    val errorMessage = "Incorrect number of line items when attempting to create invoice ${invoice.id} " +
+                                                            "- expected one but was ${items.size}"
+
+                                                    removeInvoice(invoice)
+                                                            .fold({
+                                                                BadGatewayError(errorMessage, error = it)
+                                                            }, {
+                                                                BadGatewayError(errorMessage)
+                                                            }).left()
+                                                } else {
+                                                    InvoiceInfo(invoice.id).right()
+                                                }
+                                            }
+                                }
                     }
+
+    /* Create and return invoice details. */
+    private fun createAndGetInvoiceDetails(customerId: String, taxRates: List<TaxRateInfo>): Either<PaymentError, Invoice> =
+            either("") {
+                val params = mapOf(
+                        "customer" to customerId,
+                        "auto_advance" to true,
+                        *(if (taxRates.isNotEmpty())
+                            arrayOf("default_tax_rates" to taxRates.map { it.id })
+                        else arrayOf())
+                )
+                Invoice.create(params)
+            }
 
     override fun payInvoice(invoiceId: String): Either<PaymentError, InvoiceInfo> =
             either("Failed to complete payment of invoice ${invoiceId}") {
@@ -405,8 +444,22 @@ class StripePaymentProcessor : PaymentProcessor {
             }
 
     override fun removeInvoice(invoiceId: String): Either<PaymentError, InvoiceInfo> =
-            either("Failed to remove invoice ${invoiceId} with Stripe") {
-                val invoice = Invoice.retrieve(invoiceId)
+            Try {
+                Invoice.retrieve(invoiceId)
+            }.fold(
+                    ifSuccess = {
+                        removeInvoice(it)
+                    },
+                    ifFailure = {
+                        logger.error("Unexpected error {} when attempting to delete invoice {}",
+                                it.message, invoiceId)
+                        NotFoundError("Unexpected error ${it.message} when attempting to delete invoice ${invoiceId}")
+                                .left()
+                    }
+            )
+
+    private fun removeInvoice(invoice: Invoice): Either<PaymentError, InvoiceInfo> =
+            either("Error when attempting to remove invoice ${invoice.id} with Stripe") {
 
                 /* Wether an invoice can be deleted or not, depends on what
                    status the invoice has.
