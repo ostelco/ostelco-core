@@ -122,12 +122,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
             responseMscc.quotaHoldingTime = 7200
 
             if (granted < mscc.requested.totalOctets) {
-                responseMscc.finalUnitIndication = FinalUnitIndication.newBuilder()
-                        .setFinalUnitAction(FinalUnitAction.TERMINATE)
-                        .setIsSet(true)
-                        .build()
-
-                responseMscc.volumeQuotaThreshold = 0L
+                responseMscc.volumeQuotaThreshold = 0L  // No point in putting a threshold on the last grant
             } else {
                 responseMscc.volumeQuotaThreshold = (grantedTotalOctets * 0.2).toLong() // When client has 20% left
             }
