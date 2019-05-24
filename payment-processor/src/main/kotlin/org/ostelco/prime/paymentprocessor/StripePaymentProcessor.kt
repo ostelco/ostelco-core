@@ -380,45 +380,45 @@ class StripePaymentProcessor : PaymentProcessor {
 
     override fun createInvoice(customerId: String, taxRates: List<TaxRateInfo>, sourceId: String?): Either<PaymentError, InvoiceInfo> =
             createAndGetInvoiceDetails(customerId, taxRates, sourceId)
-                    .flatMap {
-                        InvoiceInfo(it.id).right()
-                    }
+                .flatMap {
+                    InvoiceInfo(it.id).right()
+                }
 
     override fun createInvoice(customerId: String, amount: Int, currency: String, description: String, taxRegion: String, sourceId: String?): Either<PaymentError, InvoiceInfo> =
             createInvoiceItem(customerId, amount, currency, description)
                     .flatMap {
                         getTaxRatesForTaxRegion(taxRegion)
-                                .flatMap { taxRates ->
-                                    createAndGetInvoiceDetails(customerId, taxRates, sourceId)
-                                            .flatMap { invoice ->
-                                                /* If there are more than one line item in the invoice, then line item(s)
-                                                   added by the (same) customer has accidentally been picked up by this
-                                                   invoice (can happen if the customer uses multiple clients or because of
-                                                   network/infrastructure issues).
-                                                   In this icase the invoice is invalid and can't be processed. */
-                                                val items = invoice.lines.list(emptyMap()).data
+                    }
+                    .flatMap {
+                        createAndGetInvoiceDetails(customerId, it, sourceId)
+                    }
+                    .flatMap { invoice ->
+                        /* If there are more than one line item in the invoice, then line item(s)
+                           added by the (same) customer has accidentally been picked up by this
+                           invoice (can happen if the customer uses multiple clients or because of
+                           network/infrastructure issues).
+                           In this icase the invoice is invalid and can't be processed. */
+                        val items = invoice.lines.list(emptyMap()).data
 
-                                                if (items.size > 1) {
-                                                    /* Deletes the invoice. Strictly speaking it is enough to just
-                                                       delete the invoice itself. */
-                                                    logger.error(NOTIFY_OPS_MARKER,
-                                                            "Unexpected number of line items got added to invoice ${invoice.id}, " +
-                                                                    "when attempting to create the invoice - expected one but was ${items.size}")
+                        if (items.size > 1) {
+                            /* Deletes the invoice. Strictly speaking it is enough to just
+                               delete the invoice itself. */
+                            logger.error(NOTIFY_OPS_MARKER,
+                                    "Unexpected number of line items got added to invoice ${invoice.id}, " +
+                                            "when attempting to create the invoice - expected one but was ${items.size}")
 
-                                                    val errorMessage = "Incorrect number of line items when attempting to create invoice ${invoice.id} " +
-                                                            "- expected one but was ${items.size}"
+                            val errorMessage = "Incorrect number of line items when attempting to create invoice ${invoice.id} " +
+                                    "- expected one but was ${items.size}"
 
-                                                    removeInvoice(invoice)
-                                                            .fold({
-                                                                BadGatewayError(errorMessage, error = it)
-                                                            }, {
-                                                                BadGatewayError(errorMessage)
-                                                            }).left()
-                                                } else {
-                                                    InvoiceInfo(invoice.id).right()
-                                                }
-                                            }
-                                }
+                            removeInvoice(invoice)
+                                    .fold({
+                                        BadGatewayError(errorMessage, error = it)
+                                    }, {
+                                        BadGatewayError(errorMessage)
+                                    }).left()
+                        } else {
+                            InvoiceInfo(invoice.id).right()
+                        }
                     }
 
     /* Create and return invoice details. */
@@ -459,6 +459,8 @@ class StripePaymentProcessor : PaymentProcessor {
 
     private fun removeInvoice(invoice: Invoice): Either<PaymentError, InvoiceInfo> =
             either("Error when attempting to remove invoice ${invoice.id} with Stripe") {
+
+                println(">>> remove invoice ${invoice.id} status: ${invoice.status}")
 
                 /* Wether an invoice can be deleted or not, depends on what
                    status the invoice has.
@@ -516,8 +518,10 @@ class StripePaymentProcessor : PaymentProcessor {
     override fun getTaxRatesForTaxRegion(taxRegion: String): Either<PaymentError, List<TaxRateInfo>> =
             getTaxRates()
                     .flatMap {
+                        println(">>> gettaxrates ${taxRegion}")
                         val lst = it.filter { x -> !x.metadata[TAX_REGION].isNullOrEmpty() &&
                                 x.metadata[TAX_REGION].equals(taxRegion, true) }
+                        println(">>>> rates : ${lst}")
                         if (lst.isEmpty())
                             emptyList<TaxRateInfo>()
                                     .right()
