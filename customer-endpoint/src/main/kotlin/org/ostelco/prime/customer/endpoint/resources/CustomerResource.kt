@@ -39,7 +39,7 @@ class CustomerResource(private val dao: SubscriberDAO) {
             var toConvert = email
             // + will be decoded to space, we will keep it as +
             if (email.contains("+")) {
-                toConvert = email.replace("+", "%20")
+                toConvert = email.replace("+", "%2B")
             }
             return URLDecoder.decode(toConvert, "UTF-8")
         }
