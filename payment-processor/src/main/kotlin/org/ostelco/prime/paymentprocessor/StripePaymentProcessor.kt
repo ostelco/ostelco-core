@@ -384,9 +384,6 @@ class StripePaymentProcessor : PaymentProcessor {
                         InvoiceInfo(it.id).right()
                     }
 
-    override fun createInvoice(customerId: String, sourceId: String?): Either<PaymentError, InvoiceInfo> =
-            createInvoice(customerId, listOf<TaxRateInfo>(), sourceId)
-
     override fun createInvoice(customerId: String, amount: Int, currency: String, description: String, taxRegion: String, sourceId: String?): Either<PaymentError, InvoiceInfo> =
             createInvoiceItem(customerId, amount, currency, description)
                     .flatMap {

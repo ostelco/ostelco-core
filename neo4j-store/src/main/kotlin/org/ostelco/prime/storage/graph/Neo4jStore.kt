@@ -1075,7 +1075,17 @@ object Neo4jStoreSingleton : GraphStore {
                     }
                 }
 
-                val invoice = paymentProcessor.createInvoice(customerId, product.price.amount, product.price.currency, product.sku, "sg", addedSourceId)
+                /* TODO: (kmm) The logic behind using region-code to fetch 'tax-rates' will fail
+                         when customers are linked to multiple regions. Currently it is assumed
+                         that a customer belongs to only one region. */
+                /* Use 'region-code' as the 'tax-region'. */
+                val region = customerStore.getRelated(customerId, customerRegionRelation, transaction)
+                        .mapLeft {
+                            BadGatewayError("No region found for ${customerId}", error = it)
+                        }
+                        .bind().first()
+
+                val invoice = paymentProcessor.createInvoice(customerId, product.price.amount, product.price.currency, product.sku, region.id, addedSourceId)
                         .mapLeft {
                             logger.error("Failed to create invoice for customer $customerId, source $addedSourceId, sku ${product.sku}")
                             it

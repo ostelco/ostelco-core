@@ -165,14 +165,7 @@ interface PaymentProcessor {
      * @param sourceId Optionally use this source for payment
      * @return ID of the invoice
      */
-    fun createInvoice(customerId: String, taxRates: List<TaxRateInfo>, sourceId: String?): Either<PaymentError, InvoiceInfo>
-
-    /**
-     * @param customerId ID of the customer to which the invoice will be assigned to
-     * @param sourceId Optionally use this source for payment
-     * @return ID of the invoice
-     */
-    fun createInvoice(customerId: String, sourceId: String?): Either<PaymentError, InvoiceInfo>
+    fun createInvoice(customerId: String, taxRates: List<TaxRateInfo> = listOf<TaxRateInfo>(), sourceId: String? = null): Either<PaymentError, InvoiceInfo>
 
     /**
      * @param customerId ID of the customer to which the invoice will be assigned to
