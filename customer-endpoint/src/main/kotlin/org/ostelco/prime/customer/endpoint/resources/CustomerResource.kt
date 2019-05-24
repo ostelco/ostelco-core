@@ -34,9 +34,14 @@ class CustomerResource(private val dao: SubscriberDAO) {
     }
 
     private fun decodeEmail(email: String): String {
+        // if the email is percent encoded, decode it
         if (email.contains("%")) {
-            // if the email is percent encoded, decode it
-            return URLDecoder.decode(email, "UTF-8")
+            var toConvert = email
+            // + will be decoded to space, we will keep it as +
+            if (email.contains("+")) {
+                toConvert = email.replace("+", "%20")
+            }
+            return URLDecoder.decode(toConvert, "UTF-8")
         }
         return email
     }
