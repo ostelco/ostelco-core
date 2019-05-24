@@ -3,8 +3,6 @@ package org.ostelco.prime.admin.api
 
 import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.Offer
-import org.ostelco.prime.model.Product
-import org.ostelco.prime.model.ProductClass
 import org.ostelco.prime.model.Segment
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.AdminDataSource
@@ -133,54 +131,5 @@ class SegmentResource {
 //        return org.ostelco.prime.model.Segment(
 //                segment.id,
 //                segment.subscribers.map { dataStore.getSubscriber(it) }.requireNoNulls())
-//    }
-}
-
-@Path("/admin/products")
-class ProductResource {
-
-    private val adminDataSource by lazy { getResource<AdminDataSource>() }
-
-//    @GET
-//    fun getProducts() = adminDataSource.getProducts().map { it.id }
-
-//    @GET
-//    @Path("/{product-sku}")
-//    fun getProducts(@PathParam("product-sku") productSku: String) = adminDataSource.getProduct(null, productSku)
-
-    @POST
-    fun createProduct(product: Product): Response {
-        return adminDataSource.createProduct(product)
-                .fold({ Response.status(Response.Status.FORBIDDEN).entity(it.message).build() },
-                        { Response.ok().build() })
-    }
-}
-
-@Path("/admin/product_classes")
-class ProductClassResource {
-
-    private val adminDataSource by lazy { getResource<AdminDataSource>() }
-
-//    @GET
-//    fun getProductClasses() = adminDataSource.getProductClasses().map { it.id }
-//
-//    @GET
-//    @Path("/{product-class-id}")
-//    fun getProductClass(@PathParam("product-class-id") productClassId: String) = adminDataSource.getProductClass(productClassId)
-
-    @POST
-    fun createProductClass(productClass: ProductClass): Response {
-        return adminDataSource.createProductClass(productClass)
-                .fold({ Response.status(Response.Status.FORBIDDEN).entity(it.message).build() },
-                        { Response.ok().build() })
-    }
-
-//    @PUT
-//    @Path("/{product-class-id}")
-//    fun updateProductClass(
-//            @PathParam("product-class-id") productClassId: String,
-//            productClass: ProductClass): Boolean {
-//        return adminDataSource.updateProductClass(
-//                productClass.copy(id = productClassId))
 //    }
 }
