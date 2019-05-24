@@ -1075,7 +1075,7 @@ object Neo4jStoreSingleton : GraphStore {
                     }
                 }
 
-                val invoice = paymentProcessor.createInvoice(customerId, product.price.amount, product.price.currency, product.sku, "sg")
+                val invoice = paymentProcessor.createInvoice(customerId, product.price.amount, product.price.currency, product.sku, "sg", addedSourceId)
                         .mapLeft {
                             logger.error("Failed to create invoice for customer $customerId, source $addedSourceId, sku ${product.sku}")
                             it

@@ -378,21 +378,21 @@ class StripePaymentProcessor : PaymentProcessor {
                 InvoiceItemInfo(invoiceItem.id)
             }
 
-    override fun createInvoice(customerId: String, taxRates: List<TaxRateInfo>): Either<PaymentError, InvoiceInfo> =
-            createAndGetInvoiceDetails(customerId, taxRates)
+    override fun createInvoice(customerId: String, taxRates: List<TaxRateInfo>, sourceId: String?): Either<PaymentError, InvoiceInfo> =
+            createAndGetInvoiceDetails(customerId, taxRates, sourceId)
                     .flatMap {
                         InvoiceInfo(it.id).right()
                     }
 
-    override fun createInvoice(customerId: String): Either<PaymentError, InvoiceInfo> =
-            createInvoice(customerId, listOf<TaxRateInfo>())
+    override fun createInvoice(customerId: String, sourceId: String?): Either<PaymentError, InvoiceInfo> =
+            createInvoice(customerId, listOf<TaxRateInfo>(), sourceId)
 
-    override fun createInvoice(customerId: String, amount: Int, currency: String, description: String, taxRegion: String): Either<PaymentError, InvoiceInfo> =
+    override fun createInvoice(customerId: String, amount: Int, currency: String, description: String, taxRegion: String, sourceId: String?): Either<PaymentError, InvoiceInfo> =
             createInvoiceItem(customerId, amount, currency, description)
                     .flatMap {
                         getTaxRatesForTaxRegion(taxRegion)
                                 .flatMap { taxRates ->
-                                    createAndGetInvoiceDetails(customerId, taxRates)
+                                    createAndGetInvoiceDetails(customerId, taxRates, sourceId)
                                             .flatMap { invoice ->
                                                 /* If there are more than one line item in the invoice, then line item(s)
                                                    added by the (same) customer has accidentally been picked up by this
@@ -425,15 +425,17 @@ class StripePaymentProcessor : PaymentProcessor {
                     }
 
     /* Create and return invoice details. */
-    private fun createAndGetInvoiceDetails(customerId: String, taxRates: List<TaxRateInfo>): Either<PaymentError, Invoice> =
+    private fun createAndGetInvoiceDetails(customerId: String, taxRates: List<TaxRateInfo>, sourceId: String?): Either<PaymentError, Invoice> =
             either("") {
                 val params = mapOf(
                         "customer" to customerId,
                         "auto_advance" to true,
                         *(if (taxRates.isNotEmpty())
                             arrayOf("default_tax_rates" to taxRates.map { it.id })
-                        else arrayOf())
-                )
+                        else arrayOf()),
+                        *(if (sourceId != null)
+                            arrayOf("default_source" to sourceId)
+                        else arrayOf()))
                 Invoice.create(params)
             }
 

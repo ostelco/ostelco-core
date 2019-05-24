@@ -162,15 +162,17 @@ interface PaymentProcessor {
     /**
      * @param customerId ID of the customer to which the invoice will be assigned to
      * @param taxRates List of tax-rates to apply for a tax region
+     * @param sourceId Optionally use this source for payment
      * @return ID of the invoice
      */
-    fun createInvoice(customerId: String, taxRates: List<TaxRateInfo>): Either<PaymentError, InvoiceInfo>
+    fun createInvoice(customerId: String, taxRates: List<TaxRateInfo>, sourceId: String?): Either<PaymentError, InvoiceInfo>
 
     /**
      * @param customerId ID of the customer to which the invoice will be assigned to
+     * @param sourceId Optionally use this source for payment
      * @return ID of the invoice
      */
-    fun createInvoice(customerId: String): Either<PaymentError, InvoiceInfo>
+    fun createInvoice(customerId: String, sourceId: String?): Either<PaymentError, InvoiceInfo>
 
     /**
      * @param customerId ID of the customer to which the invoice will be assigned to
@@ -178,9 +180,10 @@ interface PaymentProcessor {
      * @param currency The currency to use for the payment (ISO code)
      * @param description Short description of what the invoice is for
      * @param taxRegion An identifier representing the taxes to be applied to a region
+     * @param sourceId Optionally use this source for payment
      * @return ID of the invoice
      */
-    fun createInvoice(customerId: String, amount: Int, currency: String, description: String, taxRegion: String): Either<PaymentError, InvoiceInfo>
+    fun createInvoice(customerId: String, amount: Int, currency: String, description: String, taxRegion: String, sourceId: String?): Either<PaymentError, InvoiceInfo>
 
     /**
      * @param invoiceId ID of the invoice to be paid
