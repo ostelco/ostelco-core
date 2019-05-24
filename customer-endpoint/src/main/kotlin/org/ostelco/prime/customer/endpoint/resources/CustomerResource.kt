@@ -3,6 +3,7 @@ package org.ostelco.prime.customer.endpoint.resources
 import io.dropwizard.auth.Auth
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.customer.endpoint.store.SubscriberDAO
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.Identity
@@ -15,6 +16,7 @@ import javax.ws.rs.core.Response
 
 @Path("/customer")
 class CustomerResource(private val dao: SubscriberDAO) {
+    private val logger by getLogger()
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -51,7 +53,7 @@ class CustomerResource(private val dao: SubscriberDAO) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
-
+        logger.info("Create customer with contactEmail = ${decodeEmail(contactEmail)} encoded = $contactEmail")
         return dao.createCustomer(
                 identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
                 customer = Customer(
@@ -81,6 +83,7 @@ class CustomerResource(private val dao: SubscriberDAO) {
         if (contactEmail != null) {
             decodedEmail = decodeEmail(contactEmail)
         }
+        logger.info("Update customer with contactEmail = $decodedEmail")
         return dao.updateCustomer(
                 identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
                 nickname = nickname,
