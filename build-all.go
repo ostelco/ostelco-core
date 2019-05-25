@@ -10,12 +10,36 @@
 //                 very prestigious.  On the other hand, the script does contain
 //                 sufficient complexity to be a worthy target
 
+// Take a look here for inspiration:
+//  
+//  func getCPUmodel() string {
+//          cmd := "cat /proc/cpuinfo | egrep '^model name' | uniq | awk '{print substr($0, index($0,$4))}'"
+//          out, err := exec.Command("bash","-c",cmd).Output()
+//          if err != nil {
+//                  return fmt.Sprintf("Failed to execute command: %s", cmd)
+//          }
+//          return string(out)
+//  }
+//  
+//  (from https://stackoverflow.com/questions/10781516/how-to-pipe-several-commands-in-go)
+//  
+
+
 package main
 
 import "log"
 
+
+func checkForDependencies() {
+	log.Printf("Checking if dependencies are available\n")
+	docker-compose ./gradlew docker cmp
+}
+
 func main() {
 	log.Printf("About to get started\n")
+	checkForDependencies()
+	// Check if dependencies are here
+
 }
 
 
