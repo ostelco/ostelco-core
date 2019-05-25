@@ -1,7 +1,8 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Card, CardBody, CardTitle } from 'reactstrap';
+import { Card, CardBody } from 'reactstrap';
+import ReactJson from 'react-json-view';
 
 class Context extends React.Component {
 
@@ -14,10 +15,10 @@ class Context extends React.Component {
     return (
       <Card>
         <CardBody>
-          <CardTitle>Context</CardTitle>
-          <pre className="language-jsx">
-            {JSON.stringify(props.context, null, 4)}
-          </pre>
+          <ReactJson
+            src={props.context}
+            displayDataTypes={false}
+            theme={"bright:inverted"} />
         </CardBody>
       </Card>
     );
