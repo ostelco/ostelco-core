@@ -9,7 +9,7 @@ import { notifyConstants } from '../actions/notifiy.actions';
 import alert from '../actions/alert.actions';
 import notification from '../actions/notifiy.actions';
 import authentication from './auth.reducer';
-import { subscriber, subscriptions, bundles, paymentHistory } from './subscriber.reducer';
+import { context, subscriber, subscriptions, bundles, paymentHistory } from './subscriber.reducer';
 
 
 const appReducer = combineReducers({
@@ -17,6 +17,7 @@ const appReducer = combineReducers({
   alert,
   notification,
   subscriber,
+  context,
   subscriptions,
   bundles,
   paymentHistory

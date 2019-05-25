@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardBody, CardTitle, Nav, NavItem, NavLink, TabContent, TabPane } from 'reactstrap';
 import classnames from 'classnames';
 
+import Context from "./Context";
 import DataUsage from "./DataUsage";
 import NotificationEditor from '../Notifications/NotificationEditor';
 import Profile from "./Profile";
@@ -42,6 +43,14 @@ class SearchResults extends React.Component {
               Purchases
             </NavLink>
           </NavItem>
+          <NavItem>
+            <NavLink
+              className={classnames({ active: this.state.activeTab === '2' })}
+              onClick={() => { this.toggle('3'); }}
+            >
+              Context
+            </NavLink>
+          </NavItem>
         </Nav>
         <TabContent activeTab={this.state.activeTab}>
           <TabPane tabId="1">
@@ -63,6 +72,9 @@ class SearchResults extends React.Component {
           </TabPane>
           <TabPane tabId="2">
             <PaymentHistory />
+          </TabPane>
+          <TabPane tabId="3">
+            <Context />
           </TabPane>
         </TabContent>
       </div>
