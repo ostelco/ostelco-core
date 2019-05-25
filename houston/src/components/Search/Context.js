@@ -18,6 +18,7 @@ class Context extends React.Component {
           <ReactJson
             src={props.context}
             displayDataTypes={false}
+            displayObjectSize={false}
             theme={"bright:inverted"} />
         </CardBody>
       </Card>
