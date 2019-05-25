@@ -60,16 +60,15 @@ class ProfilesResource {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
-        val decodedId = URLDecoder.decode(id, "UTF-8")
-        return if (!isEmail(decodedId)) {
-            logger.info("${token.name} Accessing profile for msisdn:$decodedId")
-            getProfileForMsisdn(decodedId).fold(
+        return if (!isEmail(id)) {
+            logger.info("${token.name} Accessing profile for msisdn:$id")
+            getProfileForMsisdn(id).fold(
                     { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                     { Response.status(Response.Status.OK).entity(asJson(it)) })
                     .build()
         } else {
-            logger.info("${token.name} Accessing profile for email:$decodedId")
-            getProfile(Identity(decodedId, "EMAIL", "email")).fold(
+            logger.info("${token.name} Accessing profile for email:$id")
+            getProfile(Identity(id, "EMAIL", "email")).fold(
                     { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                     { Response.status(Response.Status.OK).entity(asJson(it)) })
                     .build()
@@ -90,9 +89,8 @@ class ProfilesResource {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
-        val decodedId = URLDecoder.decode(email, "UTF-8")
-        logger.info("${token.name} Accessing subscriptions for email:$decodedId")
-        return getSubscriptions(Identity(decodedId, "EMAIL", "email")).fold(
+        logger.info("${token.name} Accessing subscriptions for email:$email")
+        return getSubscriptions(Identity(email, "EMAIL", "email")).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
@@ -112,9 +110,8 @@ class ProfilesResource {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
-        val decodedId = URLDecoder.decode(email, "UTF-8")
-        logger.info("${token.name} Accessing scan information for email:$decodedId")
-        return getAllScanInformation(identity = Identity(id = decodedId, type = "EMAIL", provider = "email")).fold(
+        logger.info("${token.name} Accessing scan information for email:$email")
+        return getAllScanInformation(identity = Identity(id = email, type = "EMAIL", provider = "email")).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
@@ -258,9 +255,8 @@ class BundlesResource {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
-        val decodedEmail = URLDecoder.decode(email, "UTF-8")
-        logger.info("${token.name} Accessing bundles for $decodedEmail")
-        return getBundles(Identity(decodedEmail, "EMAIL", "email")).fold(
+        logger.info("${token.name} Accessing bundles for $email")
+        return getBundles(Identity(email, "EMAIL", "email")).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
@@ -301,9 +297,8 @@ class PurchaseResource {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
-        val decodedEmail = URLDecoder.decode(email, "UTF-8")
-        logger.info("${token.name} Accessing bundles for $decodedEmail")
-        return getPurchaseHistory(Identity(decodedEmail, "EMAIL", "email")).fold(
+        logger.info("${token.name} Accessing bundles for $email")
+        return getPurchaseHistory(Identity(email, "EMAIL", "email")).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
@@ -350,12 +345,11 @@ class RefundResource {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
-        val decodedEmail = URLDecoder.decode(email, "UTF-8")
-        logger.info("${token.name} Refunding purchase for $decodedEmail at id: $purchaseRecordId")
-        return refundPurchase(Identity(decodedEmail, "EMAIL", "email"), purchaseRecordId, reason).fold(
+        logger.info("${token.name} Refunding purchase for $email at id: $purchaseRecordId")
+        return refundPurchase(Identity(email, "EMAIL", "email"), purchaseRecordId, reason).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 {
-                    logger.info(NOTIFY_OPS_MARKER, "${token.name} refunded the purchase (id:$purchaseRecordId) for $decodedEmail ")
+                    logger.info(NOTIFY_OPS_MARKER, "${token.name} refunded the purchase (id:$purchaseRecordId) for $email ")
                     Response.status(Response.Status.OK).entity(asJson(it))
                 })
                 .build()
@@ -404,11 +398,10 @@ class NotifyResource {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
-        val decodedEmail = URLDecoder.decode(email, "UTF-8")
-        return getCustomerId(email = decodedEmail).fold(
+        return getCustomerId(email = email).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { customerId ->
-                    logger.info("${token.name} Sending notification to $decodedEmail customerId: $customerId")
+                    logger.info("${token.name} Sending notification to $email customerId: $customerId")
                     val data = mapOf("timestamp" to "${System.currentTimeMillis()}")
                     notifier.notify(customerId, title, message, data)
                     Response.status(Response.Status.OK).entity("Message Sent")
