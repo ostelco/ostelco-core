@@ -21,8 +21,7 @@ const DEPLOYED_PROD_AUTH_CONFIG = {
 };
 
 export function getAuthConfig() {
-  if (process.env.REACT_APP_DEPLOYMENT_ENV === "development" ||
-    process.env.NODE_ENV === "development") {
+  if (process.env.REACT_APP_DEPLOYMENT_ENV === "development") {
     return DEPLOYED_DEV_AUTH_CONFIG;
   } else if (process.env.REACT_APP_DEPLOYMENT_ENV === "production" ||
     process.env.NODE_ENV === "production") {
