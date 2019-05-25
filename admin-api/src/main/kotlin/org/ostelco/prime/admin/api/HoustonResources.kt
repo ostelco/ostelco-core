@@ -110,8 +110,8 @@ class ProfilesResource {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
-        logger.info("${token.name} Accessing scan information for email:$id")
-        return getAllScanInformation(identity = Identity(id = id, type = "EMAIL", provider = "email")).fold(
+        logger.info("${token.name} Accessing scan information for email:$email")
+        return getAllScanInformation(identity = Identity(id = email, type = "EMAIL", provider = "email")).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
