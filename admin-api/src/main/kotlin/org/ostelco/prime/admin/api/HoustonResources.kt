@@ -11,13 +11,7 @@ import org.ostelco.prime.appnotifier.AppNotifier
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
-import org.ostelco.prime.model.Bundle
-import org.ostelco.prime.model.Customer
-import org.ostelco.prime.model.Identity
-import org.ostelco.prime.model.Plan
-import org.ostelco.prime.model.PurchaseRecord
-import org.ostelco.prime.model.ScanInformation
-import org.ostelco.prime.model.Subscription
+import org.ostelco.prime.model.*
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
@@ -366,6 +360,55 @@ class RefundResource {
         } catch (e: Exception) {
             logger.error("Failed to refund purchase for customer with identity - $identity, id: $purchaseRecordId", e)
             Either.left(InternalServerError("Failed to refund purchase", ApiErrorCode.FAILED_TO_REFUND_PURCHASE))
+        }
+    }
+}
+
+/**
+ * Resource used to handle context REST call.
+ */
+@Path("/context")
+class ContextResource {
+    private val logger by getLogger()
+    private val storage by lazy { getResource<AdminDataSource>() }
+
+    /**
+     * Get context for the subscriber.
+     */
+    @GET
+    @Path("{email}")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun getContextByEmail(@Auth token: AccessTokenPrincipal?,
+                          @NotNull
+                          @PathParam("email")
+                          email: String): Response {
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .build()
+        }
+        logger.info("${token.name} Accessing context for $email")
+        return getContext(Identity(email, "EMAIL", "email")).fold(
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                { Response.status(Response.Status.OK).entity(asJson(it)) })
+                .build()
+    }
+
+    // TODO: Reuse the one from SubscriberDAO
+    fun getContext(identity: Identity): Either<ApiError, Context> {
+        return try {
+            storage.getCustomer(identity)
+                    .mapLeft {
+                        NotFoundError("Failed to fetch customer.", ApiErrorCode.FAILED_TO_FETCH_CONTEXT, it)
+                    }
+                    .map { customer ->
+                        storage.getAllRegionDetails(identity = identity)
+                                .fold(
+                                        { Context(customer = customer) },
+                                        { regionDetailsCollection -> Context(customer = customer, regions = regionDetailsCollection) })
+                    }
+        } catch (e: Exception) {
+            logger.error("Failed to fetch context for customer with identity - $identity", e)
+            Either.left(NotFoundError("Failed to fetch context", ApiErrorCode.FAILED_TO_FETCH_CONTEXT))
         }
     }
 }
