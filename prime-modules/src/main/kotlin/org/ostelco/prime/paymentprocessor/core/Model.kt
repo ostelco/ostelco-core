@@ -29,3 +29,5 @@ data class TaxRateInfo(val id: String, val percentage: BigDecimal, val displayNa
 data class InvoiceItemInfo(val id: String)
 
 data class InvoiceInfo(val id: String)
+
+data class InvoicePaymentInfo(val id: String, val chargeId: String)

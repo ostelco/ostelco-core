@@ -29,6 +29,7 @@ import org.ostelco.prime.getLogger
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.core.BadGatewayError
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
+import org.ostelco.prime.paymentprocessor.core.InvoicePaymentInfo
 import org.ostelco.prime.paymentprocessor.core.InvoiceInfo
 import org.ostelco.prime.paymentprocessor.core.InvoiceItemInfo
 import org.ostelco.prime.paymentprocessor.core.NotFoundError
@@ -436,10 +437,10 @@ class StripePaymentProcessor : PaymentProcessor {
                 Invoice.create(params)
             }
 
-    override fun payInvoice(invoiceId: String): Either<PaymentError, InvoiceInfo> =
+    override fun payInvoice(invoiceId: String): Either<PaymentError, InvoicePaymentInfo> =
             either("Failed to complete payment of invoice ${invoiceId}") {
-                InvoiceInfo(Invoice.retrieve(invoiceId).pay()
-                        .id)
+                val receipt = Invoice.retrieve(invoiceId).pay()
+                InvoicePaymentInfo(receipt.id, receipt.charge)
             }
 
     override fun removeInvoice(invoiceId: String): Either<PaymentError, InvoiceInfo> =

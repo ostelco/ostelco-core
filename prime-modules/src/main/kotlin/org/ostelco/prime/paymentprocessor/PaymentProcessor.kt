@@ -1,6 +1,7 @@
 package org.ostelco.prime.paymentprocessor
 
 import arrow.core.Either
+import org.ostelco.prime.paymentprocessor.core.InvoicePaymentInfo
 import org.ostelco.prime.paymentprocessor.core.InvoiceInfo
 import org.ostelco.prime.paymentprocessor.core.InvoiceItemInfo
 import org.ostelco.prime.paymentprocessor.core.PaymentError
@@ -182,7 +183,7 @@ interface PaymentProcessor {
      * @param invoiceId ID of the invoice to be paid
      * @return ID of the invoice
      */
-    fun payInvoice(invoiceId: String): Either<PaymentError, InvoiceInfo>
+    fun payInvoice(invoiceId: String): Either<PaymentError, InvoicePaymentInfo>
 
     /**
      * @param invoiceId ID of the invoice to be paid

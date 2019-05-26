@@ -39,6 +39,7 @@ import org.ostelco.prime.model.SimProfileStatus.AVAILABLE_FOR_DOWNLOAD
 import org.ostelco.prime.notifications.EmailNotifier
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.InvoiceInfo
+import org.ostelco.prime.paymentprocessor.core.InvoicePaymentInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.sim.SimManager
 import org.ostelco.prime.storage.NotFoundError
@@ -101,7 +102,7 @@ class Neo4jStoreTest {
         Neo4jStoreSingleton.createSegment(allSegment)
     }
 
-    //@Test
+    @Test
     fun `test - add customer`() {
 
         Neo4jStoreSingleton.addCustomer(
@@ -120,7 +121,7 @@ class Neo4jStoreTest {
 //        assertEquals(Bundle(id = EMAIL, balance = 100_000_000), bundleArgCaptor.value)
     }
 
-    //@Test
+    @Test
     fun `test - fail to add customer with invalid referred by`() {
 
         Neo4jStoreSingleton.addCustomer(
@@ -134,7 +135,7 @@ class Neo4jStoreTest {
                         { fail("Created customer in spite of invalid 'referred by'") })
     }
 
-    //@Test
+    @Test
     fun `test - add subscription`() {
 
         // prep
@@ -172,8 +173,12 @@ class Neo4jStoreTest {
 
         val sku = "1GB_249NOK"
         val invoiceId = "in_01234"
+        val chargeId = UUID.randomUUID().toString()
 
         // mock
+        Mockito.`when`(mockPaymentProcessor.getPaymentProfile(customerId = CUSTOMER.id))
+                .thenReturn(ProfileInfo(EMAIL).right())
+
         Mockito.`when`(mockPaymentProcessor.createInvoice(
                 customerId = CUSTOMER.id,
                 amount = 24900,
@@ -185,7 +190,7 @@ class Neo4jStoreTest {
 
         Mockito.`when`(mockPaymentProcessor.payInvoice(
                 invoiceId = invoiceId)
-        ).thenReturn(InvoiceInfo(invoiceId).right())
+        ).thenReturn(InvoicePaymentInfo(invoiceId, chargeId).right())
 
         // prep
         Neo4jStoreSingleton.createRegion(Region(REGION_CODE, "Norway"))

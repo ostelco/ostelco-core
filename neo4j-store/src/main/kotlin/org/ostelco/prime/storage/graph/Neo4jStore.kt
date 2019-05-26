@@ -52,7 +52,6 @@ import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.PaymentStatus
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
-import org.ostelco.prime.paymentprocessor.core.TaxRateInfo
 import org.ostelco.prime.securearchive.SecureArchiveService
 import org.ostelco.prime.sim.SimManager
 import org.ostelco.prime.storage.AlreadyExistsError
@@ -1107,8 +1106,15 @@ object Neo4jStoreSingleton : GraphStore {
                                     """.trimIndent())
                         }.bind()
 
+                /* Force immediate payment of the invoice. */
+                val paymentInfo = paymentProcessor.payInvoice(invoice.id)
+                        .mapLeft {
+                            logger.error("Payment of invoice ${invoice.id} failed for customer $customerId.")
+                            it
+                        }.bind()
+
                 val purchaseRecord = PurchaseRecord(
-                        id = invoice.id,
+                        id = paymentInfo.chargeId,
                         product = product,
                         timestamp = Instant.now().toEpochMilli())
 
@@ -1149,12 +1155,6 @@ object Neo4jStoreSingleton : GraphStore {
                             })
                 }.bind()
 
-                /* Force immediate payment of the invoice. */
-                paymentProcessor.payInvoice(invoice.id)
-                        .mapLeft {
-                            logger.error("Payment of invoice ${invoice.id} failed for customer $customerId.")
-                            it
-                        }.bind()
                 ProductInfo(product.sku)
             }.fix()
         }.unsafeRunSync()
