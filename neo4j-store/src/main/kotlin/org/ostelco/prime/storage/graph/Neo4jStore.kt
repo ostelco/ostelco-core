@@ -1056,6 +1056,16 @@ object Neo4jStoreSingleton : GraphStore {
                         .bind()
                 var addedSourceId: String? = null
 
+                val customer = getCustomer(identity = identity, transaction = transaction)
+                        .mapLeft {
+                            org.ostelco.prime.paymentprocessor.core.NotFoundError(
+                                    "Failed to get customer data for customer with identity - $identity",
+                                    error = it)
+                        }.bind()
+
+                 val profileInfo = fetchOrCreatePaymentProfile(customer)
+                         .bind()
+
                 /* Add source if set and if it has not already been added to the customer. */
                 if (sourceId != null) {
                     val sourceDetails = paymentProcessor.getSavedSources(customerId)
@@ -1145,7 +1155,6 @@ object Neo4jStoreSingleton : GraphStore {
                             logger.error("Payment of invoice ${invoice.id} failed for customer $customerId.")
                             it
                         }.bind()
-
                 ProductInfo(product.sku)
             }.fix()
         }.unsafeRunSync()

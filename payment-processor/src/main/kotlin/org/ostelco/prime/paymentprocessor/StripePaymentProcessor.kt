@@ -460,8 +460,6 @@ class StripePaymentProcessor : PaymentProcessor {
     private fun removeInvoice(invoice: Invoice): Either<PaymentError, InvoiceInfo> =
             either("Error when attempting to remove invoice ${invoice.id} with Stripe") {
 
-                println(">>> remove invoice ${invoice.id} status: ${invoice.status}")
-
                 /* Wether an invoice can be deleted or not, depends on what
                    status the invoice has.
                    Ref.: https://stripe.com/docs/billing/invoices/workflow */
@@ -518,10 +516,8 @@ class StripePaymentProcessor : PaymentProcessor {
     override fun getTaxRatesForTaxRegion(taxRegion: String): Either<PaymentError, List<TaxRateInfo>> =
             getTaxRates()
                     .flatMap {
-                        println(">>> gettaxrates ${taxRegion}")
                         val lst = it.filter { x -> !x.metadata[TAX_REGION].isNullOrEmpty() &&
                                 x.metadata[TAX_REGION].equals(taxRegion, true) }
-                        println(">>>> rates : ${lst}")
                         if (lst.isEmpty())
                             emptyList<TaxRateInfo>()
                                     .right()
