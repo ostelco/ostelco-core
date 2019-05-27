@@ -74,6 +74,7 @@ enum class ScanStatus {
 data class ScanResult(
         val vendorScanReference: String,
         val verificationStatus: String,
+        val similarity: String,
         val time: Long,
         val type: String?,
         val country: String?,

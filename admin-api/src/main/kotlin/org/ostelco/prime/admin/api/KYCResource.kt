@@ -88,17 +88,19 @@ class KYCResource {
             var rejectReason: String? = dataMap[JumioScanData.REJECT_REASON.s]
             val scanId: String = dataMap[JumioScanData.SCAN_ID.s]!!
             val identityVerificationData: String? = dataMap[JumioScanData.IDENTITY_VERIFICATION.s]
+            val similarity: String?
 
             // Check if the id matched with the photo.
             if (verificationStatus.toUpperCase() == JumioScanData.APPROVED_VERIFIED.s) {
                 val identityVerification = toRegularMap(identityVerificationData)
                 if (identityVerification == null) {
                     // something gone wrong while parsing identityVerification
-                    rejectReason = """{ "message": "Missing ${JumioScanData.IDENTITY_VERIFICATION.s} information" }"""
+                    rejectReason = null
                     status = ScanStatus.REJECTED
+                    similarity = null
                 } else {
                     // identityVerification field is present
-                    val similarity = identityVerification[JumioScanData.SIMILARITY.s]
+                    similarity = identityVerification[JumioScanData.SIMILARITY.s]
                     val validity = identityVerification[JumioScanData.VALIDITY.s]
                     if (!(similarity != null && similarity.toUpperCase() == JumioScanData.MATCH.s &&
                             validity != null && validity.toUpperCase() == JumioScanData.TRUE.s)) {
@@ -118,7 +120,8 @@ class KYCResource {
                         firstName = firstName,
                         lastName = lastName,
                         dob = dob,
-                        rejectReason = rejectReason
+                        rejectReason = rejectReason,
+                        similarity = similarity
                 ))
             } else {
                 return null
