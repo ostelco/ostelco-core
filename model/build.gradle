@@ -7,6 +7,7 @@ dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
   implementation "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
   implementation "com.google.cloud:google-cloud-datastore:$googleCloudVersion"
+  implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
 
   // TODO vihang: this dependency is added only for @Exclude annotation for firebase
   implementation "com.google.firebase:firebase-admin:$firebaseVersion"
