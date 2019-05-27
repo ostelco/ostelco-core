@@ -25,8 +25,32 @@ class KYCResourceTest {
     }
 
     @Test
+    fun `test all correct boolean IdentityVerification`() {
+        val identityVerification = """{ "similarity":"MATCH", "validity":true}"""
+        val res = KYCResource()
+        val id = res.toIdentityVerification(identityVerification)
+        if (id != null) {
+            Assertions.assertThat(id.similarity).isEqualTo(Similarity.MATCH)
+            Assertions.assertThat(id.validity).isEqualTo(true)
+        }
+        Assertions.assertThat(id).isNotNull()
+    }
+
+    @Test
     fun `test validity false IdentityVerification`() {
         val identityVerification = """{ "similarity":"MATCH", "validity":"FALSE"}"""
+        val res = KYCResource()
+        val id = res.toIdentityVerification(identityVerification)
+        if (id != null) {
+            Assertions.assertThat(id.similarity).isEqualTo(Similarity.MATCH)
+            Assertions.assertThat(id.validity).isEqualTo(false)
+        }
+        Assertions.assertThat(id).isNotNull()
+    }
+
+    @Test
+    fun `test validity false boolean IdentityVerification`() {
+        val identityVerification = """{ "similarity":"MATCH", "validity":false}"""
         val res = KYCResource()
         val id = res.toIdentityVerification(identityVerification)
         if (id != null) {
