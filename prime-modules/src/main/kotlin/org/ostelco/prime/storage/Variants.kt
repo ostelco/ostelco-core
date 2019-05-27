@@ -334,5 +334,5 @@ interface AdminGraphStore {
 interface ScanInformationStore {
     // Function to upsert scan information data from the 3rd party eKYC scan
     fun upsertVendorScanInformation(customerId: String, countryCode: String, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit>
-    fun getExtendedStatusInformation(vendorData: MultivaluedMap<String, String>): Map<String, String>
+    fun getExtendedStatusInformation(scanInformation: ScanInformation): Map<String, String>
 }
