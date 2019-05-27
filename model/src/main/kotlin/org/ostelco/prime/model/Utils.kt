@@ -21,7 +21,10 @@ class StringBooleanDeserializer : JsonDeserializer<Boolean>() {
             } else if (FALSE.equals(text, ignoreCase = true)) {
                 return false
             }
+        } else if (currentToken.equals(JsonToken.VALUE_TRUE)) {
+            return true
         }
+
         return false
     }
 }
