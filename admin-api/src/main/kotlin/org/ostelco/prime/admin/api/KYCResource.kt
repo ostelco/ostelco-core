@@ -95,6 +95,8 @@ class KYCResource {
                     rejectReason = null
                     status = ScanStatus.REJECTED
                 } else {
+                    //TODO: remove after tests
+                    logger.info("IDENTITY_VERIFICATION Data: $identityVerificationData")
                     // identityVerification field is present
                     val similarity = identityVerification.similarity
                     val validity = identityVerification.validity
