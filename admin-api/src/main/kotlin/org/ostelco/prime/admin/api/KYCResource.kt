@@ -10,6 +10,7 @@ import org.ostelco.prime.apierror.BadRequestError
 import org.ostelco.prime.apierror.NotFoundError
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
+import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.model.*
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.AdminDataSource
@@ -63,7 +64,7 @@ class KYCResource {
     internal fun toIdentityVerification(jsonData: String?): IdentityVerification? {
         try {
             if (jsonData != null) {
-                return ObjectMapper().readValue(jsonData)
+                return objectMapper.readValue(jsonData)
             }
         } catch (e: IOException) {
             logger.error("Cannot parse Json Data: $jsonData", e)

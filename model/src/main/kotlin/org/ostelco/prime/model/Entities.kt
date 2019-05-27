@@ -1,7 +1,6 @@
 package org.ostelco.prime.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.DeserializationContext
@@ -102,14 +101,10 @@ enum class ValidityReason {
 
 // Jumio Identity verification structure, valid when a scan is verified & approved
 data class IdentityVerification(
-        @JsonProperty("similarity")
         val similarity: Similarity,
-        @JsonProperty("validity")
         @JsonDeserialize(using = StringBooleanDeserializer::class)
         val validity: Boolean,
-        @JsonProperty("reason")
         val reason: ValidityReason?,
-        @JsonProperty("handwrittenNoteMatches")
         @JsonDeserialize(using = StringBooleanDeserializer::class)
         val handwrittenNoteMatches:Boolean?
 )
@@ -314,24 +309,3 @@ enum class SimProfileStatus {
 data class Context(
         val customer: Customer,
         val regions: Collection<RegionDetails> = emptyList())
-
-// Helper for deserializing  boolean from a string value (TRUE or FALSE)
-class StringBooleanDeserializer : JsonDeserializer<Boolean>() {
-
-    override fun deserialize(jp: JsonParser, ctxt: DeserializationContext): Boolean? {
-        val TRUE = "TRUE"
-        val FALSE = "FALSE"
-        val currentToken = jp.getCurrentToken()
-
-        if (currentToken.equals(JsonToken.VALUE_STRING)) {
-            val text = jp.getText().trim()
-
-            if (TRUE.equals(text, ignoreCase = true)) {
-                return true
-            } else if (FALSE.equals(text, ignoreCase = true)) {
-                return false
-            }
-        }
-        return false
-    }
-}
