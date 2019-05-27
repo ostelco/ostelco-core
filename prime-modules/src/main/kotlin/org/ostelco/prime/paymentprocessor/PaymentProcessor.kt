@@ -83,10 +83,10 @@ interface PaymentProcessor {
     fun cancelSubscription(subscriptionId: String, invoiceNow: Boolean = false): Either<PaymentError, SubscriptionInfo>
 
     /**
-     * @param sku Prime product SKU
+     * @param name Prime product name
      * @return Stripe productId if created
      */
-    fun createProduct(sku: String): Either<PaymentError, ProductInfo>
+    fun createProduct(name: String): Either<PaymentError, ProductInfo>
 
     /**
      * @param productId Stripe product Id
