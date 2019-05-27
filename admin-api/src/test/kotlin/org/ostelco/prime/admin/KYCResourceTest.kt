@@ -65,7 +65,7 @@ class KYCResourceTest {
         val res = KYCResource()
         val id = res.toIdentityVerification(identityVerification)
         if (id != null) {
-            val result = """{"similarity":"NO_MATCH","validity":true,"reason":null}"""
+            val result = """{"similarity":"NO_MATCH","validity":true,"reason":null,"handwrittenNoteMatches":null}"""
             Assertions.assertThat(ObjectMapper().writeValueAsString(id)).isEqualTo(result)
         }
         Assertions.assertThat(id).isNotNull()
@@ -92,10 +92,9 @@ class KYCResourceTest {
                 status = ScanStatus.REJECTED,
                 scanResult = scanResult)
         if (id != null) {
-            print(ObjectMapper().writeValueAsString(scanInformation))
             val result = """{"scanId":"123456","countryCode":"sg","status":"REJECTED","""+
             """"scanResult":{"vendorScanReference":"7890123","verificationStatus":"APPROVED_VERIFIED","time":123456,"type":"PASSPORT","country":"NORWAY","firstName":"Ole","""+
-            """"lastName":"Nordmann","dob":"1988-01-23","rejectReason":{"similarity":"NO_MATCH","validity":true,"reason":null}}}"""
+            """"lastName":"Nordmann","dob":"1988-01-23","rejectReason":{"similarity":"NO_MATCH","validity":true,"reason":null,"handwrittenNoteMatches":null}}}"""
             Assertions.assertThat(ObjectMapper().writeValueAsString(scanInformation)).isEqualTo(result)
         }
         Assertions.assertThat(id).isNotNull()

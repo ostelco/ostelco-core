@@ -108,7 +108,10 @@ data class IdentityVerification(
         @JsonDeserialize(using = StringBooleanDeserializer::class)
         val validity: Boolean,
         @JsonProperty("reason")
-        val reason: ValidityReason?
+        val reason: ValidityReason?,
+        @JsonProperty("handwrittenNoteMatches")
+        @JsonDeserialize(using = StringBooleanDeserializer::class)
+        val handwrittenNoteMatches:Boolean?
 )
 
 data class ScanResult(
