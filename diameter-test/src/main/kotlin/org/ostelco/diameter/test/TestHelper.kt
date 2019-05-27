@@ -56,11 +56,13 @@ object TestHelper {
                     avp(Avp.SERVICE_IDENTIFIER_CCA, serviceIdentifier, pFlag = true)
                 }
 
-                group(Avp.REQUESTED_SERVICE_UNIT) {
-                    if (requestedBucketSize > 0) {
-                        avp(Avp.CC_TOTAL_OCTETS, requestedBucketSize, pFlag = true)
-                        avp(Avp.CC_INPUT_OCTETS, 0L, pFlag = true)
-                        avp(Avp.CC_OUTPUT_OCTETS, 0L, pFlag = true)
+                if (requestedBucketSize >= 0 ) {
+                    group(Avp.REQUESTED_SERVICE_UNIT) {
+                        if (requestedBucketSize > 0) {
+                            avp(Avp.CC_TOTAL_OCTETS, requestedBucketSize, pFlag = true)
+                            avp(Avp.CC_INPUT_OCTETS, 0L, pFlag = true)
+                            avp(Avp.CC_OUTPUT_OCTETS, 0L, pFlag = true)
+                        }
                     }
                 }
 

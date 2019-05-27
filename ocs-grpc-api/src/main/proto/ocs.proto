@@ -121,6 +121,7 @@ message CreditControlAnswerInfo {
   string msisdn = 2;
   repeated MultipleServiceCreditControl mscc = 3;
   ResultCode resultCode = 4;
+  uint32 validityTime = 5;
 }
 
 

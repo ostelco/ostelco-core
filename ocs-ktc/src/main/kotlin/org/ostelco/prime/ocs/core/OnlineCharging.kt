@@ -73,7 +73,13 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                             doneSignal.countDown()
                         }
                     }
+
                     doneSignal.await(2, TimeUnit.SECONDS)
+
+                    if (responseBuilder.msccCount == 0) {
+                        responseBuilder.setValidityTime(86400)
+                    }
+
                     synchronized(OnlineCharging) {
                         returnCreditControlAnswer(responseBuilder.build())
                     }

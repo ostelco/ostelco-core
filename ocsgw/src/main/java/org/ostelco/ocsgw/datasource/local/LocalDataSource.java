@@ -69,29 +69,31 @@ public class LocalDataSource implements DataSource {
                 newRequested.add(new ServiceUnit(requested.getTotal(), 0, 0));
             }
 
-            final ServiceUnit granted;
             if (!newRequested.isEmpty()) {
-                granted = newRequested.get(0);
-            } else {
-                granted = new ServiceUnit(0, 0, 0);
+                final ServiceUnit granted = newRequested.get(0);
+                MultipleServiceCreditControl newMscc = new MultipleServiceCreditControl(
+                        mscc.getRatingGroup(),
+                        mscc.getServiceIdentifier(),
+                        newRequested,
+                        new ServiceUnit(mscc.getUsed().getTotal(), mscc.getUsed().getInput(), mscc.getUsed().getOutput()),
+                        granted,
+                        mscc.getValidityTime(),
+                        7200,
+                        (long) (granted.getTotal() * 0.2), // 20%
+                        finalUnitIndication,
+                        ResultCode.DIAMETER_SUCCESS);
+
+                newMultipleServiceCreditControls.add(newMscc);
+
             }
-
-            MultipleServiceCreditControl newMscc = new MultipleServiceCreditControl(
-                    mscc.getRatingGroup(),
-                    mscc.getServiceIdentifier(),
-                    newRequested,
-                    new ServiceUnit(mscc.getUsed().getTotal(), mscc.getUsed().getInput(), mscc.getUsed().getOutput()),
-                    granted,
-                    mscc.getValidityTime(),
-                    7200,
-                    (long) (granted.getTotal() * 0.2), // 20%
-                    finalUnitIndication,
-                    ResultCode.DIAMETER_SUCCESS);
-
-            newMultipleServiceCreditControls.add(newMscc);
         }
 
-        return new CreditControlAnswer(ResultCode.DIAMETER_SUCCESS, newMultipleServiceCreditControls);
+        int validityTime = 0;
+        if (newMultipleServiceCreditControls.isEmpty()) {
+            validityTime = 86400;
+        }
+
+        return new CreditControlAnswer(ResultCode.DIAMETER_SUCCESS, newMultipleServiceCreditControls, validityTime);
     }
 
     public boolean isBlocked(final String msisdn) {
