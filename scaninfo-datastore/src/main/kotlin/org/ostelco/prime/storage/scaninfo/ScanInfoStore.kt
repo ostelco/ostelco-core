@@ -12,6 +12,7 @@ import com.google.cloud.datastore.Blob
 import com.google.cloud.datastore.DatastoreException
 import com.google.crypto.tink.config.TinkConfig
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.model.*
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.securearchive.SecureArchiveService
@@ -285,7 +286,7 @@ object JumioHelper {
      */
     fun getExtendedStatusInformation(scanInformation: ScanInformation): Map<String, String> {
         val extendedStatus = mutableMapOf<String, String>()
-        extendedStatus.putIfAbsent(JumioScanData.SCAN_INFORMATION.s, ObjectMapper().writeValueAsString(scanInformation))
+        extendedStatus.putIfAbsent(JumioScanData.SCAN_INFORMATION.s, objectMapper.writeValueAsString(scanInformation))
         return extendedStatus
     }
 

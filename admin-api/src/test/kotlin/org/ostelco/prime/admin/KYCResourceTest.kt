@@ -36,6 +36,22 @@ class KYCResourceTest {
     }
 
     @Test
+    fun `test incomplete IdentityVerification`() {
+        val identityVerification = """{ "similarity":"MATCH"}"""
+        val res = KYCResource()
+        val id = res.toIdentityVerification(identityVerification)
+        Assertions.assertThat(id).isNull()
+    }
+
+    @Test
+    fun `test similarity unknown IdentityVerification`() {
+        val identityVerification = """{ "similarity":"UNKNOWN", "validity":"TRUE"}"""
+        val res = KYCResource()
+        val id = res.toIdentityVerification(identityVerification)
+        Assertions.assertThat(id).isNull()
+    }
+
+    @Test
     fun `test similarity no match IdentityVerification`() {
         val identityVerification = """{ "similarity":"NO_MATCH", "validity":"TRUE"}"""
         val res = KYCResource()
