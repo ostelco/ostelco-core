@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.assertj.core.api.Assertions
 import org.junit.Test
 import org.ostelco.prime.admin.api.KYCResource
+import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.ScanResult
 import org.ostelco.prime.model.ScanStatus
@@ -82,7 +83,7 @@ class KYCResourceTest {
         val id = res.toIdentityVerification(identityVerification)
         if (id != null) {
             val result = """{"similarity":"NO_MATCH","validity":true,"reason":null,"handwrittenNoteMatches":null}"""
-            Assertions.assertThat(ObjectMapper().writeValueAsString(id)).isEqualTo(result)
+            Assertions.assertThat(objectMapper.writeValueAsString(id)).isEqualTo(result)
         }
         Assertions.assertThat(id).isNotNull()
     }
@@ -111,7 +112,7 @@ class KYCResourceTest {
             val result = """{"scanId":"123456","countryCode":"sg","status":"REJECTED","""+
             """"scanResult":{"vendorScanReference":"7890123","verificationStatus":"APPROVED_VERIFIED","time":123456,"type":"PASSPORT","country":"NORWAY","firstName":"Ole","""+
             """"lastName":"Nordmann","dob":"1988-01-23","rejectReason":{"similarity":"NO_MATCH","validity":true,"reason":null,"handwrittenNoteMatches":null}}}"""
-            Assertions.assertThat(ObjectMapper().writeValueAsString(scanInformation)).isEqualTo(result)
+            Assertions.assertThat(objectMapper.writeValueAsString(scanInformation)).isEqualTo(result)
         }
         Assertions.assertThat(id).isNotNull()
     }
