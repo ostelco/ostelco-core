@@ -1085,7 +1085,13 @@ object Neo4jStoreSingleton : GraphStore {
                         }
                         .bind().first()
 
-                val invoice = paymentProcessor.createInvoice(customer.id, product.price.amount, product.price.currency, product.sku, region.id, addedSourceId)
+                /* Product presentation. */
+                val productLabel = if (product.presentation.containsKey("productLabel"))
+                        product.presentation["productLabel"] ?: product.sku
+                else
+                    product.sku
+
+                val invoice = paymentProcessor.createInvoice(customer.id, product.price.amount, product.price.currency, productLabel, region.id, addedSourceId)
                         .mapLeft {
                             logger.error("Failed to create invoice for customer ${customer.id}, source $addedSourceId, sku ${product.sku}")
                             it
@@ -1806,7 +1812,13 @@ object Neo4jStoreSingleton : GraphStore {
                                 }
                         ).bind()
 
-                val productInfo = paymentProcessor.createProduct(plan.id)
+                /* Plan/product presentation. */
+                val productLabel = if (plan.presentation.containsKey("productLabel"))
+                    plan.presentation["productLabel"] ?: plan.id
+                else
+                    plan.id
+
+                val productInfo = paymentProcessor.createProduct(productLabel)
                         .mapLeft {
                             NotCreatedError(type = planEntity.name, id = "Failed to create plan ${plan.id}",
                                     error = it)

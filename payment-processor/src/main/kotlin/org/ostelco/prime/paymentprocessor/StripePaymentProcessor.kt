@@ -169,10 +169,10 @@ class StripePaymentProcessor : PaymentProcessor {
                 }
             }
 
-    override fun createProduct(sku: String): Either<PaymentError, ProductInfo> =
-            either("Failed to create product with sku $sku") {
+    override fun createProduct(name: String): Either<PaymentError, ProductInfo> =
+            either("Failed to create product with name $name") {
                 val productParams = mapOf(
-                        "name" to sku,
+                        "name" to name,
                         "type" to "service")
                 ProductInfo(Product.create(productParams).id)
             }
