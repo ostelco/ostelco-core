@@ -3,6 +3,7 @@ package org.ostelco.prime.paymentprocessor
 import arrow.core.Either
 import arrow.core.Try
 import arrow.core.flatMap
+import arrow.core.left
 import arrow.core.right
 import com.stripe.exception.ApiConnectionException
 import com.stripe.exception.AuthenticationException
@@ -14,16 +15,23 @@ import com.stripe.model.Card
 import com.stripe.model.Charge
 import com.stripe.model.Customer
 import com.stripe.model.EphemeralKey
+import com.stripe.model.Invoice
+import com.stripe.model.InvoiceItem
 import com.stripe.model.PaymentSource
 import com.stripe.model.Plan
 import com.stripe.model.Product
 import com.stripe.model.Refund
 import com.stripe.model.Source
 import com.stripe.model.Subscription
+import com.stripe.model.TaxRate
 import com.stripe.net.RequestOptions
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.core.BadGatewayError
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
+import org.ostelco.prime.paymentprocessor.core.InvoicePaymentInfo
+import org.ostelco.prime.paymentprocessor.core.InvoiceInfo
+import org.ostelco.prime.paymentprocessor.core.InvoiceItemInfo
 import org.ostelco.prime.paymentprocessor.core.NotFoundError
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.PaymentStatus
@@ -34,6 +42,8 @@ import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
+import org.ostelco.prime.paymentprocessor.core.TaxRateInfo
+import java.math.BigDecimal
 import java.time.Instant
 import java.util.*
 
@@ -203,16 +213,24 @@ class StripePaymentProcessor : PaymentProcessor {
     /* The 'expand' part will cause an immediate attempt at charging for the
        subscription when creating it. For interpreting the result see:
        https://stripe.com/docs/billing/subscriptions/payment#signup-3b */
-    override fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long): Either<PaymentError, SubscriptionDetailsInfo> =
+    override fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long, taxRegion: String): Either<PaymentError, SubscriptionDetailsInfo> =
             either("Failed to subscribe customer $stripeCustomerId to plan $planId") {
                 val item = mapOf("plan" to planId)
+                val taxRates = getTaxRatesForTaxRegion(taxRegion)
+                        .fold(
+                                { emptyList<TaxRateInfo>() },
+                                { it }
+                        )
                 val subscriptionParams = mapOf(
                         "customer" to stripeCustomerId,
                         "items" to mapOf("0" to item),
                         *(if (trialEnd > Instant.now().epochSecond)
                             arrayOf("trial_end" to trialEnd.toString())
                         else
-                            arrayOf("expand" to arrayOf("latest_invoice.payment_intent"))))
+                            arrayOf("expand" to arrayOf("latest_invoice.payment_intent"))),
+                        *(if (taxRates.isNotEmpty())
+                            arrayOf("default_tax_rates" to taxRates.map { it.id })
+                        else arrayOf()))
                 val subscription = Subscription.create(subscriptionParams)
                 val status = subscriptionStatus(subscription)
                 SubscriptionDetailsInfo(id = subscription.id,
@@ -230,7 +248,7 @@ class StripePaymentProcessor : PaymentProcessor {
         return when (subscription.status) {
             "active", "incomplete" -> {
                 if (intent != null)
-                    Triple(when(intent.status) {
+                    Triple(when (intent.status) {
                         "succeeded" -> PaymentStatus.PAYMENT_SUCCEEDED
                         "requires_payment_method" -> PaymentStatus.REQUIRES_PAYMENT_METHOD
                         "requires_action" -> PaymentStatus.REQUIRES_ACTION
@@ -310,11 +328,19 @@ class StripePaymentProcessor : PaymentProcessor {
         }
     }
 
-    override fun refundCharge(chargeId: String, amount: Int, currency: String): Either<PaymentError, String> =
+    override fun refundCharge(chargeId: String): Either<PaymentError, String> =
+            either("Failed to refund charge $chargeId") {
+                val refundParams = mapOf("charge" to chargeId)
+                Refund.create(refundParams).id
+            }
+
+    override fun refundCharge(chargeId: String, amount: Int): Either<PaymentError, String> =
             when (amount) {
                 0 -> Either.right(chargeId)
                 else -> either("Failed to refund charge $chargeId") {
-                    val refundParams = mapOf("charge" to chargeId)
+                    val refundParams = mapOf(
+                            "charge" to chargeId,
+                            "amount" to amount)
                     Refund.create(refundParams).id
                 }
             }
@@ -344,6 +370,184 @@ class StripePaymentProcessor : PaymentProcessor {
                                     .rawJson
                         }
                     }
+
+    override fun createInvoiceItem(customerId: String, amount: Int, currency: String, description: String): Either<PaymentError, InvoiceItemInfo> =
+            either("Failed to create an invoice item for customer ${customerId} with Stripe") {
+                val params = mapOf(
+                        "customer" to customerId,
+                        "amount" to amount,
+                        "currency" to currency,
+                        "description" to description)
+                InvoiceItemInfo(InvoiceItem.create(params).id)
+            }
+
+    override fun removeInvoiceItem(invoiceItemId: String): Either<PaymentError, InvoiceItemInfo> =
+            either("Failed to remove invoice item ${invoiceItemId} with Stripe") {
+                val invoiceItem = InvoiceItem.retrieve(invoiceItemId).delete()
+                InvoiceItemInfo(invoiceItem.id)
+            }
+
+    override fun createInvoice(customerId: String, taxRates: List<TaxRateInfo>, sourceId: String?): Either<PaymentError, InvoiceInfo> =
+            createAndGetInvoiceDetails(customerId, taxRates, sourceId)
+                .flatMap {
+                    InvoiceInfo(it.id).right()
+                }
+
+    override fun createInvoice(customerId: String, amount: Int, currency: String, description: String, taxRegion: String, sourceId: String?): Either<PaymentError, InvoiceInfo> =
+            createInvoiceItem(customerId, amount, currency, description)
+                    .flatMap {
+                        getTaxRatesForTaxRegion(taxRegion)
+                    }
+                    .flatMap {
+                        createAndGetInvoiceDetails(customerId, it, sourceId)
+                    }
+                    .flatMap { invoice ->
+                        /* If there are more than one line item in the invoice, then line item(s)
+                           added by the (same) customer has accidentally been picked up by this
+                           invoice (can happen if the customer uses multiple clients or because of
+                           network/infrastructure issues).
+                           In this icase the invoice is invalid and can't be processed. */
+                        val items = invoice.lines.list(emptyMap()).data
+
+                        if (items.size > 1) {
+                            /* Deletes the invoice. Strictly speaking it is enough to just
+                               delete the invoice itself. */
+                            logger.error(NOTIFY_OPS_MARKER,
+                                    "Unexpected number of line items got added to invoice ${invoice.id}, " +
+                                            "when attempting to create the invoice - expected one but was ${items.size}")
+
+                            val errorMessage = "Incorrect number of line items when attempting to create invoice ${invoice.id} " +
+                                    "- expected one but was ${items.size}"
+
+                            removeInvoice(invoice)
+                                    .fold({
+                                        BadGatewayError(errorMessage, error = it)
+                                    }, {
+                                        BadGatewayError(errorMessage)
+                                    }).left()
+                        } else {
+                            InvoiceInfo(invoice.id).right()
+                        }
+                    }
+
+    /* Create and return invoice details. */
+    private fun createAndGetInvoiceDetails(customerId: String, taxRates: List<TaxRateInfo>, sourceId: String?): Either<PaymentError, Invoice> =
+            either("") {
+                val params = mapOf(
+                        "customer" to customerId,
+                        "auto_advance" to true,
+                        *(if (taxRates.isNotEmpty())
+                            arrayOf("default_tax_rates" to taxRates.map { it.id })
+                        else arrayOf()),
+                        *(if (sourceId != null)
+                            arrayOf("default_source" to sourceId)
+                        else arrayOf()))
+                Invoice.create(params)
+            }
+
+    override fun payInvoice(invoiceId: String): Either<PaymentError, InvoicePaymentInfo> =
+            either("Failed to complete payment of invoice ${invoiceId}") {
+                val receipt = Invoice.retrieve(invoiceId).pay()
+                InvoicePaymentInfo(receipt.id, receipt.charge)
+            }
+
+    override fun removeInvoice(invoiceId: String): Either<PaymentError, InvoiceInfo> =
+            Try {
+                Invoice.retrieve(invoiceId)
+            }.fold(
+                    ifSuccess = {
+                        removeInvoice(it)
+                    },
+                    ifFailure = {
+                        logger.error("Unexpected error {} when attempting to delete invoice {}",
+                                it.message, invoiceId)
+                        NotFoundError("Unexpected error ${it.message} when attempting to delete invoice ${invoiceId}")
+                                .left()
+                    }
+            )
+
+    private fun removeInvoice(invoice: Invoice): Either<PaymentError, InvoiceInfo> =
+            either("Error when attempting to remove invoice ${invoice.id} with Stripe") {
+
+                /* Wether an invoice can be deleted or not, depends on what
+                   status the invoice has.
+                   Ref.: https://stripe.com/docs/billing/invoices/workflow */
+                when (invoice.status) {
+                    "draft" -> {
+                        val items = invoice.lines.list(emptyMap()).data
+
+                        items.forEach {
+                            InvoiceItem.retrieve(it.id).delete()
+                        }
+                        invoice.delete()
+                    }
+                    "open", "uncollectible" -> {
+                        invoice.voidInvoice()
+                    }
+                    "paid", "void" -> {
+                        /* Nothing to do. */
+                    }
+                    else -> {
+                        logger.error("Unexpected invoice status {} when attempting to delete invoice {}",
+                                invoice.status, invoice.id)
+                    }
+                }
+                InvoiceInfo(invoice.id)
+            }
+
+    /* Metadata key used to assoiciate a specific tax rate with a specific
+       regional area. Typically such a region will be a country. */
+    companion object {
+        val TAX_REGION = "tax-region"
+    }
+
+    /* NOTE! This method creates a 'tax rate' with Stipe, unless there already
+             exists a 'tax-rate' with the same information. */
+    override fun createTaxRateForTaxRegion(taxRegion: String, percentage: BigDecimal, displayName: String, inclusive: Boolean): Either<PaymentError, TaxRateInfo> =
+            getTaxRatesForTaxRegion(taxRegion)
+                    .flatMap { taxRates ->
+                        val match = taxRates.find {
+                            it.percentage == percentage && it.displayName == displayName && it.inclusive == inclusive
+                        }
+
+                        if (match == null) {
+                            val param = mapOf(
+                                    "percentage" to percentage,
+                                    "display_name" to displayName,
+                                    "inclusive" to inclusive,
+                                    "metadata" to mapOf(TAX_REGION to taxRegion))
+                            TaxRateInfo(TaxRate.create(param).id, percentage, displayName, inclusive)
+                        } else {
+                            match
+                        }.right()
+                    }
+
+    override fun getTaxRatesForTaxRegion(taxRegion: String): Either<PaymentError, List<TaxRateInfo>> =
+            getTaxRates()
+                    .flatMap {
+                        val lst = it.filter { x -> !x.metadata[TAX_REGION].isNullOrEmpty() &&
+                                x.metadata[TAX_REGION].equals(taxRegion, true) }
+                        if (lst.isEmpty())
+                            emptyList<TaxRateInfo>()
+                                    .right()
+                        else {
+                            lst.map {
+                                TaxRateInfo(id = it.id,
+                                        percentage = it.percentage,
+                                        displayName = it.displayName,   /* VAT, GST, etc. */
+                                        inclusive = it.inclusive)
+                            }.right()
+                        }
+                    }
+
+    private fun getTaxRates(): Either<PaymentError, List<TaxRate>> =
+            either("Failed to fetch list with tax-rates from Stripe") {
+                val taxRateParameters = mapOf(
+                        "active" to true
+                )
+                TaxRate.list(taxRateParameters)
+                        .data
+            }
 
     private fun <RETURN> either(errorDescription: String, action: () -> RETURN): Either<PaymentError, RETURN> {
         return try {

@@ -38,6 +38,8 @@ import org.ostelco.prime.model.SimProfile
 import org.ostelco.prime.model.SimProfileStatus.AVAILABLE_FOR_DOWNLOAD
 import org.ostelco.prime.notifications.EmailNotifier
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
+import org.ostelco.prime.paymentprocessor.core.InvoiceInfo
+import org.ostelco.prime.paymentprocessor.core.InvoicePaymentInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.sim.SimManager
 import org.ostelco.prime.storage.NotFoundError
@@ -170,24 +172,25 @@ class Neo4jStoreTest {
     fun `test - purchase`() {
 
         val sku = "1GB_249NOK"
+        val invoiceId = "in_01234"
         val chargeId = UUID.randomUUID().toString()
+
         // mock
         Mockito.`when`(mockPaymentProcessor.getPaymentProfile(customerId = CUSTOMER.id))
                 .thenReturn(ProfileInfo(EMAIL).right())
 
-        Mockito.`when`(mockPaymentProcessor.authorizeCharge(
-                customerId = EMAIL,
-                sourceId = null,
-                amount = 24900,
-                currency = "NOK")
-        ).thenReturn(chargeId.right())
-
-        Mockito.`when`(mockPaymentProcessor.captureCharge(
-                customerId = EMAIL,
+        Mockito.`when`(mockPaymentProcessor.createInvoice(
+                customerId = CUSTOMER.id,
                 amount = 24900,
                 currency = "NOK",
-                chargeId = chargeId)
-        ).thenReturn(chargeId.right())
+                description = sku,
+                taxRegion = "no",
+                sourceId = null)
+        ).thenReturn(InvoiceInfo(invoiceId).right())
+
+        Mockito.`when`(mockPaymentProcessor.payInvoice(
+                invoiceId = invoiceId)
+        ).thenReturn(InvoicePaymentInfo(invoiceId, chargeId).right())
 
         // prep
         Neo4jStoreSingleton.createRegion(Region(REGION_CODE, "Norway"))
