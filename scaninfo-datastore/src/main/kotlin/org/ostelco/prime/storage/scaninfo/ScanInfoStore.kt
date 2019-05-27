@@ -12,9 +12,8 @@ import com.google.cloud.datastore.Blob
 import com.google.cloud.datastore.DatastoreException
 import com.google.crypto.tink.config.TinkConfig
 import org.ostelco.prime.getLogger
-import org.ostelco.prime.model.JumioScanData
-import org.ostelco.prime.model.ScanMetadata
-import org.ostelco.prime.model.VendorScanInformation
+import org.ostelco.prime.jsonmapper.objectMapper
+import org.ostelco.prime.model.*
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.securearchive.SecureArchiveService
 import org.ostelco.prime.storage.FileDownloadError
@@ -87,8 +86,8 @@ object ScanInformationStoreSingleton : ScanInformationStore {
         }.unsafeRunSync()
     }
 
-    override fun getExtendedStatusInformation(vendorData: MultivaluedMap<String, String>): Map<String, String> {
-        return JumioHelper.getExtendedStatusInformation(vendorData)
+    override fun getExtendedStatusInformation(scanInformation: ScanInformation): Map<String, String> {
+        return JumioHelper.getExtendedStatusInformation(scanInformation)
     }
 
     private fun createVendorScanInformation(vendorData: MultivaluedMap<String, String>): Either<StoreError, VendorScanInformation> {
@@ -272,43 +271,22 @@ object JumioHelper {
         }
         return null
     }
-
+    internal fun toIdentityVerification(jsonData: String?): IdentityVerification? {
+        try {
+            if (jsonData != null) {
+                return ObjectMapper().readValue(jsonData)
+            }
+        } catch (e: IOException) {
+            logger.error("Cannot parse Json Data: $jsonData", e)
+        }
+        return null
+    }
     /**
      * Constructs extended status information from Jumio callback data.
      */
-    fun getExtendedStatusInformation(vendorData: MultivaluedMap<String, String>): Map<String, String> {
+    fun getExtendedStatusInformation(scanInformation: ScanInformation): Map<String, String> {
         val extendedStatus = mutableMapOf<String, String>()
-        val verificationStatus: String = vendorData.getFirst(JumioScanData.VERIFICATION_STATUS.s)
-        val identityVerificationData: String? = vendorData.getFirst(JumioScanData.IDENTITY_VERIFICATION.s)
-
-        extendedStatus.putIfAbsent(JumioScanData.VERIFICATION_STATUS.s, verificationStatus)
-        if (verificationStatus.toUpperCase() == JumioScanData.APPROVED_VERIFIED.s) {
-            val identityVerification = toRegularMap(identityVerificationData)
-            if (identityVerification == null) {
-                extendedStatus.putIfAbsent(JumioScanData.REJECT_REASON.s, JumioScanData.PRIME_MISSING_IDENTITY_VERIFICATION.s)
-            } else {
-                // identityVerification field is present
-                val similarity = identityVerification[JumioScanData.SIMILARITY.s]
-                val validity = identityVerification[JumioScanData.VALIDITY.s]
-                val reason = identityVerification[JumioScanData.REASON.s]
-                if (similarity == null || validity == null) {
-                    // Similarity or Validity field is not present
-                    extendedStatus.putIfAbsent(JumioScanData.IDENTITY_VERIFICATION.s, JumioScanData.PRIME_IDENTITY_VERIFICATION_FAILED.s)
-                } else {
-                    if (similarity.toUpperCase() == JumioScanData.MATCH.s && validity.toUpperCase() == JumioScanData.TRUE.s) {
-                        // This verification is a success
-                        extendedStatus.putIfAbsent(JumioScanData.IDENTITY_VERIFICATION.s, JumioScanData.PRIME_IDENTITY_VALID_SIMILAR.s)
-                    } else if (similarity.toUpperCase() != JumioScanData.MATCH.s) {
-                        // The document and photo doesn't match
-                        extendedStatus.putIfAbsent(JumioScanData.REJECT_REASON.s, similarity)
-                    } else if (validity.toUpperCase() != JumioScanData.TRUE.s) {
-                        // The photo is not valid.
-                        extendedStatus.putIfAbsent(JumioScanData.REJECT_REASON.s, reason
-                                ?: JumioScanData.PRIME_MISSING_IDENTITY_REASON.s)
-                    }
-                }
-            }
-        }
+        extendedStatus.putIfAbsent(JumioScanData.SCAN_INFORMATION.s, objectMapper.writeValueAsString(scanInformation))
         return extendedStatus
     }
 
