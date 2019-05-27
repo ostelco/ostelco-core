@@ -328,11 +328,19 @@ class StripePaymentProcessor : PaymentProcessor {
         }
     }
 
-    override fun refundCharge(chargeId: String, amount: Int, currency: String): Either<PaymentError, String> =
+    override fun refundCharge(chargeId: String): Either<PaymentError, String> =
+            either("Failed to refund charge $chargeId") {
+                val refundParams = mapOf("charge" to chargeId)
+                Refund.create(refundParams).id
+            }
+
+    override fun refundCharge(chargeId: String, amount: Int): Either<PaymentError, String> =
             when (amount) {
                 0 -> Either.right(chargeId)
                 else -> either("Failed to refund charge $chargeId") {
-                    val refundParams = mapOf("charge" to chargeId)
+                    val refundParams = mapOf(
+                            "charge" to chargeId,
+                            "amount" to amount)
                     Refund.create(refundParams).id
                 }
             }

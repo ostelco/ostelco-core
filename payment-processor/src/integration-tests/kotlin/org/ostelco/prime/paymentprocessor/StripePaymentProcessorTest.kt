@@ -217,7 +217,7 @@ class StripePaymentProcessorTest {
         val resultAuthorizeCharge = paymentProcessor.authorizeCharge(stripeCustomerId, right(resultAddSource).id, amount, currency)
         assertEquals(true, resultAuthorizeCharge.isRight())
 
-        val resultRefundCharge = paymentProcessor.refundCharge(right(resultAuthorizeCharge), amount, currency)
+        val resultRefundCharge = paymentProcessor.refundCharge(right(resultAuthorizeCharge), amount)
         assertEquals(true, resultRefundCharge.isRight())
 
         val resultRemoveSource = paymentProcessor.removeSource(stripeCustomerId, right(resultAddSource).id)
@@ -235,7 +235,7 @@ class StripePaymentProcessorTest {
         val resultAuthorizeCharge = paymentProcessor.authorizeCharge(stripeCustomerId, right(resultAddSource).id, amount, currency)
         assertEquals(true, resultAuthorizeCharge.isRight())
 
-        val resultRefundCharge = paymentProcessor.refundCharge(right(resultAuthorizeCharge), amount, currency)
+        val resultRefundCharge = paymentProcessor.refundCharge(right(resultAuthorizeCharge), amount)
         assertEquals(true, resultRefundCharge.isRight())
         assertEquals(resultAuthorizeCharge.fold({ "" }, { it } ), right(resultRefundCharge))
 
@@ -251,7 +251,6 @@ class StripePaymentProcessorTest {
         val resultRemoveProduct = paymentProcessor.removeProduct(resultCreateProduct.fold({ "" }, { it.id }))
         assertEquals(true, resultRemoveProduct.isRight())
     }
-
 
     @Test
     fun subscribeAndUnsubscribePlan() {

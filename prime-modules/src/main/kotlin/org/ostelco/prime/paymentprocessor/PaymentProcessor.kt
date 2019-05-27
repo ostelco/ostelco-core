@@ -133,8 +133,14 @@ interface PaymentProcessor {
      * @param chargeId ID of the of the authorized charge to refund from authorizeCharge()
      * @return id of the charge
      */
-    fun refundCharge(chargeId: String, amount: Int, currency: String
-    ): Either<PaymentError, String>
+    fun refundCharge(chargeId: String): Either<PaymentError, String>
+
+    /**
+     * @param chargeId ID of the of the authorized charge to refund from authorizeCharge()
+     * @param amount The amount to refund form the charge
+     * @return id of the charge
+     */
+    fun refundCharge(chargeId: String, amount: Int): Either<PaymentError, String>
 
     /**
      * @param stripeCustomerId Customer id in the payment system
