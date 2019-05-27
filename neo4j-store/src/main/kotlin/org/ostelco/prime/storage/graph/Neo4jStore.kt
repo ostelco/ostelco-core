@@ -1400,7 +1400,7 @@ object Neo4jStoreSingleton : GraphStore {
         getCustomerUsingScanId(scanInformation.scanId, transaction).flatMap { customer ->
             scanInformationStore.update(scanInformation, transaction).flatMap {
                 logger.info("updating scan Information for : ${customer.contactEmail} id: ${scanInformation.scanId} status: ${scanInformation.status}")
-                val extendedStatus = scanInformationDatastore.getExtendedStatusInformation(vendorData)
+                val extendedStatus = scanInformationDatastore.getExtendedStatusInformation(scanInformation)
                 if (scanInformation.status == ScanStatus.APPROVED) {
 
                     logger.info("Inserting scan Information to cloud storage : id: ${scanInformation.scanId} countryCode: ${scanInformation.countryCode}")
