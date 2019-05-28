@@ -342,7 +342,7 @@ workflows:
           filters:
             branches:
               only:
-                - prod-deploy-pipeline
+                - develop
       - build-image:
           requires:
             - build-code
