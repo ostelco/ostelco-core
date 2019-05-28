@@ -29,6 +29,7 @@ object Reporter {
             is Invoice -> report(event, data)
             is InvoiceItem -> report(event, data)
             is PaymentIntent -> report(event, data)
+            is PaymentMethod -> report(event, data)
             is Payout -> report(event, data)
             is Plan -> report(event, data)
             is Product -> report(event, data)
@@ -148,6 +149,9 @@ object Reporter {
                 event.type == "invoice.payment_succeeded" -> logger.info(NOTIFY_OPS_MARKER,
                         format("${invoice.customerEmail}'s invoice for ${currency(invoice.amountPaid, invoice.currency)} was paid",
                             event))
+                event.type == "invoice.voided" -> logger.debug(
+                        format("${invoice.customerEmail}'s invoice ${invoice.id} was voided",
+                                event))
                 event.type == "invoice.payment_failed" -> logger.info(NOTIFY_OPS_MARKER,
                         format("Payment of  ${invoice.customerEmail}'s invoice for ${currency(invoice.amountPaid, invoice.currency)} failed",
                                 event)
@@ -174,7 +178,7 @@ object Reporter {
 
     private fun report(event: Event, plan: Plan) =
             when {
-                event.type == "plan.created " -> logger.info(
+                event.type == "plan.created" -> logger.info(
                         format("A new plan called ${plan.nickname} was crated",
                                 event)
                 )
@@ -185,7 +189,7 @@ object Reporter {
 
     private fun report(event: Event, product: Product) =
             when {
-                event.type == "product.created " -> logger.info(
+                event.type == "product.created" -> logger.info(
                         format("A product with ID ${product.id} was created",
                                 event)
                 )
@@ -210,6 +214,31 @@ object Reporter {
                 )
                 else -> logger.warn(
                         format("Unhandled Stripe event ${event.type} (cat: PaymentIntent)",
+                                event))
+            }
+
+    private fun report(event: Event, method: PaymentMethod) =
+            when {
+                event.type == "payment_method.attached" -> {
+                    if (method.type == "card")
+                        logger.debug("A card payment method ending in ${method.card.last4} was attached to customer ${method.customer}")
+                    else
+                        /* TODO: (kmm) Add other payment methods. */
+                        logger.warn(
+                                format("Unhandled Stripe event ${event.type} (cat: PaymentMethod)",
+                                        event))
+                }
+                event.type == "payment_method.detached" -> {
+                    if (method.type == "card")
+                        logger.debug("A card payment method ending in ${method.card.last4} was detached from customer ${method.customer}")
+                    else
+                    /* TODO: (kmm) Add other payment methods. */
+                        logger.warn(
+                                format("Unhandled Stripe event ${event.type} (cat: PaymentMethod)",
+                                        event))
+                }
+                else -> logger.warn(
+                        format("Unhandled Stripe event ${event.type} (cat: PaymentMethod)",
                                 event))
             }
 
@@ -239,8 +268,8 @@ object Reporter {
 
     private fun report(event: Event, subscription: Subscription) =
             when {
-                event.type == "customer.subscription.created " -> logger.info(NOTIFY_OPS_MARKER,
-                        format("${email(subscription.customer)} subscribed to ${subscription.plan.nickname}",
+                event.type == "customer.subscription.created" -> logger.info(NOTIFY_OPS_MARKER,
+                        format("${email(subscription.customer)} subscribed to ${subscription.plan.id}",
                                 event)
                 )
                 else -> logger.warn(format("Unhandled Stripe event ${event.type} (cat: Subscription)",
