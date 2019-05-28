@@ -50,6 +50,7 @@ import org.ostelco.prime.paymentprocessor.core.BadGatewayError
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.PaymentStatus
+import org.ostelco.prime.paymentprocessor.core.PlanAlredyPurchasedError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.securearchive.SecureArchiveService
@@ -993,7 +994,7 @@ object Neo4jStoreSingleton : GraphStore {
                 customerStore.getRelated(customer.id, purchaseRecordRelation, transaction)
                         .map {
                             if (it.any { x -> x.sku == product.sku }) {
-                                ForbiddenError("A subscription to plan ${product.sku} already exists")
+                                PlanAlredyPurchasedError("A subscription to plan ${product.sku} already exists")
                                         .left().bind()
                             }
                         }
