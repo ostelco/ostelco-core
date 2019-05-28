@@ -13,10 +13,10 @@ object RequestType {
     @JvmStatic
     fun getTypeAsString(type: Int): String {
         return when (type) {
-            RequestType.INITIAL_REQUEST -> "INITIAL"
-            RequestType.UPDATE_REQUEST -> "UPDATE"
-            RequestType.TERMINATION_REQUEST -> "TERMINATE"
-            RequestType.EVENT_REQUEST -> "EVENT"
+            INITIAL_REQUEST -> "INITIAL"
+            UPDATE_REQUEST -> "UPDATE"
+            TERMINATION_REQUEST -> "TERMINATE"
+            EVENT_REQUEST -> "EVENT"
             else -> Integer.toString(type)
         }
     }
@@ -27,7 +27,8 @@ object RequestType {
  */
 data class CreditControlAnswer(
         val resultCode: ResultCode,
-        val multipleServiceCreditControls: List<MultipleServiceCreditControl>)
+        val multipleServiceCreditControls: List<MultipleServiceCreditControl>,
+        val validityTime: Int)
 
 enum class ResultCode(val value: Int) {
     DIAMETER_SUCCESS(2001),

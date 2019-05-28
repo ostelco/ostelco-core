@@ -12,6 +12,7 @@ import org.ostelco.diameter.model.FinalUnitAction
 import org.ostelco.diameter.model.FinalUnitIndication
 import org.ostelco.diameter.model.MultipleServiceCreditControl
 import org.ostelco.diameter.model.RequestType
+import org.ostelco.diameter.model.RequestType.TERMINATION_REQUEST
 import org.ostelco.diameter.parser.AvpParser
 import org.ostelco.diameter.util.DiameterUtilities
 
@@ -58,7 +59,11 @@ class CreditControlContext(
             ccaAvps.addAvp(Avp.ORIGIN_HOST, originHost, true, false, true)
             ccaAvps.addAvp(Avp.ORIGIN_REALM, originRealm, true, false, true)
 
-            addMultipleServiceCreditControls(ccaAvps, creditControlAnswer)
+            if (!creditControlAnswer.multipleServiceCreditControls.isEmpty()) {
+                addMultipleServiceCreditControls(ccaAvps, creditControlAnswer)
+            } else if (originalCreditControlRequest.requestTypeAVPValue != TERMINATION_REQUEST) {
+                ccaAvps.addAvp(Avp.VALIDITY_TIME, creditControlAnswer.validityTime, true, false)
+            }
 
             logger.info("Created Credit-Control-Answer")
             DiameterUtilities().printAvps(ccaAvps)

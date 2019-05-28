@@ -179,6 +179,7 @@ class OcsTest {
     }
 
     //@Test
+    // This is disabled until this is implemented in the store
     fun multiRatingGroupsInitUserUnknown() {
 
         val client = testClient ?: fail("Test client is null")
@@ -591,8 +592,8 @@ class OcsTest {
         val session = client.createSession() ?: fail("Failed to create session")
 
         // This test assume that the default bucket size is set to 4000000L
-        simpleCreditControlRequestInit(session, msisdn,-1L, DEFAULT_REQUESTED_SERVICE_UNIT, ratingGroup, serviceIdentifier)
-        simpleCreditControlRequestUpdate(session, msisdn, -1L, DEFAULT_REQUESTED_SERVICE_UNIT, DEFAULT_REQUESTED_SERVICE_UNIT, ratingGroup, serviceIdentifier)
+        simpleCreditControlRequestInit(session, msisdn,0L, DEFAULT_REQUESTED_SERVICE_UNIT, ratingGroup, serviceIdentifier)
+        simpleCreditControlRequestUpdate(session, msisdn, 0L, DEFAULT_REQUESTED_SERVICE_UNIT, DEFAULT_REQUESTED_SERVICE_UNIT, ratingGroup, serviceIdentifier)
 
         val request = client.createRequest(
                 DEST_REALM,
@@ -609,6 +610,44 @@ class OcsTest {
         assertEquals(DIAMETER_SUCCESS, client.resultCodeAvp!!.integer32.toLong())
         val resultAvps = client.resultAvps
         assertEquals(RequestType.TERMINATION_REQUEST.toLong(), resultAvps!!.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+    }
+
+
+
+    @Test
+    fun simpleCreditControlRequestInitUpdateNoRSU() {
+
+        val email = "ocs-${randomInt()}@test.com"
+        createCustomer(name = "Test OCS User", email = email)
+
+        val msisdn = createSubscription(email = email)
+
+        val ratingGroup = 10
+        val serviceIdentifier = -1
+
+        val client = testClient ?: fail("Test client is null")
+
+        val session = client.createSession() ?: fail("Failed to create session")
+
+        // This test assume that the default bucket size is set to 4000000L
+        simpleCreditControlRequestInit(session, msisdn,0L, DEFAULT_REQUESTED_SERVICE_UNIT, ratingGroup, serviceIdentifier)
+
+        val request = client.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session
+        )
+
+        TestHelper.createUpdateRequest(request!!.avps, msisdn, -1L, DEFAULT_REQUESTED_SERVICE_UNIT, ratingGroup, serviceIdentifier)
+
+        client.sendNextRequest(request, session)
+
+        waitForAnswer()
+
+        assertEquals(DIAMETER_SUCCESS, client.resultCodeAvp!!.integer32.toLong())
+        val resultAvps = client.resultAvps
+        assertEquals(RequestType.UPDATE_REQUEST.toLong(), resultAvps!!.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+        assertEquals(86400L, resultAvps.getAvp(Avp.VALIDITY_TIME).integer32.toLong())
     }
 
 
