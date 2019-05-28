@@ -151,9 +151,9 @@ prime:
 
 
 canary: 
-  # weight: 25
-  headers: # only route requests with these headers to the canary service
-    x-mode: canary
+  weight: 25
+  # headers: # only route requests with these headers to the canary service
+  #   x-mode: canary
   tag: ""
 
 cloudsqlProxy:
