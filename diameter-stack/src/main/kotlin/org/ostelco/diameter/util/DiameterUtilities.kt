@@ -31,12 +31,15 @@ class DiameterUtilities {
     private val dictionary = DictionaryImpl.INSTANCE
 
     fun printAvps(avps: AvpSet?) {
+        val builder = StringBuilder()
+        builder.append("\n")
         if (avps != null) {
-            printAvps(avps, "")
+            printAvps(avps, "", builder)
         }
+        logger.debug(builder.toString())
     }
 
-    private fun printAvps(avps: AvpSet, indentation: String) {
+    private fun printAvps(avps: AvpSet, indentation: String, builder: StringBuilder) {
         for (avp in avps) {
             val avpRep : AvpRepresentation? = dictionary.getAvp(avp.code, avp.vendorId)
             val avpValue = getAvpValue(avp)
@@ -45,10 +48,10 @@ class DiameterUtilities {
                 avpLine.append(if (avpLine.length % 2 == 0) "." else " ")
             }
             avpLine.append(avpValue)
-            logger.debug(avpLine.toString())
+            builder.append(avpLine.toString() + "\n")
             if (isGrouped(avp)) {
                 try {
-                    printAvps(avp.grouped, "$indentation  ")
+                    printAvps(avp.grouped, "$indentation  ", builder)
                 } catch (e: AvpDataException) {
                     // Failed to ungroup... ignore then...
                 }
