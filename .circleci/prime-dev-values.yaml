@@ -239,6 +239,8 @@ services:
     targetPort: 9006
     portName: http
     host: houston-api # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
+    ambassadorMappingOptions:
+      timeout_ms: 600000
   prime-alvin-api:
     name: alvin-api
     type: ClusterIP

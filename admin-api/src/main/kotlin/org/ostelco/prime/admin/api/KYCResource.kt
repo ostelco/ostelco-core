@@ -10,10 +10,8 @@ import org.ostelco.prime.apierror.BadRequestError
 import org.ostelco.prime.apierror.NotFoundError
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
-import org.ostelco.prime.model.JumioScanData
-import org.ostelco.prime.model.ScanInformation
-import org.ostelco.prime.model.ScanResult
-import org.ostelco.prime.model.ScanStatus
+import org.ostelco.prime.jsonmapper.objectMapper
+import org.ostelco.prime.model.*
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.AdminDataSource
 import java.io.IOException
@@ -63,13 +61,13 @@ class KYCResource {
         }
     }
 
-    private fun toRegularMap(jsonData: String?): Map<String, String>? {
+    internal fun toIdentityVerification(jsonData: String?): IdentityVerification? {
         try {
             if (jsonData != null) {
-                return ObjectMapper().readValue(jsonData)
+                return objectMapper.readValue(jsonData)
             }
         } catch (e: IOException) {
-            logger.error("Cannot parse Json Data: $jsonData")
+            logger.error("Cannot parse Json Data: $jsonData", e)
         }
         return null
     }
@@ -85,25 +83,24 @@ class KYCResource {
             val firstName: String? = dataMap[JumioScanData.ID_FIRSTNAME.s]
             val lastName: String? = dataMap[JumioScanData.ID_LASTNAME.s]
             val dob: String? = dataMap[JumioScanData.ID_DOB.s]
-            var rejectReason: String? = dataMap[JumioScanData.REJECT_REASON.s]
             val scanId: String = dataMap[JumioScanData.SCAN_ID.s]!!
             val identityVerificationData: String? = dataMap[JumioScanData.IDENTITY_VERIFICATION.s]
+            var rejectReason: IdentityVerification? = null
 
             // Check if the id matched with the photo.
             if (verificationStatus.toUpperCase() == JumioScanData.APPROVED_VERIFIED.s) {
-                val identityVerification = toRegularMap(identityVerificationData)
+                val identityVerification = toIdentityVerification(identityVerificationData)
                 if (identityVerification == null) {
                     // something gone wrong while parsing identityVerification
-                    rejectReason = """{ "message": "Missing ${JumioScanData.IDENTITY_VERIFICATION.s} information" }"""
+                    rejectReason = null
                     status = ScanStatus.REJECTED
                 } else {
                     // identityVerification field is present
-                    val similarity = identityVerification[JumioScanData.SIMILARITY.s]
-                    val validity = identityVerification[JumioScanData.VALIDITY.s]
-                    if (!(similarity != null && similarity.toUpperCase() == JumioScanData.MATCH.s &&
-                            validity != null && validity.toUpperCase() == JumioScanData.TRUE.s)) {
+                    val similarity = identityVerification.similarity
+                    val validity = identityVerification.validity
+                    if (!(similarity == Similarity.MATCH && validity)) {
                         status = ScanStatus.REJECTED
-                        rejectReason = identityVerificationData
+                        rejectReason = identityVerification
                     }
                 }
             }

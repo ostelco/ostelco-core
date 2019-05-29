@@ -7,6 +7,7 @@ import io.dropwizard.setup.Environment
 import org.hibernate.validator.constraints.NotEmpty
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.module.PrimeModule
+import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.publishers.StripeEventPublisher
 import org.ostelco.prime.paymentprocessor.resources.StripeWebhookResource
 import org.ostelco.prime.paymentprocessor.subscribers.RecurringPaymentStripeEvent
@@ -30,6 +31,12 @@ class PaymentProcessorModule : PrimeModule {
            https://stripe.com/docs/keys */
         Stripe.apiKey = System.getenv("STRIPE_API_KEY")
                 ?: throw Error("Missing environment variable STRIPE_API_KEY")
+
+        val API_VERSION = "2019-03-14"
+
+        if (Stripe.API_VERSION != API_VERSION) {
+            logger.warn(NOTIFY_OPS_MARKER, "Stripe API version is ${Stripe.API_VERSION} but expected ${API_VERSION}")
+        }
 
         val jerseyEnv = env.jersey()
 

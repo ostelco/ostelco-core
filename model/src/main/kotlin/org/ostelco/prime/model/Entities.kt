@@ -1,9 +1,15 @@
 package org.ostelco.prime.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.core.JsonToken
+import com.fasterxml.jackson.databind.DeserializationContext
+import com.fasterxml.jackson.databind.JsonDeserializer
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.google.cloud.datastore.Blob
 import com.google.firebase.database.Exclude
 import java.util.*
+
 
 interface HasId {
     val id: String
@@ -71,6 +77,38 @@ enum class ScanStatus {
     APPROVED   // scanned Id was approved
 }
 
+// Jumio Identity verification codes for Similarity
+enum class Similarity {
+    MATCH,
+    NO_MATCH,
+    NOT_POSSIBLE
+}
+
+// Jumio Identity verification reasons for validity being fasle
+enum class ValidityReason {
+    SELFIE_CROPPED_FROM_ID,
+    ENTIRE_ID_USED_AS_SELFIE,
+    MULTIPLE_PEOPLE,
+    SELFIE_IS_SCREEN_PAPER_VIDEO,
+    SELFIE_MANIPULATED,
+    AGE_DIFFERENCE_TOO_BIG,
+    NO_FACE_PRESENT,
+    FACE_NOT_FULLY_VISIBLE,
+    BAD_QUALITY,
+    BLACK_AND_WHITE,
+    LIVENESS_FAILED
+}
+
+// Jumio Identity verification structure, valid when a scan is verified & approved
+data class IdentityVerification(
+        val similarity: Similarity,
+        @JsonDeserialize(using = StringBooleanDeserializer::class)
+        val validity: Boolean,
+        val reason: ValidityReason?,
+        @JsonDeserialize(using = StringBooleanDeserializer::class)
+        val handwrittenNoteMatches:Boolean?
+)
+
 data class ScanResult(
         val vendorScanReference: String,
         val verificationStatus: String,
@@ -80,7 +118,7 @@ data class ScanResult(
         val firstName: String?,
         val lastName: String?,
         val dob: String?,
-        val rejectReason: String?)
+        val rejectReason: IdentityVerification?)
 
 data class ScanInformation(
         val scanId: String,
@@ -129,17 +167,9 @@ enum class JumioScanData(val s: String) {
     SCAN_LIVENESS_IMAGES("livenessImages"),
     REJECT_REASON("rejectReason"),
     IDENTITY_VERIFICATION("identityVerification"),
-    SIMILARITY("similarity"),
-    VALIDITY("validity"),
-    REASON("reason"),
     APPROVED_VERIFIED("APPROVED_VERIFIED"),
-    MATCH("MATCH"),
-    TRUE("TRUE"),
     // Extended values from prime
-    PRIME_MISSING_IDENTITY_VERIFICATION("PRIME_MISSING_IDENTITY_VERIFICATION"),
-    PRIME_IDENTITY_VALID_SIMILAR("PRIME_IDENTITY_VALID_SIMILAR"),
-    PRIME_IDENTITY_VERIFICATION_FAILED("PRIME_IDENTITY_VERIFICATION_FAILED"),
-    PRIME_MISSING_IDENTITY_REASON("PRIME_MISSING_IDENTITY_REASON")
+    SCAN_INFORMATION("SCAN_INFORMATION")
 }
 
 enum class VendorScanData(val s: String) {
@@ -227,10 +257,12 @@ data class RefundRecord(
         val timestamp: Long) : HasId
 
 data class PurchaseRecord(
-        override val id: String,
+        override val id: String,           /* 'charge' id. */
         val product: Product,
         val timestamp: Long,
-        val refund: RefundRecord? = null) : HasId
+        val refund: RefundRecord? = null,
+        /* For storing 'invoice-id' when purchasing a plan. */
+        val properties: Map<String, String> = emptyMap()) : HasId
 
 data class PurchaseRecordInfo(override val id: String,
                               val subscriberId: String,

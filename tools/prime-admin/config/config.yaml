@@ -1,0 +1,19 @@
+# This config is used as config.yaml when prime is running using docker-compose for Acceptance Testing
+
+modules:
+  - type: env
+  - type: firebase
+    config:
+      configFile: config/prime-service-account.json
+      rootPath: test
+  - type: neo4j
+    config:
+      host: neo4j
+      protocol: bolt
+
+logging:
+  level: INFO
+  loggers:
+    org.ostelco: DEBUG
+    # suppress exception logged while connecting to real bigQuery 3 times before connecting to emulator
+    com.google.auth.oauth2.ComputeEngineCredentials: ERROR

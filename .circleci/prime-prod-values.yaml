@@ -150,9 +150,9 @@ prime:
 
 
 canary: 
-  # weight: 25
-  headers: # only route requests with these headers to the canary service
-    x-mode: canary
+  weight: 25
+  # headers: # only route requests with these headers to the canary service
+  #   x-mode: canary
   tag: ""
 
 cloudsqlProxy:
@@ -243,6 +243,8 @@ services:
     targetPort: 9006
     portName: http
     host: houston-api # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
+    ambassadorMappingOptions:
+      timeout_ms: 600000
   prime-alvin-api:
     name: alvin-api
     type: ClusterIP

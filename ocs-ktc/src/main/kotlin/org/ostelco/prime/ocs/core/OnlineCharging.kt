@@ -35,7 +35,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
 
             // these are keepalives to keep latency low
             if (msisdn.equals("keepalive")) {
-                responseBuilder.setRequestId(request.requestId).setMsisdn("None").setResultCode(ResultCode.UNKNOWN)
+                responseBuilder.setRequestId(request.requestId).setMsisdn("keepalive").setResultCode(ResultCode.UNKNOWN)
                 returnCreditControlAnswer(responseBuilder.buildPartial())
             } else {
 
@@ -58,19 +58,28 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                                             doneSignal.countDown()
                                         },
                                         { consumptionResult ->
-                                            addGrantedQuota(consumptionResult.granted, mscc, responseBuilder)
+                                            if (requested > 0) {
+                                                addGrantedQuota(consumptionResult.granted, mscc, responseBuilder)
+                                            }
                                             reportAnalytics(consumptionResult, request)
                                             doneSignal.countDown()
                                         }
                                 )
                             }
                         } else { // zeroRate
-
-                            addGrantedQuota(requested, mscc, responseBuilder)
+                            if (requested > 0) {
+                                addGrantedQuota(requested, mscc, responseBuilder)
+                            }
                             doneSignal.countDown()
                         }
                     }
+
                     doneSignal.await(2, TimeUnit.SECONDS)
+
+                    if (responseBuilder.msccCount == 0) {
+                        responseBuilder.setValidityTime(86400)
+                    }
+
                     synchronized(OnlineCharging) {
                         returnCreditControlAnswer(responseBuilder.build())
                     }
@@ -119,12 +128,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
             responseMscc.quotaHoldingTime = 7200
 
             if (granted < mscc.requested.totalOctets) {
-                responseMscc.finalUnitIndication = FinalUnitIndication.newBuilder()
-                        .setFinalUnitAction(FinalUnitAction.TERMINATE)
-                        .setIsSet(true)
-                        .build()
-
-                responseMscc.volumeQuotaThreshold = 0L
+                responseMscc.volumeQuotaThreshold = 0L  // No point in putting a threshold on the last grant
             } else {
                 responseMscc.volumeQuotaThreshold = (grantedTotalOctets * 0.2).toLong() // When client has 20% left
             }

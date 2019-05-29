@@ -2,8 +2,8 @@ package org.ostelco.simcards.inventory
 
 import arrow.core.Either
 import org.ostelco.prime.simmanager.SimManagerError
-import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
 import org.ostelco.simcards.hss.HssEntry
+import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
 
 
 interface SimInventoryDBWrapper {
@@ -142,4 +142,10 @@ interface SimInventoryDBWrapper {
      */
 
     fun getProfileStatsAsKeyValuePairs(hssId: Long, simProfile: String): Either<SimManagerError, List<KeyValuePair>>
+
+    /**
+     * Reserve numbers ending in "0000" and "9999" as they are "golden numbers" that
+     * require special handling in some jurisdictions.
+     */
+    fun reserveGoldenNumbersForBatch(batchId: Long): Either<SimManagerError, Int>
 }

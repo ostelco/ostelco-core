@@ -9,6 +9,7 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 import org.neo4j.driver.v1.AccessMode.WRITE
+import org.ostelco.prime.dsl.writeTransaction
 import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.model.HasId
 import org.ostelco.prime.storage.AlreadyExistsError
