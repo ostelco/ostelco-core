@@ -137,38 +137,48 @@ func isError(err error) bool {
 func generateEspEndpointCertificates() {
 
 	originalCertPath := "certs/ocs.dev.ostelco.org/nginx.crt"
-	activeCertPath := "ocsgw/cert/metrics.crt"
+	activeCertPath   := "ocsgw/cert/metrics.crt"
 
 	if bothFilesExistsButAreDifferent(originalCertPath, activeCertPath) {
 		deleteFile(originalCertPath)
 		deleteFile(activeCertPath)
 	}
 
-	// If no original certificate (for whatever reason), generate a new one.
+	// If no original certificate (for whatever reason),
+	// generate a new one.
 	if !fileExists(originalCertPath) {
-		generateNewCertificate(originalCertPath)
+		generateNewCertificate(originalCertPath, "ocs.dev.ostelco.org")
 	}
 
-	if !fileExists(activeCertPath) {
+	if fileExists(activeCertPath) {
 		copyFile(originalCertPath, activeCertPath)
 	}
 }
 
+// XXX This does not work.
 func copyFile(src string, dest string) {
 	cp := fmt.Sprintf("cp %s %s", src, dest)
-	cpCmd := exec.Command("bash", "-c", cp)
-	err := cpCmd.Run()
+	_, err := exec.Command("bash", "-c", cp).Output()
+
 	if err != nil {
 		log.Fatalf("ERROR: Could not copy from '%s' to '%s'", src, dest)
 		os.Exit(1)
 	}
 }
 
-func generateNewCertificate(certificatePath string) {
-	cmd := fmt.Sprintf("scripts/generate-selfsigned-ssl-certs.sh %s", certificatePath)
-	_, err := exec.Command("bash", "-c", cmd).Output()
+func generateNewCertificate(certificateFilename string, certificateDomain string) {
+	cmd := fmt.Sprintf("scripts/generate-selfsigned-ssl-certs.sh %s", certificateDomain)
+	out, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
-		log.Fatalf("ERROR: Could not generate certificate '%s'", certificatePath)
+		log.Fatalf("ERROR: Could not generate self signed certificate for domain '%s'.\n      Reason: %s", certificateDomain, err)
+		os.Exit(1)
+	}
+
+	log.Printf("out = %s", out)
+
+
+	if !fileExists(certificateFilename) {
+		log.Fatalf("ERROR: Did not generate self signed for domain '%s'", certificateDomain)
 		os.Exit(1)
 	}
 }
