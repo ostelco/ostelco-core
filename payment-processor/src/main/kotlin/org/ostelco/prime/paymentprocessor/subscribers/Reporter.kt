@@ -44,7 +44,7 @@ object Reporter {
     private fun report(event: Event, balance: Balance) =
             when {
                 event.type == "balance.available" -> logger.info(NOTIFY_OPS_MARKER,
-                        format("Your balance has new available transactions" +
+                        format("Your balance has new available transactions " +
                                 "${currency(balance.available[0].amount, balance.available[0].currency)} is available, " +
                                 "${currency(balance.pending[0].amount, balance.pending[0].currency)} is pending.",
                                 event)
@@ -75,15 +75,15 @@ object Reporter {
                         format("${email(charge.customer)}'s payment was captured for ${currency(charge.amount, charge.currency)}",
                                 event)
                 )
-                event.type == "charge.succeeded" -> logger.info(NOTIFY_OPS_MARKER,
+                event.type == "charge.succeeded" -> logger.info(
                         format("${email(charge.customer)} was charged ${currency(charge.amount, charge.currency)}",
                                 event)
                 )
-                event.type == "charge.refunded" -> logger.info(NOTIFY_OPS_MARKER,
+                event.type == "charge.refunded" -> logger.info(
                         format("A ${currency(charge.amount, charge.currency)} payment was refunded to ${email(charge.customer)}}",
                                 event)
                 )
-                event.type == "charge.failed" -> logger.info(NOTIFY_OPS_MARKER,
+                event.type == "charge.failed" -> logger.info(
                         format("A ${currency(charge.amount, charge.currency)} payment from ${email(charge.customer)} failed",
                         event)
                 )
@@ -94,11 +94,11 @@ object Reporter {
 
     private fun report(event: Event, customer: Customer) =
             when {
-                event.type == "customer.created" -> logger.info(NOTIFY_OPS_MARKER,
+                event.type == "customer.created" -> logger.info(
                         format("${customer.email} is a new customer",
                                 event)
                 )
-                event.type == "customer.deleted" -> logger.info(NOTIFY_OPS_MARKER,
+                event.type == "customer.deleted" -> logger.info(
                         format("${customer.email} had been deleted",
                                 event)
                 )
@@ -123,7 +123,7 @@ object Reporter {
                                 "on ${millisToDate(payout.arrivalDate)}",
                                 event)
                 )
-                event.type == "payout.paid" -> logger.info(NOTIFY_OPS_MARKER,
+                event.type == "payout.paid" -> logger.info(
                         format("A payout of ${currency(payout.amount, payout.currency)} should now appear on your bank account statement",
                                 event)
                 )
@@ -146,7 +146,7 @@ object Reporter {
                         format("${invoice.customerEmail}'s invoice has changed",
                                 event)
                 )
-                event.type == "invoice.payment_succeeded" -> logger.info(NOTIFY_OPS_MARKER,
+                event.type == "invoice.payment_succeeded" -> logger.info(
                         format("${invoice.customerEmail}'s invoice for ${currency(invoice.amountPaid, invoice.currency)} was paid",
                             event))
                 event.type == "invoice.voided" -> logger.debug(
