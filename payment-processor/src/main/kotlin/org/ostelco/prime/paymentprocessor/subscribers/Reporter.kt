@@ -29,6 +29,7 @@ object Reporter {
             is Invoice -> report(event, data)
             is InvoiceItem -> report(event, data)
             is PaymentIntent -> report(event, data)
+            is PaymentMethod -> report(event, data)
             is Payout -> report(event, data)
             is Plan -> report(event, data)
             is Product -> report(event, data)
@@ -43,7 +44,7 @@ object Reporter {
     private fun report(event: Event, balance: Balance) =
             when {
                 event.type == "balance.available" -> logger.info(NOTIFY_OPS_MARKER,
-                        format("Your balance has new available transactions" +
+                        format("Your balance has new available transactions " +
                                 "${currency(balance.available[0].amount, balance.available[0].currency)} is available, " +
                                 "${currency(balance.pending[0].amount, balance.pending[0].currency)} is pending.",
                                 event)
@@ -74,15 +75,15 @@ object Reporter {
                         format("${email(charge.customer)}'s payment was captured for ${currency(charge.amount, charge.currency)}",
                                 event)
                 )
-                event.type == "charge.succeeded" -> logger.info(NOTIFY_OPS_MARKER,
+                event.type == "charge.succeeded" -> logger.info(
                         format("${email(charge.customer)} was charged ${currency(charge.amount, charge.currency)}",
                                 event)
                 )
-                event.type == "charge.refunded" -> logger.info(NOTIFY_OPS_MARKER,
+                event.type == "charge.refunded" -> logger.info(
                         format("A ${currency(charge.amount, charge.currency)} payment was refunded to ${email(charge.customer)}}",
                                 event)
                 )
-                event.type == "charge.failed" -> logger.info(NOTIFY_OPS_MARKER,
+                event.type == "charge.failed" -> logger.info(
                         format("A ${currency(charge.amount, charge.currency)} payment from ${email(charge.customer)} failed",
                         event)
                 )
@@ -93,11 +94,11 @@ object Reporter {
 
     private fun report(event: Event, customer: Customer) =
             when {
-                event.type == "customer.created" -> logger.info(NOTIFY_OPS_MARKER,
+                event.type == "customer.created" -> logger.info(
                         format("${customer.email} is a new customer",
                                 event)
                 )
-                event.type == "customer.deleted" -> logger.info(NOTIFY_OPS_MARKER,
+                event.type == "customer.deleted" -> logger.info(
                         format("${customer.email} had been deleted",
                                 event)
                 )
@@ -122,7 +123,7 @@ object Reporter {
                                 "on ${millisToDate(payout.arrivalDate)}",
                                 event)
                 )
-                event.type == "payout.paid" -> logger.info(NOTIFY_OPS_MARKER,
+                event.type == "payout.paid" -> logger.info(
                         format("A payout of ${currency(payout.amount, payout.currency)} should now appear on your bank account statement",
                                 event)
                 )
@@ -145,9 +146,12 @@ object Reporter {
                         format("${invoice.customerEmail}'s invoice has changed",
                                 event)
                 )
-                event.type == "invoice.payment_succeeded" -> logger.info(NOTIFY_OPS_MARKER,
+                event.type == "invoice.payment_succeeded" -> logger.info(
                         format("${invoice.customerEmail}'s invoice for ${currency(invoice.amountPaid, invoice.currency)} was paid",
                             event))
+                event.type == "invoice.voided" -> logger.debug(
+                        format("${invoice.customerEmail}'s invoice ${invoice.id} was voided",
+                                event))
                 event.type == "invoice.payment_failed" -> logger.info(NOTIFY_OPS_MARKER,
                         format("Payment of  ${invoice.customerEmail}'s invoice for ${currency(invoice.amountPaid, invoice.currency)} failed",
                                 event)
@@ -174,7 +178,7 @@ object Reporter {
 
     private fun report(event: Event, plan: Plan) =
             when {
-                event.type == "plan.created " -> logger.info(
+                event.type == "plan.created" -> logger.info(
                         format("A new plan called ${plan.nickname} was crated",
                                 event)
                 )
@@ -185,7 +189,7 @@ object Reporter {
 
     private fun report(event: Event, product: Product) =
             when {
-                event.type == "product.created " -> logger.info(
+                event.type == "product.created" -> logger.info(
                         format("A product with ID ${product.id} was created",
                                 event)
                 )
@@ -210,6 +214,31 @@ object Reporter {
                 )
                 else -> logger.warn(
                         format("Unhandled Stripe event ${event.type} (cat: PaymentIntent)",
+                                event))
+            }
+
+    private fun report(event: Event, method: PaymentMethod) =
+            when {
+                event.type == "payment_method.attached" -> {
+                    if (method.type == "card")
+                        logger.debug("A card payment method ending in ${method.card.last4} was attached to customer ${method.customer}")
+                    else
+                        /* TODO: (kmm) Add other payment methods. */
+                        logger.warn(
+                                format("Unhandled Stripe event ${event.type} (cat: PaymentMethod)",
+                                        event))
+                }
+                event.type == "payment_method.detached" -> {
+                    if (method.type == "card")
+                        logger.debug("A card payment method ending in ${method.card.last4} was detached from customer ${method.customer}")
+                    else
+                    /* TODO: (kmm) Add other payment methods. */
+                        logger.warn(
+                                format("Unhandled Stripe event ${event.type} (cat: PaymentMethod)",
+                                        event))
+                }
+                else -> logger.warn(
+                        format("Unhandled Stripe event ${event.type} (cat: PaymentMethod)",
                                 event))
             }
 
@@ -239,8 +268,8 @@ object Reporter {
 
     private fun report(event: Event, subscription: Subscription) =
             when {
-                event.type == "customer.subscription.created " -> logger.info(NOTIFY_OPS_MARKER,
-                        format("${email(subscription.customer)} subscribed to ${subscription.plan.nickname}",
+                event.type == "customer.subscription.created" -> logger.info(NOTIFY_OPS_MARKER,
+                        format("${email(subscription.customer)} subscribed to ${subscription.plan.id}",
                                 event)
                 )
                 else -> logger.warn(format("Unhandled Stripe event ${event.type} (cat: Subscription)",
