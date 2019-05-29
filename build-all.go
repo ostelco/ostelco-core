@@ -27,7 +27,11 @@
 package main
 
 import (
+	"bytes"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -51,162 +55,230 @@ func checkForDependency(dependency string) {
 	}
 }
 
-func main() {
-	log.Printf("About to get started\n")
-	checkForDependencies()
-	// Check if dependencies are here
+func checkThatEnvironmentVariableIsSet(key string) {
+	if len(os.Getenv(key)) == 0 {
+		log.Fatalf("ERROR: Environment variable not set'%s'", key)
+		os.Exit(1)
+	}
+}
+
+func bothFilesExistsButAreDifferent(s string, s2 string) bool {
+	return fileExists(s) && fileExists(s2) && filesAreDifferent(s, s2)
+}
+
+const chunkSize = 64000
+
+//
+// True iff files are equal.
+//
+func deepCompare(file1, file2 string) bool {
+	// Check file size ...
+
+	f1, err := os.Open(file1)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	f2, err := os.Open(file2)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for {
+		b1 := make([]byte, chunkSize)
+		_, err1 := f1.Read(b1)
+
+		b2 := make([]byte, chunkSize)
+		_, err2 := f2.Read(b2)
+
+		if err1 != nil || err2 != nil {
+			if err1 == io.EOF && err2 == io.EOF {
+				return true
+			} else if err1 == io.EOF || err2 == io.EOF {
+				return false
+			} else {
+				log.Fatal(err1, err2)
+			}
+		}
+
+		if !bytes.Equal(b1, b2) {
+			return false
+		}
+	}
+}
+
+func filesAreDifferent(s string, s2 string) bool {
+	return !deepCompare(s, s2)
+}
+
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return !os.IsNotExist(err)
+}
+
+func deleteFile(path string) {
+	// delete file
+	var err = os.Remove(path)
+	if isError(err) {
+		return
+	}
+
+	fmt.Println("==> done deleting file")
+}
+
+func isError(err error) bool {
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	return (err != nil)
+}
+
+func generateEspEndpointCertificates() {
+
+	originalCertPath := "certs/ocs.dev.ostelco.org/nginx.crt"
+	activeCertPath := "ocsgw/cert/metrics.crt"
+
+	if bothFilesExistsButAreDifferent(originalCertPath, activeCertPath) {
+		deleteFile(originalCertPath)
+		deleteFile(activeCertPath)
+	}
+
+	// If no original certificate (for whatever reason), generate a new one.
+	if !fileExists(originalCertPath) {
+		generateNewCertificate(originalCertPath)
+	}
+
+	if !fileExists(activeCertPath) {
+		copyFile(originalCertPath, activeCertPath)
+	}
+}
+
+func copyFile(src string, dest string) {
+	cp := fmt.Sprintf("cp %s %s", src, dest)
+	cpCmd := exec.Command("bash", "-c", cp)
+	err := cpCmd.Run()
+	if err != nil {
+		log.Fatalf("ERROR: Could not copy from '%s' to '%s'", src, dest)
+		os.Exit(1)
+	}
+}
+
+func generateNewCertificate(certificatePath string) {
+	cmd := fmt.Sprintf("scripts/generate-selfsigned-ssl-certs.sh %s", certificatePath)
+	_, err := exec.Command("bash", "-c", cmd).Output()
+	if err != nil {
+		log.Fatalf("ERROR: Could not generate certificate '%s'", certificatePath)
+		os.Exit(1)
+	}
+}
+
+func hash_file_md5(filePath string) (string, error) {
+	//Initialize variable returnMD5String now in case an error has to be returned
+	var returnMD5String string
+
+	//Open the passed argument and check for any error
+	file, err := os.Open(filePath)
+	if err != nil {
+		return returnMD5String, err
+	}
+
+	//Tell the program to call the following function when the current function returns
+	defer file.Close()
+
+	//Open a new hash interface to write to
+	hash := md5.New()
+
+	//Copy the file in the hash interface and check for any error
+	if _, err := io.Copy(hash, file); err != nil {
+		return returnMD5String, err
+	}
+
+	//Get the 16 bytes hash
+	hashInBytes := hash.Sum(nil)[:16]
+
+	//Convert the bytes to a string
+	returnMD5String = hex.EncodeToString(hashInBytes)
+
+	return returnMD5String, nil
 
 }
 
-// #!/bin/bash
-//
-// ##
-// ##  Build script that will build everything and run acceptance tests.
-// ##  Prior to running this script it is necesary to set th4
-// ##  STRIPE_API_KEY environment variable to a key that is valid for a
-// ##  Stripe test account.  See instructions in docs/TEST.md for how to
-// ##  get one.
-// ##
-//
-//
-//
-// #
-// # Cd to script directory
-// #
-//
-// cd $(dirname $0)
-//
-//
-// DEPENDENCIES="docker-compose ./gradlew docker cmp"
-//
-// #
-// # Do we have the dependencies (in this case only gradle, but copy/paste
-// # made the test more generic .-)
-// #
-// for dep in $DEPENDENCIES ; do
-//  if [[ -z "$(which $dep)" ]] ; then
-//    echo "Couldn't find dependency $dep"
-//    exit 1
-//  fi
-// done
-//
-//
-// #
-// # Generate certificates for ESP endpoints, if needed
-// # (the script will check if they are needed)
-// #
-//
-// if [[ -f "certs/ocs.dev.ostelco.org/nginx.crt" ]] ; then
-//  if  [[ -f  "ocsgw/cert/metrics.crt" ]] ; then
-//   if  [[ -n "$(cmp certs/ocs.dev.ostelco.org/nginx.crt ocsgw/cert/metrics.crt)"  ]] ; then
-//       rm certs/ocs.dev.ostelco.org/nginx.crt ocsgw/cert/metrics.crt
-//   fi
-//  fi
-// fi
-//
-//
-// if [[ ! -f "certs/ocs.dev.ostelco.org/nginx.crt" ]] ; then
-//     scripts/generate-selfsigned-ssl-certs.sh   ocs.dev.ostelco.org
-// fi
-//
-// if [[ ! -f  "ocsgw/cert/metrics.crt" ]] ; then
-//     cp certs/ocs.dev.ostelco.org/nginx.crt ocsgw/cert/ocs.crt
-// fi
-//
-//
-//
-// if [[ -f  "certs/metrics.dev.ostelco.org/nginx.crt" ]] ; then
-//  if [[  "ocsgw/cert/metrics.crt" ]] ; then
-//   if  [[ -n  "$(cmp certs/metrics.dev.ostelco.org/nginx.crt ocsgw/cert/metrics.crt)" ]] ; then
-//       rm "certs/metrics.dev.ostelco.org/nginx.crt" "ocsgw/cert/metrics.crt"
-//   fi
-//  fi
-// fi
-//
-// if [[ ! -f "certs/metrics.dev.ostelco.org/nginx.crt" ]] ; then
-//     scripts/generate-selfsigned-ssl-certs.sh   metrics.dev.ostelco.org
-// fi
-//
-// if [[ ! -f "ocsgw/cert/metrics.crt" ]] ; then
-//     cp certs/metrics.dev.ostelco.org/nginx.crt ocsgw/cert/metrics.crt
-// fi
-//
-//
-// #
-// # Ensure that the GCP project is known to building  process
-// #
-//
-// if [[ -z "$GCP_PROJECT_ID" ]] ; then
-//    echo "You need to set the GCP_PROJECT_ID otherwise we'll not be able to run acceptance tests"
-//    exit 1
-// fi
-//
-// #
-// # Setting up service account files where they are needed.
-// #
-//
-//
-// DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS=" \
-//   acceptance-tests/config \
-//   dataflow-pipelines/config \
-//   ocsgw/config \
-//   bq-metrics-extractor/config \
-//   auth-server/config prime/config"
-//
-// SERVICE_ACCOUNT_MD5="c54b903790340dd9365fa59fce3ad8e2"
-// SERVICE_ACCOUNT_JSON="prime-service-account.json"
-//
-// if [[ ! -f "${SERVICE_ACCOUNT_JSON}" ]] ; then
-//     echo "$0 ERROR: Could not find master service-account file  ${SERVICE_ACCOUNT_JSON}, aborting."
-//     exit 1
-// fi
-//
-// if [[ $(md5 -q "${SERVICE_ACCOUNT_JSON}") != $SERVICE_ACCOUNT_MD5 ]] ; then
-//     echo "$0 ERROR: MD5 checksum of service account file ${SERVICE_ACCOUNT_JSON} does not match expectation, aborting."
-//     exit 1
-// fi
-//
-// for DIR in $DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS ; do
-//     echo "Checking $DIR"
-//     FILE="$DIR/${SERVICE_ACCOUNT_JSON}"
-//     if [[ ! -f $FILE ]] ; then
-// 	if [[ $(md5 -q "${SERVICE_ACCOUNT_JSON}") = $SERVICE_ACCOUNT_MD5 ]] ; then
-// 	    echo "$0 INFO: Couldn't find service account file '$FILE' so copying one from root directory"
-// 	    cp "${SERVICE_ACCOUNT_JSON}" "$FILE"
-// 	else
-// 	    echo "$0 ERROR: Could not find service account file $FILE, aborting."
-// 	    exit 1
-// 	fi
-//     fi
-//     if [[ $(md5 -q $FILE) != $SERVICE_ACCOUNT_MD5 ]] ; then
-// 	if [[ $(md5 -q "${SERVICE_ACCOUNT_JSON}") = $SERVICE_ACCOUNT_MD5 ]] ; then
-// 	    echo "$0 INFO: Service account  '$FILE'  has wrong MD5 checksum, but the one in the root directory has the right one, so we're copying that."
-// 	    cp "${SERVICE_ACCOUNT_JSON}" "$FILE"
-// 	else
-// 	    echo "$0 ERROR: MD5 checksum of service account file  '$FILE' is not $SERVICE_ACCOUNT_MD5, aborting."
-// 	    exit 1
-// 	fi
-//     fi
-// done
-//
-//
-//
-// #
-// # Do we have the necessary environment variables set
-// # to run payment tests?
-// #
-//
-// if [[ -z "$STRIPE_API_KEY" ]] ; then
-//     echo "$0 ERROR: STRIPE_API_KEY is not set.  Se instructions in docs/TEST.md for how to get one."
-//     exit 1
-// fi
-//
-// if [[ -z "$STRIPE_ENDPOINT_SECRET" ]] ; then
-//     export  STRIPE_ENDPOINT_SECRET=thisIsARandomString
-//     echo "$0 INFO: Couldn't find variable STRIPE_ENDPOINT_SECRET, setting it to dummy value '$STRIPE_ENDPOINT_SECRET'"
-// fi
-//
-//
+func distributeServiceAccountConfigs() {
+	log.Printf("Distributing service account configs\n")
+	dirsThatNeedsServiceAccountConfigs := [...]string{
+		0: " acceptance-tests/config",
+		1: "dataflow-pipelines/config",
+		2: "ocsgw/config",
+		3: "bq-metrics-extractor/config",
+		4: "auth-server/config prime/config"}
+	serviceAccountMD5 := "c54b903790340dd9365fa59fce3ad8e2"
+	serviceAccountJsonFilename := "prime-service-account.json"
+
+	if !fileExists(serviceAccountJsonFilename) {
+		log.Fatalf("ERROR: : Could not find master service-account file'%s'", serviceAccountJsonFilename)
+		os.Exit(1)
+	}
+
+	rootMd5, err := hash_file_md5(serviceAccountJsonFilename)
+	if err != nil {
+		log.Fatalf("ERROR: Could not calculate md5 from file ", serviceAccountJsonFilename)
+		os.Exit(1)
+	}
+
+	if serviceAccountMD5 != rootMd5 {
+		log.Fatalf("MD5 of root service acccount file '%s' is not '%s', so bailing out", serviceAccountJsonFilename, serviceAccountMD5)
+		os.Exit(1)
+	}
+
+	for _, dir := range dirsThatNeedsServiceAccountConfigs {
+		currentFilename := fmt.Sprintf("%s/%s", dir, serviceAccountJsonFilename)
+
+		if !fileExists(currentFilename) {
+			copyFile(serviceAccountJsonFilename, currentFilename)
+		} else {
+
+			localMd5, err := hash_file_md5(serviceAccountJsonFilename)
+			if err != nil {
+				log.Fatalf("ERROR: Could not calculate md5 from file ", serviceAccountJsonFilename)
+				os.Exit(1)
+			}
+
+			if localMd5 != rootMd5 {
+				copyFile(serviceAccountJsonFilename, currentFilename)
+			}
+		}
+	}
+}
+
+func main() {
+	log.Printf("About to get started\n")
+	checkForDependencies()
+	checkThatEnvironmentVariableIsSet("STRIPE_API_KEY")
+	generateEspEndpointCertificates()
+	checkThatEnvironmentVariableIsSet("GCP_PROJECT_ID")
+
+	distributeServiceAccountConfigs()
+
+	// If not set, then just set a random value
+	if len(os.Getenv("STRIPE_ENDPOINT_SECRET")) == 0 {
+		log.Printf("Setting value of STRIPE_ENDPOINT_SECRET to 'thisIsARandomString'")
+		os.Setenv("STRIPE_ENDPOINT_SECRET", "thisIsARandomString")
+	}
+
+	assertDockerIsRunning()
+	log.Printf("Docker is running")
+}
+
+func assertDockerIsRunning() {
+	cmd := "if [[ ! -z \"$( docker version | grep Version:)\" ]] ; echo 'Docker not running' ; fi"
+	_, err := exec.Command("bash", "-c", cmd).Output()
+	if err != nil {
+		log.Fatalf("ERROR: Docker not running")
+		os.Exit(1)
+	}
+}
+
 // if [[ -z "$( docker version | grep Version:)" ]] ; then
 //     echo "$0 INFO: Docker not running, please start it before trying again'"
 //     exit 1
