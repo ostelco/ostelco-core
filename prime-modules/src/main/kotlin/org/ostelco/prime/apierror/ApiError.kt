@@ -34,6 +34,7 @@ object ApiErrorMapper {
     fun mapPaymentErrorToApiError(description: String, errorCode: ApiErrorCode, paymentError: PaymentError) : ApiError {
         logger.error("description: $description, errorCode: $errorCode, paymentError: ${asJson(paymentError)}")
         return when(paymentError) {
+            is org.ostelco.prime.paymentprocessor.core.PlanAlredyPurchasedError -> org.ostelco.prime.apierror.ForbiddenError(description, errorCode, paymentError)
             is org.ostelco.prime.paymentprocessor.core.ForbiddenError  ->  org.ostelco.prime.apierror.ForbiddenError(description, errorCode, paymentError)
             // FIXME vihang: remove PaymentError from BadGatewayError
             is org.ostelco.prime.paymentprocessor.core.BadGatewayError -> org.ostelco.prime.apierror.InternalServerError(description, errorCode, paymentError)
