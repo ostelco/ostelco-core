@@ -1081,10 +1081,17 @@ object Neo4jStoreSingleton : GraphStore {
                          that a customer belongs to only one region. */
                 /* Use 'region-code' as the 'tax-region'. */
                 val region = customerStore.getRelated(customer.id, customerRegionRelation, transaction)
+                        .flatMap {
+                            if (!it.isEmpty())
+                                it.first().right()
+                            else
+                                NotFoundError(type = customerRegionRelation.name, id = "No region found for ${customer.id}")
+                                        .left()
+                        }
                         .mapLeft {
                             BadGatewayError("No region found for ${customer.id}", error = it)
                         }
-                        .bind().first()
+                        .bind()
 
                 /* Product presentation. */
                 val productLabel = if (product.presentation.containsKey("productLabel"))
