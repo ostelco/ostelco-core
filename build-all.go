@@ -137,7 +137,7 @@ func isError(err error) bool {
 func generateEspEndpointCertificates() {
 
 	originalCertPath := "certs/ocs.dev.ostelco.org/nginx.crt"
-	activeCertPath   := "ocsgw/cert/metrics.crt"
+	activeCertPath := "ocsgw/cert/metrics.crt"
 
 	if bothFilesExistsButAreDifferent(originalCertPath, activeCertPath) {
 		deleteFile(originalCertPath)
@@ -156,14 +156,37 @@ func generateEspEndpointCertificates() {
 }
 
 // XXX This does not work.
-func copyFile(src string, dest string) {
-	cp := fmt.Sprintf("cp %s %s", src, dest)
-	_, err := exec.Command("bash", "-c", cp).Output()
+func copyFilez(src string, dest string) {
+	// cp := fmt.Sprintf("cp %s %s", src, dest)
+	// out, err := exec.Command("bash", "-c", cp).Output()
+	out, err := exec.Command("cp", src, dest).Output()
 
 	if err != nil {
-		log.Fatalf("ERROR: Could not copy from '%s' to '%s'", src, dest)
+		log.Fatalf("ERROR: Could not copy from '%s' to '%s': (%s, %s)", src, dest, out, err)
 		os.Exit(1)
 	}
+}
+
+// Copy the src file to dst. Any existing file will be overwritten and will not
+// copy file attributes.
+func copyFile(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, in)
+	if err != nil {
+		return err
+	}
+	return out.Close()
 }
 
 func generateNewCertificate(certificateFilename string, certificateDomain string) {
@@ -175,7 +198,6 @@ func generateNewCertificate(certificateFilename string, certificateDomain string
 	}
 
 	log.Printf("out = %s", out)
-
 
 	if !fileExists(certificateFilename) {
 		log.Fatalf("ERROR: Did not generate self signed for domain '%s'", certificateDomain)
@@ -289,11 +311,6 @@ func assertDockerIsRunning() {
 	}
 }
 
-// if [[ -z "$( docker version | grep Version:)" ]] ; then
-//     echo "$0 INFO: Docker not running, please start it before trying again'"
-//     exit 1
-// fi
-//
 //
 // #
 // # Then start running the build
