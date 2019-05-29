@@ -56,9 +56,7 @@ class PubSubClient(
         // init subscriber
         setupPubSubSubscriber(subscriptionId = ccrSubscriptionId) { message, consumer ->
                 val ccrInfo = CreditControlRequestInfo.parseFrom(message)
-                logger.info("Received CCR with request-id: {}", ccrInfo.requestId)
                 ocsAsyncRequestConsumer.creditControlRequestEvent(ccrInfo) {
-                    logger.info("Sending CCA with request-id: {}", ccrInfo.requestId)
                     publish(messageId = ccrInfo.requestId,
                             byteString = it.toByteString(),
                             publisher = ccrPublisherMaps.getOrPut(ccrInfo.topicId) {
@@ -86,7 +84,6 @@ class PubSubClient(
     internal fun publish(messageId: String, byteString: ByteString, publisher: Publisher) {
 
         val base64String = Base64.getEncoder().encodeToString(byteString.toByteArray())
-        logger.debug("[>>] base64String: {}", base64String)
         val pubsubMessage = PubsubMessage.newBuilder()
                 .setMessageId(messageId)
                 .setData(ByteString.copyFromUtf8(base64String))
@@ -107,7 +104,7 @@ class PubSubClient(
 
             override fun onSuccess(messageId: String) {
                 // Once published, returns server-assigned message ids (unique within the topic)
-                logger.debug("Submitted message with request-id: {} successfully", messageId)
+                //logger.debug("Submitted message with request-id: {} successfully", messageId)
             }
         }, singleThreadScheduledExecutor)
     }
@@ -119,7 +116,6 @@ class PubSubClient(
 
         val receiver = MessageReceiver { message, consumer ->
             val base64String = message.data.toStringUtf8()
-            logger.debug("[<<] base64String: {}", base64String)
             handler(ByteString.copyFrom(Base64.getDecoder().decode(base64String)), consumer)
         }
 
