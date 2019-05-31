@@ -283,6 +283,35 @@ func distributeServiceAccountConfigs() {
 	}
 }
 
+
+func assertDockerIsRunning() {
+	cmd := "if [[ ! -z \"$( docker version | grep Version:)\" ]] ; then echo 'Docker not running' ; fi"
+	out, err := exec.Command("bash", "-c", cmd).Output()
+	log.Printf("docker -> %s", out)
+	if err != nil {
+		log.Fatalf("ERROR: Docker not running")
+		os.Exit(1)
+	}
+
+}
+
+
+func gradlewBuild() {
+
+	// We would like to take a close look at the output from the build.  How can we do that?
+	cmd := "./gradlew build"
+	out, err := exec.Command("bash", "-c", cmd).Output()
+	log.Printf("docker -> %s", out)
+	if err != nil {
+		log.Fatalf("ERROR: Docker not running")
+		os.Exit(1)
+	}
+
+	// https://stackoverflow.com/questions/27576902/reading-stdout-from-a-subprocess
+}
+
+
+
 func main() {
 	log.Printf("About to get started\n")
 	checkForDependencies()
@@ -300,22 +329,15 @@ func main() {
 
 	assertDockerIsRunning()
 	log.Printf("Docker is running")
+
+	gradlewBuild()
 }
 
-func assertDockerIsRunning() {
-	cmd := "if [[ ! -z \"$( docker version | grep Version:)\" ]] ; echo 'Docker not running' ; fi"
-	_, err := exec.Command("bash", "-c", cmd).Output()
-	if err != nil {
-		log.Fatalf("ERROR: Docker not running")
-		os.Exit(1)
-	}
-}
 
-//
-// #
-// # Then start running the build
-// #
-//
+
+
+
+
 // ./gradlew build
 //
 // #
