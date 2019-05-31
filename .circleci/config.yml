@@ -4,7 +4,7 @@ jobs:
   build-test-repo:
     # machine is needed to run Gradle build and to run docker compose tests
     machine:
-      image: circleci/classic:201808-01
+      image: ubuntu-1604:201903-01
     environment:
       JAVA_HOME: /usr/lib/jvm/zulu11.31.11-ca-jdk11.0.3-linux_x64
 
@@ -89,7 +89,7 @@ jobs:
       CODACY_MODULE: com.codacy.CodacyCoverageReporter
 
     docker:
-      - image: circleci/openjdk:11.0.1-jdk-node-browsers
+      - image: circleci/openjdk:11.0.3-jdk-stretch
 
     steps:
       - run:
@@ -115,7 +115,7 @@ jobs:
   ### JOBS FOR  on-PR-merge-to-dev PIPELINE 
   build-code:
     machine:
-      image: circleci/classic:201808-01
+      image: ubuntu-1604:201903-01
     environment:
       JAVA_HOME: /usr/lib/jvm/zulu11.31.11-ca-jdk11.0.3-linux_x64
 
@@ -260,7 +260,7 @@ jobs:
             /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
             helm repo update
-            helm upgrade prime ostelco/prime --version 0.6.2 --install --namespace dev \
+            helm upgrade prime ostelco/prime --version 0.6.3 --install --namespace dev \
              -f .circleci/prime-dev-values.yaml \
              --set prime.tag=${CIRCLE_SHA1:0:9} 
 
@@ -269,7 +269,7 @@ jobs:
           when: on_fail
           command: .circleci/notify-slack.sh on-PR-merge-to-dev false
 
-  ### JOBS FOR  on-PR-merge-to-master PIPELINE
+  ### JOBS FOR deploying to prod
   update-prod-endpoints:
     docker:
       - image: eu.gcr.io/pi-ostelco-prod/python-gcloud
@@ -298,7 +298,7 @@ jobs:
           when: on_fail
           command: .circleci/notify-slack.sh on-PR-merge-to-master false
 
-  deploy-to-prod:
+  deploy-canary:
     docker:
       - image: praqma/gcloud-kubectl-helm:v2.11.0
         environment:
@@ -310,14 +310,14 @@ jobs:
     steps:
       - checkout
       - run:
-          name: deploy prime to the prod cluster
+          name: deploy canary prime to the prod cluster
           command: |
             export GOOGLE_CREDENTIALS=${PI_PROD_CLUSTER_CREDENTIALS}
             /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
             helm repo update
-            helm upgrade prime ostelco/prime --version 0.6.2 --install --namespace prod \
-             -f .circleci/prime-prod-values.yaml  --set-string canary.tag=${CIRCLE_SHA1:0:9}
+            helm upgrade prime ostelco/prime --version 0.6.3 --install --namespace prod \
+             -f .circleci/prime-prod-values.yaml  --set-string canary.tag=${CIRCLE_SHA1:0:9} --set canary.weight=100
 
       - run:
           name: notify slack on failure
@@ -352,14 +352,13 @@ workflows:
       - deploy-to-dev:
           requires:
             - update-dev-endpoints
-
-  deploy-to-prod:
-    jobs:
-      - update-prod-endpoints:
-          filters:
-            branches:
-              only:
-                - master
-      - deploy-to-prod:
+      - approve-prod-deploy:
+          type: approval
           requires:
-            - update-prod-endpoints
+            - deploy-to-dev 
+      - update-prod-endpoints:
+          requires:
+            - approve-prod-deploy
+      - deploy-canary:
+          requires:
+            - update-prod-endpoints     

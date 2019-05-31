@@ -13,6 +13,7 @@ import org.mockito.Mockito.`when`
 import org.neo4j.driver.v1.AccessMode.WRITE
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.appnotifier.AppNotifier
+import org.ostelco.prime.dsl.DSL.job
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.CustomerRegionStatus.APPROVED
 import org.ostelco.prime.model.CustomerRegionStatus.PENDING
@@ -38,6 +39,8 @@ import org.ostelco.prime.model.SimProfile
 import org.ostelco.prime.model.SimProfileStatus.AVAILABLE_FOR_DOWNLOAD
 import org.ostelco.prime.notifications.EmailNotifier
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
+import org.ostelco.prime.paymentprocessor.core.InvoiceInfo
+import org.ostelco.prime.paymentprocessor.core.InvoicePaymentInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.sim.SimManager
 import org.ostelco.prime.storage.NotFoundError
@@ -86,18 +89,21 @@ class Neo4jStoreTest {
             }
         }
 
-        Neo4jStoreSingleton.createProduct(
+        job {
+            create {
                 Product(sku = "2GB_FREE_ON_JOINING",
                         price = Price(0, ""),
-                        properties = mapOf("noOfBytes" to "2_147_483_648")))
-
-        Neo4jStoreSingleton.createProduct(
+                        properties = mapOf("noOfBytes" to "2_147_483_648"))
+            }
+            create {
                 Product(sku = "1GB_FREE_ON_REFERRED",
                         price = Price(0, ""),
-                        properties = mapOf("noOfBytes" to "1_073_741_824")))
-
-        val allSegment = Segment(id = getSegmentNameFromCountryCode(REGION))
-        Neo4jStoreSingleton.createSegment(allSegment)
+                        properties = mapOf("noOfBytes" to "1_073_741_824"))
+            }
+            create {
+                Segment(id = getSegmentNameFromCountryCode(REGION))
+            }
+        }
     }
 
     @Test
@@ -137,8 +143,9 @@ class Neo4jStoreTest {
     fun `test - add subscription`() {
 
         // prep
-        Neo4jStoreSingleton.createRegion(Region(REGION_CODE, "Norway"))
-                .mapLeft { fail(it.message) }
+        job {
+            create { Region(REGION_CODE, "Norway") }
+        }.mapLeft { fail(it.message) }
 
         Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
@@ -170,31 +177,31 @@ class Neo4jStoreTest {
     fun `test - purchase`() {
 
         val sku = "1GB_249NOK"
+        val invoiceId = "in_01234"
         val chargeId = UUID.randomUUID().toString()
+
         // mock
         Mockito.`when`(mockPaymentProcessor.getPaymentProfile(customerId = CUSTOMER.id))
                 .thenReturn(ProfileInfo(EMAIL).right())
 
-        Mockito.`when`(mockPaymentProcessor.authorizeCharge(
-                customerId = EMAIL,
-                sourceId = null,
-                amount = 24900,
-                currency = "NOK")
-        ).thenReturn(chargeId.right())
-
-        Mockito.`when`(mockPaymentProcessor.captureCharge(
-                customerId = EMAIL,
+        Mockito.`when`(mockPaymentProcessor.createInvoice(
+                customerId = CUSTOMER.id,
                 amount = 24900,
                 currency = "NOK",
-                chargeId = chargeId)
-        ).thenReturn(chargeId.right())
+                description = sku,
+                taxRegion = "no",
+                sourceId = null)
+        ).thenReturn(InvoiceInfo(invoiceId).right())
+
+        Mockito.`when`(mockPaymentProcessor.payInvoice(
+                invoiceId = invoiceId)
+        ).thenReturn(InvoicePaymentInfo(invoiceId, chargeId).right())
 
         // prep
-        Neo4jStoreSingleton.createRegion(Region(REGION_CODE, "Norway"))
-                .mapLeft { fail(it.message) }
-
-        Neo4jStoreSingleton.createProduct(createProduct(sku = sku, amount = 24900))
-                .mapLeft { fail(it.message) }
+        job {
+            create { Region(REGION_CODE, "Norway") }
+            create { createProduct(sku = sku, amount = 24900) }
+        }.mapLeft { fail(it.message) }
 
         val offer = Offer(
                 id = "NEW_OFFER",
@@ -234,8 +241,9 @@ class Neo4jStoreTest {
     @Test
     fun `test - consume`() = runBlocking {
         // prep
-        Neo4jStoreSingleton.createRegion(Region(REGION_CODE, "Norway"))
-                .mapLeft { fail(it.message) }
+        job {
+            create { Region(REGION_CODE, "Norway") }
+        }.mapLeft { fail(it.message) }
 
         Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
@@ -292,9 +300,12 @@ class Neo4jStoreTest {
         val product = createProduct("1GB_249NOK", 24900)
         val now = Instant.now().toEpochMilli()
 
-        Neo4jStoreSingleton.createProduct(product)
-                .mapLeft { fail(it.message) }
+        // prep
+        job {
+            create { product }
+        }.mapLeft { fail(it.message) }
 
+        // test
         val purchaseRecord = PurchaseRecord(product = product, timestamp = now, id = UUID.randomUUID().toString())
         Neo4jStoreSingleton.addPurchaseRecord(customerId = CUSTOMER.id, purchase = purchaseRecord).bimap(
                 { fail(it.message) },
@@ -313,14 +324,13 @@ class Neo4jStoreTest {
                 identity = IDENTITY,
                 customer = CUSTOMER).isRight())
 
-        Neo4jStoreSingleton.createProduct(createProduct("1GB_249NOK", 24900))
-                .mapLeft { fail(it.message) }
-        Neo4jStoreSingleton.createProduct(createProduct("2GB_299NOK", 29900))
-                .mapLeft { fail(it.message) }
-        Neo4jStoreSingleton.createProduct(createProduct("3GB_349NOK", 34900))
-                .mapLeft { fail(it.message) }
-        Neo4jStoreSingleton.createProduct(createProduct("5GB_399NOK", 39900))
-                .mapLeft { fail(it.message) }
+        // prep
+        job {
+            create { createProduct("1GB_249NOK", 24900) }
+            create { createProduct("2GB_299NOK", 29900) }
+            create { createProduct("3GB_349NOK", 34900) }
+            create { createProduct("5GB_399NOK", 39900) }
+        }.mapLeft { fail(it.message) }
 
         val segment = Segment(
                 id = "NEW_SEGMENT",
@@ -351,10 +361,10 @@ class Neo4jStoreTest {
     fun `import offer + product + segment`() {
 
         // existing products
-        Neo4jStoreSingleton.createProduct(createProduct("1GB_249NOK", 24900))
-                .mapLeft { fail(it.message) }
-        Neo4jStoreSingleton.createProduct(createProduct("2GB_299NOK", 29900))
-                .mapLeft { fail(it.message) }
+        job {
+            create { createProduct("1GB_249NOK", 24900) }
+            create { createProduct("2GB_299NOK", 29900) }
+        }.mapLeft { fail(it.message) }
 
         val products = listOf(
                 createProduct("3GB_349NOK", 34900),
@@ -372,10 +382,10 @@ class Neo4jStoreTest {
     fun `failed on import duplicate offer`() {
 
         // existing products
-        Neo4jStoreSingleton.createProduct(createProduct("1GB_249NOK", 24900))
-                .mapLeft { fail(it.message) }
-        Neo4jStoreSingleton.createProduct(createProduct("2GB_299NOK", 29900))
-                .mapLeft { fail(it.message) }
+        job {
+            create { createProduct("1GB_249NOK", 24900) }
+            create { createProduct("2GB_299NOK", 29900) }
+        }.mapLeft { fail(it.message) }
 
         // new products in the offer
         val products = listOf(
@@ -404,8 +414,9 @@ class Neo4jStoreTest {
     fun `eKYCScan - generate new scanId`() {
 
         // prep
-        Neo4jStoreSingleton.createRegion(Region(REGION_CODE, "Norway"))
-                .mapLeft { fail(it.message) }
+        job {
+            create { Region(REGION_CODE, "Norway") }
+        }.mapLeft { fail(it.message) }
 
         assert(Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
@@ -425,8 +436,9 @@ class Neo4jStoreTest {
     fun `eKYCScan - get all scans`() {
 
         // prep
-        Neo4jStoreSingleton.createRegion(Region(REGION_CODE, "Norway"))
-                .mapLeft { fail(it.message) }
+        job {
+            create { Region(REGION_CODE, "Norway") }
+        }.mapLeft { fail(it.message) }
 
         assert(Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
@@ -448,7 +460,9 @@ class Neo4jStoreTest {
     @Test
     fun `eKYCScan - update scan information`() {
 
-        assert(Neo4jStoreSingleton.createRegion(Region(id = REGION_CODE, name = "Norway")).isRight())
+        job {
+            create { Region(REGION_CODE, "Norway") }
+        }.mapLeft { fail(it.message) }
 
         assert(Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
@@ -494,8 +508,9 @@ class Neo4jStoreTest {
     fun `eKYCScan - update with unknown scanId`() {
 
         // prep
-        Neo4jStoreSingleton.createRegion(Region(REGION_CODE, "Norway"))
-                .mapLeft { fail(it.message) }
+        job {
+            create { Region(REGION_CODE, "Norway") }
+        }.mapLeft { fail(it.message) }
 
         assert(Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
@@ -538,8 +553,9 @@ class Neo4jStoreTest {
     fun `eKYCScan - illegal access`() {
 
         // prep
-        Neo4jStoreSingleton.createRegion(Region(REGION_CODE, "Norway"))
-                .mapLeft { fail(it.message) }
+        job {
+            create { Region(REGION_CODE, "Norway") }
+        }.mapLeft { fail(it.message) }
 
         val fakeEmail = "fake-$EMAIL"
         val fakeIdentity = Identity(id = fakeEmail, type = "EMAIL", provider = "email")
@@ -570,8 +586,9 @@ class Neo4jStoreTest {
         `when`(mockEmailNotifier.sendESimQrCodeEmail(email = CUSTOMER.contactEmail, name = CUSTOMER.nickname, qrCode = "eSimActivationCode"))
                 .thenReturn(Unit.right())
 
-        Neo4jStoreSingleton.createRegion(Region(REGION_CODE, "Norway"))
-                .mapLeft { fail(it.message) }
+        job {
+            create { Region(REGION_CODE, "Norway") }
+        }.mapLeft { fail(it.message) }
 
         assert(Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
@@ -622,8 +639,9 @@ class Neo4jStoreTest {
     @Test
     fun `test getAllRegionDetails with no region`() {
         // prep
-        Neo4jStoreSingleton.createRegion(Region(REGION_CODE, "Norway"))
-                .mapLeft { fail(it.message) }
+        job {
+            create { Region(REGION_CODE, "Norway") }
+        }.mapLeft { fail(it.message) }
 
         assert(Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
@@ -639,8 +657,9 @@ class Neo4jStoreTest {
     @Test
     fun `test getRegionDetails with no region`() {
         // prep
-        Neo4jStoreSingleton.createRegion(Region(REGION_CODE, "Norway"))
-                .mapLeft { fail(it.message) }
+        job {
+            create { Region(REGION_CODE, "Norway") }
+        }.mapLeft { fail(it.message) }
 
         assert(Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
@@ -660,10 +679,10 @@ class Neo4jStoreTest {
     @Test
     fun `test getAllRegionDetails with region without sim profile`() {
         // prep
-        Neo4jStoreSingleton.createRegion(Region("no", "Norway"))
-                .mapLeft { fail(it.message) }
-        Neo4jStoreSingleton.createRegion(Region("sg", "Singapore"))
-                .mapLeft { fail(it.message) }
+        job {
+            create { Region("no", "Norway") }
+            create { Region("sg", "Singapore") }
+        }.mapLeft { fail(it.message) }
 
         assert(Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
@@ -704,10 +723,10 @@ class Neo4jStoreTest {
     @Test
     fun `test getRegionDetails with region without sim profile`() {
         // prep
-        Neo4jStoreSingleton.createRegion(Region("no", "Norway"))
-                .mapLeft { fail(it.message) }
-        Neo4jStoreSingleton.createRegion(Region("sg", "Singapore"))
-                .mapLeft { fail(it.message) }
+        job {
+            create { Region("no", "Norway") }
+            create { Region("sg", "Singapore") }
+        }.mapLeft { fail(it.message) }
 
         assert(Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
@@ -743,10 +762,10 @@ class Neo4jStoreTest {
         `when`(mockEmailNotifier.sendESimQrCodeEmail(email = CUSTOMER.contactEmail, name = CUSTOMER.nickname, qrCode = "eSimActivationCode"))
                 .thenReturn(Unit.right())
 
-        Neo4jStoreSingleton.createRegion(Region("no", "Norway"))
-                .mapLeft { fail(it.message) }
-        Neo4jStoreSingleton.createRegion(Region("sg", "Singapore"))
-                .mapLeft { fail(it.message) }
+        job {
+            create { Region("no", "Norway") }
+            create { Region("sg", "Singapore") }
+        }.mapLeft { fail(it.message) }
 
         assert(Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
@@ -807,10 +826,10 @@ class Neo4jStoreTest {
         `when`(mockEmailNotifier.sendESimQrCodeEmail(email = CUSTOMER.contactEmail, name = CUSTOMER.nickname, qrCode = "eSimActivationCode"))
                 .thenReturn(Unit.right())
 
-        Neo4jStoreSingleton.createRegion(Region("no", "Norway"))
-                .mapLeft { fail(it.message) }
-        Neo4jStoreSingleton.createRegion(Region("sg", "Singapore"))
-                .mapLeft { fail(it.message) }
+        job {
+            create { Region("no", "Norway") }
+            create { Region("sg", "Singapore") }
+        }.mapLeft { fail(it.message) }
 
         assert(Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
@@ -858,8 +877,9 @@ class Neo4jStoreTest {
     @Test
     fun `test MY_INFO status`() {
 
-        Neo4jStoreSingleton.createRegion(Region("sg", "Singapore"))
-                .mapLeft { fail(it.message) }
+        job {
+            create { Region("sg", "Singapore") }
+        }.mapLeft { fail(it.message) }
 
         /* Note: (kmm) For 'sg' the first segment offered is always a plan. */
         Neo4jStoreSingleton.createSegment(Segment(id = getPlanSegmentNameFromCountryCode("sg")))
@@ -898,8 +918,9 @@ class Neo4jStoreTest {
         /* Note: (kmm) For 'sg' the first segment offered is always a plan. */
         Neo4jStoreSingleton.createSegment(Segment(id = getPlanSegmentNameFromCountryCode("sg")))
 
-        Neo4jStoreSingleton.createRegion(Region("sg", "Singapore"))
-                .mapLeft { fail(it.message) }
+        job {
+            create { Region("sg", "Singapore") }
+        }.mapLeft { fail(it.message) }
 
         assert(Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
@@ -958,7 +979,6 @@ class Neo4jStoreTest {
     companion object {
         const val EMAIL = "foo@bar.com"
         const val NAME = "Test User"
-        const val CURRENCY = "NOK"
         const val REGION = "NO"
         const val REGION_CODE = "no"
         const val MSISDN = "4712345678"

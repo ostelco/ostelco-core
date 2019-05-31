@@ -45,7 +45,8 @@ class JerseyModule : PrimeModule {
                 .build(env.name)
 
         /* OAuth2 with cache. */
-        val authenticator = CachingAuthenticator(env.metrics(),
+        val authenticator = CachingAuthenticator(
+                env.metrics(),
                 OAuthAuthenticator(client),
                 config.authenticationCachePolicy)
 

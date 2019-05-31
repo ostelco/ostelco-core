@@ -51,9 +51,57 @@ import kotlin.test.assertTrue
 class CustomerTest {
 
     @Test
+    fun `jersey test - encoded email GET and PUT customer`() {
+
+        val email ="customer-${randomInt()}+test@test.com"
+        val nickname = "Test Customer"
+        var customerId = ""
+        try {
+            val createdCustomer: Customer = post {
+                path = "/customer"
+                queryParams = mapOf(
+                        "contactEmail" to URLEncoder.encode(email, "UTF-8"),
+                        "nickname" to nickname)
+                this.email = email
+            }
+
+            customerId = createdCustomer.id
+
+            assertEquals(email, createdCustomer.contactEmail, "Incorrect 'contactEmail' in created customer")
+            assertEquals(nickname, createdCustomer.nickname, "Incorrect 'nickname' in created customer")
+
+            val customer: Customer = get {
+                path = "/customer"
+                this.email = email
+            }
+
+            assertEquals(createdCustomer.contactEmail, customer.contactEmail, "Incorrect 'contactEmail' in fetched customer")
+            assertEquals(createdCustomer.nickname, customer.nickname, "Incorrect 'nickname' in fetched customer")
+            assertEquals(createdCustomer.analyticsId, customer.analyticsId, "Incorrect 'analyticsId' in fetched customer")
+            assertEquals(createdCustomer.referralId, customer.referralId, "Incorrect 'referralId' in fetched customer")
+
+            val newName = "New name: Test Customer"
+            val email2 ="customer-${randomInt()}.abc+test@test.com"
+
+            val updatedCustomer: Customer = put {
+                path = "/customer"
+                queryParams = mapOf(
+                        "contactEmail" to URLEncoder.encode(email2, "UTF-8"),
+                        "nickname" to newName)
+                this.email = email
+            }
+
+            assertEquals(email2, updatedCustomer.contactEmail, "Incorrect 'email' in response after updating customer")
+            assertEquals(newName, updatedCustomer.nickname, "Incorrect 'name' in response after updating customer")
+        } finally {
+            StripePayment.deleteCustomer(customerId = customerId)
+        }
+    }
+
+    @Test
     fun `jersey test - GET and PUT customer`() {
 
-        val email = "customer-${randomInt()}@test.com"
+        val email ="customer-${randomInt()}+test@test.com"
         val nickname = "Test Customer"
         var customerId = ""
         try {
@@ -1708,6 +1756,7 @@ class PlanTest {
         }
     }
 
+    @Ignore
     @Test
     fun `jersey test - POST profiles plans`() {
 
@@ -1756,26 +1805,24 @@ class PlanTest {
 
             // Now create and verify the subscription.
 
-            // TODO: (kmm) Update to reflect the changes in how a subscription is added.
-            //       Plus remove the 'plans' REST API from '/profiles' API.
-//            post<Unit> {
-//                path = "/profiles/$email/plans/${plan.name}"
-//            }
-//
-//            val plans: List<Plan> = get {
-//                path = "/profiles/$email/plans"
-//            }
-//
-//            assert(plans.isNotEmpty())
-//            assert(plans.lastIndex == 0)
-//            assertEquals(plan.name, plans[0].name)
-//            assertEquals(plan.price, plans[0].price)
-//            assertEquals(plan.interval, plans[0].interval)
-//            assertEquals(plan.intervalCount, plans[0].intervalCount)
-//
-//            delete<Unit> {
-//                path = "/profiles/$email/plans/${plan.name}"
-//            }
+            post<Unit> {
+                path = "/profiles/$email/plans/${plan.name}"
+            }
+
+            val plans: List<Plan> = get {
+                path = "/profiles/$email/plans"
+            }
+
+            assert(plans.isNotEmpty())
+            assert(plans.lastIndex == 0)
+            assertEquals(plan.name, plans[0].name)
+            assertEquals(plan.price, plans[0].price)
+            assertEquals(plan.interval, plans[0].interval)
+            assertEquals(plan.intervalCount, plans[0].intervalCount)
+
+            delete<Unit> {
+                path = "/profiles/$email/plans/${plan.name}"
+            }
 
             // Cleanup - remove plan.
             val deletedPLan: Plan = delete {

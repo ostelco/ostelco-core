@@ -20,10 +20,10 @@ dependencies {
     implementation "javax.xml.bind:jaxb-api:$jaxbVersion"
     runtimeOnly "javax.activation:activation:$javaxActivationVersion"
 
+    implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
     implementation 'ch.qos.logback:logback-classic:1.2.3'
     implementation 'ch.qos.logback.contrib:logback-json-classic:0.1.5'
     implementation 'ch.qos.logback.contrib:logback-jackson:0.1.5'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
 
     testImplementation project(':diameter-test')
     testImplementation "org.junit.jupiter:junit-jupiter-api:$junit5Version"

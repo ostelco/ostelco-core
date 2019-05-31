@@ -9,7 +9,6 @@ import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.Plan
 import org.ostelco.prime.model.Product
-import org.ostelco.prime.model.ProductClass
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Region
 import org.ostelco.prime.model.RegionDetails
@@ -219,10 +218,6 @@ interface AdminGraphStore {
 
     fun deleteSimProfileWithSubscription(regionCode: String, iccId: String): Either<StoreError, Unit>
 
-    // simple create
-    fun createProductClass(productClass: ProductClass): Either<StoreError, Unit>
-
-    fun createProduct(product: Product): Either<StoreError, Unit>
     fun createSegment(segment: Segment): Either<StoreError, Unit>
     fun createOffer(offer: Offer): Either<StoreError, Unit>
 
@@ -277,21 +272,22 @@ interface AdminGraphStore {
      * Remove the subscription to a plan for a specific subscrber.
      * @param identity - The identity of the customer
      * @param planId - The name/id of the plan
-     * @param atIntervalEnd - Remove at end of curren subscription period
+     * @param invoiceNow - Set to true if a final invoice should be generated now
      * @return Unit value if the subscription was removed successfully
      */
-    fun unsubscribeFromPlan(identity: Identity, planId: String, atIntervalEnd: Boolean = false): Either<StoreError, Plan>
+    fun unsubscribeFromPlan(identity: Identity, planId: String, invoiceNow: Boolean = true): Either<StoreError, Plan>
 
     /**
      * Adds a purchase record to customer on start of or renewal
      * of a subscription.
-     * @param invoiceId - The reference to the invoice that has been paid
      * @param customerId - The customer that got charged
+     * @param invoiceId - The reference to the invoice that has been paid
+     * @param chargeId - The reference to the charge (used on refunds)
      * @param sku - The product/plan bought
      * @param amount - Cost of the product/plan
      * @param currency - Currency used
      */
-    fun purchasedSubscription(invoiceId: String, customerId: String, sku: String, amount: Long, currency: String): Either<StoreError, Plan>
+    fun purchasedSubscription(customerId: String, invoiceId: String, chargeId: String, sku: String, amount: Long, currency: String): Either<StoreError, Plan>
 
     // atomic import of Offer + Product + Segment
     fun atomicCreateOffer(
@@ -315,8 +311,6 @@ interface AdminGraphStore {
     // Retrieve all scan information for the customer
     fun getAllScanInformation(identity: Identity): Either<StoreError, Collection<ScanInformation>>
 
-    fun createRegion(region: Region): Either<StoreError, Unit>
-
     // simple getAll
     // fun getOffers(): Collection<Offer>
     // fun getSegments(): Collection<Segment>
@@ -333,5 +327,5 @@ interface AdminGraphStore {
 interface ScanInformationStore {
     // Function to upsert scan information data from the 3rd party eKYC scan
     fun upsertVendorScanInformation(customerId: String, countryCode: String, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit>
-    fun getExtendedStatusInformation(vendorData: MultivaluedMap<String, String>): Map<String, String>
+    fun getExtendedStatusInformation(scanInformation: ScanInformation): Map<String, String>
 }

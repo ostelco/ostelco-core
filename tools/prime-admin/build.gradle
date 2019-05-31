@@ -1,0 +1,23 @@
+plugins {
+  id "org.jetbrains.kotlin.jvm"
+  id "application"
+  // Keeping version to 4.0.1 - https://github.com/johnrengelman/shadow/issues/425
+  // This issue is NOT fixed in version > 4.0.1 including 5.0.0.
+  id "com.github.johnrengelman.shadow" version "4.0.1"
+  id "idea"
+}
+
+dependencies {
+  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+
+  implementation project(":prime")
+  implementation project(":neo4j-store")
+}
+
+shadowJar {
+  mainClassName = 'org.ostelco.tools.migration.MainKt'
+  mergeServiceFiles()
+  classifier = "uber"
+  zip64 true
+  version = null
+}
