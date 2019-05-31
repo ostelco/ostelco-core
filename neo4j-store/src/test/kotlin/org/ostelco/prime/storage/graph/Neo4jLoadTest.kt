@@ -10,6 +10,7 @@ import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.neo4j.driver.v1.AccessMode.WRITE
+import org.ostelco.prime.dsl.DSL.job
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.Price
@@ -37,18 +38,21 @@ class Neo4jLoadTest {
 
         Neo4jStoreSingleton.createIndex()
 
-        Neo4jStoreSingleton.createProduct(
+        job {
+            create {
                 Product(sku = "2GB_FREE_ON_JOINING",
                         price = Price(0, ""),
-                        properties = mapOf("noOfBytes" to "2_147_483_648")))
-
-        Neo4jStoreSingleton.createProduct(
+                        properties = mapOf("noOfBytes" to "2_147_483_648"))
+            }
+            create {
                 Product(sku = "1GB_FREE_ON_REFERRED",
                         price = Price(0, ""),
-                        properties = mapOf("noOfBytes" to "1_000_000_000")))
-
-        val allSegment = Segment(id = getSegmentNameFromCountryCode(COUNTRY))
-        Neo4jStoreSingleton.createSegment(allSegment)
+                        properties = mapOf("noOfBytes" to "1_000_000_000"))
+            }
+            create {
+                Segment(id = getSegmentNameFromCountryCode(COUNTRY))
+            }
+        }
     }
 
     @Ignore
