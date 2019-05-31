@@ -46,7 +46,7 @@ class SchemaTest {
             aEntityStore.create(a, transaction)
 
             // get node
-            assertEquals(a, aEntityStore.get("a_id", transaction).toOption().orNull())
+            assertEquals(a, get(A::class, "a_id").toOption().orNull())
 
             // update node
             val ua = A()
@@ -57,13 +57,13 @@ class SchemaTest {
             aEntityStore.update(ua, transaction)
 
             // get updated node
-            assertEquals(ua, aEntityStore.get(aId, transaction).toOption().orNull())
+            assertEquals(ua, get(A::class, aId).toOption().orNull())
 
             // delete node
             aEntityStore.delete(aId, transaction)
 
             // get deleted node
-            assert(aEntityStore.get(aId, transaction).isLeft())
+            assert(get(A::class, aId).isLeft())
         }
     }
 
