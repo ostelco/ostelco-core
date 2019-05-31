@@ -9,7 +9,6 @@ import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.Plan
 import org.ostelco.prime.model.Product
-import org.ostelco.prime.model.ProductClass
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Region
 import org.ostelco.prime.model.RegionDetails
@@ -219,10 +218,6 @@ interface AdminGraphStore {
 
     fun deleteSimProfileWithSubscription(regionCode: String, iccId: String): Either<StoreError, Unit>
 
-    // simple create
-    fun createProductClass(productClass: ProductClass): Either<StoreError, Unit>
-
-    fun createProduct(product: Product): Either<StoreError, Unit>
     fun createSegment(segment: Segment): Either<StoreError, Unit>
     fun createOffer(offer: Offer): Either<StoreError, Unit>
 
@@ -315,8 +310,6 @@ interface AdminGraphStore {
 
     // Retrieve all scan information for the customer
     fun getAllScanInformation(identity: Identity): Either<StoreError, Collection<ScanInformation>>
-
-    fun createRegion(region: Region): Either<StoreError, Unit>
 
     // simple getAll
     // fun getOffers(): Collection<Offer>

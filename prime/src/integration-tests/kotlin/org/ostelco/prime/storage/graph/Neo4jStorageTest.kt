@@ -13,6 +13,8 @@ import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
+import org.ostelco.prime.dsl.DSL.job
+import org.ostelco.prime.dsl.KotlinScript
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.Identity
@@ -81,7 +83,7 @@ class Neo4jStorageTest {
     @Test
     fun addRecordOfPurchaseTest() {
 
-        storage.createProduct(DATA_TOPUP_3GB)
+        job { create { DATA_TOPUP_3GB } }.mapLeft { fail(it.message) }
 
         val now = Instant.now().toEpochMilli()
         val purchase = PurchaseRecord(
@@ -127,7 +129,7 @@ class Neo4jStorageTest {
 
             Neo4jClient.start()
 
-            initDatabase()
+            KotlinScript("/AcceptanceTestSetup.kts").eval()
         }
 
         @JvmStatic
