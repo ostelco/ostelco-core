@@ -34,40 +34,40 @@ object ApiErrorMapper {
     fun mapPaymentErrorToApiError(description: String, errorCode: ApiErrorCode, paymentError: PaymentError) : ApiError {
         logger.error("description: $description, errorCode: $errorCode, paymentError: ${asJson(paymentError)}")
         return when(paymentError) {
-            is org.ostelco.prime.paymentprocessor.core.PlanAlredyPurchasedError -> org.ostelco.prime.apierror.ForbiddenError(description, errorCode, paymentError)
-            is org.ostelco.prime.paymentprocessor.core.ForbiddenError  ->  org.ostelco.prime.apierror.ForbiddenError(description, errorCode, paymentError)
+            is org.ostelco.prime.paymentprocessor.core.PlanAlredyPurchasedError -> ForbiddenError(description, errorCode, paymentError)
+            is org.ostelco.prime.paymentprocessor.core.ForbiddenError  ->  ForbiddenError(description, errorCode, paymentError)
             // FIXME vihang: remove PaymentError from BadGatewayError
-            is org.ostelco.prime.paymentprocessor.core.BadGatewayError -> org.ostelco.prime.apierror.InternalServerError(description, errorCode, paymentError)
-            is org.ostelco.prime.paymentprocessor.core.NotFoundError -> org.ostelco.prime.apierror.NotFoundError(description, errorCode, paymentError)
+            is org.ostelco.prime.paymentprocessor.core.BadGatewayError -> InternalServerError(description, errorCode, paymentError)
+            is org.ostelco.prime.paymentprocessor.core.NotFoundError -> NotFoundError(description, errorCode, paymentError)
         }
     }
 
     fun mapStorageErrorToApiError(description: String, errorCode: ApiErrorCode, storeError: StoreError) : ApiError {
         logger.error("description: $description, errorCode: $errorCode, storeError: ${asJson(storeError)}")
         return when(storeError) {
-            is org.ostelco.prime.storage.NotFoundError  ->  org.ostelco.prime.apierror.NotFoundError(description, errorCode, storeError)
-            is org.ostelco.prime.storage.AlreadyExistsError  ->  org.ostelco.prime.apierror.ForbiddenError(description, errorCode, storeError)
+            is org.ostelco.prime.storage.NotFoundError  ->  NotFoundError(description, errorCode, storeError)
+            is org.ostelco.prime.storage.AlreadyExistsError  ->  ForbiddenError(description, errorCode, storeError)
             // FIXME vihang: remove StoreError from BadGatewayError
-            is org.ostelco.prime.storage.NotCreatedError  ->  org.ostelco.prime.apierror.InternalServerError(description, errorCode)
-            is org.ostelco.prime.storage.NotUpdatedError  ->  org.ostelco.prime.apierror.InternalServerError(description, errorCode)
-            is org.ostelco.prime.storage.NotDeletedError  ->  org.ostelco.prime.apierror.InternalServerError(description, errorCode)
-            is org.ostelco.prime.storage.ValidationError  ->  org.ostelco.prime.apierror.ForbiddenError(description, errorCode, storeError)
-            is org.ostelco.prime.storage.FileDownloadError  ->  org.ostelco.prime.apierror.InternalServerError(description, errorCode)
-            is org.ostelco.prime.storage.FileDeleteError  ->  org.ostelco.prime.apierror.InternalServerError(description, errorCode)
-            is org.ostelco.prime.storage.SystemError  ->  org.ostelco.prime.apierror.InternalServerError(description, errorCode)
-            is org.ostelco.prime.storage.DatabaseError  ->  org.ostelco.prime.apierror.InternalServerError(description, errorCode)
+            is org.ostelco.prime.storage.NotCreatedError  ->  InternalServerError(description, errorCode)
+            is org.ostelco.prime.storage.NotUpdatedError  ->  InternalServerError(description, errorCode)
+            is org.ostelco.prime.storage.NotDeletedError  ->  InternalServerError(description, errorCode)
+            is org.ostelco.prime.storage.ValidationError  ->  ForbiddenError(description, errorCode, storeError)
+            is org.ostelco.prime.storage.FileDownloadError  ->  InternalServerError(description, errorCode)
+            is org.ostelco.prime.storage.FileDeleteError  ->  InternalServerError(description, errorCode)
+            is org.ostelco.prime.storage.SystemError  ->  InternalServerError(description, errorCode)
+            is org.ostelco.prime.storage.DatabaseError  ->  InternalServerError(description, errorCode)
         }
     }
 
     fun mapSimManagerErrorToApiError(description: String, errorCode: ApiErrorCode, simManagerError: SimManagerError) : ApiError {
         logger.error("description: $description, errorCode: $errorCode, simManagerError: ${asJson(simManagerError)}")
         return when (simManagerError) {
-            is org.ostelco.prime.simmanager.NotFoundError -> org.ostelco.prime.apierror.NotFoundError(description, errorCode, simManagerError)
-            is org.ostelco.prime.simmanager.NotUpdatedError -> org.ostelco.prime.apierror.BadRequestError(description, errorCode, simManagerError)
-            is org.ostelco.prime.simmanager.ForbiddenError -> org.ostelco.prime.apierror.ForbiddenError(description, errorCode, simManagerError)
-            is org.ostelco.prime.simmanager.AdapterError -> org.ostelco.prime.apierror.InternalServerError(description, errorCode, simManagerError)
-            is org.ostelco.prime.simmanager.DatabaseError -> org.ostelco.prime.apierror.InternalServerError(description, errorCode, simManagerError)
-            is org.ostelco.prime.simmanager.SystemError -> org.ostelco.prime.apierror.InternalServerError(description, errorCode, simManagerError)
+            is org.ostelco.prime.simmanager.NotFoundError -> NotFoundError(description, errorCode, simManagerError)
+            is org.ostelco.prime.simmanager.NotUpdatedError -> BadRequestError(description, errorCode, simManagerError)
+            is org.ostelco.prime.simmanager.ForbiddenError -> ForbiddenError(description, errorCode, simManagerError)
+            is org.ostelco.prime.simmanager.AdapterError -> InternalServerError(description, errorCode, simManagerError)
+            is org.ostelco.prime.simmanager.DatabaseError -> InternalServerError(description, errorCode, simManagerError)
+            is org.ostelco.prime.simmanager.SystemError -> InternalServerError(description, errorCode, simManagerError)
         }
     }
 }
