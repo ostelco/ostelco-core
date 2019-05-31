@@ -4,7 +4,7 @@ jobs:
   build-test-repo:
     # machine is needed to run Gradle build and to run docker compose tests
     machine:
-      image: circleci/classic:201808-01
+      image: ubuntu-1604:201903-01
     environment:
       JAVA_HOME: /usr/lib/jvm/zulu11.31.11-ca-jdk11.0.3-linux_x64
 
@@ -89,7 +89,7 @@ jobs:
       CODACY_MODULE: com.codacy.CodacyCoverageReporter
 
     docker:
-      - image: circleci/openjdk:11.0.1-jdk-node-browsers
+      - image: circleci/openjdk:11.0.3-jdk-stretch
 
     steps:
       - run:
@@ -115,7 +115,7 @@ jobs:
   ### JOBS FOR  on-PR-merge-to-dev PIPELINE 
   build-code:
     machine:
-      image: circleci/classic:201808-01
+      image: ubuntu-1604:201903-01
     environment:
       JAVA_HOME: /usr/lib/jvm/zulu11.31.11-ca-jdk11.0.3-linux_x64
 

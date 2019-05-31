@@ -12,6 +12,7 @@ import javax.annotation.security.DenyAll
 import javax.annotation.security.PermitAll
 import javax.annotation.security.RolesAllowed
 import javax.security.auth.Subject
+import javax.servlet.ServletRequest
 import javax.servlet.http.HttpServletRequest
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
@@ -299,6 +300,10 @@ data class CertificateRBACUSER(
     }
 
     override fun logout() {
+        TODO("not implemented")
+    }
+
+    override fun logout(request: ServletRequest?): Authentication {
         TODO("not implemented")
     }
 
