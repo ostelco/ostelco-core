@@ -7,25 +7,25 @@ import kotlin.reflect.KClass
 
 object EntityRegistry {
 
-    private val entityTypeMap = mutableMapOf<Class<out HasId>, EntityType<out HasId>>()
+    private val entityTypeMap = mutableMapOf<KClass<out HasId>, EntityType<out HasId>>()
 
-    fun <E : HasId> getEntityType(clazz: Class<E>): EntityType<E> {
-        return (entityTypeMap as MutableMap<Class<E>, EntityType<E>>).getOrPut(clazz) {
-            val entityType = EntityType(clazz)
+    fun <E : HasId> getEntityType(kClass: KClass<E>): EntityType<E> {
+        return (entityTypeMap as MutableMap<KClass<E>, EntityType<E>>).getOrPut(kClass) {
+            val entityType = EntityType(kClass.java)
             EntityStore(entityType)
             entityType
         }
     }
 
-    fun <E : HasId> getEntityStore(clazz: Class<E>): EntityStore<E> =
-            getEntityType(clazz).entityStore ?: throw Exception("Missing EntityStore for Entity Type: ${clazz.name}")
+    fun <E : HasId> getEntityStore(kClass: KClass<E>): EntityStore<E> =
+            getEntityType(kClass).entityStore ?: throw Exception("Missing EntityStore for Entity Type: ${kClass.simpleName}")
 }
 
 val <E : HasId> KClass<E>.entityType: EntityType<E>
-    get() = getEntityType(this.java)
+    get() = getEntityType(this)
 
 val <E : HasId> KClass<E>.entityStore: EntityStore<E>
-    get() = getEntityStore(this.java)
+    get() = getEntityStore(this)
 
 object RelationRegistry {
 

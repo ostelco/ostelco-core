@@ -39,7 +39,7 @@ object JwtUtils {
                 "nationality",
                 "mobileno",
                 "email",
-                "regadd"
+                "mailadd"
               ],
               "auth_time": 1552124419000,
               "realm": "/consent/myinfo-com",

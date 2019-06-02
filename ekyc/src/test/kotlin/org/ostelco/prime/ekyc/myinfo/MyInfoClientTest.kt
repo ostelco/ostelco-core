@@ -52,7 +52,6 @@ private val templateTestConfig = String(File("src/test/resources/stg-demoapp-cli
                     myInfoApiClientSecret = "44d953c796cccebcec9bdc826852857ab412fbe2",
                     myInfoRedirectUri = "http://localhost:3001/callback",
                     myInfoApiRealm = "http://localhost:3001",
-                    myInfoPersonDataAttributes = "name,sex,race,nationality,dob,email,mobileno,regadd,housingtype,hdbtype,marital,edulevel,assessableincome,ownerprivate,assessyear,cpfcontributions,cpfbalances",
                     myInfoServerPublicKey = "",
                     myInfoClientPrivateKey = Base64.getEncoder().encodeToString(clientPrivateKey.encoded))
         }
@@ -94,6 +93,7 @@ class MyInfoClientTest {
         val certificate= certificateFactory.generateCertificate(FileInputStream("src/test/resources/stg-auth-signing-public.pem"))
 
         ConfigRegistry.config = templateTestConfig.copy(
+                myInfoPersonDataAttributes = "name,sex,race,nationality,dob,email,mobileno,regadd,housingtype,hdbtype,marital,edulevel,assessableincome,ownerprivate,assessyear,cpfcontributions,cpfbalances",
                 myInfoServerPublicKey = Base64.getEncoder().encodeToString(certificate.publicKey.encoded))
 
         Registry.myInfoClient = HttpClientBuilder.create().build()
