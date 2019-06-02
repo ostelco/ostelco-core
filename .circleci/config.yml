@@ -213,7 +213,7 @@ jobs:
 
   update-dev-endpoints:
     docker:
-      - image: eu.gcr.io/pi-ostelco-dev/python-gcloud
+      - image: eu.gcr.io/pi-ostelco-prod/python-gcloud
     steps:
       - checkout
       - run:
@@ -346,19 +346,19 @@ workflows:
       - build-image:
           requires:
             - build-code
-      - update-dev-endpoints:
-          requires:
-            - build-image
+#      - update-dev-endpoints:
+#          requires:
+#            - build-image
       - deploy-to-dev:
           requires:
-            - update-dev-endpoints
+            - build-image
       - approve-prod-deploy:
           type: approval
           requires:
-            - deploy-to-dev 
-      - update-prod-endpoints:
-          requires:
-            - approve-prod-deploy
+            - deploy-to-dev
+#      - update-prod-endpoints:
+#          requires:
+#            - approve-prod-deploy
       - deploy-canary:
           requires:
-            - update-prod-endpoints     
+            - approve-prod-deploy
