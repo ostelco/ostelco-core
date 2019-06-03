@@ -304,11 +304,18 @@ func readStuff(nameOfStream string, scanner *bufio.Scanner) {
 	}
 }
 
-func gradlewBuild() {
-	runCmdPipeStderrStdoutViaReadStuff("./gradlew build")
+func gradlewBuild() error {
+	return runCmdPipeStderrStdoutViaReadStuff("./gradlew build")
 }
 
-func runCmdPipeStderrStdoutViaReadStuff(cmdTxt string) {
+func foo() (result string) {
+	defer func() {
+		result = "Change World" // change value at the very last moment
+	}()
+	return "Hello World"
+}
+
+func runCmdPipeStderrStdoutViaReadStuff(cmdTxt string) (result error) {
 
 	// Declare the  cmd
 	cmd := exec.Command("bash", "-c", cmdTxt)
@@ -338,16 +345,19 @@ func runCmdPipeStderrStdoutViaReadStuff(cmdTxt string) {
 	stdoutScanner := bufio.NewScanner(out)
 	stderrScanner := bufio.NewScanner(stdErr)
 
-	// ... then do some magic to make the stdout/stderr interception to  work.
-	defer cmd.Wait()
-
-	//  ... and finally (for reasons I don't understand), after the Wait, we  setu
-	//  up the goroutineø infrastructure to interdept stdout/stderr.  It works,  but
+	//  ... and  set up
+	//  up the goroutine infrastructure to intercept stdout/stderr.  It works,  but
 	//  I don't quit understand why.
 	go readStuff("stdout", stdoutScanner)
 	go readStuff("stderr", stderrScanner)
 
-	// https://stackoverflow.com/questions/27576902/reading-stdout-from-a-subprocess
+	// When exiting the function, run the defered  function that
+	// gets the return value from the  cmd, and return that
+	// as the return value for this function.
+	defer func() {
+		result = cmd.Wait()
+	}()
+	return nil
 }
 
 func main() {
@@ -368,25 +378,9 @@ func main() {
 	assertDockerIsRunning()
 	log.Printf("Docker is running")
 
+	// XXX Shuld check return values, and only continue these commands
+	//     terminate successfully.
 	gradlewBuild()
+	runCmdPipeStderrStdoutViaReadStuff("docker-compose down")
+	runCmdPipeStderrStdoutViaReadStuff("docker-compose up --build --abort-on-container-exit")
 }
-
-// ./gradlew build
-//
-// #
-// # If that didn't go too well, then bail out.
-// #
-//
-// if [[ $? -ne 0 ]] ; then echo
-//    echo "Compilation failed, aborting. Not running acceptance tests."
-//    exit 1
-// fi
-//
-// #
-// # .... but it did go well, so we'll proceed to acceptance test
-// #
-//
-// echo "$0 INFO: Building/unit tests went well, Proceeding to acceptance tests."
-//
-// docker-compose down
-// docker-compose up --build --abort-on-container-exit
