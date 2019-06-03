@@ -22,7 +22,9 @@ public interface DataSource {
     void handleRequest(CreditControlContext context);
 
     /**
-     * Check if a subscriber is on the blockedlist
+     * Check if a subscriber is on the blocked-list.
+     * If a subscriber is blocked then requests for this
+     * subscriber can not be handled locally.
      *
      * @param msisdn Subscriber msisdn to check
      */
