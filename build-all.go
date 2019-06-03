@@ -27,6 +27,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
@@ -283,7 +284,6 @@ func distributeServiceAccountConfigs() {
 	}
 }
 
-
 func assertDockerIsRunning() {
 	cmd := "if [[ ! -z \"$( docker version | grep Version:)\" ]] ; then echo 'Docker not running' ; fi"
 	out, err := exec.Command("bash", "-c", cmd).Output()
@@ -295,22 +295,60 @@ func assertDockerIsRunning() {
 
 }
 
+func readStuff(nameOfStream string, scanner *bufio.Scanner) {
+	for scanner.Scan() {
+		fmt.Printf("%10s:  %s\n", nameOfStream, scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		fmt.Fprintln(os.Stderr, "reading %s : %s", nameOfStream, err)
+	}
+}
 
 func gradlewBuild() {
+	runCmdPipeStderrStdoutViaReadStuff("./gradlew build")
+}
 
-	// We would like to take a close look at the output from the build.  How can we do that?
-	cmd := "./gradlew build"
-	out, err := exec.Command("bash", "-c", cmd).Output()
-	log.Printf("docker -> %s", out)
+func runCmdPipeStderrStdoutViaReadStuff(cmdTxt string) {
+
+	// Declare the  cmd
+	cmd := exec.Command("bash", "-c", cmdTxt)
+
+	// Get the stdout
+	out, err := cmd.StdoutPipe()
 	if err != nil {
-		log.Fatalf("ERROR: Docker not running")
+		log.Fatalf("ERROR: '%s' stdout plumbing failure  %s", cmdTxt, err)
 		os.Exit(1)
 	}
 
+	// ... then the stderr
+	stdErr, err := cmd.StderrPipe()
+	if err != nil {
+		log.Fatalf("ERROR: '%s' stderr plumbing failure  %s", cmdTxt, err)
+		os.Exit(1)
+	}
+
+	// Run the command
+	err = cmd.Start()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to start err=%v", err)
+		os.Exit(1)
+	}
+
+	// ... but  add these scanners to the output from it
+	stdoutScanner := bufio.NewScanner(out)
+	stderrScanner := bufio.NewScanner(stdErr)
+
+	// ... then do some magic to make the stdout/stderr interception to  work.
+	defer cmd.Wait()
+
+	//  ... and finally (for reasons I don't understand), after the Wait, we  setu
+	//  up the goroutineø infrastructure to interdept stdout/stderr.  It works,  but
+	//  I don't quit understand why.
+	go readStuff("stdout", stdoutScanner)
+	go readStuff("stderr", stderrScanner)
+
 	// https://stackoverflow.com/questions/27576902/reading-stdout-from-a-subprocess
 }
-
-
 
 func main() {
 	log.Printf("About to get started\n")
@@ -332,11 +370,6 @@ func main() {
 
 	gradlewBuild()
 }
-
-
-
-
-
 
 // ./gradlew build
 //
