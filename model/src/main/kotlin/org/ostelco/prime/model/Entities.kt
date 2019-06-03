@@ -225,6 +225,7 @@ data class Price(
 data class Product(
         val sku: String,
         val price: Price,
+        val payment: Map<String, String> = emptyMap(),
         val properties: Map<String, String> = emptyMap(),
         val presentation: Map<String, String> = emptyMap()) : HasId {
 
@@ -241,6 +242,7 @@ data class ProductClass(
 data class Plan(
         val name: String,
         val price: Price,
+        val payment: Map<String, String> = emptyMap(),
         val interval: String,
         val intervalCount: Long = 1L,
         val properties: Map<String, String> = emptyMap(),

@@ -1094,22 +1094,14 @@ object Neo4jStoreSingleton : GraphStore {
                     }
                 }
 
-                /* TODO: (kmm) The logic behind using region-code to fetch 'tax-rates' will fail
-                         when customers are linked to multiple regions. Currently it is assumed
-                         that a customer belongs to only one region. */
-                /* Use 'region-code' as the 'tax-region'. */
-                val region = customerStore.getRelated(customer.id, customerRegionRelation, transaction)
-                        .flatMap {
-                            if (!it.isEmpty())
-                                it.first().right()
-                            else
-                                NotFoundError(type = customerRegionRelation.name, id = "No region found for ${customer.id}")
-                                        .left()
-                        }
-                        .mapLeft {
-                            BadGatewayError("No region found for ${customer.id}", error = it)
-                        }
-                        .bind()
+                /* Fetch 'tax' id to be applied. */
+                val taxRegionId = if (product.payment.containsKey("taxRegionId"))
+                    product.payment["taxRegionId"]
+                else if (product.price.amount > 0)
+                    BadGatewayError("Product ${product.sku} has price ${product.price.amount} ${product.price.currency} but no 'taxRegionId' set")
+                            .left().bind()
+                else
+                    null
 
                 /* Product presentation. */
                 val productLabel = if (product.presentation.containsKey("productLabel"))
@@ -1117,7 +1109,7 @@ object Neo4jStoreSingleton : GraphStore {
                 else
                     product.sku
 
-                val invoice = paymentProcessor.createInvoice(customer.id, product.price.amount, product.price.currency, productLabel, region.id, addedSourceId)
+                val invoice = paymentProcessor.createInvoice(customer.id, product.price.amount, product.price.currency, productLabel, taxRegionId, addedSourceId)
                         .mapLeft {
                             logger.error("Failed to create invoice for customer ${customer.id}, source $addedSourceId, sku ${product.sku}")
                             it
@@ -1863,6 +1855,7 @@ object Neo4jStoreSingleton : GraphStore {
                     TODO: Complete support for 'product-class' and merge 'plan' and 'product' objects
                           into one object differentiated by 'product-class'. */
                 val product = Product(sku = plan.id, price = plan.price,
+
                         properties = plan.properties + mapOf(
                                 "productClass" to "PLAN",
                                 "interval" to plan.interval,
@@ -2077,8 +2070,11 @@ object Neo4jStoreSingleton : GraphStore {
                 createPurchaseRecordRelation(customerId, purchaseRecord, transaction)
                         .bind()
 
-                /* Unique relation between 'plan' and 'region' */
-                val region = plansStore.getRelated(plan.id, planRegionRelation, transaction)
+                /* TODO! This will not work as intended when a customer belongs to multiple
+                         regions.
+                         A better way would be to link offers to Plan and when a subscribes
+                         to the plan, "forward" the offers to the subscriber. */
+                val region = customerStore.getRelated(customerId, customerRegionRelation, transaction)
                         .bind()
                         .singleOrNull()
 

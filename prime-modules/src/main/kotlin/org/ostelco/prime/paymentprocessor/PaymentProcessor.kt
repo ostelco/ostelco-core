@@ -73,7 +73,7 @@ interface PaymentProcessor {
      * @param taxRegion An identifier representing the taxes to be applied to a region
      * @return Stripe SubscriptionId if subscribed
      */
-    fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long = 0L, taxRegion: String = ""): Either<PaymentError, SubscriptionDetailsInfo>
+    fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long = 0L, taxRegionId: String?): Either<PaymentError, SubscriptionDetailsInfo>
 
     /**
      * @param Stripe Subscription Id
@@ -183,7 +183,7 @@ interface PaymentProcessor {
      * @param sourceId Optionally use this source for payment
      * @return ID of the invoice
      */
-    fun createInvoice(customerId: String, amount: Int, currency: String, description: String, taxRegion: String, sourceId: String?): Either<PaymentError, InvoiceInfo>
+    fun createInvoice(customerId: String, amount: Int, currency: String, description: String, taxRegionId: String?, sourceId: String?): Either<PaymentError, InvoiceInfo>
 
     /**
      * @param invoiceId ID of the invoice to be paid
@@ -197,11 +197,11 @@ interface PaymentProcessor {
      */
     fun removeInvoice(invoiceId: String): Either<PaymentError, InvoiceInfo>
 
-    fun createTaxRateForTaxRegion(taxRegion: String, percentage: BigDecimal, displayName: String, inclusive: Boolean = true): Either<PaymentError, TaxRateInfo>
+    fun createTaxRateForTaxRegionId(taxRegionId: String, percentage: BigDecimal, displayName: String, inclusive: Boolean = true): Either<PaymentError, TaxRateInfo>
 
     /**
      * @param region Region code
      * @return List with tax rates to apply for region if any found
      */
-    fun getTaxRatesForTaxRegion(taxRegion: String): Either<PaymentError, List<TaxRateInfo>>
+    fun getTaxRatesForTaxRegionId(taxRegionId: String?): Either<PaymentError, List<TaxRateInfo>>
 }

@@ -213,10 +213,10 @@ class StripePaymentProcessor : PaymentProcessor {
     /* The 'expand' part will cause an immediate attempt at charging for the
        subscription when creating it. For interpreting the result see:
        https://stripe.com/docs/billing/subscriptions/payment#signup-3b */
-    override fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long, taxRegion: String): Either<PaymentError, SubscriptionDetailsInfo> =
+    override fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long, taxRegionId: String?): Either<PaymentError, SubscriptionDetailsInfo> =
             either("Failed to subscribe customer $stripeCustomerId to plan $planId") {
                 val item = mapOf("plan" to planId)
-                val taxRates = getTaxRatesForTaxRegion(taxRegion)
+                val taxRates = getTaxRatesForTaxRegionId(taxRegionId)
                         .fold(
                                 { emptyList<TaxRateInfo>() },
                                 { it }
@@ -393,10 +393,10 @@ class StripePaymentProcessor : PaymentProcessor {
                     InvoiceInfo(it.id).right()
                 }
 
-    override fun createInvoice(customerId: String, amount: Int, currency: String, description: String, taxRegion: String, sourceId: String?): Either<PaymentError, InvoiceInfo> =
+    override fun createInvoice(customerId: String, amount: Int, currency: String, description: String, taxRegionId: String?, sourceId: String?): Either<PaymentError, InvoiceInfo> =
             createInvoiceItem(customerId, amount, currency, description)
                     .flatMap {
-                        getTaxRatesForTaxRegion(taxRegion)
+                        getTaxRatesForTaxRegionId(taxRegionId)
                     }
                     .flatMap {
                         createAndGetInvoiceDetails(customerId, it, sourceId)
@@ -503,8 +503,8 @@ class StripePaymentProcessor : PaymentProcessor {
 
     /* NOTE! This method creates a 'tax rate' with Stipe, unless there already
              exists a 'tax-rate' with the same information. */
-    override fun createTaxRateForTaxRegion(taxRegion: String, percentage: BigDecimal, displayName: String, inclusive: Boolean): Either<PaymentError, TaxRateInfo> =
-            getTaxRatesForTaxRegion(taxRegion)
+    override fun createTaxRateForTaxRegionId(taxRegionId: String, percentage: BigDecimal, displayName: String, inclusive: Boolean): Either<PaymentError, TaxRateInfo> =
+            getTaxRatesForTaxRegionId(taxRegionId)
                     .flatMap { taxRates ->
                         val match = taxRates.find {
                             it.percentage == percentage && it.displayName == displayName && it.inclusive == inclusive
@@ -515,30 +515,36 @@ class StripePaymentProcessor : PaymentProcessor {
                                     "percentage" to percentage,
                                     "display_name" to displayName,
                                     "inclusive" to inclusive,
-                                    "metadata" to mapOf(TAX_REGION to taxRegion))
+                                    "metadata" to mapOf(TAX_REGION to taxRegionId))
                             TaxRateInfo(TaxRate.create(param).id, percentage, displayName, inclusive)
                         } else {
                             match
                         }.right()
                     }
 
-    override fun getTaxRatesForTaxRegion(taxRegion: String): Either<PaymentError, List<TaxRateInfo>> =
-            getTaxRates()
-                    .flatMap {
-                        val lst = it.filter { x -> !x.metadata[TAX_REGION].isNullOrEmpty() &&
-                                x.metadata[TAX_REGION].equals(taxRegion, true) }
-                        if (lst.isEmpty())
-                            emptyList<TaxRateInfo>()
-                                    .right()
-                        else {
-                            lst.map {
-                                TaxRateInfo(id = it.id,
-                                        percentage = it.percentage,
-                                        displayName = it.displayName,   /* VAT, GST, etc. */
-                                        inclusive = it.inclusive)
-                            }.right()
+    override fun getTaxRatesForTaxRegionId(taxRegionId: String?): Either<PaymentError, List<TaxRateInfo>> =
+            if (taxRegionId != null)
+                getTaxRates()
+                        .flatMap {
+                            val lst = it.filter { x ->
+                                !x.metadata[TAX_REGION].isNullOrEmpty() &&
+                                        x.metadata[TAX_REGION].equals(taxRegionId, true)
+                            }
+                            if (lst.isEmpty())
+                                emptyList<TaxRateInfo>()
+                                        .right()
+                            else {
+                                lst.map {
+                                    TaxRateInfo(id = it.id,
+                                            percentage = it.percentage,
+                                            displayName = it.displayName,   /* VAT, GST, etc. */
+                                            inclusive = it.inclusive)
+                                }.right()
+                            }
                         }
-                    }
+            else
+                emptyList<TaxRateInfo>()
+                        .right()
 
     private fun getTaxRates(): Either<PaymentError, List<TaxRate>> =
             either("Failed to fetch list with tax-rates from Stripe") {
