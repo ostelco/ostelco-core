@@ -284,12 +284,13 @@ func distributeServiceAccountConfigs() {
 	}
 }
 
+// XXX This is bogus
 func assertDockerIsRunning() {
 	cmd := "if [[ ! -z \"$( docker version | grep Version:)\" ]] ; then echo 'Docker not running' ; fi"
 	out, err := exec.Command("bash", "-c", cmd).Output()
 	log.Printf("docker -> %s", out)
 	if err != nil {
-		log.Fatalf("ERROR: Docker not running")
+		log.Fatalf("ERROR: Docker not running: %s", err)
 		os.Exit(1)
 	}
 
