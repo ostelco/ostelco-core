@@ -60,6 +60,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                                         { consumptionResult ->
                                             if (requested > 0) {
                                                 addGrantedQuota(consumptionResult.granted, mscc, responseBuilder)
+                                                addInfo(consumptionResult.balance, mscc, responseBuilder)
                                             }
                                             reportAnalytics(consumptionResult, request)
                                             doneSignal.countDown()
@@ -69,6 +70,8 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                         } else { // zeroRate
                             if (requested > 0) {
                                 addGrantedQuota(requested, mscc, responseBuilder)
+                                // adding by 100 just to set it high
+                                addInfo(mscc.requested.totalOctets * 100, mscc, responseBuilder)
                             }
                             doneSignal.countDown()
                         }
@@ -105,6 +108,17 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                 balance = consumptionResult.balance)
         }*/
         }
+    }
+
+    private fun addInfo(balance: Long, mscc: MultipleServiceCreditControl, response: CreditControlAnswerInfo.Builder) {
+        response.extraInfoBuilder.addMsccInfo(
+                MultipleServiceCreditControlInfo
+                        .newBuilder()
+                        .setBalance(balance)
+                        .setRatingGroup(mscc.ratingGroup)
+                        .setServiceIdentifier(mscc.serviceIdentifier)
+                        .build()
+        )
     }
 
     private fun addGrantedQuota(granted: Long, mscc: MultipleServiceCreditControl, response: CreditControlAnswerInfo.Builder) {
