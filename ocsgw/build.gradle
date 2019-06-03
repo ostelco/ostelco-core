@@ -25,6 +25,8 @@ dependencies {
     implementation 'ch.qos.logback.contrib:logback-json-classic:0.1.5'
     implementation 'ch.qos.logback.contrib:logback-jackson:0.1.5'
 
+    compile 'com.google.cloud:google-cloud-logging-logback:0.92.0-alpha'
+
     testImplementation project(':diameter-test')
     testImplementation "org.junit.jupiter:junit-jupiter-api:$junit5Version"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junit5Version"
