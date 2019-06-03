@@ -1409,7 +1409,7 @@ class SingaporeKycTest {
             assertEquals(
                     "http://ext-myinfo-emulator:8080/authorise" +
                             "?client_id=STG2-MYINFO-SELF-TEST" +
-                            "&attributes=name,sex,dob,residentialstatus,nationality,mobileno,email,regadd" +
+                            "&attributes=name,sex,dob,residentialstatus,nationality,mobileno,email,mailadd" +
                             "&redirect_uri=http://localhost:3001/callback",
                     myInfoConfig.url)
 
@@ -1441,7 +1441,7 @@ class SingaporeKycTest {
                 this.email = email
             }
 
-            val expectedPersonData = """{"name":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"TANXIAOHUI"},"sex":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"F"},"nationality":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"SG"},"dob":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"1970-05-17"},"email":{"lastupdated":"2018-08-23","source":"4","classification":"C","value":"myinfotesting@gmail.com"},"mobileno":{"lastupdated":"2018-08-23","code":"65","source":"4","classification":"C","prefix":"+","nbr":"97399245"},"regadd":{"country":"SG","unit":"128","street":"BEDOKNORTHAVENUE4","lastupdated":"2018-03-20","block":"102","postal":"460102","source":"1","classification":"C","floor":"09","building":"PEARLGARDEN"},"uinfin":"S9812381D"}"""
+            val expectedPersonData = """{"name":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"TANXIAOHUI"},"sex":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"F"},"nationality":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"SG"},"dob":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"1970-05-17"},"email":{"lastupdated":"2018-08-23","source":"4","classification":"C","value":"myinfotesting@gmail.com"},"mobileno":{"lastupdated":"2018-08-23","code":"65","source":"4","classification":"C","prefix":"+","nbr":"97399245"},"mailadd":{"country":"SG","unit":"128","street":"BEDOKNORTHAVENUE4","lastupdated":"2018-03-20","block":"102","postal":"460102","source":"1","classification":"C","floor":"09","building":"PEARLGARDEN"},"uinfin":"S9812381D"}"""
             assertEquals(expectedPersonData, personData, "MyInfo PersonData do not match")
 
             run {

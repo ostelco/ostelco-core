@@ -124,20 +124,22 @@ class ProtobufDataSource {
      * A user will be blocked if one of the MSCC in the request could not be filled in the answer
      */
     private fun updateBlockedList(answer: CreditControlAnswerInfo, request: CreditControlRequest) {
-        for (msccAnswer in answer.msccList) {
+
+        for (mssAnswerInfo in answer.extraInfo.msccInfoList) {
             for (msccRequest in request.multipleServiceCreditControls) {
-                if (msccAnswer.serviceIdentifier == msccRequest.serviceIdentifier && msccAnswer.ratingGroup == msccRequest.ratingGroup) {
-                    if (updateBlockedList(msccAnswer, msccRequest, answer.msisdn)) {
+                if (mssAnswerInfo.serviceIdentifier == msccRequest.serviceIdentifier && mssAnswerInfo.ratingGroup == msccRequest.ratingGroup) {
+                    if (updateBlockedList(mssAnswerInfo, msccRequest, answer.msisdn)) {
                         return
                     }
                 }
             }
+
         }
     }
 
-    private fun updateBlockedList(msccAnswer: org.ostelco.ocs.api.MultipleServiceCreditControl, msccRequest: MultipleServiceCreditControl, msisdn: String): Boolean {
+    private fun updateBlockedList(msccAnswer: org.ostelco.ocs.api.MultipleServiceCreditControlInfo, msccRequest: MultipleServiceCreditControl, msisdn: String): Boolean {
         if (!msccRequest.requested.isEmpty()) {
-            if (msccAnswer.granted.totalOctets < msccRequest.requested[0].total) {
+            if (msccAnswer.balance < msccRequest.requested[0].total * 3) {
                 blocked.add(msisdn)
                 return true
             } else {
