@@ -19,6 +19,7 @@ import org.ostelco.prime.storage.graph.Relation
 import org.ostelco.prime.storage.graph.RelationRegistry
 import org.ostelco.prime.storage.graph.RelationStore
 import org.ostelco.prime.storage.graph.UniqueRelationStore
+import kotlin.reflect.KClass
 
 object DSL {
 
@@ -65,14 +66,30 @@ suspend fun <R> suspendedWriteTransaction(action: suspend WriteTransaction.() ->
                     result
                 }
 
-data class ReadTransaction(val transaction: PrimeTransaction)
+data class ReadTransaction(val transaction: PrimeTransaction) {
+    fun <E : HasId> get(entityClass: KClass<E>, id: String): Either<StoreError, E> {
+        val entityStore: EntityStore<E> = EntityRegistry.getEntityStore(entityClass)
+        return entityStore.get(id = id, transaction = transaction)
+    }
+}
 
 data class WriteTransaction(val transaction: PrimeTransaction) {
 
     fun <E : HasId> create(obj: () -> E): Either<StoreError, Unit> {
         val entity: E = obj()
-        val entityStore: EntityStore<E> = EntityRegistry.getEntityStore(entity::class.java) as EntityStore<E>
+        val entityStore: EntityStore<E> = EntityRegistry.getEntityStore(entity::class) as EntityStore<E>
         return entityStore.create(entity = entity, transaction = transaction)
+    }
+
+    fun <E : HasId> update(obj: () -> E): Either<StoreError, Unit> {
+        val entity: E = obj()
+        val entityStore: EntityStore<E> = EntityRegistry.getEntityStore(entity::class) as EntityStore<E>
+        return entityStore.update(entity = entity, transaction = transaction)
+    }
+
+    fun <E : HasId> get(entityClass: KClass<E>, id: String): Either<StoreError, E> {
+        val entityStore: EntityStore<E> = EntityRegistry.getEntityStore(entityClass)
+        return entityStore.get(id = id, transaction = transaction)
     }
 }
 
@@ -81,11 +98,25 @@ class JobContext(private val transaction: PrimeTransaction) {
     var result: Either<StoreError, Unit> = Unit.right()
 
     fun <E : HasId> create(obj: () -> E) {
-
         result = result.flatMap {
             val entity: E = obj()
-            val entityStore: EntityStore<E> = EntityRegistry.getEntityStore(entity::class.java) as EntityStore<E>
+            val entityStore: EntityStore<E> = EntityRegistry.getEntityStore(entity::class) as EntityStore<E>
             entityStore.create(entity = entity, transaction = transaction)
+        }
+    }
+
+    fun <E : HasId> update(obj: () -> E) {
+        result = result.flatMap {
+            val entity: E = obj()
+            val entityStore: EntityStore<E> = EntityRegistry.getEntityStore(entity::class) as EntityStore<E>
+            entityStore.update(entity = entity, transaction = transaction)
+        }
+    }
+
+    fun <E : HasId> get(entityClass: KClass<E>, id: String): Either<StoreError, E> {
+        return result.flatMap {
+            val entityStore: EntityStore<E> = EntityRegistry.getEntityStore(entityClass)
+            entityStore.get(id = id, transaction = transaction)
         }
     }
 

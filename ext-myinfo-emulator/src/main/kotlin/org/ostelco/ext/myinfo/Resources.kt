@@ -70,7 +70,7 @@ class TokenResource(private val config: MyInfoEmulatorConfig) {
                 Response.status(Response.Status.OK).entity("""
                     {
                         "access_token":"${createAccessToken(config.myInfoServerPrivateKey)}",
-                        "scope":"mobileno nationality dob name regadd email sex residentialstatus",
+                        "scope":"mobileno nationality dob name mailadd email sex residentialstatus",
                         "token_type":"Bearer",
                         "expires_in":1799
                     }""".trimIndent())
@@ -166,7 +166,7 @@ class PersonResource(private val config: MyInfoEmulatorConfig) {
     "prefix": "+",
     "nbr": "97399245"
   },
-  "regadd": {
+  "mailadd": {
     "country": "SG",
     "unit": "128",
     "street": "BEDOK NORTH AVENUE 4",

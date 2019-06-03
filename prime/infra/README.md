@@ -178,7 +178,9 @@ kubectl create secret generic prime-service-account.json --from-file prime/confi
 Note: To update the secrets defined using yaml, delete and created them again. They are not updated.
  
 ```bash
-kubectl create secret generic stripe-secrets --from-literal=stripeApiKey='keep-stripe-api-key-here'
+kubectl create secret generic stripe-secrets \
+  --from-literal=stripeApiKey='keep-stripe-api-key-here' \
+  --from-literal=stripeEndpointSecret='keep-stripe-endpoint-secret-here'
 ```
 
 ```bash

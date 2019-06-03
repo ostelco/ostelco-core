@@ -12,6 +12,8 @@ dependencies {
 
   implementation project(":prime")
   implementation project(":neo4j-store")
+  
+  implementation "com.google.cloud.sql:postgres-socket-factory:1.0.13"
 }
 
 shadowJar {

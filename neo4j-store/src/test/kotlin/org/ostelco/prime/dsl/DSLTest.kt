@@ -44,7 +44,7 @@ class DSLTest {
 
         Neo4jClient.driver.session(WRITE).use { session ->
             session.writeTransaction {
-                getEntityStore(Region::class.java)
+                getEntityStore(Region::class)
                         .get(id = "no", transaction = it)
                         .bimap(
                                 { fail("Unable to read region") },
