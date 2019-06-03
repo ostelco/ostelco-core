@@ -286,14 +286,17 @@ func distributeServiceAccountConfigs() {
 
 // XXX This is bogus
 func assertDockerIsRunning() {
-	cmd := "if [[ ! -z \"$( docker version | grep Version:)\" ]] ; then echo 'Docker not running' ; fi"
+	cmd := "if [[  -z \"$( docker version | grep Version:) \" ]] ; then echo 'Docker not running' ; fi"
 	out, err := exec.Command("bash", "-c", cmd).Output()
 	log.Printf("docker -> %s", out)
+	if ( "Docker not running" == cmd) {
+		log.Fatalf("ERROR: Docker not running")
+		os.Exit(1)
+	}
 	if err != nil {
 		log.Fatalf("ERROR: Docker not running: %s", err)
 		os.Exit(1)
 	}
-
 }
 
 func readStuff(nameOfStream string, scanner *bufio.Scanner) {
