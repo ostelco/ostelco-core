@@ -448,7 +448,7 @@ class StripePaymentProcessor : PaymentProcessor {
     override fun payInvoice(invoiceId: String): Either<PaymentError, InvoicePaymentInfo> =
             either("Failed to complete payment of invoice ${invoiceId}") {
                 val receipt = Invoice.retrieve(invoiceId).pay()
-                InvoicePaymentInfo(receipt.id, receipt.charge)
+                InvoicePaymentInfo(receipt.id, receipt?.charge ?: UUID.randomUUID().toString())
             }
 
     override fun removeInvoice(invoiceId: String): Either<PaymentError, InvoiceInfo> =
