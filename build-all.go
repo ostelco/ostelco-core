@@ -143,16 +143,6 @@ func generateEspEndpointCertificates() {
 	}
 }
 
-// XXX This does not work.
-func copyFilez(src string, dest string) {
-	// cp := fmt.Sprintf("cp %s %s", src, dest)
-	// out, err := exec.Command("bash", "-c", cp).Output()
-	out, err := exec.Command("cp", src, dest).Output()
-
-	if err != nil {
-		log.Fatalf("Could not copy from '%s' to '%s': (%s, %s)", src, dest, out, err)
-	}
-}
 
 // Copy the src file to dst. Any existing file will be overwritten and will not
 // copy file attributes.
