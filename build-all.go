@@ -22,6 +22,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"github.com/ostelco-core/goscript"
 )
 
 func checkForDependencies() {
@@ -224,7 +225,7 @@ func distributeServiceAccountConfigs() {
 
 	rootMd5, err := hash_file_md5(serviceAccountJsonFilename)
 	if err != nil {
-		log.Fatalf("Could not calculate md5 from file ", serviceAccountJsonFilename)
+		log.Fatalf("Could not calculate md5 from file '%s'", serviceAccountJsonFilename)
 	}
 
 	if serviceAccountMD5 != rootMd5 {
@@ -240,7 +241,7 @@ func distributeServiceAccountConfigs() {
 
 			localMd5, err := hash_file_md5(serviceAccountJsonFilename)
 			if err != nil {
-				log.Fatalf("ERROR: Could not calculate md5 from file ", serviceAccountJsonFilename)
+				log.Fatalf("ERROR: Could not calculate md5 from file '%s'", serviceAccountJsonFilename)
 			}
 
 			if localMd5 != rootMd5 {
@@ -274,9 +275,9 @@ func relayScanToStdout(nameOfStream string, scanner *bufio.Scanner) {
 		fmt.Printf("%10s:  %s\n", nameOfStream, scanner.Text())
 	}
 	// XXX Don't know if we should do this. Probably shouldn't
-	if err := scanner.Err(); err != nil {
-		fmt.Fprintln(os.Stderr, "reading %s : %s", nameOfStream, err)
-	}
+	// if err := scanner.Err(); err != nil {
+	//	fmt.Fprintln(os.Stderr, "reading %s : %s", nameOfStream, err)
+	//}
 }
 
 func assertSuccesfulRun(cmdTxt string) {
@@ -330,6 +331,8 @@ func runCmdWithPiping(cmdTxt string) (result error) {
 
 func main() {
 	log.Printf("About to get started\n")
+
+	goscript.CommonFunctionality()
 
 	//
 	// Check all preconditions for building

@@ -1,0 +1,6 @@
+package goscript
+
+func CommonFunctionality() {
+
+
+}
