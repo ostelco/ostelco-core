@@ -1317,20 +1317,17 @@ object Neo4jStoreSingleton : GraphStore {
     private fun assignCustomerToRegionSegment(
             customerId: String,
             segmentName: String,
-            transaction: Transaction): Either<StoreError, Unit> {
-
-        return customerToSegmentStore.create(
-                fromId = customerId,
-                toId = segmentName,
-                transaction = transaction).mapLeft { storeError ->
-
-            if (storeError is NotCreatedError && storeError.type == customerToSegmentRelation.name) {
-                ValidationError(type = customerEntity.name, id = customerId, message = "Unsupported segment: $segmentName")
-            } else {
-                storeError
+            transaction: Transaction): Either<StoreError, Unit> =
+            customerToSegmentStore.create(
+                    fromId = customerId,
+                    toId = segmentName,
+                    transaction = transaction).mapLeft { storeError ->
+                if (storeError is NotCreatedError && storeError.type == customerToSegmentRelation.name) {
+                    ValidationError(type = customerEntity.name, id = customerId, message = "Unsupported segment: $segmentName")
+                } else {
+                    storeError
+                }
             }
-        }
-    }
 
     //
     // eKYC - Jumio
@@ -2067,24 +2064,12 @@ object Neo4jStoreSingleton : GraphStore {
                 createPurchaseRecordRelation(customerId, purchaseRecord, transaction)
                         .bind()
 
-                /* TODO! This will not work as intended when a customer belongs to multiple
-                         regions.
-                         A better way would be to link offers to Plan and when a subscribes
-                         to the plan, "forward" the offers to the subscriber. */
-                val region = customerStore.getRelated(customerId, customerRegionRelation, transaction)
-                        .bind()
-                        .singleOrNull()
-
-                if (region == null) {
-                    logger.error("Found no 'region' associated with plan {} for customer {}",
-                            plan.id, customerId)
-                    NotFoundError("No region found found for plan", plan.id)
-                            .left()
-                } else {
-                    assignCustomerToRegionSegment(
-                            customerId = customerId,
-                            segmentName = getSegmentNameFromCountryCode(region.id),
-                            transaction = transaction).bind()
+                /* Offer products to the newly signed up subscriber. */
+                plan.segments.forEach { segmentName ->
+                    assignCustomerToRegionSegment(customerId = customerId,
+                            segmentName = segmentName,
+                            transaction = transaction)
+                            .bind()
                 }
                 logger.info("Customer ${customerId} completed payment of invoice ${invoiceId} for subscription to plan ${plan.id}")
 

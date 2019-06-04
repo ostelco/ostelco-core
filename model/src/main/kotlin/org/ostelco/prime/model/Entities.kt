@@ -245,6 +245,7 @@ data class Plan(
         val payment: Map<String, String> = emptyMap(),
         val interval: String,
         val intervalCount: Long = 1L,
+        val segments: Collection<String> = emptyList(),
         val properties: Map<String, String> = emptyMap(),
         val presentation: Map<String, String> = emptyMap()) : HasId {
 
