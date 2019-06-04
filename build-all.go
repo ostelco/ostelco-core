@@ -10,7 +10,6 @@
 //                 very prestigious.  On the other hand, the script does contain
 //                 sufficient complexity to be a worthy target
 
-
 package main
 
 import (
@@ -41,8 +40,6 @@ func checkForDependency(dependency string) {
 		log.Fatalf("Could not locate dependency '%s'", dependency)
 	}
 }
-
-
 
 func checkThatEnvironmentVariableIsSet(key string) {
 	if len(os.Getenv(key)) == 0 {
@@ -142,7 +139,6 @@ func generateEspEndpointCertificates() {
 		copyFile(originalCertPath, activeCertPath)
 	}
 }
-
 
 // Copy the src file to dst. Any existing file will be overwritten and will not
 // copy file attributes.
@@ -254,19 +250,18 @@ func distributeServiceAccountConfigs() {
 	}
 }
 
-
 func checkIfDockerIsRunning() bool {
 	cmd := "if [[  -z \"$( docker version | grep Version:) \" ]] ; then echo 'Docker not running' ; fi"
 	out, err := exec.Command("bash", "-c", cmd).Output()
 	log.Printf("docker -> %s", out)
-	if ( "Docker not running" == cmd) {
+	if "Docker not running" == cmd {
 		return false
 	}
 	return err != nil
 }
 
 func assertDockerIsRunning() {
-	if (!checkIfDockerIsRunning()) {
+	if !checkIfDockerIsRunning() {
 		log.Fatal("Docker is not running")
 	}
 }
@@ -284,12 +279,10 @@ func relayScanToStdout(nameOfStream string, scanner *bufio.Scanner) {
 	}
 }
 
-
 func assertSuccesfulRun(cmdTxt string) {
 	err := runCmdWithPiping(cmdTxt)
-	if (err != nil) {
-			log.Fatalf("Could not successfully run command '%s': %s", cmdTxt, err)
-		}
+	if err != nil {
+		log.Fatalf("Could not successfully run command '%s': %s", cmdTxt, err)
 	}
 }
 
