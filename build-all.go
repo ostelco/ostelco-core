@@ -3,26 +3,13 @@
 // EXPERIMENTAL:   This may or may not end up as production code.
 // INTENT:         Replace the current build-all.sh script with a go program
 //   	           that can be run from the command line as if it were a script
-//		   The intent is straignt forward replacement, but with type
+//		           The intent is straignt forward replacement, but with type
 //                 safety and perhaps a bit of additional reliability.
 //                 The build-all.sh script isn't used by a lot of people, so
 //                 it's some distance "off broadway", and that may help the test
 //                 very prestigious.  On the other hand, the script does contain
 //                 sufficient complexity to be a worthy target
 
-// Take a look here for inspiration:
-//
-//  func getCPUmodel() string {
-//          cmd := "cat /proc/cpuinfo | egrep '^model name' | uniq | awk '{print substr($0, index($0,$4))}'"
-//          out, err := exec.Command("bash","-c",cmd).Output()
-//          if err != nil {
-//                  return fmt.Sprintf("Failed to execute command: %s", cmd)
-//          }
-//          return string(out)
-//  }
-//
-//  (from https://stackoverflow.com/questions/10781516/how-to-pipe-several-commands-in-go)
-//
 
 package main
 
@@ -52,14 +39,14 @@ func checkForDependency(dependency string) {
 	_, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
 		log.Fatalf("ERROR: Could not locate dependency '%s'", dependency)
-		os.Exit(1)
 	}
 }
+
+
 
 func checkThatEnvironmentVariableIsSet(key string) {
 	if len(os.Getenv(key)) == 0 {
 		log.Fatalf("ERROR: Environment variable not set'%s'", key)
-		os.Exit(1)
 	}
 }
 
@@ -164,7 +151,6 @@ func copyFilez(src string, dest string) {
 
 	if err != nil {
 		log.Fatalf("ERROR: Could not copy from '%s' to '%s': (%s, %s)", src, dest, out, err)
-		os.Exit(1)
 	}
 }
 
@@ -195,14 +181,12 @@ func generateNewCertificate(certificateFilename string, certificateDomain string
 	out, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
 		log.Fatalf("ERROR: Could not generate self signed certificate for domain '%s'.\n      Reason: %s", certificateDomain, err)
-		os.Exit(1)
 	}
 
 	log.Printf("out = %s", out)
 
 	if !fileExists(certificateFilename) {
 		log.Fatalf("ERROR: Did not generate self signed for domain '%s'", certificateDomain)
-		os.Exit(1)
 	}
 }
 
@@ -250,18 +234,15 @@ func distributeServiceAccountConfigs() {
 
 	if !fileExists(serviceAccountJsonFilename) {
 		log.Fatalf("ERROR: : Could not find master service-account file'%s'", serviceAccountJsonFilename)
-		os.Exit(1)
 	}
 
 	rootMd5, err := hash_file_md5(serviceAccountJsonFilename)
 	if err != nil {
 		log.Fatalf("ERROR: Could not calculate md5 from file ", serviceAccountJsonFilename)
-		os.Exit(1)
 	}
 
 	if serviceAccountMD5 != rootMd5 {
 		log.Fatalf("MD5 of root service acccount file '%s' is not '%s', so bailing out", serviceAccountJsonFilename, serviceAccountMD5)
-		os.Exit(1)
 	}
 
 	for _, dir := range dirsThatNeedsServiceAccountConfigs {
@@ -274,7 +255,6 @@ func distributeServiceAccountConfigs() {
 			localMd5, err := hash_file_md5(serviceAccountJsonFilename)
 			if err != nil {
 				log.Fatalf("ERROR: Could not calculate md5 from file ", serviceAccountJsonFilename)
-				os.Exit(1)
 			}
 
 			if localMd5 != rootMd5 {
@@ -284,42 +264,46 @@ func distributeServiceAccountConfigs() {
 	}
 }
 
-// XXX This is bogus
-func assertDockerIsRunning() {
+
+func checkIfDockerIsRunning() bool {
 	cmd := "if [[  -z \"$( docker version | grep Version:) \" ]] ; then echo 'Docker not running' ; fi"
 	out, err := exec.Command("bash", "-c", cmd).Output()
 	log.Printf("docker -> %s", out)
 	if ( "Docker not running" == cmd) {
-		log.Fatalf("ERROR: Docker not running")
-		os.Exit(1)
+		return false
 	}
-	if err != nil {
-		log.Fatalf("ERROR: Docker not running: %s", err)
-		os.Exit(1)
+	return err != nil
+}
+
+func assertDockerIsRunning() {
+	if (!checkIfDockerIsRunning()) {
+		log.Fatal("Docker is not running")
 	}
 }
 
-func readStuff(nameOfStream string, scanner *bufio.Scanner) {
+//  Read something via a scanner, then send it to stdout.
+//  to every line read, prepend the name of the stream
+//  that has been read.
+func relayScanToStdout(nameOfStream string, scanner *bufio.Scanner) {
 	for scanner.Scan() {
 		fmt.Printf("%10s:  %s\n", nameOfStream, scanner.Text())
 	}
+	// XXX Don't know if we should do this. Probably shouldn't
 	if err := scanner.Err(); err != nil {
 		fmt.Fprintln(os.Stderr, "reading %s : %s", nameOfStream, err)
 	}
 }
 
-func gradlewBuild() error {
-	return runCmdPipeStderrStdoutViaReadStuff("./gradlew build")
+
+func assertSuccesfulRun(cmdTxt string) {
+	err := runCmdWithPiping(cmdTxt)
+	if (err != nil) {
+			log.Fatalf("ERROR: Could not successfully run command '%s': %s", cmdTxt, err)
+		}
+	}
 }
 
-func foo() (result string) {
-	defer func() {
-		result = "Change World" // change value at the very last moment
-	}()
-	return "Hello World"
-}
-
-func runCmdPipeStderrStdoutViaReadStuff(cmdTxt string) (result error) {
+func runCmdWithPiping(cmdTxt string) (result error) {
 
 	// Declare the  cmd
 	cmd := exec.Command("bash", "-c", cmdTxt)
@@ -327,22 +311,19 @@ func runCmdPipeStderrStdoutViaReadStuff(cmdTxt string) (result error) {
 	// Get the stdout
 	out, err := cmd.StdoutPipe()
 	if err != nil {
-		log.Fatalf("ERROR: '%s' stdout plumbing failure  %s", cmdTxt, err)
-		os.Exit(1)
+		return err
 	}
 
 	// ... then the stderr
 	stdErr, err := cmd.StderrPipe()
 	if err != nil {
-		log.Fatalf("ERROR: '%s' stderr plumbing failure  %s", cmdTxt, err)
-		os.Exit(1)
+		return err
 	}
 
 	// Run the command
 	err = cmd.Start()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to start err=%v", err)
-		os.Exit(1)
+		return err
 	}
 
 	// ... but  add these scanners to the output from it
@@ -352,8 +333,8 @@ func runCmdPipeStderrStdoutViaReadStuff(cmdTxt string) (result error) {
 	//  ... and  set up
 	//  up the goroutine infrastructure to intercept stdout/stderr.  It works,  but
 	//  I don't quit understand why.
-	go readStuff("stdout", stdoutScanner)
-	go readStuff("stderr", stderrScanner)
+	go relayScanToStdout("stdout", stdoutScanner)
+	go relayScanToStdout("stderr", stderrScanner)
 
 	// When exiting the function, run the defered  function that
 	// gets the return value from the  cmd, and return that
@@ -366,6 +347,11 @@ func runCmdPipeStderrStdoutViaReadStuff(cmdTxt string) (result error) {
 
 func main() {
 	log.Printf("About to get started\n")
+
+	//
+	// Check all preconditions for building
+	//
+
 	checkForDependencies()
 	checkThatEnvironmentVariableIsSet("STRIPE_API_KEY")
 	generateEspEndpointCertificates()
@@ -378,13 +364,14 @@ func main() {
 		log.Printf("Setting value of STRIPE_ENDPOINT_SECRET to 'thisIsARandomString'")
 		os.Setenv("STRIPE_ENDPOINT_SECRET", "thisIsARandomString")
 	}
-
 	assertDockerIsRunning()
-	log.Printf("Docker is running")
 
-	// XXX Shuld check return values, and only continue these commands
-	//     terminate successfully.
-	gradlewBuild()
-	runCmdPipeStderrStdoutViaReadStuff("docker-compose down")
-	runCmdPipeStderrStdoutViaReadStuff("docker-compose up --build --abort-on-container-exit")
+	//
+	// All preconditions are now satisfied, now run the actual build commands
+	// and terminate the build process if any of them fails.
+	//
+
+	assertSuccesfulRun("./gradlew build")
+	assertSuccesfulRun("docker-compose down")
+	assertSuccesfulRun("docker-compose up --build --abort-on-container-exit")
 }
