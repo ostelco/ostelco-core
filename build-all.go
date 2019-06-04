@@ -18,11 +18,11 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"github.com/ostelco-core/goscript"
 	"io"
 	"log"
 	"os"
 	"os/exec"
-	"github.com/ostelco-core/goscript"
 )
 
 func checkForDependencies() {
@@ -254,11 +254,7 @@ func distributeServiceAccountConfigs() {
 func checkIfDockerIsRunning() bool {
 	cmd := "if [[  -z \"$( docker version | grep Version:) \" ]] ; then echo 'Docker not running' ; fi"
 	out, err := exec.Command("bash", "-c", cmd).Output()
-	log.Printf("docker -> %s", out)
-	if "Docker not running" == cmd {
-		return false
-	}
-	return err != nil
+	return "Docker not running" != string(out) && err == nil
 }
 
 func assertDockerIsRunning() {
