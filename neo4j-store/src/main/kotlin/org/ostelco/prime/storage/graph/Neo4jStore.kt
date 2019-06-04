@@ -1097,9 +1097,6 @@ object Neo4jStoreSingleton : GraphStore {
                 /* Fetch 'tax' id to be applied. */
                 val taxRegionId = if (product.payment.containsKey("taxRegionId"))
                     product.payment["taxRegionId"]
-                else if (product.price.amount > 0)
-                    BadGatewayError("Product ${product.sku} has price ${product.price.amount} ${product.price.currency} but no 'taxRegionId' set")
-                            .left().bind()
                 else
                     null
 
