@@ -342,7 +342,9 @@ func main() {
 
 	distributeServiceAccountConfigs()
 
-	// If not set, then just set a random value
+	// If the stripe endpoint secret is not set, then
+	// then just set a random value.  It's not important right now,
+	// but it may cause build failure, so we set it to something.
 	if len(os.Getenv("STRIPE_ENDPOINT_SECRET")) == 0 {
 		log.Printf("Setting value of STRIPE_ENDPOINT_SECRET to 'thisIsARandomString'")
 		os.Setenv("STRIPE_ENDPOINT_SECRET", "thisIsARandomString")
