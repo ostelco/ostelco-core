@@ -189,7 +189,7 @@ class Neo4jStoreTest {
                 amount = 24900,
                 currency = "NOK",
                 description = sku,
-                taxRegion = "no",
+                taxRegionId = "no",
                 sourceId = null)
         ).thenReturn(InvoiceInfo(invoiceId).right())
 
@@ -200,7 +200,7 @@ class Neo4jStoreTest {
         // prep
         job {
             create { Region(REGION_CODE, "Norway") }
-            create { createProduct(sku = sku, amount = 24900) }
+            create { createProduct(sku = sku, amount = 24900, taxRegionId = "no") }
         }.mapLeft { fail(it.message) }
 
         val offer = Offer(

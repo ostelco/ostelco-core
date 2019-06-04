@@ -320,6 +320,7 @@ class BundlesAndPurchasesTest {
             val freeProduct = Product()
                     .sku("2GB_FREE_ON_JOINING")
                     .price(Price().amount(0).currency(""))
+                    .payment(emptyMap<String, String>())
                     .properties(mapOf(
                             "noOfBytes" to "2_147_483_648",
                             "productClass" to "SIMPLE_DATA"))
@@ -1698,6 +1699,7 @@ class ReferralTest {
             val freeProductForReferred = Product()
                     .sku("1GB_FREE_ON_REFERRED")
                     .price(Price().amount(0).currency("NOK"))
+                    .payment(emptyMap<String, String>())
                     .properties(mapOf(
                             "noOfBytes" to "1_000_000_000",
                             "productClass" to "SIMPLE_DATA"))
