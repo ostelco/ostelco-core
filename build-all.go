@@ -38,7 +38,7 @@ func checkForDependency(dependency string) {
 	cmd := fmt.Sprintf("which %s", dependency)
 	_, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
-		log.Fatalf("ERROR: Could not locate dependency '%s'", dependency)
+		log.Fatalf("Could not locate dependency '%s'", dependency)
 	}
 }
 
@@ -46,7 +46,7 @@ func checkForDependency(dependency string) {
 
 func checkThatEnvironmentVariableIsSet(key string) {
 	if len(os.Getenv(key)) == 0 {
-		log.Fatalf("ERROR: Environment variable not set'%s'", key)
+		log.Fatalf("Environment variable not set'%s'", key)
 	}
 }
 
@@ -150,7 +150,7 @@ func copyFilez(src string, dest string) {
 	out, err := exec.Command("cp", src, dest).Output()
 
 	if err != nil {
-		log.Fatalf("ERROR: Could not copy from '%s' to '%s': (%s, %s)", src, dest, out, err)
+		log.Fatalf("Could not copy from '%s' to '%s': (%s, %s)", src, dest, out, err)
 	}
 }
 
@@ -180,13 +180,13 @@ func generateNewCertificate(certificateFilename string, certificateDomain string
 	cmd := fmt.Sprintf("scripts/generate-selfsigned-ssl-certs.sh %s", certificateDomain)
 	out, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
-		log.Fatalf("ERROR: Could not generate self signed certificate for domain '%s'.\n      Reason: %s", certificateDomain, err)
+		log.Fatalf("Could not generate self signed certificate for domain '%s'.\n      Reason: %s", certificateDomain, err)
 	}
 
 	log.Printf("out = %s", out)
 
 	if !fileExists(certificateFilename) {
-		log.Fatalf("ERROR: Did not generate self signed for domain '%s'", certificateDomain)
+		log.Fatalf("Did not generate self signed for domain '%s'", certificateDomain)
 	}
 }
 
@@ -238,7 +238,7 @@ func distributeServiceAccountConfigs() {
 
 	rootMd5, err := hash_file_md5(serviceAccountJsonFilename)
 	if err != nil {
-		log.Fatalf("ERROR: Could not calculate md5 from file ", serviceAccountJsonFilename)
+		log.Fatalf("Could not calculate md5 from file ", serviceAccountJsonFilename)
 	}
 
 	if serviceAccountMD5 != rootMd5 {
@@ -298,7 +298,7 @@ func relayScanToStdout(nameOfStream string, scanner *bufio.Scanner) {
 func assertSuccesfulRun(cmdTxt string) {
 	err := runCmdWithPiping(cmdTxt)
 	if (err != nil) {
-			log.Fatalf("ERROR: Could not successfully run command '%s': %s", cmdTxt, err)
+			log.Fatalf("Could not successfully run command '%s': %s", cmdTxt, err)
 		}
 	}
 }
