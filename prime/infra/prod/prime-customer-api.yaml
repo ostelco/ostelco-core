@@ -848,6 +848,8 @@ definitions:
         type: string
       price:
         $ref: '#/definitions/Price'
+      payment:
+        type: object
       properties:
         type: object
       presentation:
