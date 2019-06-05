@@ -1094,22 +1094,11 @@ object Neo4jStoreSingleton : GraphStore {
                     }
                 }
 
-                /* TODO: (kmm) The logic behind using region-code to fetch 'tax-rates' will fail
-                         when customers are linked to multiple regions. Currently it is assumed
-                         that a customer belongs to only one region. */
-                /* Use 'region-code' as the 'tax-region'. */
-                val region = customerStore.getRelated(customer.id, customerRegionRelation, transaction)
-                        .flatMap {
-                            if (!it.isEmpty())
-                                it.first().right()
-                            else
-                                NotFoundError(type = customerRegionRelation.name, id = "No region found for ${customer.id}")
-                                        .left()
-                        }
-                        .mapLeft {
-                            BadGatewayError("No region found for ${customer.id}", error = it)
-                        }
-                        .bind()
+                /* Fetch 'tax' id to be applied. */
+                val taxRegionId = if (product.payment.containsKey("taxRegionId"))
+                    product.payment["taxRegionId"]
+                else
+                    null
 
                 /* Product presentation. */
                 val productLabel = if (product.presentation.containsKey("productLabel"))
@@ -1117,7 +1106,7 @@ object Neo4jStoreSingleton : GraphStore {
                 else
                     product.sku
 
-                val invoice = paymentProcessor.createInvoice(customer.id, product.price.amount, product.price.currency, productLabel, region.id, addedSourceId)
+                val invoice = paymentProcessor.createInvoice(customer.id, product.price.amount, product.price.currency, productLabel, taxRegionId, addedSourceId)
                         .mapLeft {
                             logger.error("Failed to create invoice for customer ${customer.id}, source $addedSourceId, sku ${product.sku}")
                             it
@@ -1318,7 +1307,7 @@ object Neo4jStoreSingleton : GraphStore {
                         if (status == APPROVED) {
                             assignCustomerToRegionSegment(
                                     customerId = customerId,
-                                    segmentName = getInitialSegmentNameForRegion(regionCode),
+                                    segmentName = getInitialSegmentNameForRegion(regionCode, transaction),
                                     transaction = transaction)
                         } else {
                             Unit.right()
@@ -1328,20 +1317,17 @@ object Neo4jStoreSingleton : GraphStore {
     private fun assignCustomerToRegionSegment(
             customerId: String,
             segmentName: String,
-            transaction: Transaction): Either<StoreError, Unit> {
-
-        return customerToSegmentStore.create(
-                fromId = customerId,
-                toId = segmentName,
-                transaction = transaction).mapLeft { storeError ->
-
-            if (storeError is NotCreatedError && storeError.type == customerToSegmentRelation.name) {
-                ValidationError(type = customerEntity.name, id = customerId, message = "Unsupported segment: $segmentName")
-            } else {
-                storeError
+            transaction: Transaction): Either<StoreError, Unit> =
+            customerToSegmentStore.create(
+                    fromId = customerId,
+                    toId = segmentName,
+                    transaction = transaction).mapLeft { storeError ->
+                if (storeError is NotCreatedError && storeError.type == customerToSegmentRelation.name) {
+                    ValidationError(type = customerEntity.name, id = customerId, message = "Unsupported segment: $segmentName")
+                } else {
+                    storeError
+                }
             }
-        }
-    }
 
     //
     // eKYC - Jumio
@@ -1658,7 +1644,7 @@ object Neo4jStoreSingleton : GraphStore {
                 if (approvedNow) {
                     assignCustomerToRegionSegment(
                             customerId = customerId,
-                            segmentName = getInitialSegmentNameForRegion(regionCode),
+                            segmentName = getInitialSegmentNameForRegion(regionCode, transaction),
                             transaction = transaction).bind()
                 }
 
@@ -1689,11 +1675,16 @@ object Neo4jStoreSingleton : GraphStore {
         }
     }
 
-    private fun getInitialSegmentNameForRegion(regionCode: String): String =
-            when (regionCode) {
-                "sg" -> getPlanSegmentNameFromCountryCode(regionCode)
-                else -> getSegmentNameFromCountryCode(regionCode)
-            }
+    private fun getInitialSegmentNameForRegion(regionCode: String, transaction: Transaction): String =
+            segmentStore.get(getPlanSegmentNameFromCountryCode(regionCode), transaction)
+                    .fold(
+                            {
+                                getSegmentNameFromCountryCode(regionCode)
+                            },
+                            {
+                                it.id
+                            }
+                    )
 
     // ------------
     // Admin Store
@@ -1836,10 +1827,8 @@ object Neo4jStoreSingleton : GraphStore {
                         ).bind()
 
                 /* Plan/product presentation. */
-                val productLabel = if (plan.presentation.containsKey("productLabel"))
-                    plan.presentation["productLabel"] ?: plan.id
-                else
-                    plan.id
+                val productLabel = plan.presentation["productLabel"]
+                        ?: plan.id
 
                 val productInfo = paymentProcessor.createProduct(productLabel)
                         .mapLeft {
@@ -1860,9 +1849,9 @@ object Neo4jStoreSingleton : GraphStore {
                 /* The associated product to the plan. Note that:
                          sku - name of the plan
                          property value 'productClass' is set to "plan"
-                    TODO: Complete support for 'product-class' and merge 'plan' and 'product' objects
-                          into one object differentiated by 'product-class'. */
+                   TODO: Update to new backend model. */
                 val product = Product(sku = plan.id, price = plan.price,
+                        payment = plan.payment,
                         properties = plan.properties + mapOf(
                                 "productClass" to "PLAN",
                                 "interval" to plan.interval,
@@ -1941,15 +1930,6 @@ object Neo4jStoreSingleton : GraphStore {
                                     error = it)
                         }.bind()
 
-                /* TODO: (kmm) The logic behind using region-code to fetch 'tax-rates' will fail
-                         when customers are linked to multiple regions. Currently it is assumed
-                         that a customer belongs to only one region. */
-                val region = customerStore.getRelated(customer.id, customerRegionRelation, transaction)
-                        .mapLeft {
-                            NotFoundError(type = customerEntity.name, id = "No region found for ${customer.id}")
-                        }
-                        .bind().first()
-
                 /* At this point, we have either:
                      1) A new subscription to a plan is being created.
                      2) An attempt at buying a previously subscribed to plan but which has not been
@@ -1971,9 +1951,11 @@ object Neo4jStoreSingleton : GraphStore {
                             }
                         }
 
+                val taxRegionId = plan.payment["taxRegionId"]
+
                 /* Lookup in payment backend will fail if no value found for 'planId'. */
                 val subscriptionInfo = paymentProcessor.createSubscription(plan.properties.getOrDefault("planId", "missing"),
-                        profileInfo.id, trialEnd, region.id)
+                        profileInfo.id, trialEnd, taxRegionId)
                         .mapLeft {
                             NotCreatedError(type = planEntity.name, id = "Failed to subscribe ${customer.id} to ${plan.id}",
                                     error = it)
@@ -2077,21 +2059,14 @@ object Neo4jStoreSingleton : GraphStore {
                 createPurchaseRecordRelation(customerId, purchaseRecord, transaction)
                         .bind()
 
-                /* Unique relation between 'plan' and 'region' */
-                val region = plansStore.getRelated(plan.id, planRegionRelation, transaction)
-                        .bind()
-                        .singleOrNull()
-
-                if (region == null) {
-                    logger.error("Found no 'region' associated with plan {} for customer {}",
-                            plan.id, customerId)
-                    NotFoundError("No region found found for plan", plan.id)
-                            .left()
-                } else {
-                    assignCustomerToRegionSegment(
-                            customerId = customerId,
-                            segmentName = getSegmentNameFromCountryCode(region.id),
-                            transaction = transaction).bind()
+                /* Offer products to the newly signed up subscriber. */
+                val segments = plan.properties["segments"]?.split(",")
+                        ?: emptyList()
+                segments.forEach { segmentName ->
+                    assignCustomerToRegionSegment(customerId = customerId,
+                            segmentName = segmentName,
+                            transaction = transaction)
+                            .bind()
                 }
                 logger.info("Customer ${customerId} completed payment of invoice ${invoiceId} for subscription to plan ${plan.id}")
 
