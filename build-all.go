@@ -1,14 +1,8 @@
 //usr/bin/env go run "$0" "$@"; exit "$?"
 
-// EXPERIMENTAL:   This may or may not end up as production code.
 // INTENT:         Replace the current build-all.sh script with a go program
 //   	           that can be run from the command line as if it were a script
-//		           The intent is straignt forward replacement, but with type
-//                 safety and perhaps a bit of additional reliability.
-//                 The build-all.sh script isn't used by a lot of people, so
-//                 it's some distance "off broadway", and that may help the test
-//                 very prestigious.  On the other hand, the script does contain
-//                 sufficient complexity to be a worthy target
+
 
 package main
 
@@ -17,7 +11,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
-	"github.com/ostelco-core/goscript"
+	"./github.com/ostelco-core/goscript"
 	"io"
 	"log"
 	"os"
@@ -36,7 +30,7 @@ func generateEspEndpointCertificates() {
 
 	// If no original certificate (for whatever reason),
 	// generate a new one.
-	if !fileExists(originalCertPath) {
+	if !goscript.fileExists(originalCertPath) {
 		generateNewCertificate(originalCertPath, "ocs.dev.ostelco.org")
 	}
 
@@ -54,7 +48,7 @@ func generateNewCertificate(certificateFilename string, certificateDomain string
 
 	log.Printf("out = %s", out)
 
-	if !fileExists(certificateFilename) {
+	if !goscript.fileExists(certificateFilename) {
 		log.Fatalf("Did not generate self signed for domain '%s'", certificateDomain)
 	}
 }
