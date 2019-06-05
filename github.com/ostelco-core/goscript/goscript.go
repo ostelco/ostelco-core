@@ -75,7 +75,7 @@ func runCmdWithPiping(cmdTxt string) (result error) {
 }
 
 
-func hash_file_md5(filePath string) (string, error) {
+func Hash_file_md5(filePath string) (string, error) {
 	//Initialize variable returnMD5String now in case an error has to be returned
 	var returnMD5String string
 
@@ -108,7 +108,7 @@ func hash_file_md5(filePath string) (string, error) {
 
 // Copy the src file to dst. Any existing file will be overwritten and will not
 // copy file attributes.
-func copyFile(src, dst string) error {
+func CopyFile(src, dst string) error {
 	in, err := os.Open(src)
 	if err != nil {
 		return err
@@ -131,9 +131,8 @@ func copyFile(src, dst string) error {
 
 
 
-func checkForDependencies() {
+func CheckForDependencies(dependencies [...]string) {
 	log.Printf("Checking if dependencies are available\n")
-	dependencies := [...]string{0: "docker-compose", 1: "./gradlew", 2: "docker", 3: "cmp"}
 	for _, dep := range dependencies {
 		// log.Printf("Checking dependency ('%s', '%s')", foo, dep)
 		checkForDependency(dep)
@@ -148,14 +147,14 @@ func checkForDependency(dependency string) {
 	}
 }
 
-func checkThatEnvironmentVariableIsSet(key string) {
+func CheckThatEnvironmentVariableIsSet(key string) {
 	if len(os.Getenv(key)) == 0 {
 		log.Fatalf("Environment variable not set'%s'", key)
 	}
 }
 
-func bothFilesExistsButAreDifferent(s string, s2 string) bool {
-	return fileExists(s) && fileExists(s2) && filesAreDifferent(s, s2)
+func BothFilesExistsButAreDifferent(s string, s2 string) bool {
+	return FileExists(s) && FileExists(s2) && filesAreDifferent(s, s2)
 }
 
 const chunkSize = 64000
@@ -203,12 +202,12 @@ func filesAreDifferent(s string, s2 string) bool {
 	return !deepCompare(s, s2)
 }
 
-func fileExists(path string) bool {
+func FileExists(path string) bool {
 	_, err := os.Stat(path)
 	return !os.IsNotExist(err)
 }
 
-func deleteFile(path string) {
+func DeleteFile(path string) {
 	// delete file
 	var err = os.Remove(path)
 	if isError(err) {

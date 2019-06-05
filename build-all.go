@@ -23,19 +23,19 @@ func generateEspEndpointCertificates() {
 	originalCertPath := "certs/ocs.dev.ostelco.org/nginx.crt"
 	activeCertPath := "ocsgw/cert/metrics.crt"
 
-	if goscript.bothFilesExistsButAreDifferent(originalCertPath, activeCertPath) {
-		goscript.deleteFile(originalCertPath)
-		goscript.deleteFile(activeCertPath)
+	if goscript.BothFilesExistsButAreDifferent(originalCertPath, activeCertPath) {
+		goscript.DeleteFile(originalCertPath)
+		goscript.DeleteFile(activeCertPath)
 	}
 
 	// If no original certificate (for whatever reason),
 	// generate a new one.
-	if !goscript.fileExists(originalCertPath) {
+	if !goscript.FileExists(originalCertPath) {
 		generateNewCertificate(originalCertPath, "ocs.dev.ostelco.org")
 	}
 
-	if goscript.fileExists(activeCertPath) {
-		goscript.copyFile(originalCertPath, activeCertPath)
+	if goscript.FileExists(activeCertPath) {
+		goscript.CopyFile(originalCertPath, activeCertPath)
 	}
 }
 
@@ -48,7 +48,7 @@ func generateNewCertificate(certificateFilename string, certificateDomain string
 
 	log.Printf("out = %s", out)
 
-	if !goscript.fileExists(certificateFilename) {
+	if !goscript.FileExists(certificateFilename) {
 		log.Fatalf("Did not generate self signed for domain '%s'", certificateDomain)
 	}
 }
@@ -65,11 +65,11 @@ func distributeServiceAccountConfigs() {
 	serviceAccountMD5 := "c54b903790340dd9365fa59fce3ad8e2"
 	serviceAccountJsonFilename := "prime-service-account.json"
 
-	if !goscript.fileExists(serviceAccountJsonFilename) {
+	if !goscript.FileExists(serviceAccountJsonFilename) {
 		log.Fatalf("ERROR: : Could not find master service-account file'%s'", serviceAccountJsonFilename)
 	}
 
-	rootMd5, err := goscript.hash_file_md5(serviceAccountJsonFilename)
+	rootMd5, err := goscript.Hash_file_md5(serviceAccountJsonFilename)
 	if err != nil {
 		log.Fatalf("Could not calculate md5 from file '%s'", serviceAccountJsonFilename)
 	}
@@ -81,18 +81,17 @@ func distributeServiceAccountConfigs() {
 	for _, dir := range dirsThatNeedsServiceAccountConfigs {
 		currentFilename := fmt.Sprintf("%s/%s", dir, serviceAccountJsonFilename)
 
-		if !goscript.fileExists(currentFilename) {
-			goscript.copyFile(serviceAccountJsonFilename, currentFilename)
-		} else {
-
-			localMd5, err := hash_file_md5(serviceAccountJsonFilename)
+		if goscript.FileExists(currentFilename) {
+			localMd5, err := goscript.Hash_file_md5(serviceAccountJsonFilename)
 			if err != nil {
 				log.Fatalf("ERROR: Could not calculate md5 from file '%s'", serviceAccountJsonFilename)
 			}
 
 			if localMd5 != rootMd5 {
-				goscript.copyFile(serviceAccountJsonFilename, currentFilename)
+				goscript.CopyFile(serviceAccountJsonFilename, currentFilename)
 			}
+		} else {
+			goscript.CopyFile(serviceAccountJsonFilename, currentFilename)
 		}
 	}
 }
@@ -117,10 +116,11 @@ func main() {
 	// Check all preconditions for building
 	//
 
-	goscript.checkForDependencies()
-	goscript.checkThatEnvironmentVariableIsSet("STRIPE_API_KEY")
+	dependencies := [...]string{0: "docker-compose", 1: "./gradlew", 2: "docker", 3: "cmp"}
+	goscript.CheckForDependencies(dependencies)
+	goscript.CheckThatEnvironmentVariableIsSet("STRIPE_API_KEY")
 	generateEspEndpointCertificates()
-	goscript.checkThatEnvironmentVariableIsSet("GCP_PROJECT_ID")
+	goscript.CheckThatEnvironmentVariableIsSet("GCP_PROJECT_ID")
 
 	distributeServiceAccountConfigs()
 
