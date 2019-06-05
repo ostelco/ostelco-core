@@ -294,11 +294,11 @@ paths:
         400:
           description: "Failed to create the plan"
       parameters:
-        - name: plan
+        - name: createPlanRequest
           in: body
           description: Plan details
           schema:
-            $ref: '#/definitions/Plan'
+            $ref: '#/definitions/CreatePlanRequest'
       security:
         - auth0_jwt: []
     delete:
@@ -593,6 +593,18 @@ definitions:
     type: array
     items:
       $ref: '#/definitions/Plan'
+  CreatePlanRequest:
+    type: object
+    properties:
+      plan:
+        description: Plan to be created.
+        $ref: '#/definitions/Plan'
+      stripeProductName:
+        description: Name of product in Stripe for this plan.
+        type: string
+      productPlan:
+        description: Product associated with this plan.
+        $ref: '#/definitions/Product'
   SubscriberState:
     type: object
     properties:

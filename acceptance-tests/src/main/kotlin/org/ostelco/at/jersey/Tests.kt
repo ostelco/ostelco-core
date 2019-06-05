@@ -19,7 +19,6 @@ import org.ostelco.prime.customer.model.MyInfoConfig
 import org.ostelco.prime.customer.model.PaymentSource
 import org.ostelco.prime.customer.model.PaymentSourceList
 import org.ostelco.prime.customer.model.Person
-import org.ostelco.prime.customer.model.Plan
 import org.ostelco.prime.customer.model.Price
 import org.ostelco.prime.customer.model.Product
 import org.ostelco.prime.customer.model.ProductInfo
@@ -42,7 +41,6 @@ import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.MultivaluedHashMap
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
-import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -1706,132 +1704,6 @@ class ReferralTest {
                     .presentation(emptyMap<String, String>())
 
             assertEquals(listOf(freeProductForReferred), secondSubscriberPurchases.map { it.product })
-        } finally {
-            StripePayment.deleteCustomer(customerId = customerId)
-        }
-    }
-}
-
-class PlanTest {
-
-    @Test
-    fun `jersey test - POST plan`() {
-
-        val price = Price()
-                .amount(100)
-                .currency("nok")
-        val plan = Plan()
-                .name("PLAN_1_NOK_PER_DAY-${randomInt()}")
-                .price(price)
-                .interval(Plan.IntervalEnum.DAY)
-                .intervalCount(1)
-                .properties(emptyMap<String, Any>())
-                .presentation(emptyMap<String, Any>())
-
-        post<Plan> {
-            path = "/plans"
-            body = plan
-        }
-
-        val stored: Plan = get {
-            path = "/plans/${plan.name}"
-        }
-
-        assertEquals(plan.name, stored.name)
-        assertEquals(plan.price, stored.price)
-        assertEquals(plan.interval, stored.interval)
-        assertEquals(plan.intervalCount, stored.intervalCount)
-
-        val deletedPLan: Plan = delete {
-            path = "/plans/${plan.name}"
-        }
-
-        assertEquals(plan.name, deletedPLan.name)
-        assertEquals(plan.price, deletedPLan.price)
-        assertEquals(plan.interval, deletedPLan.interval)
-        assertEquals(plan.intervalCount, deletedPLan.intervalCount)
-
-        assertFailsWith(AssertionError::class, "Plan ${plan.name} not removed") {
-            get<Plan> {
-                path = "/plans/${plan.name}"
-            }
-        }
-    }
-
-    @Ignore
-    @Test
-    fun `jersey test - POST profiles plans`() {
-
-        val email = "purchase-${randomInt()}@test.com"
-
-        val price = Price()
-                .amount(100)
-                .currency("nok")
-        val plan = Plan()
-                .name("plan-${randomInt()}")
-                .price(price)
-                .interval(Plan.IntervalEnum.DAY)
-                .intervalCount(1)
-                .properties(emptyMap<String, Any>())
-                .presentation(emptyMap<String, Any>())
-
-        var customerId = ""
-
-        try {
-            // Create subscriber with payment source.
-
-            customerId = createCustomer(name = "Test create Profile Plans", email = email).id
-
-            val sourceId = StripePayment.createPaymentTokenId()
-
-            val paymentSource: PaymentSource = post {
-                path = "/paymentSources"
-                this.email = email
-                queryParams = mapOf("sourceId" to sourceId)
-            }
-
-            assertNotNull(paymentSource.id, message = "Failed to create payment source")
-
-            // Create a plan.
-
-            post<Plan> {
-                path = "/plans"
-                body = plan
-            }
-
-            val stored: Plan = get {
-                path = "/plans/${plan.name}"
-            }
-
-            assertEquals(plan.name, stored.name)
-
-            // Now create and verify the subscription.
-
-            post<Unit> {
-                path = "/profiles/$email/plans/${plan.name}"
-            }
-
-            val plans: List<Plan> = get {
-                path = "/profiles/$email/plans"
-            }
-
-            assert(plans.isNotEmpty())
-            assert(plans.lastIndex == 0)
-            assertEquals(plan.name, plans[0].name)
-            assertEquals(plan.price, plans[0].price)
-            assertEquals(plan.interval, plans[0].interval)
-            assertEquals(plan.intervalCount, plans[0].intervalCount)
-
-            delete<Unit> {
-                path = "/profiles/$email/plans/${plan.name}"
-            }
-
-            // Cleanup - remove plan.
-            val deletedPLan: Plan = delete {
-                path = "/plans/${plan.name}"
-            }
-            assertEquals(plan.name, deletedPLan.name)
-
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
         }

@@ -3,6 +3,9 @@ import org.ostelco.prime.dsl.DSL.job
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
+import org.ostelco.prime.model.ProductClass.SIMPLE_DATA
+import org.ostelco.prime.model.ProductProperties.NO_OF_BYTES
+import org.ostelco.prime.model.ProductProperties.PRODUCT_CLASS
 import org.ostelco.prime.model.Region
 import org.ostelco.prime.model.Segment
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.atomicCreateOffer
@@ -21,16 +24,18 @@ job {
             sku = "2GB_FREE_ON_JOINING",
             price = Price(0, ""),
             properties = mapOf(
-                    "noOfBytes" to "2_147_483_648",
-                    "productClass" to "SIMPLE_DATA"))
+                    PRODUCT_CLASS.s to SIMPLE_DATA.name,
+                    NO_OF_BYTES.s to "2_147_483_648"
+            ))
     }
     create {
         Product(
                 sku = "1GB_FREE_ON_REFERRED",
                 price = Price(0, ""),
                 properties = mapOf(
-                        "noOfBytes" to "1_073_741_824",
-                        "productClass" to "SIMPLE_DATA"))
+                        PRODUCT_CLASS.s to SIMPLE_DATA.name,
+                        NO_OF_BYTES.s to "1_073_741_824"
+                ))
     }
     /* Note: (kmm) For 'sg' the first segment offered is always a plan. */
     create {

@@ -2,6 +2,9 @@ package org.ostelco.prime.storage.graph
 
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
+import org.ostelco.prime.model.ProductClass.SIMPLE_DATA
+import org.ostelco.prime.model.ProductProperties.NO_OF_BYTES
+import org.ostelco.prime.model.ProductProperties.PRODUCT_CLASS
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 
@@ -33,7 +36,8 @@ fun createProduct(sku: String, amount: Int): Product {
             price = Price(amount = amount, currency = "NOK"),
             payment = emptyMap(),
             properties = mapOf(
-                    "noOfBytes" to df.format(gbs * Math.pow(2.0, 30.0).toLong()),
-                    "productClass" to "SIMPLE_DATA"),
+                    PRODUCT_CLASS.s to SIMPLE_DATA.name,
+                    NO_OF_BYTES.s to df.format(gbs * Math.pow(2.0, 30.0).toLong())
+            ),
             presentation = mapOf("label" to "$gbs GB for ${amount / 100}"))
 }

@@ -27,6 +27,7 @@ import org.ostelco.prime.model.KycType.NRIC_FIN
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
+import org.ostelco.prime.model.ProductProperties.NO_OF_BYTES
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Region
 import org.ostelco.prime.model.RegionDetails
@@ -93,12 +94,12 @@ class Neo4jStoreTest {
             create {
                 Product(sku = "2GB_FREE_ON_JOINING",
                         price = Price(0, ""),
-                        properties = mapOf("noOfBytes" to "2_147_483_648"))
+                        properties = mapOf(NO_OF_BYTES.s to "2_147_483_648"))
             }
             create {
                 Product(sku = "1GB_FREE_ON_REFERRED",
                         price = Price(0, ""),
-                        properties = mapOf("noOfBytes" to "1_073_741_824"))
+                        properties = mapOf(NO_OF_BYTES.s to "1_073_741_824"))
             }
             create {
                 Segment(id = getSegmentNameFromCountryCode(REGION))

@@ -10,7 +10,6 @@ import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.Plan
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
-import org.ostelco.prime.model.Region
 import org.ostelco.prime.model.RegionDetails
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.Segment
@@ -248,9 +247,14 @@ interface AdminGraphStore {
     /**
      * Create a new plan.
      * @param plan - Plan details
+     * @param stripeProductName - Stripe Product Name
+     * @param planProduct - Corresponding Product for the plan
      * @return Unit value if created successfully
      */
-    fun createPlan(plan: Plan): Either<StoreError, Plan>
+    fun createPlan(
+            plan: Plan,
+            stripeProductName: String,
+            planProduct: Product): Either<StoreError, Plan>
 
     /**
      * Remove a plan.
@@ -266,7 +270,7 @@ interface AdminGraphStore {
      * @param trialEnd - Epoch timestamp for when the trial period ends
      * @return Unit value if the subscription was created successfully
      */
-    fun subscribeToPlan(identity: Identity, planId: String, trialEnd: Long = 0): Either<StoreError, Plan>
+    fun subscribeToPlan(identity: Identity, planId: String, trialEnd: Long = 0): Either<StoreError, Unit>
 
     /**
      * Remove the subscription to a plan for a specific subscrber.
