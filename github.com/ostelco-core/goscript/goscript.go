@@ -12,6 +12,12 @@ import (
 	"os/exec"
 )
 
+// XXX This package contains a lot of different things, that is
+//     a discouraged practice: Packages should be small, and only
+//     do one  thing,  which they do  well.  Unix philosophy.
+//     This packa oes not follow unix philosophy. Feel free to refactor
+//     until it does.
+
 //  Read something via a scanner, then send it to stdout.
 //  to every line read, prepend the name of the stream
 //  that has been read.
@@ -74,7 +80,6 @@ func runCmdWithPiping(cmdTxt string) (result error) {
 	return nil
 }
 
-
 func Hash_file_md5(filePath string) (string, error) {
 	//Initialize variable returnMD5String now in case an error has to be returned
 	var returnMD5String string
@@ -105,7 +110,6 @@ func Hash_file_md5(filePath string) (string, error) {
 	return returnMD5String, nil
 }
 
-
 // Copy the src file to dst. Any existing file will be overwritten and will not
 // copy file attributes.
 func CopyFile(src, dst string) error {
@@ -127,9 +131,6 @@ func CopyFile(src, dst string) error {
 	}
 	return out.Close()
 }
-
-
-
 
 func CheckForDependencies(dependencies [...]string) {
 	log.Printf("Checking if dependencies are available\n")
