@@ -132,7 +132,7 @@ func CopyFile(src, dst string) error {
 	return out.Close()
 }
 
-func CheckForDependencies(dependencies [...]string) {
+func CheckForDependencies(dependencies ...string) {
 	log.Printf("Checking if dependencies are available\n")
 	for _, dep := range dependencies {
 		// log.Printf("Checking dependency ('%s', '%s')", foo, dep)
@@ -154,8 +154,8 @@ func CheckThatEnvironmentVariableIsSet(key string) {
 	}
 }
 
-func BothFilesExistsButAreDifferent(s string, s2 string) bool {
-	return FileExists(s) && FileExists(s2) && filesAreDifferent(s, s2)
+func BothFilesExistsButAreDifferent(path1 string, path2 string) bool {
+	return FileExists(path1) && FileExists(path2) && filesAreDifferent(path1, path2)
 }
 
 const chunkSize = 64000

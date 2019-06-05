@@ -3,16 +3,11 @@
 // INTENT:         Replace the current build-all.sh script with a go program
 //   	           that can be run from the command line as if it were a script
 
-
 package main
 
 import (
-	"bytes"
-	"crypto/md5"
-	"encoding/hex"
-	"fmt"
 	"./github.com/ostelco-core/goscript"
-	"io"
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -53,15 +48,14 @@ func generateNewCertificate(certificateFilename string, certificateDomain string
 	}
 }
 
-
 func distributeServiceAccountConfigs() {
 	log.Printf("Distributing service account configs\n")
 	dirsThatNeedsServiceAccountConfigs := [...]string{
-		0: " acceptance-tests/config",
-		1: "dataflow-pipelines/config",
-		2: "ocsgw/config",
-		3: "bq-metrics-extractor/config",
-		4: "auth-server/config prime/config"}
+		" acceptance-tests/config",
+		"dataflow-pipelines/config",
+		"ocsgw/config",
+		"bq-metrics-extractor/config",
+		"auth-server/config prime/config"}
 	serviceAccountMD5 := "c54b903790340dd9365fa59fce3ad8e2"
 	serviceAccountJsonFilename := "prime-service-account.json"
 
@@ -108,7 +102,6 @@ func assertDockerIsRunning() {
 	}
 }
 
-
 func main() {
 	log.Printf("About to get started\n")
 
@@ -116,8 +109,7 @@ func main() {
 	// Check all preconditions for building
 	//
 
-	dependencies := [...]string{0: "docker-compose", 1: "./gradlew", 2: "docker", 3: "cmp"}
-	goscript.CheckForDependencies(dependencies)
+	goscript.CheckForDependencies("docker-compose", "./gradlew", "docker", "cmp")
 	goscript.CheckThatEnvironmentVariableIsSet("STRIPE_API_KEY")
 	generateEspEndpointCertificates()
 	goscript.CheckThatEnvironmentVariableIsSet("GCP_PROJECT_ID")
@@ -142,4 +134,3 @@ func main() {
 	goscript.AssertSuccesfulRun("docker-compose down")
 	goscript.AssertSuccesfulRun("docker-compose up --build --abort-on-container-exit")
 }
-
