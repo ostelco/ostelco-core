@@ -133,11 +133,12 @@ func CopyFile(src, dst string) error {
 }
 
 func AssertThatScriptCommandsAreAvailable(dependencies ...string) {
-	log.Printf("Checking if dependencies are available\n")
+	log.Printf("Checking if dependencies are available...\n")
 	for _, dep := range dependencies {
 		// log.Printf("Checking dependency ('%s', '%s')", foo, dep)
 		checkForDependency(dep)
 	}
+	log.Printf("   ... they are\n")
 }
 
 func checkForDependency(dependency string) {
@@ -149,11 +150,13 @@ func checkForDependency(dependency string) {
 }
 
 func AssertThatEnvironmentVariableaAreSet(keys ...string) {
+	log.Printf("Checking if environment variables are set...\n")
 	for key := range keys {
 		if len(os.Getenv(keys[key])) == 0 {
 			log.Fatalf("Environment variable not set'%s'", key)
 		}
 	}
+	log.Printf("   ... they are\n")
 }
 
 func BothFilesExistsButAreDifferent(path1 string, path2 string) bool {
