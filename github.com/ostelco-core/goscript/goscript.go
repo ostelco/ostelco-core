@@ -1,3 +1,7 @@
+// Package goscript contains utility methods to help when writing
+// executable "go scripts" that are intended to replacer
+// utility shell scripts.
+
 package goscript
 
 import (
@@ -18,9 +22,9 @@ import (
 //     This packa oes not follow unix philosophy. Feel free to refactor
 //     until it does.
 
-//  Read something via a scanner, then send it to stdout.
-//  to every line read, prepend the name of the stream
-//  that has been read.
+//  relayScanToStdout reads  something via a scanner, then send it to stdout.
+//  To every line that is printed, prepend the name of the stream
+//  that has been read from.
 func relayScanToStdout(nameOfStream string, scanner *bufio.Scanner) {
 	for scanner.Scan() {
 		fmt.Printf("%10s:  %s\n", nameOfStream, scanner.Text())
@@ -31,6 +35,9 @@ func relayScanToStdout(nameOfStream string, scanner *bufio.Scanner) {
 	//}
 }
 
+// AssertSuccesfulRun will execute a command, and if the return value is
+// zero, the method will return. Otherwise an error message is written
+// to stdout, and the program exits with return value 1.
 func AssertSuccesfulRun(cmdTxt string) {
 	err := runCmdWithPiping(cmdTxt)
 	if err != nil {
@@ -38,6 +45,12 @@ func AssertSuccesfulRun(cmdTxt string) {
 	}
 }
 
+// runCmdWithPiping runs a command, sets up "piping" in which the
+// standard error and standard output are both piped through to the
+// relayScanToStdout method, which sends it all to stdout, but with
+// prefixes on every line indicating if the output was for
+// stdout or stderr.  If an error occurs, the error value is
+// returned by the method.
 func runCmdWithPiping(cmdTxt string) (result error) {
 
 	// Declare the  cmd
@@ -80,6 +93,7 @@ func runCmdWithPiping(cmdTxt string) (result error) {
 	return nil
 }
 
+// Hash_file_md5 will read a file and return the MD5 checksum.
 func Hash_file_md5(filePath string) (string, error) {
 	//Initialize variable returnMD5String now in case an error has to be returned
 	var returnMD5String string
@@ -110,8 +124,8 @@ func Hash_file_md5(filePath string) (string, error) {
 	return returnMD5String, nil
 }
 
-// Copy the src file to dst. Any existing file will be overwritten and will not
-// copy file attributes.
+// CopyFile will copy the src file to dst. Any existing file will be overwritten.
+// The method will not copy file attributes.
 func CopyFile(src, dst string) error {
 	in, err := os.Open(src)
 	if err != nil {
@@ -132,6 +146,11 @@ func CopyFile(src, dst string) error {
 	return out.Close()
 }
 
+// AssertThatScriptCommandsAreAvailable will check if all of the depencencies
+// are available as bash script commands. It will do so by issuing a "which cmd"
+// command to a subshell, for every one of the dependencies.
+// If the dependencies are not available, the program will exit with return
+// value 1.
 func AssertThatScriptCommandsAreAvailable(dependencies ...string) {
 	log.Printf("Checking if dependencies are available...\n")
 	for _, dep := range dependencies {
@@ -149,16 +168,20 @@ func checkForDependency(dependency string) {
 	}
 }
 
-func AssertThatEnvironmentVariableaAreSet(keys ...string) {
+// AssertThatEnvironmentVariableaAreSet checks that environment variablers are set. If they are not
+// then the program terminates with return value 1.
+func AssertThatEnvironmentVariableaAreSet(variableNames ...string) {
 	log.Printf("Checking if environment variables are set...\n")
-	for key := range keys {
-		if len(os.Getenv(keys[key])) == 0 {
+	for key := range variableNames {
+		if len(os.Getenv(variableNames[key])) == 0 {
 			log.Fatalf("Environment variable not set'%s'", key)
 		}
 	}
 	log.Printf("   ... they are\n")
 }
 
+//  BothFilesExistsAndAreDifferent returns true if the files at
+//  both paths exist, but are different.
 func BothFilesExistsAndAreDifferent(path1 string, path2 string) bool {
 	return FileExists(path1) && FileExists(path2) && filesAreDifferent(path1, path2)
 }
@@ -237,6 +260,8 @@ func checkIfDockerIsRunning() bool {
 	return "Docker not running" != string(out) && err == nil
 }
 
+// AssertDockerIsRunning will terminate the program with exit code 1 if docker is not
+// found to be running on the same host.
 func AssertDockerIsRunning() {
 	if !checkIfDockerIsRunning() {
 		log.Fatal("Docker is not running")
