@@ -132,7 +132,7 @@ func CopyFile(src, dst string) error {
 	return out.Close()
 }
 
-func CheckForDependencies(dependencies ...string) {
+func AssertThatScriptCommandsAreAvailable(dependencies ...string) {
 	log.Printf("Checking if dependencies are available\n")
 	for _, dep := range dependencies {
 		// log.Printf("Checking dependency ('%s', '%s')", foo, dep)
@@ -148,9 +148,11 @@ func checkForDependency(dependency string) {
 	}
 }
 
-func CheckThatEnvironmentVariableIsSet(key string) {
-	if len(os.Getenv(key)) == 0 {
-		log.Fatalf("Environment variable not set'%s'", key)
+func AssertThatEnvironmentVariableaAreSet(keys ...string) {
+	for key := range keys {
+		if len(os.Getenv(keys[key])) == 0 {
+			log.Fatalf("Environment variable not set'%s'", key)
+		}
 	}
 }
 
@@ -224,4 +226,16 @@ func isError(err error) bool {
 	}
 
 	return (err != nil)
+}
+
+func checkIfDockerIsRunning() bool {
+	cmd := "if [[  -z \"$( docker version | grep Version:) \" ]] ; then echo 'Docker not running' ; fi"
+	out, err := exec.Command("bash", "-c", cmd).Output()
+	return "Docker not running" != string(out) && err == nil
+}
+
+func AssertDockerIsRunning() {
+	if !checkIfDockerIsRunning() {
+		log.Fatal("Docker is not running")
+	}
 }

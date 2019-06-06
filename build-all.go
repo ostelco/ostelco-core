@@ -10,25 +10,18 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 )
 
-func generateEspEndpointCertificates() {
-
-	originalCertPath := "certs/ocs.dev.ostelco.org/nginx.crt"
-	activeCertPath := "ocsgw/cert/metrics.crt"
-
+func generateEspEndpointCertificates(originalCertPath string, activeCertPath string, domainName string) {
 	if goscript.BothFilesExistsButAreDifferent(originalCertPath, activeCertPath) {
 		goscript.DeleteFile(originalCertPath)
 		goscript.DeleteFile(activeCertPath)
 	}
-
 	// If no original certificate (for whatever reason),
 	// generate a new one.
 	if !goscript.FileExists(originalCertPath) {
-		generateNewCertificate(originalCertPath, "ocs.dev.ostelco.org")
+		generateNewCertificate(originalCertPath, domainName)
 	}
-
 	if goscript.FileExists(activeCertPath) {
 		goscript.CopyFile(originalCertPath, activeCertPath)
 	}
@@ -36,42 +29,29 @@ func generateEspEndpointCertificates() {
 
 func generateNewCertificate(certificateFilename string, certificateDomain string) {
 	cmd := fmt.Sprintf("scripts/generate-selfsigned-ssl-certs.sh %s", certificateDomain)
-	out, err := exec.Command("bash", "-c", cmd).Output()
-	if err != nil {
-		log.Fatalf("Could not generate self signed certificate for domain '%s'.\n      Reason: %s", certificateDomain, err)
-	}
-
-	log.Printf("out = %s", out)
-
+	goscript.AssertSuccesfulRun(cmd)
 	if !goscript.FileExists(certificateFilename) {
 		log.Fatalf("Did not generate self signed for domain '%s'", certificateDomain)
 	}
 }
 
-func distributeServiceAccountConfigs() {
+func distributeServiceAccountConfigs(
+	serviceAccountJsonFilename string,
+	serviceAccountFileMD5Checksum string,
+	dirsThatNeedsServiceAccountConfigs ...string) {
 	log.Printf("Distributing service account configs\n")
-	dirsThatNeedsServiceAccountConfigs := [...]string{
-		" acceptance-tests/config",
-		"dataflow-pipelines/config",
-		"ocsgw/config",
-		"bq-metrics-extractor/config",
-		"auth-server/config prime/config"}
-	serviceAccountMD5 := "c54b903790340dd9365fa59fce3ad8e2"
-	serviceAccountJsonFilename := "prime-service-account.json"
-
 	if !goscript.FileExists(serviceAccountJsonFilename) {
 		log.Fatalf("ERROR: : Could not find master service-account file'%s'", serviceAccountJsonFilename)
 	}
-
 	rootMd5, err := goscript.Hash_file_md5(serviceAccountJsonFilename)
 	if err != nil {
 		log.Fatalf("Could not calculate md5 from file '%s'", serviceAccountJsonFilename)
 	}
-
-	if serviceAccountMD5 != rootMd5 {
-		log.Fatalf("MD5 of root service acccount file '%s' is not '%s', so bailing out", serviceAccountJsonFilename, serviceAccountMD5)
+	if serviceAccountFileMD5Checksum != rootMd5 {
+		log.Fatalf("MD5 of root service acccount file '%s' is not '%s', so bailing out",
+			serviceAccountJsonFilename,
+			serviceAccountFileMD5Checksum)
 	}
-
 	for _, dir := range dirsThatNeedsServiceAccountConfigs {
 		currentFilename := fmt.Sprintf("%s/%s", dir, serviceAccountJsonFilename)
 
@@ -90,32 +70,7 @@ func distributeServiceAccountConfigs() {
 	}
 }
 
-func checkIfDockerIsRunning() bool {
-	cmd := "if [[  -z \"$( docker version | grep Version:) \" ]] ; then echo 'Docker not running' ; fi"
-	out, err := exec.Command("bash", "-c", cmd).Output()
-	return "Docker not running" != string(out) && err == nil
-}
-
-func assertDockerIsRunning() {
-	if !checkIfDockerIsRunning() {
-		log.Fatal("Docker is not running")
-	}
-}
-
-func main() {
-	log.Printf("About to get started\n")
-
-	//
-	// Check all preconditions for building
-	//
-
-	goscript.CheckForDependencies("docker-compose", "./gradlew", "docker", "cmp")
-	goscript.CheckThatEnvironmentVariableIsSet("STRIPE_API_KEY")
-	generateEspEndpointCertificates()
-	goscript.CheckThatEnvironmentVariableIsSet("GCP_PROJECT_ID")
-
-	distributeServiceAccountConfigs()
-
+func generateDummyStripeEndpointSecretIfNotSet() {
 	// If the stripe endpoint secret is not set, then
 	// then just set a random value.  It's not important right now,
 	// but it may cause build failure, so we set it to something.
@@ -123,14 +78,41 @@ func main() {
 		log.Printf("Setting value of STRIPE_ENDPOINT_SECRET to 'thisIsARandomString'")
 		os.Setenv("STRIPE_ENDPOINT_SECRET", "thisIsARandomString")
 	}
-	assertDockerIsRunning()
+}
+
+func main() {
+	log.Printf("About to get started\n")
 
 	//
-	// All preconditions are now satisfied, now run the actual build commands
+	// Ensure that  all preconditions for building and testing are met, if not
+	// fail and terminate execution.
+	//
+
+	goscript.AssertThatScriptCommandsAreAvailable("docker-compose", "./gradlew", "docker", "cmp")
+	goscript.AssertThatEnvironmentVariableaAreSet("STRIPE_API_KEY", "GCP_PROJECT_ID")
+	goscript.AssertDockerIsRunning()
+	generateDummyStripeEndpointSecretIfNotSet()
+	distributeServiceAccountConfigs(
+		"prime-service-account.json",
+		"c54b903790340dd9365fa59fce3ad8e2",
+		"acceptance-tests/config",
+		"dataflow-pipelines/config",
+		"ocsgw/config",
+		"bq-metrics-extractor/config",
+		"auth-server/config prime/config")
+	generateEspEndpointCertificates(
+		"certs/ocs.dev.ostelco.org/nginx.crt",
+		"ocsgw/cert/metrics.crt",
+		"ocs.dev.ostelco.org")
+
+	//
+	// All preconditions are now satisfied, now run the actual build/test commands
 	// and terminate the build process if any of them fails.
 	//
 
 	goscript.AssertSuccesfulRun("./gradlew build")
 	goscript.AssertSuccesfulRun("docker-compose down")
 	goscript.AssertSuccesfulRun("docker-compose up --build --abort-on-container-exit")
+
+	log.Printf("Build and integration tests succeeded\n")
 }
