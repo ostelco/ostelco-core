@@ -13,7 +13,7 @@ import (
 )
 
 func generateEspEndpointCertificates(originalCertPath string, activeCertPath string, domainName string) {
-	if goscript.BothFilesExistsButAreDifferent(originalCertPath, activeCertPath) {
+	if goscript.BothFilesExistsAndAreDifferent(originalCertPath, activeCertPath) {
 		goscript.DeleteFile(originalCertPath)
 		goscript.DeleteFile(activeCertPath)
 	}

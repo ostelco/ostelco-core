@@ -159,7 +159,7 @@ func AssertThatEnvironmentVariableaAreSet(keys ...string) {
 	log.Printf("   ... they are\n")
 }
 
-func BothFilesExistsButAreDifferent(path1 string, path2 string) bool {
+func BothFilesExistsAndAreDifferent(path1 string, path2 string) bool {
 	return FileExists(path1) && FileExists(path2) && filesAreDifferent(path1, path2)
 }
 
