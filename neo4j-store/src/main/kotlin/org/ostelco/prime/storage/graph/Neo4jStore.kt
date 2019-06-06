@@ -1146,8 +1146,12 @@ object Neo4jStoreSingleton : GraphStore {
                         }
 
                 /* Lookup in payment backend will fail if no value found for 'planId'. */
+                val planStripeId = plan.stripePlanId ?: SystemError(type = "", id = "", message = "")
+                        .left()
+                        .bind()
+
                 val subscriptionDetailsInfo = paymentProcessor.createSubscription(
-                        planId = planId,
+                        planId = planStripeId,
                         stripeCustomerId = profileInfo.id,
                         trialEnd = trialEnd,
                         taxRegionId = taxRegionId)
@@ -1974,7 +1978,6 @@ object Neo4jStoreSingleton : GraphStore {
                 val product = planProduct.copy(
                         payment = planProduct.payment + mapOf(
                                 "type" to SUBSCRIPTION.name,
-                                "taxRegionId" to "", // FIXME
                                 "interval" to plan.interval,
                                 "intervalCount" to plan.intervalCount.toString())
                 )

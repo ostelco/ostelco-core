@@ -93,7 +93,7 @@ adminStore.createPlan(
                 payment = mapOf(
                         TYPE.s to SUBSCRIPTION.name,
                         LABEL.s to "Annual subscription plan",
-                        TAX_REGION_ID.s to "sg"
+                        TAX_REGION_ID.s to "SG"
                 )
         )
 ).mapLeft {
