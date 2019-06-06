@@ -1977,9 +1977,7 @@ object Neo4jStoreSingleton : GraphStore {
                    TODO: Update to new backend model. */
                 val product = planProduct.copy(
                         payment = planProduct.payment + mapOf(
-                                "type" to SUBSCRIPTION.name,
-                                "interval" to plan.interval,
-                                "intervalCount" to plan.intervalCount.toString())
+                                "type" to SUBSCRIPTION.name)
                 )
 
                 /* Propagates errors from lower layer if any. */

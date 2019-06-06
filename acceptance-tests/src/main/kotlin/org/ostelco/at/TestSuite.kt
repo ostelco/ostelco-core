@@ -38,8 +38,11 @@ class TestSuite {
                                 org.ostelco.at.jersey.BundlesAndPurchasesTest::class.java,
                                 org.ostelco.at.jersey.SourceTest::class.java,
                                 org.ostelco.at.jersey.PurchaseTest::class.java,
+                                org.ostelco.at.jersey.PlanTest::class.java,
                                 org.ostelco.at.jersey.GraphQlTests::class.java,
-                                org.ostelco.at.jersey.JumioKycTest::class.java))
+                                org.ostelco.at.jersey.JumioKycTest::class.java
+                        )
+                )
             }
 
             launch {

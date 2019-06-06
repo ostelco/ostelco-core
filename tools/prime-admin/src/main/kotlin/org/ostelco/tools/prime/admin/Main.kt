@@ -1,7 +1,6 @@
 package org.ostelco.tools.prime.admin
 
 import org.ostelco.prime.PrimeApplication
-import org.ostelco.tools.prime.admin.actions.getAllRegionDetails
 import org.ostelco.tools.prime.admin.modules.DwEnvModule
 import java.util.concurrent.TimeUnit.SECONDS
 
@@ -21,7 +20,7 @@ fun main() {
 
 fun doActions() {
 
-    // createCustomer(email = "", nickname = "")
+//    createCustomer(email = "", nickname = "")
 
     // link to region
 

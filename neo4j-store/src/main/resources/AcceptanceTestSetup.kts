@@ -63,10 +63,10 @@ atomicCreateOffer(
         offer = Offer(id = "default_offer"),
         segments = listOf(Segment(id = getSegmentNameFromCountryCode("NO"))),
         products = listOf(
-                createProduct(sku = "1GB_249NOK", amount = 24900),
-                createProduct(sku = "2GB_299NOK", amount = 29900),
-                createProduct(sku = "3GB_349NOK", amount = 34900),
-                createProduct(sku = "5GB_399NOK", amount = 39900))
+                createProduct(sku = "1GB_249NOK"),
+                createProduct(sku = "2GB_299NOK"),
+                createProduct(sku = "3GB_349NOK"),
+                createProduct(sku = "5GB_399NOK"))
 ).mapLeft {
     throw Exception(it.message)
 }

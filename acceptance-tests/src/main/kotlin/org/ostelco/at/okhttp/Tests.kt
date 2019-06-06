@@ -7,7 +7,7 @@ import org.ostelco.at.common.StripePayment
 import org.ostelco.at.common.createCustomer
 import org.ostelco.at.common.createSubscription
 import org.ostelco.at.common.enableRegion
-import org.ostelco.at.common.expectedPlanProducts
+import org.ostelco.at.common.expectedPlanProduct
 import org.ostelco.at.common.expectedProducts
 import org.ostelco.at.common.getLogger
 import org.ostelco.at.common.randomInt
@@ -854,15 +854,14 @@ class ReferralTest {
 
 class PlanTest {
 
-    @Ignore
     @Test
     fun `okhttp test - POST purchase plan`() {
 
         val email = "purchase-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createCustomer(name = "Test Purchase User", email = email).id
-            enableRegion(email = email, region = "SG")
+            customerId = createCustomer(name = "Test Purchase Plan User", email = email).id
+            enableRegion(email = email, region = "sg")
 
             val client = clientForSubject(subject = email)
             val sourceId = StripePayment.createPaymentTokenId()
@@ -876,7 +875,7 @@ class PlanTest {
             purchaseRecords.sortBy { it.timestamp }
 
             assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
-            assertEquals(expectedPlanProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
+            assertEquals(expectedPlanProduct, purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
         }

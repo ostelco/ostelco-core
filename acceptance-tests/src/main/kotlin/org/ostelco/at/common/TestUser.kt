@@ -1,6 +1,7 @@
 package org.ostelco.at.common
 
 import org.apache.commons.lang3.RandomStringUtils
+import org.ostelco.at.jersey.get
 import org.ostelco.at.jersey.post
 import org.ostelco.prime.customer.model.Customer
 import org.ostelco.prime.customer.model.ScanInformation
@@ -54,16 +55,17 @@ fun enableRegion(email: String) {
     }
 }
 
-fun enableRegion(email: String, region: String) =
+fun enableRegion(email: String, region: String) {
     when (region) {
-        "SG" -> {
-            post<String>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
+        "sg" -> {
+            get<String> {
                 path = "/regions/sg/kyc/myInfo/activation-code"
                 this.email = email
             }
         }
         else -> enableRegion(email)
     }
+}
 
 private val random = Random()
 fun randomInt(): Int = random.nextInt(99999)

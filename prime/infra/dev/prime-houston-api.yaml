@@ -563,11 +563,13 @@ definitions:
   Plan:
     type: object
     properties:
-      name:
-        description: "An unique name representing the plan"
+      id:
+        description: "An unique id representing the plan"
         type: string
-      price:
-        $ref: '#/definitions/Price'
+      stripePlanId:
+        type: string
+      stripeProductId:
+        type: string
       interval:
         description: "The recurring period for the plan"
         type: string
@@ -577,18 +579,8 @@ definitions:
         type: integer
         default: 1
         minimum: 1
-      properties:
-        description: "Free form key/value pairs"
-        type: object
-        additionalProperties: true
-      presentation:
-        description: "Pretty print version of plan"
-        type: object
-        additionalProperties: true
     required:
-      - name
-      - price
-      - interval
+      - id
   PlanList:
     type: array
     items:
