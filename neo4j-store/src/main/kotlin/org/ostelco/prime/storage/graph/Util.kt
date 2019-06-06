@@ -5,8 +5,12 @@ import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.ProductClass.SIMPLE_DATA
 import org.ostelco.prime.model.ProductProperties.NO_OF_BYTES
 import org.ostelco.prime.model.ProductProperties.PRODUCT_CLASS
+import org.ostelco.prime.module.getResource
+import org.ostelco.prime.storage.AdminDataSource
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
+
+val adminStore by lazy { getResource<AdminDataSource>() }
 
 // Helper for naming of default segments based on country code.
 fun getSegmentNameFromCountryCode(countryCode: String): String = "country-$countryCode".toLowerCase()

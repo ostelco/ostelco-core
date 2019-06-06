@@ -1160,7 +1160,8 @@ object Neo4jStoreSingleton : GraphStore {
 
                 /* Dispatch according to the charge result. */
                 when (subscriptionDetailsInfo.status) {
-                    PaymentStatus.PAYMENT_SUCCEEDED -> { }
+                    PaymentStatus.PAYMENT_SUCCEEDED -> {
+                    }
                     PaymentStatus.REQUIRES_PAYMENT_METHOD -> {
                         NotCreatedError(type = planEntity.name, id = "Failed to subscribe $customerId to ${plan.id}",
                                 error = ForbiddenError("Payment method failed"))
@@ -1288,8 +1289,7 @@ object Neo4jStoreSingleton : GraphStore {
 
             if (bytes == 0L) {
                 logger.error("Product with 0 bytes: sku = {}", sku)
-            }
-            else {
+            } else {
                 /* Update balance with bought data. */
                 /* TODO: Add rollback in case of errors later on. */
                 write("""MATCH (cr:${customerEntity.name} { id:'$customerId' })-[:${customerToBundleRelation.name}]->(bundle:${bundleEntity.name})
@@ -2009,12 +2009,12 @@ object Neo4jStoreSingleton : GraphStore {
                         .bind()
 
                 /* Lookup in payment backend will fail if no value found for 'planId'. */
-                plan.stripePlanId?.let {stripePlanId ->
+                plan.stripePlanId?.let { stripePlanId ->
                     paymentProcessor.removePlan(stripePlanId)
-                        .mapLeft {
-                            NotDeletedError(type = planEntity.name, id = "Failed to delete ${plan.id}",
-                                error = it)
-                        }.bind()
+                            .mapLeft {
+                                NotDeletedError(type = planEntity.name, id = "Failed to delete ${plan.id}",
+                                        error = it)
+                            }.bind()
                 }
 
                 /* Lookup in payment backend will fail if no value found for 'productId'. */
@@ -2238,7 +2238,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     private fun createOffer(offer: org.ostelco.prime.model.Offer, transaction: Transaction): Either<StoreError, Unit> {
         return offerStore
-                .create(offer.id, transaction)
+                .create(Offer(id = offer.id), transaction)
                 .flatMap { offerToSegmentStore.create(offer.id, offer.segments, transaction) }
                 .flatMap { offerToProductStore.create(offer.id, offer.products, transaction) }
     }
@@ -2274,29 +2274,20 @@ object Neo4jStoreSingleton : GraphStore {
         }
         // end of validation
 
-        var result: Either<StoreError, Unit> = Unit.right()
-
-        result = products.fold(
-                initial = result,
-                operation = { acc, product ->
-                    acc.flatMap {
-                        create { product }
-                    }
-                })
-
-        result = segments.fold(
-                initial = result,
-                operation = { acc, segment ->
-                    acc.flatMap { createSegment(segment, transaction) }
-                })
-
         val actualOffer = org.ostelco.prime.model.Offer(
                 id = offer.id,
                 products = productIds,
                 segments = segmentIds)
 
-        result
-                .flatMap { createOffer(actualOffer, transaction) }
+        IO {
+            Either.monad<StoreError>().binding {
+
+                products.forEach { product -> create { product }.bind() }
+                segments.forEach { segment -> create { segment }.bind() }
+                createOffer(actualOffer, transaction).bind()
+
+            }.fix()
+        }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
     }
 
