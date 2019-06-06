@@ -29,6 +29,7 @@ class TestSuite {
                                 org.ostelco.at.okhttp.SourceTest::class.java,
                                 org.ostelco.at.okhttp.PurchaseTest::class.java,
                                 org.ostelco.at.okhttp.GraphQlTests::class.java,
+                                org.ostelco.at.okhttp.PlanTest::class.java,
                                 org.ostelco.at.jersey.CustomerTest::class.java,
                                 // org.ostelco.at.jersey.SubscriptionsTest::class.java,
                                 org.ostelco.at.jersey.RegionsTest::class.java,

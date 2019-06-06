@@ -13,6 +13,11 @@ fun expectedProducts(): List<Product> {
             createProduct("5GB_399NOK", 39900))
 }
 
+fun expectedPlanProducts(): List<Product> {
+    return listOf(
+            createProduct("PLAN_1000SGD_YEAR", 100000))
+}
+
 private val dfs = DecimalFormatSymbols().apply {
     groupingSeparator = '_'
 }

@@ -54,5 +54,16 @@ fun enableRegion(email: String) {
     }
 }
 
+fun enableRegion(email: String, region: String) =
+    when (region) {
+        "SG" -> {
+            post<String>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
+                path = "/regions/sg/kyc/myInfo/activation-code"
+                this.email = email
+            }
+        }
+        else -> enableRegion(email)
+    }
+
 private val random = Random()
 fun randomInt(): Int = random.nextInt(99999)
