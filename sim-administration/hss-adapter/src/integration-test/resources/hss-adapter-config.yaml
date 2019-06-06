@@ -4,6 +4,7 @@ logging:
 
 hlrs:
   - name: Foo
+    hssNameUsedInAPI: foo
     endpoint: http://localhost:9180/default/provision
     userId: user
     apiKey: xyz

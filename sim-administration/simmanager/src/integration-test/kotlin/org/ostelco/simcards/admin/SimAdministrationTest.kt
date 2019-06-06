@@ -341,7 +341,6 @@ class SimAdministrationTest {
                 noOfAllocatedProfiles)
     }
 
-
     fun getSimEntryByICCIDFromLoadedBatch(iccid: String): SimEntry? {
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
                 .getDAO()
