@@ -121,7 +121,7 @@ class SimAdministrationModule : PrimeModule {
             for (config in config.hssVendors) {
                 dispatchers.add(
                         SimpleHssDispatcher(
-                                name = config.name,
+                                name = config.apiEndpointName,
                                 httpClient = httpClient,
                                 config = config))
             }

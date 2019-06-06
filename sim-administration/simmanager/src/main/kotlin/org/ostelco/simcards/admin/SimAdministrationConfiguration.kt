@@ -74,6 +74,10 @@ class HssAdapterConfig {
 }
 
 class HssConfig {
+    @Valid
+    @NotNull
+    @JsonProperty("hssNameUsedInAPI")
+    lateinit var hssNameUsedInAPI: String
 
     @Valid
     // TODO: Make not null asap @NotNull

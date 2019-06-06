@@ -80,7 +80,13 @@ modules:
         contactEmail: rmz@telenordigital.com
         resourcePackage: org.ostelco
       hlrs:
+	  # This name, starting with a uppercase "L", needs to match whatever is present
+	  # in the database, and is used to identify HSSes.
         - name: Loltel
+	  # This name, starting with a lowercase "l" is used in the
+	  # api itself, and must match whatever the API expects
+	  # the bss to be identified as.
+	  hssNameUsedInAPI: loltel
           endpoint: ${WG2_ENDPOINT}
           userId: ${WG2_USER}
           apiKey: ${WG2_API_KEY}
