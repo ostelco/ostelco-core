@@ -83,7 +83,7 @@ class StripePaymentProcessorTest {
     @Before
     fun addTaxRates() {
         if (!taxesAdded) {
-            val addedTaxRate = paymentProcessor.createTaxRateForTaxRegion("sg", 7.0.toBigDecimal(), "GST")
+            val addedTaxRate = paymentProcessor.createTaxRateForTaxRegionId("sg", 7.0.toBigDecimal(), "GST")
             assertEquals(true, addedTaxRate.isRight())
 
             taxesAdded = true
@@ -309,9 +309,9 @@ class StripePaymentProcessorTest {
         val addedInvoiceItem = paymentProcessor.createInvoiceItem(stripeCustomerId, amount, currency, "SGD")
         assertEquals(true, addedInvoiceItem.isRight())
 
-        val taxRegion = "sg"
+        val taxRegionId = "sg"
 
-        val taxRates = paymentProcessor.getTaxRatesForTaxRegion(taxRegion)
+        val taxRates = paymentProcessor.getTaxRatesForTaxRegionId(taxRegionId)
         assertEquals(true, taxRates.isRight())
 
         val addedInvoice = paymentProcessor.createInvoice(stripeCustomerId, right(taxRates))

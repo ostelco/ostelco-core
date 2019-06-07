@@ -73,28 +73,59 @@ class HssAdapterConfig {
     var port: Int = 0
 }
 
+/**
+ * Class used to input configuration data to the sim manager, that it
+ * will use when communicating with HSS (Home Subscriber Service) entities
+ * that keep track of authentication information used to authenticate
+ * SIM profiles.
+ */
 class HssConfig {
 
+
+    /**
+     * To differentiate between types of HSSes with potentially different
+     * APIs.
+     */
     @Valid
     // TODO: Make not null asap @NotNull
     @JsonProperty("type")
     lateinit var type: String
 
+    /**
+     * The name of the HSS used when referring to it in the sim manager's database.
+     */
     @Valid
     @NotNull
     @JsonProperty("name")
     lateinit var name: String
 
+    /**
+     * The name of the hss used when contacting the HSS over the API.
+     */
+    @Valid
+    @NotNull
+    @JsonProperty("hssNameUsedInAPI")
+    lateinit var hssNameUsedInAPI: String
+
+    /**
+     * An URL used to contact the HSS over
+     */
     @Valid
     @NotNull
     @JsonProperty("endpoint")
     lateinit var endpoint: String
 
+    /**
+     * Userid used to authenticate towards the API.
+     */
     @Valid
     @NotNull
     @JsonProperty("userId")
     lateinit var userId: String
 
+    /**
+     * API key (secret) used when authenticating towards the API.
+     */
     @Valid
     @NotNull
     @JsonProperty("apiKey")

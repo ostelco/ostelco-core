@@ -56,6 +56,8 @@ class SimpleHssDispatcher(val name: String,
                     .left()
         }
 
+        // XXX ICCID validation (as well as other types of validation) should be kept
+        //     in separate libraries, not as magic regexps in production code.
         if (!iccid.matches(Regex("^\\d{19,20}"))) {
             return NotUpdatedError("Ill formatted ICCID $iccid").left()
         }

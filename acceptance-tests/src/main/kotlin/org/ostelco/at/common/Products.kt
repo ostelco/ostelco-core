@@ -18,7 +18,7 @@ private val dfs = DecimalFormatSymbols().apply {
 }
 private val df = DecimalFormat("#,###", dfs)
 
-private fun createProduct(sku: String, amount: Int): Product {
+private fun createProduct(sku: String, amount: Int, taxRegionId: String? = null): Product {
     val product = Product()
     product.sku = sku
     product.price = Price()
@@ -27,6 +27,12 @@ private fun createProduct(sku: String, amount: Int): Product {
 
     // This is messy code
     val gbs: Long = "${sku[0]}".toLong()
+    product.payment = if (taxRegionId != null)
+        mapOf(
+                "taxRegionId" to taxRegionId
+        )
+    else
+        emptyMap<String, String>()
     product.properties = mapOf(
             "noOfBytes" to df.format(gbs * Math.pow(2.0, 30.0)),
             "productClass" to "SIMPLE_DATA")

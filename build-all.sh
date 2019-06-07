@@ -148,9 +148,16 @@ fi
 
 
 if [[ -z "$( docker version | grep Version:)" ]] ; then
-    echo "$0 INFO: Docker not running, please start it before trying again'"
+    echo "$0 ERROR: Docker not running, please start it before trying again'"
     exit 1
 fi
+
+if [[ -z "$( docker version  2&>1| grep 'Cannot connect to the Docker daemon')" ]] ; then
+    echo "$0 ERROR: Cannot connect to docker deaemon.'"
+    exit 1
+fi
+
+
 
 
 #
