@@ -33,6 +33,7 @@ func parseCommandLine() {
 	firstMsisdn := flag.String("first-msisdn", "Not a valid MSISDN", "First MSISDN in batch")
 	lastMsisdn := flag.String("last-msisdn", "Not a valid MSISDN", "Last MSISDN in batch")
 	profileType := flag.String("profile-type", "Not a valid sim profile type", "SIM profile type")
+	url := flag.String("url", "Not a valid url type", "URL pointing to prime admin service")
 
 	// XXX Missing: URL of endpoint to upload batch to.
 
@@ -62,5 +63,6 @@ func parseCommandLine() {
 	fmt.Println("first-imsi:", *firstIMSI)
 	fmt.Println("last-imsi:", *lastIMSI)
 	fmt.Println("profile-type:", *profileType)
+	fmt.Println("url:", *url)
 	fmt.Println("tail:", flag.Args())
 }
