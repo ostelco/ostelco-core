@@ -37,6 +37,18 @@ checkEnvironment () {
     return 1
 }
 
+checkIfImageExist() {
+    if [[ -z "$(docker images eu.gcr.io/${GCP_PROJECT_ID}/ocsgw:${TAG_OCS} -q)" ]]; then
+        echo "eu.gcr.io/${GCP_PROJECT_ID}/ocsgw:${TAG_OCS} not found in registry"
+        echo "creating new image"
+        return 1
+    else
+        echo "eu.gcr.io/${GCP_PROJECT_ID}/ocsgw:${TAG_OCS} already in registry"
+        echo "using existing image"
+        return 0
+    fi
+}
+
 deploy () {
 
     echo
@@ -77,6 +89,16 @@ echo
 
 }
 
+printUsage() {
+    echo ""
+    echo "The script require following parameters"
+    echo "<environment> <region> <zone> <instance>"
+    echo ""
+    echo ""
+    echo "example:"
+    echo "./ocsgw/infra/script/deploy-ocsgw.sh prod asia-southeast1 c 1"
+}
+
 ##### Main
 
 set -e
@@ -88,32 +110,40 @@ fi
 
 printInfo
 
-# Environment can be passed as first parameter ( dev / prod ) : default [dev]
+# Environment can be passed as first parameter ( dev / prod )
 if [[ ! -z "$1" ]]; then
     ENVIRONMENT=$1
 else
-    ENVIRONMENT="dev"
+    echo "no environment set"
+    printUsage
+    exit 1
 fi
 
-# Region can be passed as second parameter ( europe-west1 /europe-west4 / asia-southeast1 ) : default [europe-west4]
+# Region can be passed as second parameter ( europe-west1 /europe-west4 / asia-southeast1 )
 if [[ ! -z "$2" ]]; then
     REGION=$2
 else
-    REGION="europe-west4"
+    echo "no region set"
+    printUsage
+    exit 1
 fi
 
-# Zone can be passed as third parameter (a/b/c/d/e/f) : default [b]
+# Zone can be passed as third parameter (a/b/c/d/e/f)
 if [[ ! -z "$3" ]]; then
     ZONE=$3
 else
-    ZONE="b"
+    echo "no zone set"
+    printUsage
+    exit 1
 fi
 
-# Instance number can be passed as forth parameter (1...n) : default [1]
+# Instance number can be passed as forth parameter (1...n)
 if [[ ! -z "$4" ]]; then
     INSTANCE=$4
 else
-    INSTANCE=1
+    echo "no instance set"
+    printUsage
+    exit 1
 fi
 
 
@@ -131,13 +161,15 @@ fi
 
 printEnvironment
 
+if ! checkIfImageExist;
+then
+    echo "Building OCS-gw"
+    ./gradlew ocsgw:clean ocsgw:build
+    docker build -t eu.gcr.io/${GCP_PROJECT_ID}/ocsgw:${TAG_OCS} ocsgw
 
-echo "Building OCS-gw"
-./gradlew ocsgw:clean ocsgw:build
-docker build -t eu.gcr.io/${GCP_PROJECT_ID}/ocsgw:${TAG_OCS} ocsgw
-
-echo "Uploading Docker image"
-docker push eu.gcr.io/${GCP_PROJECT_ID}/ocsgw:${TAG_OCS}
+    echo "Uploading Docker image"
+    docker push eu.gcr.io/${GCP_PROJECT_ID}/ocsgw:${TAG_OCS}
+fi
 
 
 deploy
