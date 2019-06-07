@@ -93,7 +93,7 @@ adminStore.createPlan(
                 payment = mapOf(
                         TYPE.s to SUBSCRIPTION.name,
                         LABEL.s to "Annual subscription plan",
-                        TAX_REGION_ID.s to "SG"
+                        TAX_REGION_ID.s to "sg"
                 )
         )
 ).mapLeft {
@@ -122,7 +122,7 @@ adminStore.atomicCreateOffer(
                         ),
                         payment = mapOf(
                                 LABEL.s to "1GB",
-                                TAX_REGION_ID.s to "SG"
+                                TAX_REGION_ID.s to "sg"
                         )
                 )
         )

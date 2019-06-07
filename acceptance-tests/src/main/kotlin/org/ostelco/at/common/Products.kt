@@ -27,7 +27,7 @@ val expectedPlanProduct: Product = Product()
                 mapOf(
                         "type" to "SUBSCRIPTION",
                         "label" to "Annual subscription plan",
-                        "taxRegionId" to "SG"
+                        "taxRegionId" to "sg"
                 )
         )
         .presentation(emptyMap<String, String>())
