@@ -14,6 +14,8 @@ import org.neo4j.driver.v1.AccessMode.WRITE
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.appnotifier.AppNotifier
 import org.ostelco.prime.dsl.DSL.job
+import org.ostelco.prime.kts.engine.KtsServiceFactory
+import org.ostelco.prime.kts.engine.reader.ClasspathResourceTextReader
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.CustomerRegionStatus.APPROVED
 import org.ostelco.prime.model.CustomerRegionStatus.PENDING
@@ -1005,7 +1007,13 @@ class Neo4jStoreTest {
         fun start() {
             ConfigRegistry.config = Config(
                     host = "0.0.0.0",
-                    protocol = "bolt")
+                    protocol = "bolt",
+                    hssNameLookupService = KtsServiceFactory(
+                            serviceInterface = "org.ostelco.prime.storage.graph.HssNameLookupService",
+                            textReader = ClasspathResourceTextReader(
+                                    filename = "/HssNameLookupService.kts"
+                            )
+                    ))
             Neo4jClient.start()
         }
 

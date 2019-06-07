@@ -14,7 +14,9 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 import org.ostelco.prime.dsl.DSL.job
-import org.ostelco.prime.dsl.KotlinScript
+import org.ostelco.prime.kts.engine.KtsServiceFactory
+import org.ostelco.prime.kts.engine.reader.ClasspathResourceTextReader
+import org.ostelco.prime.kts.engine.script.RunnableKotlinScript
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.Identity
@@ -125,11 +127,18 @@ class Neo4jStorageTest {
 
             ConfigRegistry.config = Config(
                     host = "0.0.0.0",
-                    protocol = "bolt")
+                    protocol = "bolt",
+                    hssNameLookupService = KtsServiceFactory(
+                            serviceInterface = "org.ostelco.prime.storage.graph.HssNameLookupService",
+                            textReader = ClasspathResourceTextReader(
+                                    filename = "/HssNameLookupService.kts"
+                            )
+                    )
+            )
 
             Neo4jClient.start()
 
-            KotlinScript("/IntegrationTestSetup.kts").eval()
+            RunnableKotlinScript(ClasspathResourceTextReader("/IntegrationTestSetup.kts").readText()).eval<Any?>()
         }
 
         @JvmStatic
