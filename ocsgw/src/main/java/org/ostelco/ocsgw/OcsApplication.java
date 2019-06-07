@@ -66,20 +66,25 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
         final String instance = System.getenv("INSTANCE");
         final String serviceFile = System.getenv("SERVICE_FILE");
 
-        if ((vpcEnv != null) && (instance != null) && (serviceFile != null)) {
+        if ((vpcEnv != null) && (instance != null)) {
+            String bucketName = "ocsgw-" + vpcEnv + "-" + instance + "-bucket";
 
-            final String bucket = "ocsgw-" + vpcEnv + "-" + instance + "-bucket";
-
-            Storage storage = StorageOptions.getDefaultInstance().getService();
-
-            Blob blobConfigFile = storage.get(BlobId.of(bucket, configFile));
-            final Path destConfigurationFilePath = Paths.get(configDir + "/" + configFile);
-            blobConfigFile.downloadTo(destConfigurationFilePath);
-
-            Blob blobServiceAccountFile = storage.get(BlobId.of(bucket, serviceFile));
-            final Path destServiceAccountFilePath = Paths.get(configDir + "/" + serviceFile);
-            blobServiceAccountFile.downloadTo(destServiceAccountFilePath);
+            fetchFromStorage(configFile, configDir, bucketName);
+            fetchFromStorage(serviceFile, configDir, bucketName);
         }
+    }
+
+    private void fetchFromStorage(String fileName, String configDir, String bucketName) {
+        if (fileName == null) {
+            return;
+        }
+
+        LOG.debug("Downloading file : " + fileName);
+
+        Storage storage = StorageOptions.getDefaultInstance().getService();
+        Blob blobFile = storage.get(BlobId.of(bucketName, fileName));
+        final Path destFilePath = Paths.get(configDir + "/" + fileName);
+        blobFile.downloadTo(destFilePath);
     }
 
 
