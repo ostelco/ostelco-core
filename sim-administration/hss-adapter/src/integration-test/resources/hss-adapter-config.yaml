@@ -4,6 +4,7 @@ logging:
 
 hlrs:
   - name: Foo
+    type: WG2
     hssNameUsedInAPI: foo
     endpoint: http://localhost:9180/default/provision
     userId: user

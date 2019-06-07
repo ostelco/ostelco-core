@@ -141,10 +141,10 @@ class HssConfig {
 
 
     fun validateAsWg2Config() {
-        check (hssNameUsedInAPI == null) { "hdssNameUsedInAPI must be non null"}
-        check (endpoint == null) {"endpoint must be non null"}
-        check (userId == null) { "userId must be non null"}
-        check (apiKey == null) { "apiKey must be non null"}
+        check (hssNameUsedInAPI != null) { "hssNameUsedInAPI must be non null"}
+        check (endpoint != null) {"endpoint must be non null"}
+        check (userId != null) { "userId must be non null"}
+        check (apiKey != null) { "apiKey must be non null"}
     }
 
     fun validateAsDummyConfig() {}
