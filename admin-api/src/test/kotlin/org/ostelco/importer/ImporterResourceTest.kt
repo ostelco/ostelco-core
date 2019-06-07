@@ -19,6 +19,7 @@ import org.ostelco.prime.admin.importer.UpdateSegments
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.jersey.YamlMessageBodyReader
 import org.ostelco.prime.model.Price
+import org.ostelco.prime.model.ProductProperties.NO_OF_BYTES
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.Response.Status
 
@@ -79,7 +80,7 @@ class ImporterResourceTest {
         val product = offer.createProducts.first()
         assertEquals("10GB_449NOK", product.sku)
         assertEquals(Price(449, "NOK"), product.price)
-        assertEquals(mapOf("noOfBytes" to "10_000_000_000"), product.properties)
+        assertEquals(mapOf(NO_OF_BYTES.s to "10_000_000_000"), product.properties)
         assertEquals(
                 mapOf("isDefault" to "true",
                         "offerLabel" to "Default Offer",

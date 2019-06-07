@@ -1,6 +1,7 @@
 package org.ostelco.at.common
 
 import org.apache.commons.lang3.RandomStringUtils
+import org.ostelco.at.jersey.get
 import org.ostelco.at.jersey.post
 import org.ostelco.prime.customer.model.Customer
 import org.ostelco.prime.customer.model.ScanInformation
@@ -51,6 +52,18 @@ fun enableRegion(email: String) {
                 "idCountry" to "NOR",
                 "merchantIdScanReference" to scanInformation.scanId,
                 "identityVerification" to """{ "similarity":"MATCH", "validity":"TRUE"}"""))
+    }
+}
+
+fun enableRegion(email: String, region: String) {
+    when (region) {
+        "sg" -> {
+            get<String> {
+                path = "/regions/sg/kyc/myInfo/activation-code"
+                this.email = email
+            }
+        }
+        else -> enableRegion(email)
     }
 }
 
