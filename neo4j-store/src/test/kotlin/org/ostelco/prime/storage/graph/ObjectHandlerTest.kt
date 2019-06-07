@@ -9,7 +9,7 @@ class ObjectHandlerTest {
 
     @Test
     fun `test object to map and back`() {
-        val map = ObjectHandler.getProperties(createProduct("1GB_249NOK", 24900))
+        val map = ObjectHandler.getProperties(createProduct("1GB_249NOK"))
 
         val expectedMap = LinkedHashMap<String, Any>()
         expectedMap["sku"] = "1GB_249NOK"

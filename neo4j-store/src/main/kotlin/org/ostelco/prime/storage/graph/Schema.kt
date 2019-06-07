@@ -88,21 +88,6 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
         }
     }
 
-    fun create(id: String, transaction: Transaction): Either<StoreError, Unit> {
-
-        return doNotExist(id = id, transaction = transaction).flatMap {
-
-            write("""CREATE (node:${entityType.name} { id:"$id"});""",
-                    transaction) { statementResult ->
-
-                if (statementResult.summary().counters().nodesCreated() == 1)
-                    Unit.right()
-                else
-                    Either.left(NotCreatedError(type = entityType.name, id = id))
-            }
-        }
-    }
-
     fun <TO : HasId> getRelated(
             id: String,
             relationType: RelationType<E, *, TO>,

@@ -129,7 +129,7 @@ class Neo4jStorageTest {
 
             Neo4jClient.start()
 
-            KotlinScript("/AcceptanceTestSetup.kts").eval()
+            KotlinScript("/IntegrationTestSetup.kts").eval()
         }
 
         @JvmStatic

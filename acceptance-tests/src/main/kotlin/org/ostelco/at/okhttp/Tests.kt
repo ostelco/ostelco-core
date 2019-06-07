@@ -7,6 +7,7 @@ import org.ostelco.at.common.StripePayment
 import org.ostelco.at.common.createCustomer
 import org.ostelco.at.common.createSubscription
 import org.ostelco.at.common.enableRegion
+import org.ostelco.at.common.expectedPlanProduct
 import org.ostelco.at.common.expectedProducts
 import org.ostelco.at.common.getLogger
 import org.ostelco.at.common.randomInt
@@ -851,7 +852,35 @@ class ReferralTest {
     }
 }
 
-// TODO Kjell: add okhttp acceptance tests for PlanTest
+class PlanTest {
+
+    @Test
+    fun `okhttp test - POST purchase plan`() {
+
+        val email = "purchase-${randomInt()}@test.com"
+        var customerId = ""
+        try {
+            customerId = createCustomer(name = "Test Purchase Plan User", email = email).id
+            enableRegion(email = email, region = "sg")
+
+            val client = clientForSubject(subject = email)
+            val sourceId = StripePayment.createPaymentTokenId()
+
+            client.purchaseProduct("PLAN_1000SGD_YEAR", sourceId, false)
+
+            Thread.sleep(200) // wait for 200 ms for balance to be updated in db
+
+            val purchaseRecords = client.purchaseHistory
+
+            purchaseRecords.sortBy { it.timestamp }
+
+            assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
+            assertEquals(expectedPlanProduct, purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
+        } finally {
+            StripePayment.deleteCustomer(customerId = customerId)
+        }
+    }
+}
 
 class GraphQlTests {
 
