@@ -2,8 +2,10 @@
 <configuration>
 
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-    <encoder>
-      <pattern>%d{dd MMM yyyy HH:mm:ss,SSS} %-5p %c{1} - %m%n</pattern>
+    <encoder class="net.logstash.logback.encoder.LogstashEncoder" >
+      <fieldNames>
+        <level>severity</level>
+      </fieldNames>
     </encoder>
   </appender>
 
@@ -12,7 +14,10 @@
   <logger name="org.jdiameter.common.impl.validation" level="INFO"/>
   <logger name="jdiameter.statistic" level="INFO"/>
   <logger name="org.jdiameter" level="WARN"/>
+
+  <!-- change to DEBUG to see gRPC headers-->
   <logger name="io.grpc.netty" level="INFO"/>
+
   <logger name="io.lettuce.core" level="INFO" />
   <logger name="io.netty" level="INFO" />
 

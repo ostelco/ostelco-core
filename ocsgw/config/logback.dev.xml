@@ -2,8 +2,10 @@
 <configuration>
 
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-    <encoder>
-      <pattern>%d{dd MMM yyyy HH:mm:ss,SSS} %-5p %c{1} - %m%n</pattern>
+    <encoder class="net.logstash.logback.encoder.LogstashEncoder" >
+      <fieldNames>
+        <level>severity</level>
+      </fieldNames>
     </encoder>
   </appender>
 
