@@ -45,6 +45,10 @@ import org.ostelco.prime.model.Region
 import org.ostelco.prime.model.RegionDetails
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.ScanStatus
+import org.ostelco.prime.model.SimEntry
+import org.ostelco.prime.model.SimProfileStatus
+import org.ostelco.prime.model.SimProfileStatus.AVAILABLE_FOR_DOWNLOAD
+import org.ostelco.prime.model.SimProfileStatus.INSTALLED
 import org.ostelco.prime.model.SimProfileStatus.NOT_READY
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
@@ -73,6 +77,7 @@ import org.ostelco.prime.storage.ScanInformationStore
 import org.ostelco.prime.storage.StoreError
 import org.ostelco.prime.storage.SystemError
 import org.ostelco.prime.storage.ValidationError
+import org.ostelco.prime.storage.graph.ConfigRegistry.config
 import org.ostelco.prime.storage.graph.Graph.read
 import org.ostelco.prime.storage.graph.Graph.write
 import org.ostelco.prime.storage.graph.Graph.writeSuspended
@@ -137,6 +142,7 @@ class Neo4jStore : GraphStore by Neo4jStoreSingleton
 object Neo4jStoreSingleton : GraphStore {
 
     private val logger by getLogger()
+
     private val scanInformationDatastore by lazy { getResource<ScanInformationStore>() }
 
     //
@@ -259,6 +265,9 @@ object Neo4jStoreSingleton : GraphStore {
             dataClass = None::class.java)
     private val subscriptionSimProfileRelationStore = UniqueRelationStore(subscriptionSimProfileRelation)
 
+
+    private val hssNameLookup: HssNameLookupService = config.hssNameLookupService.getKtsService()
+
     // -------------
     // Client Store
     // -------------
@@ -374,21 +383,19 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
 
-    // TODO vihang: Should we also delete SimProfile attached to this user?
+    // TODO vihang: When we read and then delete, it fails when deserialization does not work.
     override fun removeCustomer(identity: org.ostelco.prime.model.Identity): Either<StoreError, Unit> = writeTransaction {
-        getCustomerId(identity = identity, transaction = transaction)
-                .flatMap { customerId ->
-                    identityStore.delete(id = identity.id, transaction = transaction)
-                    customerStore.exists(customerId, transaction)
-                            .flatMap {
-                                customerStore.getRelated(customerId, customerToBundleRelation, transaction)
-                                        .map { it.forEach { bundle -> bundleStore.delete(bundle.id, transaction) } }
-                                customerStore.getRelated(customerId, scanInformationRelation, transaction)
-                                        .map { it.forEach { scanInfo -> scanInformationStore.delete(scanInfo.id, transaction) } }
-                            }
-                            .flatMap { customerStore.delete(customerId, transaction) }
-                }
-                .ifFailedThenRollback(transaction)
+        write(query = """
+            MATCH (i:${identityEntity.name} {id:'${identity.id}'})-[:${identifiesRelation.name}]->(c:${customerEntity.name})
+            OPTIONAL MATCH (c)-[:${customerToBundleRelation.name}]->(b:${bundleEntity.name})
+            OPTIONAL MATCH (c)-[:${scanInformationRelation.name}]->(s:${scanInformationEntity.name})
+            DETACH DELETE i, c, b, s;
+        """.trimIndent(), transaction = transaction) { statementResult ->
+            Either.cond(
+                    test = statementResult.summary().counters().nodesDeleted() > 0,
+                    ifTrue = {},
+                    ifFalse = { NotFoundError(type = identityEntity.name, id = identity.id) })
+        }
     }
 
     //
@@ -443,7 +450,7 @@ object Neo4jStoreSingleton : GraphStore {
                             listOf(simProfileEntity.createEntity(record["sp"].asMap()))
                                     .mapNotNull { simProfile ->
                                         simManager.getSimProfile(
-                                                hlr = getHlr(regionCode = region.id),
+                                                hlr = hssNameLookup.getHssName(regionCode = region.id),
                                                 iccId = simProfile.iccId)
                                                 .map { simEntry ->
                                                     org.ostelco.prime.model.SimProfile(
@@ -485,7 +492,39 @@ object Neo4jStoreSingleton : GraphStore {
     // SIM Profile
     //
 
-    private val simManager by lazy { getResource<SimManager>() }
+
+    private val simManager = object : SimManager {
+
+        private val simManager by lazy { getResource<SimManager>() }
+
+        override fun allocateNextEsimProfile(hlr: String, phoneType: String?): Either<String, SimEntry> {
+            return if (hlr == "TEST" || phoneType == "TEST") {
+                SimEntry(
+                        iccId = UUID.randomUUID().toString(),
+                        status = AVAILABLE_FOR_DOWNLOAD,
+                        eSimActivationCode = "Dummy eSIM",
+                        msisdnList = emptyList()).right()
+            } else {
+                simManager.allocateNextEsimProfile(hlr, phoneType)
+            }
+        }
+
+        override fun getSimProfile(hlr: String, iccId: String): Either<String, SimEntry> {
+            return if (hlr == "TEST") {
+                SimEntry(
+                        iccId = iccId,
+                        status = INSTALLED,
+                        eSimActivationCode = "Dummy eSIM",
+                        msisdnList = emptyList()).right()
+            } else {
+                simManager.getSimProfile(hlr, iccId)
+            }
+        }
+
+        override fun getSimProfileStatusUpdates(onUpdate: (iccId: String, status: SimProfileStatus) -> Unit) {
+            return simManager.getSimProfileStatusUpdates(onUpdate)
+        }
+    }
 
     private val emailNotifier by lazy { getResource<EmailNotifier>() }
 
@@ -515,7 +554,7 @@ object Neo4jStoreSingleton : GraphStore {
                         customerId = customerId,
                         regionCode = regionCode.toLowerCase()).bind()
                 val region = get(Region::class, regionCode.toLowerCase()).bind()
-                val simEntry = simManager.allocateNextEsimProfile(hlr = getHlr(region.id.toLowerCase()), phoneType = profileType)
+                val simEntry = simManager.allocateNextEsimProfile(hlr = hssNameLookup.getHssName(region.id.toLowerCase()), phoneType = profileType)
                         .mapLeft { NotFoundError("eSIM profile", id = "Loltel") }
                         .bind()
                 val simProfile = SimProfile(id = UUID.randomUUID().toString(), iccId = simEntry.iccId)
@@ -622,7 +661,7 @@ object Neo4jStoreSingleton : GraphStore {
                                             .bind()
 
                             val simEntry = simManager.getSimProfile(
-                                    hlr = getHlr(regionId),
+                                    hlr = hssNameLookup.getHssName(regionId),
                                     iccId = simProfile.iccId)
                                     .mapLeft { NotFoundError(type = simProfileEntity.name, id = simProfile.iccId) }
                                     .bind()
@@ -634,10 +673,6 @@ object Neo4jStoreSingleton : GraphStore {
                         }
                     }.fix()
         }.unsafeRunSync()
-    }
-
-    private fun getHlr(regionCode: String): String {
-        return "Loltel"
     }
 
     override fun updateSimProfile(
@@ -673,7 +708,7 @@ object Neo4jStoreSingleton : GraphStore {
             Either.monad<StoreError>().binding {
                 val simProfile = simProfileEither.bind()
                 val simEntry = simManager.getSimProfile(
-                        hlr = getHlr(regionCode),
+                        hlr = hssNameLookup.getHssName(regionCode),
                         iccId = iccId)
                         .mapLeft { NotFoundError(type = simProfileEntity.name, id = simProfile.iccId) }
                         .bind()
@@ -714,7 +749,7 @@ object Neo4jStoreSingleton : GraphStore {
             Either.monad<StoreError>().binding {
                 val (customer, simProfile) = infoEither.bind()
                 val simEntry = simManager.getSimProfile(
-                        hlr = getHlr(regionCode),
+                        hlr = hssNameLookup.getHssName(regionCode),
                         iccId = iccId)
                         .mapLeft {
                             NotFoundError(type = simProfileEntity.name, id = simProfile.iccId)

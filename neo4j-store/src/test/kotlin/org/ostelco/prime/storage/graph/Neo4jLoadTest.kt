@@ -11,6 +11,8 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.neo4j.driver.v1.AccessMode.WRITE
 import org.ostelco.prime.dsl.DSL.job
+import org.ostelco.prime.kts.engine.KtsServiceFactory
+import org.ostelco.prime.kts.engine.reader.ClasspathResourceTextReader
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.Price
@@ -158,7 +160,14 @@ class Neo4jLoadTest {
         fun start() {
             ConfigRegistry.config = Config(
                     host = "0.0.0.0",
-                    protocol = "bolt")
+                    protocol = "bolt",
+                    hssNameLookupService = KtsServiceFactory(
+                            serviceInterface = "org.ostelco.prime.storage.graph.HssNameLookupService",
+                            textReader = ClasspathResourceTextReader(
+                                    filename = "/HssNameLookupService.kts"
+                            )
+                    )
+            )
             Neo4jClient.start()
         }
 
