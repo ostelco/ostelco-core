@@ -2381,8 +2381,16 @@ object Neo4jStoreSingleton : GraphStore {
 
     fun createIndex() = writeTransaction {
         write(query = "CREATE INDEX ON :${identityEntity.name}(id)", transaction = transaction) {}
+        write(query = "CREATE INDEX ON :${customerEntity.name}(id)", transaction = transaction) {}
+        write(query = "CREATE INDEX ON :${productEntity.name}(id)", transaction = transaction) {}
+        write(query = "CREATE INDEX ON :${productEntity.name}(sku)", transaction = transaction) {}
         write(query = "CREATE INDEX ON :${subscriptionEntity.name}(id)", transaction = transaction) {}
+        write(query = "CREATE INDEX ON :${subscriptionEntity.name}(msisdn)", transaction = transaction) {}
         write(query = "CREATE INDEX ON :${bundleEntity.name}(id)", transaction = transaction) {}
+        write(query = "CREATE INDEX ON :${simProfileEntity.name}(id)", transaction = transaction) {}
+        write(query = "CREATE INDEX ON :${planEntity.name}(id)", transaction = transaction) {}
+        write(query = "CREATE INDEX ON :${regionEntity.name}(id)", transaction = transaction) {}
+        write(query = "CREATE INDEX ON :${scanInformationEntity.name}(id)", transaction = transaction) {}
     }
 }
 

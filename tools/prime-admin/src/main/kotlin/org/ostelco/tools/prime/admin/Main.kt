@@ -22,6 +22,7 @@ fun doActions() {
 //    check()
 //    sync()
 //    setup()
+//    index()
 
 //    createCustomer(email = "", nickname = "")
 //    deleteCustomer(email = "")
