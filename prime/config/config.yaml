@@ -38,6 +38,11 @@ modules:
     config:
       host: ${NEO4J_HOST}
       protocol: bolt+routing
+      hssNameLookupService:
+        serviceInterface: org.ostelco.prime.storage.graph.HssNameLookupService
+        textReader:
+          type: file
+          filename: /config-data/HssNameLookupService.kts
   - type: analytics
     config:
       projectId: ${GCP_PROJECT_ID}

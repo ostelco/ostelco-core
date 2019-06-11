@@ -18,9 +18,12 @@ class PaymentProcessorModule : PrimeModule {
 
     private val logger by getLogger()
 
+    private var isConfigInitialized = false
+
     @JsonProperty("config")
     fun setConfig(config: PaymentProcessorConfig) {
         ConfigRegistry.config = config
+        isConfigInitialized = true
     }
 
     override fun init(env: Environment) {
@@ -31,16 +34,19 @@ class PaymentProcessorModule : PrimeModule {
         Stripe.apiKey = System.getenv("STRIPE_API_KEY")
                 ?: throw Error("Missing environment variable STRIPE_API_KEY")
 
-        val jerseyEnv = env.jersey()
+        if (isConfigInitialized) {
+            /* APIs. */
+            env.jersey().register(StripeWebhookResource())
 
-        /* APIs. */
-        jerseyEnv.register(StripeWebhookResource())
+            /* Stripe events reporting. */
 
-        /* Stripe events reporting. */
-        env.lifecycle().manage(StripeEventPublisher)
-        env.lifecycle().manage(StoreStripeEvent())
-        env.lifecycle().manage(ReportStripeEvent())
-        env.lifecycle().manage(RecurringPaymentStripeEvent())
+            env.lifecycle().manage(StripeEventPublisher)
+            env.lifecycle().manage(StoreStripeEvent())
+            env.lifecycle().manage(ReportStripeEvent())
+            env.lifecycle().manage(RecurringPaymentStripeEvent())
+        } else {
+            logger.warn("Running stripe-payment-processor in admin mode")
+        }
     }
 }
 
