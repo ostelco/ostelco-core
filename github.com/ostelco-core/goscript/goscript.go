@@ -254,6 +254,7 @@ func isError(err error) bool {
 	return (err != nil)
 }
 
+/// XXX THis succeeds even if docker is not running. Must be fixed.
 func checkIfDockerIsRunning() bool {
 	cmd := "if [[  -z \"$( docker version | grep Version:) \" ]] ; then echo 'Docker not running' ; fi"
 	out, err := exec.Command("bash", "-c", cmd).Output()
