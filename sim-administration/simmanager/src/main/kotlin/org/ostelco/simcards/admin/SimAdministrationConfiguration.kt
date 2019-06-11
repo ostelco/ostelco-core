@@ -73,6 +73,11 @@ class HssAdapterConfig {
     var port: Int = 0
 }
 
+
+enum class HSSType {
+    DUMMY, WG2
+}
+
 /**
  * Class used to input configuration data to the sim manager, that it
  * will use when communicating with HSS (Home Subscriber Service) entities
@@ -81,15 +86,14 @@ class HssAdapterConfig {
  */
 class HssConfig {
 
-
     /**
      * To differentiate between types of HSSes with potentially different
-     * APIs.
+     * APIs.   The  current implementation types are "dummy" and "wg2".
      */
     @Valid
-    // TODO: Make not null asap @NotNull
-    @JsonProperty("type")
-    lateinit var type: String
+    @NotNull
+    @JsonProperty("hlrType")
+    lateinit var type: HSSType
 
     /**
      * The name of the HSS used when referring to it in the sim manager's database.
@@ -99,11 +103,15 @@ class HssConfig {
     @JsonProperty("name")
     lateinit var name: String
 
+
+    //
+    //   Parameters that only make sense if the type is "wg2"
+    //
     /**
      * The name of the hss used when contacting the HSS over the API.
      */
     @Valid
-    @NotNull
+    // @NotNull
     @JsonProperty("hssNameUsedInAPI")
     lateinit var hssNameUsedInAPI: String
 
@@ -111,7 +119,7 @@ class HssConfig {
      * An URL used to contact the HSS over
      */
     @Valid
-    @NotNull
+    // @NotNull
     @JsonProperty("endpoint")
     lateinit var endpoint: String
 
@@ -119,7 +127,7 @@ class HssConfig {
      * Userid used to authenticate towards the API.
      */
     @Valid
-    @NotNull
+    // @NotNull
     @JsonProperty("userId")
     lateinit var userId: String
 
@@ -127,9 +135,26 @@ class HssConfig {
      * API key (secret) used when authenticating towards the API.
      */
     @Valid
-    @NotNull
+    // @NotNull
     @JsonProperty("apiKey")
     lateinit var apiKey: String
+
+
+    fun validateAsWg2Config() {
+        check (hssNameUsedInAPI != null) { "hssNameUsedInAPI must be non null"}
+        check (endpoint != null) {"endpoint must be non null"}
+        check (userId != null) { "userId must be non null"}
+        check (apiKey != null) { "apiKey must be non null"}
+    }
+
+    fun validateAsDummyConfig() {}
+
+    fun validate() {
+        return when(type) {
+            HSSType.WG2 -> validateAsWg2Config()
+            HSSType.DUMMY -> validateAsDummyConfig()
+        }
+    }
 }
 
 class ProfileVendorConfig {
