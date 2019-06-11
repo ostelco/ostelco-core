@@ -1,0 +1,2 @@
+org.ostelco.prime.kts.engine.reader.ClasspathResourceTextReader
+org.ostelco.prime.kts.engine.reader.FileTextReader

@@ -7,7 +7,9 @@ import io.dropwizard.setup.Environment
 import org.neo4j.driver.v1.AuthTokens
 import org.neo4j.driver.v1.Driver
 import org.neo4j.driver.v1.GraphDatabase
-import org.ostelco.prime.dsl.KotlinScript
+import org.ostelco.prime.kts.engine.KtsServiceFactory
+import org.ostelco.prime.kts.engine.reader.ClasspathResourceTextReader
+import org.ostelco.prime.kts.engine.script.RunnableKotlinScript
 import org.ostelco.prime.module.PrimeModule
 import java.net.URI
 import java.util.concurrent.TimeUnit.SECONDS
@@ -28,14 +30,15 @@ class Neo4jModule : PrimeModule {
 
         // For Acceptance Tests
         if (System.getenv("FIREBASE_ROOT_PATH") == "test") {
-            KotlinScript("/AcceptanceTestSetup.kts").eval()
+            RunnableKotlinScript(ClasspathResourceTextReader("/AcceptanceTestSetup.kts").readText()).eval<Any?>()
         }
     }
 }
 
 data class Config(
         val host: String,
-        val protocol: String)
+        val protocol: String,
+        val hssNameLookupService: KtsServiceFactory)
 
 object ConfigRegistry {
     lateinit var config: Config

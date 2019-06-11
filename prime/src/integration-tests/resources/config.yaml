@@ -12,6 +12,11 @@ modules:
     config:
       host: 0.0.0.0
       protocol: bolt
+      hssNameLookupService:
+        serviceInterface: org.ostelco.prime.storage.graph.HssNameLookupService
+        textReader:
+          type: classpathResource
+          filename: /HssNameLookupService.kts
   - type: analytics
     config:
       projectId: ${GCP_PROJECT_ID}
