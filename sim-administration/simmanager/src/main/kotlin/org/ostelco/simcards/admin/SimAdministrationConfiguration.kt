@@ -92,7 +92,7 @@ class HssConfig {
      */
     @Valid
     @NotNull
-    @JsonProperty("type")
+    @JsonProperty("hlrType")
     lateinit var type: HSSType
 
     /**

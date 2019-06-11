@@ -4,13 +4,13 @@ logging:
 
 hlrs:
   - name: Foo
-    type: WG2
+    hlrType: WG2
     hssNameUsedInAPI: foo
     endpoint: http://localhost:9180/default/provision
     userId: user
     apiKey: xyz
   - name: Bar
-    type: Dummy
+    hlrType: Dummy
 
 httpClient:
   timeout: 10000ms

@@ -254,11 +254,19 @@ func isError(err error) bool {
 	return (err != nil)
 }
 
-/// XXX THis succeeds even if docker is not running. Must be fixed.
+// XXX THis code seems to work, but it looks clunky. Please fix.
 func checkIfDockerIsRunning() bool {
 	cmd := "if [[  -z \"$( docker version | grep Version:) \" ]] ; then echo 'Docker not running' ; fi"
 	out, err := exec.Command("bash", "-c", cmd).Output()
-	return "Docker not running" != string(out) && err == nil
+	ostring := string(out)
+
+	if "Docker not running" == ostring && err == nil {
+		return false
+	}
+
+	cmd2 := "docker ps 2>&1  | grep 'Cannot connect to the Docker daemon'"
+	out, err = exec.Command("bash", "-c", cmd2).Output()
+	return (len(out) == 0 && err != nil)
 }
 
 // AssertDockerIsRunning will terminate the program with exit code 1 if docker is not
