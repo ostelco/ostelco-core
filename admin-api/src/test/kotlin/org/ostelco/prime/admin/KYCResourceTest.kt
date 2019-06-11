@@ -1,6 +1,5 @@
 package org.ostelco.prime.admin
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.assertj.core.api.Assertions
 import org.junit.Test
 import org.ostelco.prime.admin.api.KYCResource
@@ -140,4 +139,65 @@ class KYCResourceTest {
         }
         Assertions.assertThat(id).isNotNull()
     }
+
+    /*
+idScanStatus = [ERROR]
+idCheckMicroprint = [N/A]
+idType = [ID_CARD]
+jumioIdScanReference = [2fcc8484-3581-42c0-b7c1-5c40f0db0143]
+callBackType = [NETVERIFYID]
+merchantIdScanReference = [2be3fc96-317f-41c0-9713-cf21811f75c5]
+verificationStatus = [ERROR_NOT_READABLE_ID]
+idCheckDocumentValidation = [N/A]
+idScanImage = [https://netverify.com/recognition/v1/idscan/2fcc8484-3581-42c0-b7c1-5c40f0db0143/front]
+callbackDate = [2019-06-04T01:50:57.746Z]
+transactionDate = [2019-06-04T01:47:40.600Z]
+idCheckDataPositions = [N/A]
+idCountry = [SGP]
+idScanImageBackside = [https://netverify.com/recognition/v1/idscan/2fcc8484-3581-42c0-b7c1-5c40f0db0143/back]
+idCheckSignature = [N/A]
+rejectReason = [{"rejectReasonCode":"200","rejectReasonDescription":"NOT_READABLE_DOCUMENT","rejectReasonDetails":[{"detailsCode":"2005","detailsDescription":"DAMAGED_DOCUMENT"}]}]
+livenessImages = [["https://netverify.com/api/netverify/v2/scans/2fcc8484-3581-42c0-b7c1-5c40f0db0143/images/liveness/1","https://netverify.com/api/netverify/v2/scans/2fcc8484-3581-42c0-b7c1-5c40f0db0143/images/liveness/2","https://netverify.com/api/netverify/v2/scans/2fcc8484-3581-42c0-b7c1-5c40f0db0143/images/liveness/3","https://netverify.com/api/netverify/v2/scans/2fcc8484-3581-42c0-b7c1-5c40f0db0143/images/liveness/4","https://netverify.com/api/netverify/v2/scans/2fcc8484-3581-42c0-b7c1-5c40f0db0143/images/liveness/5","https://netverify.com/api/netverify/v2/scans/2fcc8484-3581-42c0-b7c1-5c40f0db0143/images/liveness/6"]]
+clientIp = [119.56.102.101]
+idScanImageFace = [https://netverify.com/recognition/v1/idscan/2fcc8484-3581-42c0-b7c1-5c40f0db0143/face]
+idCheckSecurityFeatures = [N/A]
+firstAttemptDate = [2019-06-04T01:49:21.197Z]
+idCheckHologram = [N/A]
+idScanSource = [SDK]
+idCheckMRZcode = [N/A]
+    */
+
+    @Test
+    fun `test toScanInformation`() {
+
+        val dataMap = mapOf(
+                "idScanStatus" to "ERROR",
+                "idCheckMicroprint" to "N/A",
+                "idType" to "ID_CARD",
+                "jumioIdScanReference" to "2fcc8484-3581-42c0-b7c1-5c40f0db0143",
+                "callBackType" to "NETVERIFYID",
+                "merchantIdScanReference" to "2be3fc96-317f-41c0-9713-cf21811f75c5",
+                "verificationStatus" to "ERROR_NOT_READABLE_ID",
+                "idCheckDocumentValidation" to "N/A",
+                "idScanImage" to "https://netverify.com/recognition/v1/idscan/2fcc8484-3581-42c0-b7c1-5c40f0db0143/front",
+                "callbackDate" to "2019-06-04T01:50:57.746Z",
+                "transactionDate" to "2019-06-04T01:47:40.600Z",
+                "idCheckDataPositions" to "N/A",
+                "idCountry" to "SGP",
+                "idScanImageBackside" to "https://netverify.com/recognition/v1/idscan/2fcc8484-3581-42c0-b7c1-5c40f0db0143/back",
+                "idCheckSignature" to "N/A",
+                "rejectReason" to """{"rejectReasonCode":"200","rejectReasonDescription":"NOT_READABLE_DOCUMENT","rejectReasonDetails":[{"detailsCode":"2005","detailsDescription":"DAMAGED_DOCUMENT"}]}""",
+                "livenessImages" to """["https://netverify.com/api/netverify/v2/scans/2fcc8484-3581-42c0-b7c1-5c40f0db0143/images/liveness/1","https://netverify.com/api/netverify/v2/scans/2fcc8484-3581-42c0-b7c1-5c40f0db0143/images/liveness/2","https://netverify.com/api/netverify/v2/scans/2fcc8484-3581-42c0-b7c1-5c40f0db0143/images/liveness/3","https://netverify.com/api/netverify/v2/scans/2fcc8484-3581-42c0-b7c1-5c40f0db0143/images/liveness/4","https://netverify.com/api/netverify/v2/scans/2fcc8484-3581-42c0-b7c1-5c40f0db0143/images/liveness/5","https://netverify.com/api/netverify/v2/scans/2fcc8484-3581-42c0-b7c1-5c40f0db0143/images/liveness/6"]""",
+                "clientIp" to "119.56.102.101",
+                "idScanImageFace" to "https://netverify.com/recognition/v1/idscan/2fcc8484-3581-42c0-b7c1-5c40f0db0143/face",
+                "idCheckSecurityFeatures" to "N/A",
+                "firstAttemptDate" to "2019-06-04T01:49:21.197Z",
+                "idCheckHologram" to "N/A",
+                "idScanSource" to "SDK",
+                "idCheckMRZcode" to "N/A"
+        )
+        val scanInformation = KYCResource().toScanInformation(dataMap = dataMap)
+        println(scanInformation)
+    }
 }
+

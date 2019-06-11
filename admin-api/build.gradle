@@ -8,6 +8,8 @@ dependencies {
 
   testImplementation project(":jersey")
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
+
+  testImplementation "org.mockito:mockito-core:$mockitoVersion"
 }
 
 apply from: '../gradle/jacoco.gradle'

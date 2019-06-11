@@ -840,6 +840,82 @@ class JumioKycTest {
     }
 
     @Test
+    fun `jersey test - ekyc callback - reproduce error`() {
+
+        val email = "ekyc-${randomInt()}@test.com"
+        var customerId = ""
+        try {
+            customerId = createCustomer(name = "Test User for eKYC", email = email).id
+
+            val scanInfo: ScanInformation = post {
+                path = "/regions/sg/kyc/jumio/scans"
+                this.email = email
+            }
+
+            assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
+
+            val dataMap = MultivaluedHashMap<String, String>()
+            dataMap["idScanStatus"] = listOf("ERROR")
+            dataMap["idCheckMicroprint"] = listOf("N/A")
+            dataMap["idType"] = listOf("ID_CARD")
+            dataMap["jumioIdScanReference"] = listOf("2fcc8484-3581-42c0-b7c1-5c40f0db0143")
+            dataMap["callBackType"] = listOf("NETVERIFYID")
+            dataMap["merchantIdScanReference"] = listOf(scanInfo.scanId)
+            dataMap["verificationStatus"] = listOf("ERROR_NOT_READABLE_ID")
+            dataMap["idCheckDocumentValidation"] = listOf("N/A")
+            dataMap["idScanImage"] = listOf("https://netverify.com/recognition/v1/idscan/2fcc8484-3581-42c0-b7c1-5c40f0db0143/front")
+            dataMap["callbackDate"] = listOf("2019-06-04T01:50:57.746Z")
+            dataMap["transactionDate"] = listOf("2019-06-04T01:47:40.600Z")
+            dataMap["idCheckDataPositions"] = listOf("N/A")
+            dataMap["idCountry"] = listOf("SGP")
+            dataMap["idScanImageBackside"] = listOf("https://netverify.com/recognition/v1/idscan/2fcc8484-3581-42c0-b7c1-5c40f0db0143/back")
+            dataMap["idScanImageBackside"] = listOf("https://netverify.com/recognition/v1/idscan/2fcc8484-3581-42c0-b7c1-5c40f0db0143/back")
+            dataMap["idCheckSignature"] = listOf("N/A")
+            dataMap["rejectReason"] = listOf("""{"rejectReasonCode":"200","rejectReasonDescription":"NOT_READABLE_DOCUMENT","rejectReasonDetails":[{"detailsCode":"2005","detailsDescription":"DAMAGED_DOCUMENT"}]}""")
+            dataMap["livenessImages"] = listOf(
+                    "https://netverify.com/api/netverify/v2/scans/2fcc8484-3581-42c0-b7c1-5c40f0db0143/images/liveness/1",
+                    "https://netverify.com/api/netverify/v2/scans/2fcc8484-3581-42c0-b7c1-5c40f0db0143/images/liveness/2",
+                    "https://netverify.com/api/netverify/v2/scans/2fcc8484-3581-42c0-b7c1-5c40f0db0143/images/liveness/3",
+                    "https://netverify.com/api/netverify/v2/scans/2fcc8484-3581-42c0-b7c1-5c40f0db0143/images/liveness/4",
+                    "https://netverify.com/api/netverify/v2/scans/2fcc8484-3581-42c0-b7c1-5c40f0db0143/images/liveness/5",
+                    "https://netverify.com/api/netverify/v2/scans/2fcc8484-3581-42c0-b7c1-5c40f0db0143/images/liveness/6"
+            )
+            dataMap["clientIp"] = listOf("119.56.102.101")
+            dataMap["idScanImageFace"] = listOf("https://netverify.com/recognition/v1/idscan/2fcc8484-3581-42c0-b7c1-5c40f0db0143/face")
+            dataMap["idCheckSecurityFeatures"] = listOf("N/A")
+            dataMap["firstAttemptDate"] = listOf("2019-06-04T01:49:21.197Z")
+            dataMap["idCheckHologram"] = listOf("N/A")
+            dataMap["idScanSource"] = listOf("SDK")
+            dataMap["idCheckMRZcode"] = listOf("N/A")
+
+            post<ScanInformation>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
+                path = "/ekyc/callback"
+                body = dataMap
+            }
+
+            val regionDetails = get<Collection<RegionDetails>> {
+                path = "/regions"
+                this.email = email
+            }.single()
+
+            assertEquals(Region().id("sg").name("Singapore"), regionDetails.region)
+            assertEquals(PENDING, regionDetails.status, message = "Wrong State")
+
+            assertEquals(
+                    expected = mapOf(
+                            KycType.JUMIO.name to KycStatus.REJECTED,
+                            KycType.MY_INFO.name to KycStatus.PENDING,
+                            KycType.ADDRESS_AND_PHONE_NUMBER.name to KycStatus.PENDING,
+                            KycType.NRIC_FIN.name to KycStatus.PENDING
+                    ),
+                    actual = regionDetails.kycStatusMap)
+
+        } finally {
+            StripePayment.deleteCustomer(customerId = customerId)
+        }
+    }
+
+    @Test
     fun `jersey test - ekyc callback - test the call back processing`() {
 
         val email = "ekyc-${randomInt()}@test.com"

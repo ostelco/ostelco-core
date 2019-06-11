@@ -1,17 +1,21 @@
 package org.ostelco.prime.admin.api
 
 import arrow.core.Either
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.apierror.ApiErrorCode
-import org.ostelco.prime.apierror.InternalServerError
 import org.ostelco.prime.apierror.BadRequestError
+import org.ostelco.prime.apierror.InternalServerError
 import org.ostelco.prime.apierror.NotFoundError
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.jsonmapper.objectMapper
-import org.ostelco.prime.model.*
+import org.ostelco.prime.model.IdentityVerification
+import org.ostelco.prime.model.JumioScanData
+import org.ostelco.prime.model.ScanInformation
+import org.ostelco.prime.model.ScanResult
+import org.ostelco.prime.model.ScanStatus
+import org.ostelco.prime.model.Similarity
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.AdminDataSource
 import java.io.IOException
@@ -72,7 +76,7 @@ class KYCResource {
         return null
     }
 
-    private fun toScanInformation(dataMap: Map<String, String>): ScanInformation? {
+    internal fun toScanInformation(dataMap: Map<String, String>): ScanInformation? {
         try {
             val vendorScanReference: String = dataMap[JumioScanData.JUMIO_SCAN_ID.s]!!
             var status: ScanStatus = toScanStatus(dataMap[JumioScanData.SCAN_STATUS.s]!!)
