@@ -10,10 +10,30 @@ import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.simmanager.AdapterError
+import org.ostelco.prime.simmanager.ForbiddenError
 import org.ostelco.prime.simmanager.NotUpdatedError
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.admin.HssConfig
 import javax.ws.rs.core.MediaType
+
+
+/**
+ * This is an HSS that does nothing, but can be referred to in the
+ * database schema.  This is useful in the cases where we sim activation
+ * is done "out of band", e.g. by preactivating before inserting into
+ * the sim  manager.
+ */
+class DummyHSSDispatcher(val name: String, config: HssConfig): HssDispatcher {
+    override fun iAmHealthy(): Boolean = true
+    override fun name() = name
+    override fun activate(hssName: String, iccid: String, msisdn: String): Either<SimManagerError, Unit> =
+            ForbiddenError("DummyHSSDispatcher's activate  should never be invoked").left()
+
+    override fun suspend(hssName: String, iccid: String): Either<SimManagerError, Unit> =
+            ForbiddenError("DummyHSSDispatcher's suspend should never be invoked").left()
+}
+
+
 
 /**
  * An interface to a simple HSS REST based HSS.
