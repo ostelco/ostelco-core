@@ -90,7 +90,7 @@ modules:
         - hlrType: WG2
           # This name, starting with a uppercase "L", needs to match whatever is present
           # in the database, and is used to identify HSSes.
-        - name: Loltel
+          name: Loltel
           # This name, starting with a lowercase "l" is used in the
           # api itself, and must match whatever the API expects
           # the bss to be identified as.
