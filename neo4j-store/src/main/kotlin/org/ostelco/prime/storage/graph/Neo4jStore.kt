@@ -500,7 +500,7 @@ object Neo4jStoreSingleton : GraphStore {
         override fun allocateNextEsimProfile(hlr: String, phoneType: String?): Either<String, SimEntry> {
             return if (hlr == "TEST" || phoneType == "TEST") {
                 SimEntry(
-                        iccId = UUID.randomUUID().toString(),
+                        iccId = "TEST-${UUID.randomUUID()}",
                         status = AVAILABLE_FOR_DOWNLOAD,
                         eSimActivationCode = "Dummy eSIM",
                         msisdnList = emptyList()).right()
@@ -510,7 +510,7 @@ object Neo4jStoreSingleton : GraphStore {
         }
 
         override fun getSimProfile(hlr: String, iccId: String): Either<String, SimEntry> {
-            return if (hlr == "TEST") {
+            return if (hlr == "TEST" || iccId.startsWith("TEST-")) {
                 SimEntry(
                         iccId = iccId,
                         status = INSTALLED,

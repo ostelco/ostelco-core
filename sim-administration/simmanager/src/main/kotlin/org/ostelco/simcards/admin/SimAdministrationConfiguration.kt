@@ -140,14 +140,14 @@ class HssConfig {
     lateinit var apiKey: String
 
 
-    fun validateAsWg2Config() {
-        check (hssNameUsedInAPI != null) { "hssNameUsedInAPI must be non null"}
-        check (endpoint != null) {"endpoint must be non null"}
-        check (userId != null) { "userId must be non null"}
-        check (apiKey != null) { "apiKey must be non null"}
+    private fun validateAsWg2Config() {
+        check (::hssNameUsedInAPI.isInitialized) { "hssNameUsedInAPI must be non null"}
+        check (::endpoint.isInitialized) {"endpoint must be non null"}
+        check (::userId.isInitialized) { "userId must be non null"}
+        check (::apiKey.isInitialized) { "apiKey must be non null"}
     }
 
-    fun validateAsDummyConfig() {}
+    private fun validateAsDummyConfig() {}
 
     fun validate() {
         return when(type) {
