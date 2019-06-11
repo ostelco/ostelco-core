@@ -85,7 +85,7 @@ modules:
         contactEmail: rmz@telenordigital.com
         resourcePackage: org.ostelco
       hlrs:
-	  # this is a "WG2" style endpoint, so we should configure parameters
+          # this is a "WG2" style endpoint, so we should configure parameters
           # accordingly.
         - type: WG2
           # This name, starting with a uppercase "L", needs to match whatever is present
