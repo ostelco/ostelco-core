@@ -1180,8 +1180,9 @@ object Neo4jStoreSingleton : GraphStore {
                             }
                         }
 
-                /* Lookup in payment backend will fail if no value found for 'planId'. */
-                val planStripeId = plan.stripePlanId ?: SystemError(type = "", id = "", message = "")
+                /* Lookup in payment backend will fail if no value found for 'stripePlanId'. */
+                val planStripeId = plan.stripePlanId ?: SystemError(type = planEntity.name, id = "${plan.id}",
+                        message = "No reference to Stripe plan found in ${plan.id}")
                         .left()
                         .bind()
 
