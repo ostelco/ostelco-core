@@ -14,32 +14,46 @@ import (
 
 func main() {
 	batch := parseCommandLine()
-	// tbd:
-	//   *  Get batch data from parsing of command line.
-	//   *  Translate batch into CSV entry (either in memory, or as a function
-	//      that can provide every line on demand).
-	//   *  Upload batch to backend server, give copious feedback
-	//      if it fails for whatever reason.
-
 	var csvPayload string = generateCsvPayload(batch)
 	fmt.Printf("CSV payload = %s", csvPayload)
 
 	// Send it along using a HTTP post to the correct endpoint  URL, and check the return value.
 }
 
+func luhnChecksum(number int) int {
+	var luhn int
+
+	for i := 0; number > 0; i++ {
+		cur := number % 10
+
+		if i%2 == 0 { // even
+			cur = cur * 2
+			if cur > 9 {
+				cur = cur%10 + cur/10
+			}
+		}
+
+		luhn += cur
+		number = number / 10
+	}
+	return luhn % 10
+}
+
 func generateCsvPayload(batch Batch) string {
 	var sb strings.Builder
 	sb.WriteString("ICCID, IMSI, MSISDN, PIN1, PIN2, PIN3, PUK1, PUK2, PUK3\n")
 
-	var iccid = batch.firstIccid
+	var iccidWithoutLuhnChecksum = batch.firstIccid
+
 	var imsi = batch.firstImsi
 	var msisdn = batch.firstMsisdn
 	for i := 0; i < batch.length; i++ {
 
-		line := fmt.Sprintf("%d, %d, %d,,,,,,\n", iccid, imsi, msisdn)
+		iccid := fmt.Sprintf("%d%1d", iccidWithoutLuhnChecksum, luhnChecksum(iccidWithoutLuhnChecksum))
+		line := fmt.Sprintf("%s, %d, %d,,,,,,\n", iccid, imsi, msisdn)
 		sb.WriteString(line)
 
-		iccid += batch.iccidIncrement
+		iccidWithoutLuhnChecksum += batch.iccidIncrement
 		imsi += batch.imsiIncrement
 		msisdn += batch.msisdnIncrement
 	}
@@ -128,10 +142,10 @@ func parseCommandLine() Batch {
 	//
 	firstIccid := flag.String("first-iccid",
 		"not  a valid iccid",
-		"An 18 or 19 digit long string.  The 19-th digit being a luhn checksum digit, if present")
+		"An 18 or 19 digit long string.  The 19-th digit being a luhn luhnChecksum digit, if present")
 	lastIccid := flag.String("last-iccid",
 		"not  a valid iccid",
-		"An 18 or 19 digit long string.  The 19-th digit being a luhn checksum digit, if present")
+		"An 18 or 19 digit long string.  The 19-th digit being a luhn luhnChecksum digit, if present")
 	firstIMSI := flag.String("first-imsi", "Not a valid IMSI", "First IMSI in batch")
 	lastIMSI := flag.String("last-imsi", "Not a valid IMSI", "Last IMSI in batch")
 	firstMsisdn := flag.String("first-msisdn", "Not a valid MSISDN", "First MSISDN in batch")
@@ -150,7 +164,7 @@ func parseCommandLine() Batch {
 	//
 
 	// tbd :(field integrity, if 19 digit ICCID, check and then remove
-	// luhn checksum. Check that ranges are ranges, and span the same number
+	// luhn luhnChecksum. Check that ranges are ranges, and span the same number
 	// of entities, if at all possible, check that ranges are within constraints
 	// set by some external database of valid ranges (typically for an operator)
 	// check that the profile type can be found in some config file somewhere.
