@@ -500,7 +500,7 @@ object Neo4jStoreSingleton : GraphStore {
         override fun allocateNextEsimProfile(hlr: String, phoneType: String?): Either<String, SimEntry> {
             return if (hlr == "TEST" || phoneType == "TEST") {
                 SimEntry(
-                        iccId = UUID.randomUUID().toString(),
+                        iccId = "TEST-${UUID.randomUUID()}",
                         status = AVAILABLE_FOR_DOWNLOAD,
                         eSimActivationCode = "Dummy eSIM",
                         msisdnList = emptyList()).right()
@@ -510,7 +510,7 @@ object Neo4jStoreSingleton : GraphStore {
         }
 
         override fun getSimProfile(hlr: String, iccId: String): Either<String, SimEntry> {
-            return if (hlr == "TEST") {
+            return if (hlr == "TEST" || iccId.startsWith("TEST-")) {
                 SimEntry(
                         iccId = iccId,
                         status = INSTALLED,
@@ -2381,8 +2381,16 @@ object Neo4jStoreSingleton : GraphStore {
 
     fun createIndex() = writeTransaction {
         write(query = "CREATE INDEX ON :${identityEntity.name}(id)", transaction = transaction) {}
+        write(query = "CREATE INDEX ON :${customerEntity.name}(id)", transaction = transaction) {}
+        write(query = "CREATE INDEX ON :${productEntity.name}(id)", transaction = transaction) {}
+        write(query = "CREATE INDEX ON :${productEntity.name}(sku)", transaction = transaction) {}
         write(query = "CREATE INDEX ON :${subscriptionEntity.name}(id)", transaction = transaction) {}
+        write(query = "CREATE INDEX ON :${subscriptionEntity.name}(msisdn)", transaction = transaction) {}
         write(query = "CREATE INDEX ON :${bundleEntity.name}(id)", transaction = transaction) {}
+        write(query = "CREATE INDEX ON :${simProfileEntity.name}(id)", transaction = transaction) {}
+        write(query = "CREATE INDEX ON :${planEntity.name}(id)", transaction = transaction) {}
+        write(query = "CREATE INDEX ON :${regionEntity.name}(id)", transaction = transaction) {}
+        write(query = "CREATE INDEX ON :${scanInformationEntity.name}(id)", transaction = transaction) {}
     }
 }
 
