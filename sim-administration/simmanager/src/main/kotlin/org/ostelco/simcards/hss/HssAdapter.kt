@@ -10,8 +10,9 @@ import io.grpc.ManagedChannelBuilder
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.simmanager.AdapterError
 import org.ostelco.prime.simmanager.SimManagerError
-import org.ostelco.simcards.admin.HSSType
+import org.ostelco.simcards.admin.DummyHssConfig
 import org.ostelco.simcards.admin.HssConfig
+import org.ostelco.simcards.admin.SwtHssConfig
 import org.ostelco.simcards.admin.mapRight
 import org.ostelco.simcards.hss.profilevendors.api.HssServiceGrpc
 import org.ostelco.simcards.hss.profilevendors.api.ServiceHealthQuery
@@ -41,7 +42,7 @@ class HssGrpcAdapter(private val host: String, private val port: Int) : HssDispa
     init {
         val channel =
                 ManagedChannelBuilder.forAddress(host, port)
-                        .usePlaintext(true)
+                        .usePlaintext()
                         .build()
 
         this.blockingStub =
@@ -112,10 +113,17 @@ class DirectHssDispatcher(
     init {
 
         for (config in hssConfigs) {
-            when (config.type) {
-                HSSType.WG2 -> adapters.add(SimpleHssDispatcher(name = config.name, httpClient = httpClient, config = config))
-                HSSType.DUMMY -> adapters.add(DummyHSSDispatcher(name = config.name, config = config))
-                else -> throw IllegalStateException("Unknown hss type ${config.type}")
+            when (config) {
+                is SwtHssConfig -> {
+                    adapters.add(SimpleHssDispatcher(
+                            name = config.name,
+                            httpClient = httpClient,
+                            config = config
+                    ))
+                }
+                is DummyHssConfig -> {
+                    adapters.add(DummyHSSDispatcher(name = config.name))
+                }
             }
         }
 

@@ -16,9 +16,9 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.reset
 import org.mockito.Mockito.verify
 import org.ostelco.prime.simmanager.NotFoundError
-import org.ostelco.simcards.admin.HssConfig
 import org.ostelco.simcards.admin.ProfileVendorConfig
 import org.ostelco.simcards.admin.SimAdministrationConfiguration
+import org.ostelco.simcards.admin.SwtHssConfig
 import org.ostelco.simcards.hss.HssEntry
 import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
 import java.io.InputStream
@@ -29,9 +29,11 @@ import javax.ws.rs.core.MediaType
 class SimInventoryUnitTests {
 
     companion object {
+        // TODO why mock data/pojo classes?
         private val config = mock(SimAdministrationConfiguration::class.java)
-        private val hssConfig = mock(HssConfig::class.java)
+        private val hssConfig = mock(SwtHssConfig::class.java)
         private val profileVendorConfig = mock(ProfileVendorConfig::class.java)
+
         private val dao = mock(SimInventoryDAO::class.java)
         private val hssEntry = mock(HssEntry::class.java)
         private val profileVendorAdapter = mock(ProfileVendorAdapter::class.java)
