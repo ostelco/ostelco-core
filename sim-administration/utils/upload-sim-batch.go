@@ -15,9 +15,16 @@ import (
 func main() {
 	batch := parseCommandLine()
 	var csvPayload string = generateCsvPayload(batch)
-	fmt.Printf("CSV payload = %s", csvPayload)
 
+	generatePostingCurlscript(batch.url, csvPayload)
 	// Send it along using a HTTP post to the correct endpoint  URL, and check the return value.
+}
+
+func generatePostingCurlscript(url string, payload string) {
+	fmt.Printf("#!/bin/bash\n")
+	fmt.Printf("curl -X POST -d @-  %s <<EOF\n", url)
+	fmt.Printf("%s", payload)
+	fmt.Print(("\nEOF"))
 }
 
 func luhnChecksum(number int) int {
@@ -114,6 +121,7 @@ func checkProfileType(name string, potentialProfileName string) {
 
 type Batch struct {
 	profileType     string
+	url             string
 	length          int
 	firstMsisdn     int
 	msisdnIncrement int
@@ -209,6 +217,7 @@ func parseCommandLine() Batch {
 	// Return a correctly parsed batch
 	return Batch{
 		profileType:     *profileType,
+		url:             *url,
 		length:          Abs(iccidlen),
 		firstIccid:      firstIccidInt,
 		iccidIncrement:  Sign(iccidlen),
