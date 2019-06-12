@@ -70,8 +70,19 @@ func checkURLSyntax(name string, theUrl string) {
 	}
 }
 
+func isProfileName(s string) bool {
+	match, _ := regexp.MatchString("^[A-Z][A-Z0-9_]*$", s)
+	return match
+}
+
+func checkProfileType(name string, potentialProfileName string) {
+	if !isProfileName(potentialProfileName) {
+		log.Fatal("Not a valid %s MSISDN: '%s'. Must be uppercase characters, numbers and underscores", name, potentialProfileName)
+	}
+}
+
 type Batch struct {
-	name            string
+	profileType     string
 	length          int
 	firstMsisdn     int
 	msisdnIncrement int
@@ -134,6 +145,7 @@ func parseCommandLine() Batch {
 	checkMSISDNSyntax("last-msisdn", *lastMsisdn)
 	checkMSISDNSyntax("first-msisdn", *firstMsisdn)
 	checkURLSyntax("url", *url)
+	checkProfileType("profile-type", *profileType)
 
 	// Convert to integers, and get lengths
 
@@ -158,26 +170,31 @@ func parseCommandLine() Batch {
 		log.Fatal("FATAL: msisdnLen, iccidLen and imsiLen are not identical.")
 	}
 
-	fmt.Println("first-iccid:", *firstIccid)
-	fmt.Println("last-iccid:", *lastIccid)
-	fmt.Println("first-msisdn:", *firstMsisdn)
-	fmt.Println("last-msisdn:", *lastMsisdn)
-	fmt.Println("first-imsi:", *firstIMSI)
-	fmt.Println("last-imsi:", *lastIMSI)
-	fmt.Println("profile-type:", *profileType)
-	fmt.Println("url:", *url)
-	fmt.Println("tail:", flag.Args())
+	tail := flag.Args()
+	if len(tail) != 0 {
+		log.Printf("Unknown parameters:  %s", flag.Args())
+	}
 
 	// Return a correctly parsed batch
 	return Batch{
-		name:            "Jalla",
-		length:          0,
+		profileType:     *profileType,
+		length:          Abs(iccidlen),
 		firstIccid:      firstIccidInt,
-		iccidIncrement:  1,
+		iccidIncrement:  Sign(iccidlen),
 		firstImsi:       firstImsiInt,
-		imsiIncrement:   1,
+		imsiIncrement:   Sign(imsiLen),
 		firstMsisdn:     firstMsisdnInt,
-		msisdnIncrement: 1,
+		msisdnIncrement: Sign(msisdnLen),
+	}
+}
+
+func Sign(x int) int {
+	if x < 0 {
+		return -1
+	} else if x > 0 {
+		return 1
+	} else {
+		return 0
 	}
 }
 
