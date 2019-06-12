@@ -15,3 +15,7 @@ fun sync() {
 fun check() {
     RunnableKotlinScript(ClasspathResourceTextReader("/Check.kts").readText()).eval<Any?>()
 }
+
+fun index() {
+    RunnableKotlinScript(ClasspathResourceTextReader("/Index.kts").readText()).eval<Any?>()
+}
