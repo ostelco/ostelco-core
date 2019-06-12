@@ -138,9 +138,12 @@ func parseCommandLine() Batch {
 	var lastIccidInt, _ = Atoi(*lastIccid)
 	var iccidlen = lastIccidInt - lastIccidInt
 
-	fmt.Println("msisdnLen =", msisdnLen)
-	fmt.Println("iccidLen=", iccidlen)
-	fmt.Println("imsiLen=", imsiLen)
+	if msisdnLen != iccidlen || msisdnLen != imsiLen {
+		log.Println("msisdnLen =", msisdnLen)
+		log.Println("iccidLen=", iccidlen)
+		log.Println("imsiLen=", imsiLen)
+		log.Fatal("FATAL: msisdnLen, iccidLen and imsiLen are not identical.")
+	}
 
 	fmt.Println("first-iccid:", *firstIccid)
 	fmt.Println("last-iccid:", *lastIccid)
