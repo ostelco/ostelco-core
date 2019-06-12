@@ -81,6 +81,18 @@ type Batch struct {
 	imsiIncrement   int
 }
 
+func iccidWithoutLuhnChecksum(s string) string {
+	if len(s) == 19 {
+		return trimSuffix(s, 1)
+	} else {
+		return s
+	}
+}
+
+func trimSuffix(s string, suffixLen int) string {
+	return s[:len(s)-suffixLen]
+}
+
 func parseCommandLine() Batch {
 
 	//
@@ -123,7 +135,7 @@ func parseCommandLine() Batch {
 	checkMSISDNSyntax("first-msisdn", *firstMsisdn)
 	checkURLSyntax("url", *url)
 
-	// XXX Check syntax of URL
+	// Convert to integers, and get lengths
 
 	var firstMsisdnInt, _ = Atoi(*firstMsisdn)
 	var lastMsisdnInt, _ = Atoi(*lastMsisdn)
@@ -133,12 +145,13 @@ func parseCommandLine() Batch {
 	var lastImsiInt, _ = Atoi(*lastIMSI)
 	var imsiLen = lastImsiInt - firstImsiInt
 
-	// XXX Doesen't work
-	var firstIccidInt, _ = Atoi(*firstIccid)
-	var lastIccidInt, _ = Atoi(*lastIccid)
-	var iccidlen = lastIccidInt - lastIccidInt
+	var firstIccidInt, _ = Atoi(iccidWithoutLuhnChecksum(*firstIccid))
+	var lastIccidInt, _ = Atoi(iccidWithoutLuhnChecksum(*lastIccid))
+	var iccidlen = lastIccidInt - firstIccidInt
 
-	if msisdnLen != iccidlen || msisdnLen != imsiLen {
+	// Validate that lengths of sequences are equal in absolute
+	// values.
+	if Abs(msisdnLen) != Abs(iccidlen) || Abs(msisdnLen) != Abs(imsiLen) {
 		log.Println("msisdnLen =", msisdnLen)
 		log.Println("iccidLen=", iccidlen)
 		log.Println("imsiLen=", imsiLen)
@@ -166,4 +179,12 @@ func parseCommandLine() Batch {
 		firstMsisdn:     firstMsisdnInt,
 		msisdnIncrement: 1,
 	}
+}
+
+// Abs returns the absolute value of x.
+func Abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
 }
