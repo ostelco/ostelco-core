@@ -9,7 +9,10 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 import org.neo4j.driver.v1.AccessMode.WRITE
+import org.ostelco.prime.dsl.writeTransaction
 import org.ostelco.prime.jsonmapper.objectMapper
+import org.ostelco.prime.kts.engine.KtsServiceFactory
+import org.ostelco.prime.kts.engine.reader.ClasspathResourceTextReader
 import org.ostelco.prime.model.HasId
 import org.ostelco.prime.storage.AlreadyExistsError
 import org.ostelco.prime.storage.graph.Relation.REFERRED
@@ -45,7 +48,7 @@ class SchemaTest {
             aEntityStore.create(a, transaction)
 
             // get node
-            assertEquals(a, aEntityStore.get("a_id", transaction).toOption().orNull())
+            assertEquals(a, get(A::class, "a_id").toOption().orNull())
 
             // update node
             val ua = A()
@@ -56,13 +59,13 @@ class SchemaTest {
             aEntityStore.update(ua, transaction)
 
             // get updated node
-            assertEquals(ua, aEntityStore.get(aId, transaction).toOption().orNull())
+            assertEquals(ua, get(A::class, aId).toOption().orNull())
 
             // delete node
             aEntityStore.delete(aId, transaction)
 
             // get deleted node
-            assert(aEntityStore.get(aId, transaction).isLeft())
+            assert(get(A::class, aId).isLeft())
         }
     }
 
@@ -253,7 +256,14 @@ class SchemaTest {
         fun start() {
             ConfigRegistry.config = Config(
                     host = "0.0.0.0",
-                    protocol = "bolt")
+                    protocol = "bolt",
+                    hssNameLookupService = KtsServiceFactory(
+                            serviceInterface = "org.ostelco.prime.storage.graph.HssNameLookupService",
+                            textReader = ClasspathResourceTextReader(
+                                    filename = "/HssNameLookupService.kts"
+                            )
+                    )
+            )
             Neo4jClient.start()
         }
 

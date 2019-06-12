@@ -1,9 +1,17 @@
 package org.ostelco.prime.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.google.cloud.datastore.Blob
 import com.google.firebase.database.Exclude
+import org.ostelco.prime.model.PaymentProperties.LABEL
+import org.ostelco.prime.model.PaymentProperties.TAX_REGION_ID
+import org.ostelco.prime.model.PaymentProperties.TYPE
+import org.ostelco.prime.model.ProductProperties.NO_OF_BYTES
+import org.ostelco.prime.model.ProductProperties.PRODUCT_CLASS
+import org.ostelco.prime.model.ProductProperties.SEGMENT_IDS
 import java.util.*
+
 
 interface HasId {
     val id: String
@@ -71,6 +79,38 @@ enum class ScanStatus {
     APPROVED   // scanned Id was approved
 }
 
+// Jumio Identity verification codes for Similarity
+enum class Similarity {
+    MATCH,
+    NO_MATCH,
+    NOT_POSSIBLE
+}
+
+// Jumio Identity verification reasons for validity being fasle
+enum class ValidityReason {
+    SELFIE_CROPPED_FROM_ID,
+    ENTIRE_ID_USED_AS_SELFIE,
+    MULTIPLE_PEOPLE,
+    SELFIE_IS_SCREEN_PAPER_VIDEO,
+    SELFIE_MANIPULATED,
+    AGE_DIFFERENCE_TOO_BIG,
+    NO_FACE_PRESENT,
+    FACE_NOT_FULLY_VISIBLE,
+    BAD_QUALITY,
+    BLACK_AND_WHITE,
+    LIVENESS_FAILED
+}
+
+// Jumio Identity verification structure, valid when a scan is verified & approved
+data class IdentityVerification(
+        val similarity: Similarity,
+        @JsonDeserialize(using = StringBooleanDeserializer::class)
+        val validity: Boolean,
+        val reason: ValidityReason?,
+        @JsonDeserialize(using = StringBooleanDeserializer::class)
+        val handwrittenNoteMatches:Boolean?
+)
+
 data class ScanResult(
         val vendorScanReference: String,
         val verificationStatus: String,
@@ -80,7 +120,7 @@ data class ScanResult(
         val firstName: String?,
         val lastName: String?,
         val dob: String?,
-        val rejectReason: String?)
+        val rejectReason: IdentityVerification?)
 
 data class ScanInformation(
         val scanId: String,
@@ -129,17 +169,9 @@ enum class JumioScanData(val s: String) {
     SCAN_LIVENESS_IMAGES("livenessImages"),
     REJECT_REASON("rejectReason"),
     IDENTITY_VERIFICATION("identityVerification"),
-    SIMILARITY("similarity"),
-    VALIDITY("validity"),
-    REASON("reason"),
     APPROVED_VERIFIED("APPROVED_VERIFIED"),
-    MATCH("MATCH"),
-    TRUE("TRUE"),
     // Extended values from prime
-    PRIME_MISSING_IDENTITY_VERIFICATION("PRIME_MISSING_IDENTITY_VERIFICATION"),
-    PRIME_IDENTITY_VALID_SIMILAR("PRIME_IDENTITY_VALID_SIMILAR"),
-    PRIME_IDENTITY_VERIFICATION_FAILED("PRIME_IDENTITY_VERIFICATION_FAILED"),
-    PRIME_MISSING_IDENTITY_REASON("PRIME_MISSING_IDENTITY_REASON")
+    SCAN_INFORMATION("SCAN_INFORMATION")
 }
 
 enum class VendorScanData(val s: String) {
@@ -195,31 +227,77 @@ data class Price(
 data class Product(
         val sku: String,
         val price: Price,
+        val payment: Map<String, String> = emptyMap(),
         val properties: Map<String, String> = emptyMap(),
         val presentation: Map<String, String> = emptyMap()) : HasId {
 
     override val id: String
         @JsonIgnore
         get() = sku
+
+    // Values from Payment map
+
+    val paymentType: PaymentType?
+        @Exclude
+        @JsonIgnore
+        get() = payment[TYPE.s]?.let(PaymentType::valueOf)
+
+    val paymentLabel: String
+        @Exclude
+        @JsonIgnore
+        get() = payment[LABEL.s] ?: sku
+
+    val paymentTaxRegionId: String?
+        @Exclude
+        @JsonIgnore
+        get() = payment[TAX_REGION_ID.s]
+
+    // Values from Properties map
+
+    val productClass: ProductClass?
+        @Exclude
+        @JsonIgnore
+        get() = properties[PRODUCT_CLASS.s]?.let(ProductClass::valueOf)
+
+    val noOfBytes: Long
+        @Exclude
+        @JsonIgnore
+        get() = properties[NO_OF_BYTES.s]?.replace("_", "")?.toLongOrNull() ?: 0L
+
+    val segmentIds: Collection<String>
+        @Exclude
+        @JsonIgnore
+        get() = properties[SEGMENT_IDS.s]?.split(",") ?: emptyList()
 }
 
-data class ProductClass(
-        override val id: String,
-        val properties: List<String> = listOf()) : HasId
+enum class ProductProperties(val s: String) {
+    PRODUCT_CLASS("productClass"),
+    NO_OF_BYTES("noOfBytes"),
+    SEGMENT_IDS("segmentIds")
+}
+
+enum class ProductClass {
+    SIMPLE_DATA,
+    MEMBERSHIP
+}
+
+enum class PaymentProperties(val s: String) {
+    TYPE("type"),
+    LABEL("label"),
+    TAX_REGION_ID("taxRegionId")
+}
+
+enum class PaymentType {
+    SUBSCRIPTION
+}
 
 // Note: The 'name' value becomes the name (sku) of the corresponding product in Stripe.
 data class Plan(
-        val name: String,
-        val price: Price,
+        override val id: String,
+        val stripePlanId: String? = null,
+        val stripeProductId: String? = null,
         val interval: String,
-        val intervalCount: Long = 1L,
-        val properties: Map<String, String> = emptyMap(),
-        val presentation: Map<String, String> = emptyMap()) : HasId {
-
-    override val id: String
-        @JsonIgnore
-        get() = name
-}
+        val intervalCount: Long = 1L) : HasId
 
 data class RefundRecord(
         override val id: String,

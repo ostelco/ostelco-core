@@ -9,6 +9,10 @@ const SUBSCRIBER_BY_EMAIL_REQUEST = 'SUBSCRIBER_BY_EMAIL_REQUEST';
 const SUBSCRIBER_BY_EMAIL_SUCCESS = 'SUBSCRIBER_BY_EMAIL_SUCCESS';
 const SUBSCRIBER_BY_EMAIL_FAILURE = 'SUBSCRIBER_BY_EMAIL_FAILURE';
 
+const CONTEXT_BY_EMAIL_REQUEST = 'CONTEXT_BY_EMAIL_REQUEST';
+const CONTEXT_BY_EMAIL_SUCCESS = 'CONTEXT_BY_EMAIL_SUCCESS';
+const CONTEXT_BY_EMAIL_FAILURE = 'CONTEXT_BY_EMAIL_FAILURE';
+
 const SUBSCRIPTIONS_REQUEST = 'SUBSCRIPTIONS_REQUEST';
 const SUBSCRIPTIONS_SUCCESS = 'SUBSCRIPTIONS_SUCCESS';
 const SUBSCRIPTIONS_FAILURE = 'SUBSCRIPTIONS_FAILURE';
@@ -35,6 +39,9 @@ export const actions = createActions(
   SUBSCRIBER_BY_EMAIL_REQUEST,
   SUBSCRIBER_BY_EMAIL_SUCCESS,
   SUBSCRIBER_BY_EMAIL_FAILURE,
+  CONTEXT_BY_EMAIL_REQUEST,
+  CONTEXT_BY_EMAIL_SUCCESS,
+  CONTEXT_BY_EMAIL_FAILURE,
   SUBSCRIPTIONS_REQUEST,
   SUBSCRIPTIONS_SUCCESS,
   SUBSCRIPTIONS_FAILURE,
@@ -56,6 +63,17 @@ const fetchSubscriberById = (id) => ({
       actions.subscriberByEmailSuccess,
       actions.subscriberByEmailFailure],
     endpoint: `profiles/${id}`,
+    method: 'GET'
+  }
+});
+
+const fetchContextByEmail = (email) => ({
+  [CALL_API]: {
+    actions: [
+      actions.contextByEmailRequest,
+      actions.contextByEmailSuccess,
+      actions.contextByEmailFailure],
+    endpoint: `context/${email}`,
     method: 'GET'
   }
 });
@@ -118,6 +136,7 @@ const getSubscriberAndBundlesByEmail = (email) => (dispatch, getState) => {
       // Get the email from the fetched user
       const subscriberEmail = encodeEmail(_.get(getState(), 'subscriber.contactEmail'));
       if (subscriberEmail) {
+        dispatch(fetchContextByEmail(subscriberEmail)).catch(handleError);
         dispatch(fetchSubscriptionsByEmail(subscriberEmail)).catch(handleError);
         return dispatch(fetchBundlesByEmail(subscriberEmail))
           .then(() => {

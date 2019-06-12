@@ -21,6 +21,7 @@ include ':firebase-store'
 include ':firebase-extensions'
 include ':graphql'
 include ':jersey'
+include ':kts-engine'
 include ':model'
 // include ':myinfo-client'
 include ':neo4j-admin-tools'
@@ -32,6 +33,7 @@ include ':ocsgw'
 include ':ostelco-lib'
 include ':payment-processor'
 include ':prime'
+include ':prime-admin'
 include ':prime-modules'
 include ':prime-customer-api'
 include ':scaninfo-datastore'
@@ -71,6 +73,7 @@ project(':firebase-store').projectDir = "$rootDir/firebase-store" as File
 project(':firebase-extensions').projectDir = "$rootDir/firebase-extensions" as File
 project(':graphql').projectDir = "$rootDir/graphql" as File
 project(':jersey').projectDir = "$rootDir/jersey" as File
+project(':kts-engine').projectDir = "$rootDir/kts-engine" as File
 project(':model').projectDir = "$rootDir/model" as File
 // project(':myinfo-client').projectDir = "$rootDir/myinfo-client" as File
 project(':neo4j-admin-tools').projectDir = "$rootDir/tools/neo4j-admin-tools" as File
@@ -82,6 +85,7 @@ project(':ocsgw').projectDir = "$rootDir/ocsgw" as File
 project(':ostelco-lib').projectDir = "$rootDir/ostelco-lib" as File
 project(':payment-processor').projectDir = "$rootDir/payment-processor" as File
 project(':prime').projectDir = "$rootDir/prime" as File
+project(':prime-admin').projectDir = "$rootDir/tools/prime-admin" as File
 project(':prime-modules').projectDir = "$rootDir/prime-modules" as File
 project(':prime-customer-api').projectDir = "$rootDir/prime-customer-api" as File
 project(':scaninfo-datastore').projectDir = "$rootDir/scaninfo-datastore" as File

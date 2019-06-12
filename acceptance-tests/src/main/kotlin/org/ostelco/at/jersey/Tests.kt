@@ -6,6 +6,7 @@ import org.ostelco.at.common.StripePayment
 import org.ostelco.at.common.createCustomer
 import org.ostelco.at.common.createSubscription
 import org.ostelco.at.common.enableRegion
+import org.ostelco.at.common.expectedPlanProduct
 import org.ostelco.at.common.expectedProducts
 import org.ostelco.at.common.getLogger
 import org.ostelco.at.common.randomInt
@@ -19,7 +20,6 @@ import org.ostelco.prime.customer.model.MyInfoConfig
 import org.ostelco.prime.customer.model.PaymentSource
 import org.ostelco.prime.customer.model.PaymentSourceList
 import org.ostelco.prime.customer.model.Person
-import org.ostelco.prime.customer.model.Plan
 import org.ostelco.prime.customer.model.Price
 import org.ostelco.prime.customer.model.Product
 import org.ostelco.prime.customer.model.ProductInfo
@@ -42,7 +42,6 @@ import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.MultivaluedHashMap
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
-import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -51,9 +50,57 @@ import kotlin.test.assertTrue
 class CustomerTest {
 
     @Test
+    fun `jersey test - encoded email GET and PUT customer`() {
+
+        val email ="customer-${randomInt()}+test@test.com"
+        val nickname = "Test Customer"
+        var customerId = ""
+        try {
+            val createdCustomer: Customer = post {
+                path = "/customer"
+                queryParams = mapOf(
+                        "contactEmail" to URLEncoder.encode(email, "UTF-8"),
+                        "nickname" to nickname)
+                this.email = email
+            }
+
+            customerId = createdCustomer.id
+
+            assertEquals(email, createdCustomer.contactEmail, "Incorrect 'contactEmail' in created customer")
+            assertEquals(nickname, createdCustomer.nickname, "Incorrect 'nickname' in created customer")
+
+            val customer: Customer = get {
+                path = "/customer"
+                this.email = email
+            }
+
+            assertEquals(createdCustomer.contactEmail, customer.contactEmail, "Incorrect 'contactEmail' in fetched customer")
+            assertEquals(createdCustomer.nickname, customer.nickname, "Incorrect 'nickname' in fetched customer")
+            assertEquals(createdCustomer.analyticsId, customer.analyticsId, "Incorrect 'analyticsId' in fetched customer")
+            assertEquals(createdCustomer.referralId, customer.referralId, "Incorrect 'referralId' in fetched customer")
+
+            val newName = "New name: Test Customer"
+            val email2 ="customer-${randomInt()}.abc+test@test.com"
+
+            val updatedCustomer: Customer = put {
+                path = "/customer"
+                queryParams = mapOf(
+                        "contactEmail" to URLEncoder.encode(email2, "UTF-8"),
+                        "nickname" to newName)
+                this.email = email
+            }
+
+            assertEquals(email2, updatedCustomer.contactEmail, "Incorrect 'email' in response after updating customer")
+            assertEquals(newName, updatedCustomer.nickname, "Incorrect 'name' in response after updating customer")
+        } finally {
+            StripePayment.deleteCustomer(customerId = customerId)
+        }
+    }
+
+    @Test
     fun `jersey test - GET and PUT customer`() {
 
-        val email = "customer-${randomInt()}@test.com"
+        val email ="customer-${randomInt()}+test@test.com"
         val nickname = "Test Customer"
         var customerId = ""
         try {
@@ -272,6 +319,7 @@ class BundlesAndPurchasesTest {
             val freeProduct = Product()
                     .sku("2GB_FREE_ON_JOINING")
                     .price(Price().amount(0).currency(""))
+                    .payment(emptyMap<String, String>())
                     .properties(mapOf(
                             "noOfBytes" to "2_147_483_648",
                             "productClass" to "SIMPLE_DATA"))
@@ -1361,7 +1409,7 @@ class SingaporeKycTest {
             assertEquals(
                     "http://ext-myinfo-emulator:8080/authorise" +
                             "?client_id=STG2-MYINFO-SELF-TEST" +
-                            "&attributes=name,sex,dob,residentialstatus,nationality,mobileno,email,regadd" +
+                            "&attributes=name,sex,dob,residentialstatus,nationality,mobileno,email,mailadd" +
                             "&redirect_uri=http://localhost:3001/callback",
                     myInfoConfig.url)
 
@@ -1393,7 +1441,7 @@ class SingaporeKycTest {
                 this.email = email
             }
 
-            val expectedPersonData = """{"name":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"TANXIAOHUI"},"sex":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"F"},"nationality":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"SG"},"dob":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"1970-05-17"},"email":{"lastupdated":"2018-08-23","source":"4","classification":"C","value":"myinfotesting@gmail.com"},"mobileno":{"lastupdated":"2018-08-23","code":"65","source":"4","classification":"C","prefix":"+","nbr":"97399245"},"regadd":{"country":"SG","unit":"128","street":"BEDOKNORTHAVENUE4","lastupdated":"2018-03-20","block":"102","postal":"460102","source":"1","classification":"C","floor":"09","building":"PEARLGARDEN"},"uinfin":"S9812381D"}"""
+            val expectedPersonData = """{"name":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"TANXIAOHUI"},"sex":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"F"},"nationality":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"SG"},"dob":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"1970-05-17"},"email":{"lastupdated":"2018-08-23","source":"4","classification":"C","value":"myinfotesting@gmail.com"},"mobileno":{"lastupdated":"2018-08-23","code":"65","source":"4","classification":"C","prefix":"+","nbr":"97399245"},"mailadd":{"country":"SG","unit":"128","street":"BEDOKNORTHAVENUE4","lastupdated":"2018-03-20","block":"102","postal":"460102","source":"1","classification":"C","floor":"09","building":"PEARLGARDEN"},"uinfin":"S9812381D"}"""
             assertEquals(expectedPersonData, personData, "MyInfo PersonData do not match")
 
             run {
@@ -1650,6 +1698,7 @@ class ReferralTest {
             val freeProductForReferred = Product()
                     .sku("1GB_FREE_ON_REFERRED")
                     .price(Price().amount(0).currency("NOK"))
+                    .payment(emptyMap<String, String>())
                     .properties(mapOf(
                             "noOfBytes" to "1_000_000_000",
                             "productClass" to "SIMPLE_DATA"))
@@ -1665,123 +1714,33 @@ class ReferralTest {
 class PlanTest {
 
     @Test
-    fun `jersey test - POST plan`() {
-
-        val price = Price()
-                .amount(100)
-                .currency("nok")
-        val plan = Plan()
-                .name("PLAN_1_NOK_PER_DAY-${randomInt()}")
-                .price(price)
-                .interval(Plan.IntervalEnum.DAY)
-                .intervalCount(1)
-                .properties(emptyMap<String, Any>())
-                .presentation(emptyMap<String, Any>())
-
-        post<Plan> {
-            path = "/plans"
-            body = plan
-        }
-
-        val stored: Plan = get {
-            path = "/plans/${plan.name}"
-        }
-
-        assertEquals(plan.name, stored.name)
-        assertEquals(plan.price, stored.price)
-        assertEquals(plan.interval, stored.interval)
-        assertEquals(plan.intervalCount, stored.intervalCount)
-
-        val deletedPLan: Plan = delete {
-            path = "/plans/${plan.name}"
-        }
-
-        assertEquals(plan.name, deletedPLan.name)
-        assertEquals(plan.price, deletedPLan.price)
-        assertEquals(plan.interval, deletedPLan.interval)
-        assertEquals(plan.intervalCount, deletedPLan.intervalCount)
-
-        assertFailsWith(AssertionError::class, "Plan ${plan.name} not removed") {
-            get<Plan> {
-                path = "/plans/${plan.name}"
-            }
-        }
-    }
-
-    @Ignore
-    @Test
-    fun `jersey test - POST profiles plans`() {
+    fun `jersey test - POST purchase plan`() {
 
         val email = "purchase-${randomInt()}@test.com"
-
-        val price = Price()
-                .amount(100)
-                .currency("nok")
-        val plan = Plan()
-                .name("plan-${randomInt()}")
-                .price(price)
-                .interval(Plan.IntervalEnum.DAY)
-                .intervalCount(1)
-                .properties(emptyMap<String, Any>())
-                .presentation(emptyMap<String, Any>())
-
         var customerId = ""
-
         try {
-            // Create subscriber with payment source.
-
-            customerId = createCustomer(name = "Test create Profile Plans", email = email).id
+            customerId = createCustomer(name = "Test Purchase Plan User", email = email).id
+            enableRegion(email = email, region = "sg")
 
             val sourceId = StripePayment.createPaymentTokenId()
 
-            val paymentSource: PaymentSource = post {
-                path = "/paymentSources"
+            post<String> {
+                path = "/products/PLAN_1000SGD_YEAR/purchase"
                 this.email = email
                 queryParams = mapOf("sourceId" to sourceId)
             }
 
-            assertNotNull(paymentSource.id, message = "Failed to create payment source")
+            Thread.sleep(200) // wait for 200 ms for balance to be updated in db
 
-            // Create a plan.
-
-            post<Plan> {
-                path = "/plans"
-                body = plan
+            val purchaseRecords: PurchaseRecordList = get {
+                path = "/purchases"
+                this.email = email
             }
 
-            val stored: Plan = get {
-                path = "/plans/${plan.name}"
-            }
+            purchaseRecords.sortBy { it.timestamp }
 
-            assertEquals(plan.name, stored.name)
-
-            // Now create and verify the subscription.
-
-            post<Unit> {
-                path = "/profiles/$email/plans/${plan.name}"
-            }
-
-            val plans: List<Plan> = get {
-                path = "/profiles/$email/plans"
-            }
-
-            assert(plans.isNotEmpty())
-            assert(plans.lastIndex == 0)
-            assertEquals(plan.name, plans[0].name)
-            assertEquals(plan.price, plans[0].price)
-            assertEquals(plan.interval, plans[0].interval)
-            assertEquals(plan.intervalCount, plans[0].intervalCount)
-
-            delete<Unit> {
-                path = "/profiles/$email/plans/${plan.name}"
-            }
-
-            // Cleanup - remove plan.
-            val deletedPLan: Plan = delete {
-                path = "/plans/${plan.name}"
-            }
-            assertEquals(plan.name, deletedPLan.name)
-
+            assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
+            assertEquals(expectedPlanProduct, purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
         }

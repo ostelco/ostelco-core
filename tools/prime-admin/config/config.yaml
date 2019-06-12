@@ -1,0 +1,44 @@
+# This config is used as config.yaml when prime is running using docker-compose for Acceptance Testing
+
+modules:
+  - type: env
+  - type: firebase
+    config:
+      configFile: config/prime-service-account.json
+      rootPath: test
+#  - type: stripe-payment-processor
+  - type: neo4j
+    config:
+      host: neo4j
+      protocol: bolt
+      hssNameLookupService:
+        serviceInterface: org.ostelco.prime.storage.graph.HssNameLookupService
+        textReader:
+          type: classpathResource
+          filename: /HssNameLookupService.kts
+#  - type: sim-manager
+#    config:
+#      hlrs: []
+#      profileVendors:
+#        - name: Idemia
+#          es2plusEndpoint: ""
+#          es9plusEndpoint: ""
+#          requesterIdentifier: ""
+#      phoneTypes: []
+#      database:
+#        driverClass: org.postgresql.Driver
+#        user: ${DB_USER}
+#        password: ${DB_PASSWORD}
+#        # https://github.com/GoogleCloudPlatform/cloud-sql-jdbc-socket-factory#postgres
+#        url: jdbc:postgresql://google/${DB_NAME}?cloudSqlInstance=${DB_INSTANCE_CONNECTION_NAME}
+#        initialSize: 2
+#        properties:
+#          socketFactory: com.google.cloud.sql.postgres.SocketFactory
+
+
+logging:
+  level: INFO
+  loggers:
+    org.ostelco: DEBUG
+    # suppress exception logged while connecting to real bigQuery 3 times before connecting to emulator
+    com.google.auth.oauth2.ComputeEngineCredentials: ERROR

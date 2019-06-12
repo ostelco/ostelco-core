@@ -38,6 +38,11 @@ modules:
     config:
       host: ${NEO4J_HOST}
       protocol: bolt+routing
+      hssNameLookupService:
+        serviceInterface: org.ostelco.prime.storage.graph.HssNameLookupService
+        textReader:
+          type: file
+          filename: /config-data/HssNameLookupService.kts
   - type: analytics
     config:
       projectId: ${GCP_PROJECT_ID}
@@ -80,7 +85,16 @@ modules:
         contactEmail: rmz@telenordigital.com
         resourcePackage: org.ostelco
       hlrs:
-        - name: Loltel
+          # this is a "WG2" style endpoint, so we should configure parameters
+          # accordingly.
+        - hlrType: WG2
+          # This name, starting with a uppercase "L", needs to match whatever is present
+          # in the database, and is used to identify HSSes.
+          name: Loltel
+          # This name, starting with a lowercase "l" is used in the
+          # api itself, and must match whatever the API expects
+          # the bss to be identified as.
+          hssNameUsedInAPI: loltel
           endpoint: ${WG2_ENDPOINT}
           userId: ${WG2_USER}
           apiKey: ${WG2_API_KEY}

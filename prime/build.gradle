@@ -1,7 +1,9 @@
 plugins {
   id "org.jetbrains.kotlin.jvm"
   id "application"
-  id "com.github.johnrengelman.shadow" version "5.0.0"
+  // Keeping version to 4.0.1 - https://github.com/johnrengelman/shadow/issues/425
+  // This issue is NOT fixed in version > 4.0.1 including 5.0.0.
+  id "com.github.johnrengelman.shadow" version "4.0.1"
   id "idea"
 }
 
@@ -18,7 +20,7 @@ sourceSets {
   }
 }
 
-version = "1.40.1"
+version = "1.45.0"
 
 repositories {
   maven {
@@ -28,7 +30,7 @@ repositories {
 
 dependencies {
   // interface module between prime and prime-modules
-  implementation project(':prime-modules')
+  api project(':prime-modules')
 
   // prime-modules
   runtimeOnly project(':ocs-ktc')

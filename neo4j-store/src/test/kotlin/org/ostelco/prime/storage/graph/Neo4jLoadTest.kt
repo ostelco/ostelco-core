@@ -10,10 +10,14 @@ import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.neo4j.driver.v1.AccessMode.WRITE
+import org.ostelco.prime.dsl.DSL.job
+import org.ostelco.prime.kts.engine.KtsServiceFactory
+import org.ostelco.prime.kts.engine.reader.ClasspathResourceTextReader
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
+import org.ostelco.prime.model.ProductProperties.NO_OF_BYTES
 import org.ostelco.prime.model.Segment
 import java.time.Instant
 import java.util.*
@@ -37,18 +41,21 @@ class Neo4jLoadTest {
 
         Neo4jStoreSingleton.createIndex()
 
-        Neo4jStoreSingleton.createProduct(
+        job {
+            create {
                 Product(sku = "2GB_FREE_ON_JOINING",
                         price = Price(0, ""),
-                        properties = mapOf("noOfBytes" to "2_147_483_648")))
-
-        Neo4jStoreSingleton.createProduct(
+                        properties = mapOf(NO_OF_BYTES.s to "2_147_483_648"))
+            }
+            create {
                 Product(sku = "1GB_FREE_ON_REFERRED",
                         price = Price(0, ""),
-                        properties = mapOf("noOfBytes" to "1_000_000_000")))
-
-        val allSegment = Segment(id = getSegmentNameFromCountryCode(COUNTRY))
-        Neo4jStoreSingleton.createSegment(allSegment)
+                        properties = mapOf(NO_OF_BYTES.s to "1_000_000_000"))
+            }
+            create {
+                Segment(id = getSegmentNameFromCountryCode(COUNTRY))
+            }
+        }
     }
 
     @Ignore
@@ -153,7 +160,14 @@ class Neo4jLoadTest {
         fun start() {
             ConfigRegistry.config = Config(
                     host = "0.0.0.0",
-                    protocol = "bolt")
+                    protocol = "bolt",
+                    hssNameLookupService = KtsServiceFactory(
+                            serviceInterface = "org.ostelco.prime.storage.graph.HssNameLookupService",
+                            textReader = ClasspathResourceTextReader(
+                                    filename = "/HssNameLookupService.kts"
+                            )
+                    )
+            )
             Neo4jClient.start()
         }
 

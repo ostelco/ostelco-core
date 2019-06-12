@@ -60,6 +60,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                                         { consumptionResult ->
                                             if (requested > 0) {
                                                 addGrantedQuota(consumptionResult.granted, mscc, responseBuilder)
+                                                addInfo(consumptionResult.balance, mscc, responseBuilder)
                                             }
                                             reportAnalytics(consumptionResult, request)
                                             doneSignal.countDown()
@@ -69,11 +70,19 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                         } else { // zeroRate
                             if (requested > 0) {
                                 addGrantedQuota(requested, mscc, responseBuilder)
+                                // adding by 100 just to set it high
+                                addInfo(mscc.requested.totalOctets * 100, mscc, responseBuilder)
                             }
                             doneSignal.countDown()
                         }
                     }
+
                     doneSignal.await(2, TimeUnit.SECONDS)
+
+                    if (responseBuilder.msccCount == 0) {
+                        responseBuilder.setValidityTime(86400)
+                    }
+
                     synchronized(OnlineCharging) {
                         returnCreditControlAnswer(responseBuilder.build())
                     }
@@ -101,6 +110,17 @@ object OnlineCharging : OcsAsyncRequestConsumer {
         }
     }
 
+    private fun addInfo(balance: Long, mscc: MultipleServiceCreditControl, response: CreditControlAnswerInfo.Builder) {
+        response.extraInfoBuilder.addMsccInfo(
+                MultipleServiceCreditControlInfo
+                        .newBuilder()
+                        .setBalance(balance)
+                        .setRatingGroup(mscc.ratingGroup)
+                        .setServiceIdentifier(mscc.serviceIdentifier)
+                        .build()
+        )
+    }
+
     private fun addGrantedQuota(granted: Long, mscc: MultipleServiceCreditControl, response: CreditControlAnswerInfo.Builder) {
 
         val responseMscc = MultipleServiceCreditControl
@@ -122,12 +142,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
             responseMscc.quotaHoldingTime = 7200
 
             if (granted < mscc.requested.totalOctets) {
-                responseMscc.finalUnitIndication = FinalUnitIndication.newBuilder()
-                        .setFinalUnitAction(FinalUnitAction.TERMINATE)
-                        .setIsSet(true)
-                        .build()
-
-                responseMscc.volumeQuotaThreshold = 0L
+                responseMscc.volumeQuotaThreshold = 0L  // No point in putting a threshold on the last grant
             } else {
                 responseMscc.volumeQuotaThreshold = (grantedTotalOctets * 0.2).toLong() // When client has 20% left
             }

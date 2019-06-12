@@ -1,6 +1,9 @@
 package org.ostelco.prime.paymentprocessor
 
 import arrow.core.Either
+import org.ostelco.prime.paymentprocessor.core.InvoicePaymentInfo
+import org.ostelco.prime.paymentprocessor.core.InvoiceInfo
+import org.ostelco.prime.paymentprocessor.core.InvoiceItemInfo
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.PlanInfo
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
@@ -9,6 +12,8 @@ import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
+import org.ostelco.prime.paymentprocessor.core.TaxRateInfo
+import java.math.BigDecimal
 
 interface PaymentProcessor {
 
@@ -64,10 +69,11 @@ interface PaymentProcessor {
     /**
      * @param Stripe Plan Id
      * @param stripeCustomerId Stripe Customer Id
-     * @param Epoch timestamp for when the trial period ends
+     * @param trielEnd Epoch timestamp for when the trial period ends
+     * @param taxRegion An identifier representing the taxes to be applied to a region
      * @return Stripe SubscriptionId if subscribed
      */
-    fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long = 0L): Either<PaymentError, SubscriptionDetailsInfo>
+    fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long = 0L, taxRegionId: String? = null): Either<PaymentError, SubscriptionDetailsInfo>
 
     /**
      * @param Stripe Subscription Id
@@ -77,10 +83,10 @@ interface PaymentProcessor {
     fun cancelSubscription(subscriptionId: String, invoiceNow: Boolean = false): Either<PaymentError, SubscriptionInfo>
 
     /**
-     * @param sku Prime product SKU
+     * @param name Prime product name
      * @return Stripe productId if created
      */
-    fun createProduct(sku: String): Either<PaymentError, ProductInfo>
+    fun createProduct(name: String): Either<PaymentError, ProductInfo>
 
     /**
      * @param productId Stripe product Id
@@ -127,8 +133,14 @@ interface PaymentProcessor {
      * @param chargeId ID of the of the authorized charge to refund from authorizeCharge()
      * @return id of the charge
      */
-    fun refundCharge(chargeId: String, amount: Int, currency: String
-    ): Either<PaymentError, String>
+    fun refundCharge(chargeId: String): Either<PaymentError, String>
+
+    /**
+     * @param chargeId ID of the of the authorized charge to refund from authorizeCharge()
+     * @param amount The amount to refund form the charge
+     * @return id of the charge
+     */
+    fun refundCharge(chargeId: String, amount: Int): Either<PaymentError, String>
 
     /**
      * @param stripeCustomerId Customer id in the payment system
@@ -138,4 +150,58 @@ interface PaymentProcessor {
     fun removeSource(stripeCustomerId: String, sourceId: String): Either<PaymentError, SourceInfo>
 
     fun getStripeEphemeralKey(customerId: String, email: String, apiVersion: String): Either<PaymentError, String>
+
+    /**
+     * @param customerId ID of the customer to which the invoice item will be assigned to
+     * @param amount Amount to pay (an integer multiplied by 100)
+     * @param currency The currency to use for the payment (ISO code)
+     * @param description Short description of what the invoice item is for
+     * @return ID of the invoice item
+     */
+    fun createInvoiceItem(customerId: String, amount: Int, currency: String, description: String): Either<PaymentError, InvoiceItemInfo>
+
+    /**
+     * @param invoiceItemId ID of invoice item to delete
+     * @return ID of the deleted invoice item
+     */
+    fun removeInvoiceItem(invoiceItemId: String): Either<PaymentError, InvoiceItemInfo>
+
+    /**
+     * @param customerId ID of the customer to which the invoice will be assigned to
+     * @param taxRates List of tax-rates to apply for a tax region
+     * @param sourceId Optionally use this source for payment
+     * @return ID of the invoice
+     */
+    fun createInvoice(customerId: String, taxRates: List<TaxRateInfo> = listOf<TaxRateInfo>(), sourceId: String? = null): Either<PaymentError, InvoiceInfo>
+
+    /**
+     * @param customerId ID of the customer to which the invoice will be assigned to
+     * @param amount Amount to pay (an integer multiplied by 100)
+     * @param currency The currency to use for the payment (ISO code)
+     * @param description Short description of what the invoice is for
+     * @param taxRegion An identifier representing the taxes to be applied to a region
+     * @param sourceId Optionally use this source for payment
+     * @return ID of the invoice
+     */
+    fun createInvoice(customerId: String, amount: Int, currency: String, description: String, taxRegionId: String?, sourceId: String?): Either<PaymentError, InvoiceInfo>
+
+    /**
+     * @param invoiceId ID of the invoice to be paid
+     * @return ID of the invoice
+     */
+    fun payInvoice(invoiceId: String): Either<PaymentError, InvoicePaymentInfo>
+
+    /**
+     * @param invoiceId ID of the invoice to be paid
+     * @return ID of the invoice
+     */
+    fun removeInvoice(invoiceId: String): Either<PaymentError, InvoiceInfo>
+
+    fun createTaxRateForTaxRegionId(taxRegionId: String, percentage: BigDecimal, displayName: String, inclusive: Boolean = true): Either<PaymentError, TaxRateInfo>
+
+    /**
+     * @param region Region code
+     * @return List with tax rates to apply for region if any found
+     */
+    fun getTaxRatesForTaxRegionId(taxRegionId: String?): Either<PaymentError, List<TaxRateInfo>>
 }

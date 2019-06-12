@@ -64,7 +64,7 @@ docker push eu.gcr.io/${GCP_PROJECT_ID}/prime:${TAG}
 
 HELM_RELEASE_NAME="prime-direct"
 HELM_CHART="ostelco/prime"
-HELM_CHART_VERSION="0.6.1"
+HELM_CHART_VERSION="0.6.3"
 HELM_VALUES_FILE="prime/infra/prime-direct-values.yaml"
 
 #

@@ -7,7 +7,6 @@ import io.dropwizard.setup.Environment
 import org.hibernate.validator.constraints.NotEmpty
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.module.PrimeModule
-import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.publishers.StripeEventPublisher
 import org.ostelco.prime.paymentprocessor.resources.StripeWebhookResource
 import org.ostelco.prime.paymentprocessor.subscribers.RecurringPaymentStripeEvent
@@ -19,9 +18,12 @@ class PaymentProcessorModule : PrimeModule {
 
     private val logger by getLogger()
 
+    private var isConfigInitialized = false
+
     @JsonProperty("config")
     fun setConfig(config: PaymentProcessorConfig) {
         ConfigRegistry.config = config
+        isConfigInitialized = true
     }
 
     override fun init(env: Environment) {
@@ -32,22 +34,19 @@ class PaymentProcessorModule : PrimeModule {
         Stripe.apiKey = System.getenv("STRIPE_API_KEY")
                 ?: throw Error("Missing environment variable STRIPE_API_KEY")
 
-        val API_VERSION = "2019-03-14"
+        if (isConfigInitialized) {
+            /* APIs. */
+            env.jersey().register(StripeWebhookResource())
 
-        if (Stripe.API_VERSION != API_VERSION) {
-            logger.warn(NOTIFY_OPS_MARKER, "Stripe API version is ${Stripe.API_VERSION} but expected ${API_VERSION}")
+            /* Stripe events reporting. */
+
+            env.lifecycle().manage(StripeEventPublisher)
+            env.lifecycle().manage(StoreStripeEvent())
+            env.lifecycle().manage(ReportStripeEvent())
+            env.lifecycle().manage(RecurringPaymentStripeEvent())
+        } else {
+            logger.warn("Running stripe-payment-processor in admin mode")
         }
-
-        val jerseyEnv = env.jersey()
-
-        /* APIs. */
-        jerseyEnv.register(StripeWebhookResource())
-
-        /* Stripe events reporting. */
-        env.lifecycle().manage(StripeEventPublisher)
-        env.lifecycle().manage(StoreStripeEvent())
-        env.lifecycle().manage(ReportStripeEvent())
-        env.lifecycle().manage(RecurringPaymentStripeEvent())
     }
 }
 

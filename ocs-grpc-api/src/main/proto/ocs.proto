@@ -121,8 +121,19 @@ message CreditControlAnswerInfo {
   string msisdn = 2;
   repeated MultipleServiceCreditControl mscc = 3;
   ResultCode resultCode = 4;
+  uint32 validityTime = 5;
+  ExtraInfo extraInfo = 6;
 }
 
+message ExtraInfo {
+  repeated MultipleServiceCreditControlInfo msccInfo= 1;
+}
+
+message MultipleServiceCreditControlInfo {
+  uint64 serviceIdentifier = 1;
+  uint64 ratingGroup = 2;
+  uint64 balance = 3;
+}
 
 message ActivateRequest {
 }

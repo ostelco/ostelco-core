@@ -28,6 +28,8 @@ import org.ostelco.prime.model.SimProfile
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
+import org.ostelco.prime.paymentprocessor.core.ForbiddenError
+import org.ostelco.prime.paymentprocessor.core.PlanAlredyPurchasedError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
@@ -267,7 +269,16 @@ class SubscriberDAOImpl : SubscriberDAO {
                     identity,
                     sku,
                     sourceId,
-                    saveCard).mapLeft { mapPaymentErrorToApiError("Failed to purchase product. ", ApiErrorCode.FAILED_TO_PURCHASE_PRODUCT, it) }
+                    saveCard).mapLeft {
+                when (it) {
+                    is PlanAlredyPurchasedError -> mapPaymentErrorToApiError("Already subscribed to plan. ",
+                            ApiErrorCode.ALREADY_SUBSCRIBED_TO_PLAN,
+                            it)
+                    else -> mapPaymentErrorToApiError("Failed to purchase product. ",
+                            ApiErrorCode.FAILED_TO_PURCHASE_PRODUCT,
+                            it)
+                }
+            }
 
     //
     // Payment

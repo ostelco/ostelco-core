@@ -10,6 +10,8 @@ openApi:
 
 hlrs:
   - name: Foo
+    hlrType: WG2
+    hssNameUsedInAPI: loltel
     endpoint: http://localhost:9180/default/provision
     userId: user
     apiKey: xyz

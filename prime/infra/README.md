@@ -147,7 +147,7 @@ $ helm repo update
 # if your kube context is not configured to point to the dev cluster, then configure it 
 $ kubectl config use-context gke_pi-ostelco-dev_europe-west1-c_pi-dev
 $ RELEASE_NAME=<some-unique-name>
-$ helm upgrade ${RELEASE_NAME} ostelco/prime --version 0.6.1 --install -f <path-to-your-custom-values-file> --set prime.tag=feature-xyz
+$ helm upgrade ${RELEASE_NAME} ostelco/prime --version 0.6.3 --install -f <path-to-your-custom-values-file> --set prime.tag=feature-xyz
 ```
 you can then watch for your pods being created with this command:
 
@@ -178,7 +178,9 @@ kubectl create secret generic prime-service-account.json --from-file prime/confi
 Note: To update the secrets defined using yaml, delete and created them again. They are not updated.
  
 ```bash
-kubectl create secret generic stripe-secrets --from-literal=stripeApiKey='keep-stripe-api-key-here'
+kubectl create secret generic stripe-secrets \
+  --from-literal=stripeApiKey='keep-stripe-api-key-here' \
+  --from-literal=stripeEndpointSecret='keep-stripe-endpoint-secret-here'
 ```
 
 ```bash

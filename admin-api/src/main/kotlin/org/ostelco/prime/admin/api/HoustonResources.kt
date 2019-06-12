@@ -12,9 +12,9 @@ import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.model.Bundle
+import org.ostelco.prime.model.Context
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.Identity
-import org.ostelco.prime.model.Plan
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.Subscription
@@ -23,7 +23,6 @@ import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.storage.AdminDataSource
-import java.net.URLDecoder
 import java.util.regex.Pattern
 import javax.validation.constraints.NotNull
 import javax.ws.rs.Consumes
@@ -60,16 +59,15 @@ class ProfilesResource {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
-        val decodedId = URLDecoder.decode(id, "UTF-8")
-        return if (!isEmail(decodedId)) {
-            logger.info("${token.name} Accessing profile for msisdn:$decodedId")
-            getProfileForMsisdn(decodedId).fold(
+        return if (!isEmail(id)) {
+            logger.info("${token.name} Accessing profile for msisdn:$id")
+            getProfileForMsisdn(id).fold(
                     { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                     { Response.status(Response.Status.OK).entity(asJson(it)) })
                     .build()
         } else {
-            logger.info("${token.name} Accessing profile for email:$decodedId")
-            getProfile(Identity(decodedId, "EMAIL", "email")).fold(
+            logger.info("${token.name} Accessing profile for email:$id")
+            getProfile(Identity(id, "EMAIL", "email")).fold(
                     { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                     { Response.status(Response.Status.OK).entity(asJson(it)) })
                     .build()
@@ -90,9 +88,8 @@ class ProfilesResource {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
-        val decodedId = URLDecoder.decode(email, "UTF-8")
-        logger.info("${token.name} Accessing subscriptions for email:$decodedId")
-        return getSubscriptions(Identity(decodedId, "EMAIL", "email")).fold(
+        logger.info("${token.name} Accessing subscriptions for email:$email")
+        return getSubscriptions(Identity(email, "EMAIL", "email")).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
@@ -112,9 +109,8 @@ class ProfilesResource {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
-        val decodedId = URLDecoder.decode(email, "UTF-8")
-        logger.info("${token.name} Accessing scan information for email:$decodedId")
-        return getAllScanInformation(identity = Identity(id = decodedId, type = "EMAIL", provider = "email")).fold(
+        logger.info("${token.name} Accessing scan information for email:$email")
+        return getAllScanInformation(identity = Identity(id = email, type = "EMAIL", provider = "email")).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
@@ -258,9 +254,8 @@ class BundlesResource {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
-        val decodedEmail = URLDecoder.decode(email, "UTF-8")
-        logger.info("${token.name} Accessing bundles for $decodedEmail")
-        return getBundles(Identity(decodedEmail, "EMAIL", "email")).fold(
+        logger.info("${token.name} Accessing bundles for $email")
+        return getBundles(Identity(email, "EMAIL", "email")).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
@@ -301,9 +296,8 @@ class PurchaseResource {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
-        val decodedEmail = URLDecoder.decode(email, "UTF-8")
-        logger.info("${token.name} Accessing bundles for $decodedEmail")
-        return getPurchaseHistory(Identity(decodedEmail, "EMAIL", "email")).fold(
+        logger.info("${token.name} Accessing bundles for $email")
+        return getPurchaseHistory(Identity(email, "EMAIL", "email")).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
@@ -350,12 +344,11 @@ class RefundResource {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
-        val decodedEmail = URLDecoder.decode(email, "UTF-8")
-        logger.info("${token.name} Refunding purchase for $decodedEmail at id: $purchaseRecordId")
-        return refundPurchase(Identity(decodedEmail, "EMAIL", "email"), purchaseRecordId, reason).fold(
+        logger.info("${token.name} Refunding purchase for $email at id: $purchaseRecordId")
+        return refundPurchase(Identity(email, "EMAIL", "email"), purchaseRecordId, reason).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 {
-                    logger.info(NOTIFY_OPS_MARKER, "${token.name} refunded the purchase (id:$purchaseRecordId) for $decodedEmail ")
+                    logger.info(NOTIFY_OPS_MARKER, "${token.name} refunded the purchase (id:$purchaseRecordId) for $email ")
                     Response.status(Response.Status.OK).entity(asJson(it))
                 })
                 .build()
@@ -372,6 +365,55 @@ class RefundResource {
         } catch (e: Exception) {
             logger.error("Failed to refund purchase for customer with identity - $identity, id: $purchaseRecordId", e)
             Either.left(InternalServerError("Failed to refund purchase", ApiErrorCode.FAILED_TO_REFUND_PURCHASE))
+        }
+    }
+}
+
+/**
+ * Resource used to handle context REST call.
+ */
+@Path("/context")
+class ContextResource {
+    private val logger by getLogger()
+    private val storage by lazy { getResource<AdminDataSource>() }
+
+    /**
+     * Get context for the subscriber.
+     */
+    @GET
+    @Path("{email}")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun getContextByEmail(@Auth token: AccessTokenPrincipal?,
+                          @NotNull
+                          @PathParam("email")
+                          email: String): Response {
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .build()
+        }
+        logger.info("${token.name} Accessing context for $email")
+        return getContext(Identity(email, "EMAIL", "email")).fold(
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                { Response.status(Response.Status.OK).entity(asJson(it)) })
+                .build()
+    }
+
+    // TODO: Reuse the one from SubscriberDAO
+    fun getContext(identity: Identity): Either<ApiError, Context> {
+        return try {
+            storage.getCustomer(identity)
+                    .mapLeft {
+                        NotFoundError("Failed to fetch customer.", ApiErrorCode.FAILED_TO_FETCH_CONTEXT, it)
+                    }
+                    .map { customer ->
+                        storage.getAllRegionDetails(identity = identity)
+                                .fold(
+                                        { Context(customer = customer) },
+                                        { regionDetailsCollection -> Context(customer = customer, regions = regionDetailsCollection) })
+                    }
+        } catch (e: Exception) {
+            logger.error("Failed to fetch context for customer with identity - $identity", e)
+            Either.left(NotFoundError("Failed to fetch context", ApiErrorCode.FAILED_TO_FETCH_CONTEXT))
         }
     }
 }
@@ -404,11 +446,10 @@ class NotifyResource {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
-        val decodedEmail = URLDecoder.decode(email, "UTF-8")
-        return getCustomerId(email = decodedEmail).fold(
+        return getCustomerId(email = email).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { customerId ->
-                    logger.info("${token.name} Sending notification to $decodedEmail customerId: $customerId")
+                    logger.info("${token.name} Sending notification to $email customerId: $customerId")
                     val data = mapOf("timestamp" to "${System.currentTimeMillis()}")
                     notifier.notify(customerId, title, message, data)
                     Response.status(Response.Status.OK).entity("Message Sent")
@@ -462,8 +503,11 @@ class PlanResource {
     @POST
     @Produces("application/json")
     @Consumes("application/json")
-    fun create(plan: Plan): Response {
-        return storage.createPlan(plan).fold(
+    fun create(createPlanRequest: CreatePlanRequest): Response {
+        return storage.createPlan(
+                plan = createPlanRequest.plan,
+                stripeProductName = createPlanRequest.stripeProductName,
+                planProduct = createPlanRequest.planProduct).fold(
                 {
                     val err = ApiErrorMapper.mapStorageErrorToApiError("Failed to store plan",
                             ApiErrorCode.FAILED_TO_STORE_PLAN,

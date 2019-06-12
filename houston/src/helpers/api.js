@@ -76,7 +76,7 @@ const apiCaller = async (endpoint, method, body, allowEmptyResponse, params = []
 };
 
 
-function transformError(errorObj) {
+export function transformError(errorObj) {
   if (errorObj.errors) {
     if (Array.isArray(errorObj.errors)) {
       return errorObj.errors.join(', ');

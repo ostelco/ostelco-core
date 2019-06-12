@@ -14,11 +14,13 @@ repositories {
     url 'https://dl.bintray.com/palantir/releases' // docker-compose-rule is published on bintray
   }
 }
+
 dependencies {
 
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinXCoroutinesVersion"
 
   implementation project(":prime-modules")
+  api project(":kts-engine")
   implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
 
   implementation "org.neo4j:neo4j-graphdb-api:$neo4jVersion"

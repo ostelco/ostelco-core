@@ -35,11 +35,10 @@ class ProtobufDataSource {
 
     fun handleRequest(context: CreditControlContext, topicId: String?): CreditControlRequestInfo? {
 
-        logger.info("[>>] creditControlRequest for {}", context.creditControlRequest.msisdn)
-
         // FixMe: We should handle conversion errors
         val creditControlRequestInfo = ProtobufToDiameterConverter.convertRequestToProtobuf(context, topicId)
         if (creditControlRequestInfo != null) {
+            // This assumes one outstanding request per session id..
             ccrMap[context.sessionId] = context
             addToSessionMap(context)
         }
@@ -48,9 +47,11 @@ class ProtobufDataSource {
 
     fun handleCcrAnswer(answer: CreditControlAnswerInfo) {
         try {
-            logger.info("[<<] CreditControlAnswer for {}", answer.msisdn)
+            logger.info("[<<] CreditControlAnswer for msisdn {} requestId {}", answer.msisdn, answer.requestId)
             val ccrContext = ccrMap.remove(answer.requestId)
             if (ccrContext != null) {
+                ccrContext.logLatency()
+                logger.debug("Found Context for answer msisdn {} requestId [{}] request nr {}", ccrContext.creditControlRequest.msisdn, ccrContext.sessionId, ccrContext.creditControlRequest.ccRequestNumber?.integer32)
                 val session = OcsServer.stack?.getSession(ccrContext.sessionId, ServerCCASession::class.java)
                 if (session != null && session.isValid) {
                     removeFromSessionMap(ccrContext)
@@ -68,7 +69,6 @@ class ProtobufDataSource {
                         } catch (e: OverloadException) {
                             logger.error("Failed to send Credit-Control-Answer", e)
                         }
-
                     }
                 } else {
                     logger.warn("No stored CCR or Session for {}", answer.requestId)
@@ -89,7 +89,7 @@ class ProtobufDataSource {
             val sessionContext = sessionIdMap[activateResponse.msisdn]
             OcsServer.sendReAuthRequest(sessionContext)
         } else {
-            logger.debug("No session context stored for msisdn : {}", activateResponse.msisdn)
+            logger.info("No session context stored for msisdn : {}", activateResponse.msisdn)
         }
     }
 
@@ -124,20 +124,22 @@ class ProtobufDataSource {
      * A user will be blocked if one of the MSCC in the request could not be filled in the answer
      */
     private fun updateBlockedList(answer: CreditControlAnswerInfo, request: CreditControlRequest) {
-        for (msccAnswer in answer.msccList) {
+
+        for (mssAnswerInfo in answer.extraInfo.msccInfoList) {
             for (msccRequest in request.multipleServiceCreditControls) {
-                if (msccAnswer.serviceIdentifier == msccRequest.serviceIdentifier && msccAnswer.ratingGroup == msccRequest.ratingGroup) {
-                    if (updateBlockedList(msccAnswer, msccRequest, answer.msisdn)) {
+                if (mssAnswerInfo.serviceIdentifier == msccRequest.serviceIdentifier && mssAnswerInfo.ratingGroup == msccRequest.ratingGroup) {
+                    if (updateBlockedList(mssAnswerInfo, msccRequest, answer.msisdn)) {
                         return
                     }
                 }
             }
+
         }
     }
 
-    private fun updateBlockedList(msccAnswer: org.ostelco.ocs.api.MultipleServiceCreditControl, msccRequest: MultipleServiceCreditControl, msisdn: String): Boolean {
+    private fun updateBlockedList(msccAnswer: org.ostelco.ocs.api.MultipleServiceCreditControlInfo, msccRequest: MultipleServiceCreditControl, msisdn: String): Boolean {
         if (!msccRequest.requested.isEmpty()) {
-            if (msccAnswer.granted.totalOctets < msccRequest.requested[0].total) {
+            if (msccAnswer.balance < msccRequest.requested[0].total * 3) {
                 blocked.add(msisdn)
                 return true
             } else {
@@ -150,14 +152,14 @@ class ProtobufDataSource {
     private fun createCreditControlAnswer(response: CreditControlAnswerInfo?): CreditControlAnswer {
         if (response == null) {
             logger.error("Empty CreditControlAnswerInfo received")
-            return CreditControlAnswer(DIAMETER_UNABLE_TO_COMPLY, ArrayList())
+            return CreditControlAnswer(DIAMETER_UNABLE_TO_COMPLY, ArrayList(), 0)
         }
 
         val multipleServiceCreditControls = LinkedList<MultipleServiceCreditControl>()
         for (mscc in response.msccList) {
             multipleServiceCreditControls.add(ProtobufToDiameterConverter.convertMSCC(mscc))
         }
-        return CreditControlAnswer(ProtobufToDiameterConverter.convertResultCode(response.resultCode), multipleServiceCreditControls)
+        return CreditControlAnswer(ProtobufToDiameterConverter.convertResultCode(response.resultCode), multipleServiceCreditControls, response.validityTime)
     }
 
 

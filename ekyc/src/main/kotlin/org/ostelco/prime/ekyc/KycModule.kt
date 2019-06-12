@@ -31,7 +31,7 @@ data class Config(
         val myInfoRedirectUri: String,
         val myInfoServerPublicKey: String,
         val myInfoClientPrivateKey: String,
-        val myInfoPersonDataAttributes: String = "name,sex,dob,residentialstatus,nationality,mobileno,email,regadd")
+        val myInfoPersonDataAttributes: String = "name,sex,dob,residentialstatus,nationality,mobileno,email,mailadd")
 
 object ConfigRegistry {
     lateinit var config: Config

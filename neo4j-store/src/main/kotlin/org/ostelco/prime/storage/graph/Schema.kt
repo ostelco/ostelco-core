@@ -7,8 +7,6 @@ import arrow.core.right
 import com.fasterxml.jackson.core.type.TypeReference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.neo4j.driver.v1.AccessMode.READ
-import org.neo4j.driver.v1.AccessMode.WRITE
 import org.neo4j.driver.v1.StatementResult
 import org.neo4j.driver.v1.StatementResultCursor
 import org.neo4j.driver.v1.Transaction
@@ -43,8 +41,14 @@ data class RelationType<FROM : HasId, RELATION, TO : HasId>(
         private val relation: Relation,
         val from: EntityType<FROM>,
         val to: EntityType<TO>,
-        private val dataClass: Class<RELATION>,
-        val name: String = relation.name) {
+        private val dataClass: Class<RELATION>) {
+
+    init {
+        RelationRegistry.register(relation, this)
+    }
+    var relationStore: BaseRelationStore? = null
+
+    val name: String = relation.name
 
     fun createRelation(map: Map<String, Any>): RELATION {
         return ObjectHandler.getObject(map, dataClass)
@@ -80,21 +84,6 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
                     Unit.right()
                 else
                     Either.left(NotCreatedError(type = entityType.name, id = entity.id))
-            }
-        }
-    }
-
-    fun create(id: String, transaction: Transaction): Either<StoreError, Unit> {
-
-        return doNotExist(id = id, transaction = transaction).flatMap {
-
-            write("""CREATE (node:${entityType.name} { id:"$id"});""",
-                    transaction) { statementResult ->
-
-                if (statementResult.summary().counters().nodesCreated() == 1)
-                    Unit.right()
-                else
-                    Either.left(NotCreatedError(type = entityType.name, id = id))
             }
         }
     }
@@ -199,8 +188,14 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
             }
 }
 
+sealed class BaseRelationStore
+
 // TODO vihang: check if relation already exists, with allow duplicate boolean flag param
-class RelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType: RelationType<FROM, RELATION, TO>) {
+class RelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType: RelationType<FROM, RELATION, TO>) : BaseRelationStore() {
+
+    init {
+        relationType.relationStore = this
+    }
 
     fun create(from: FROM, relation: RELATION, to: TO, transaction: Transaction): Either<StoreError, Unit> {
 
@@ -317,7 +312,11 @@ class RelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType
     }
 }
 
-class ChangeableRelationStore<FROM : HasId, TO : HasId, RELATION : HasId>(private val relationType: RelationType<FROM, RELATION, TO>) {
+class ChangeableRelationStore<FROM : HasId, RELATION : HasId, TO : HasId>(private val relationType: RelationType<FROM, RELATION, TO>) : BaseRelationStore() {
+
+    init {
+        relationType.relationStore = this
+    }
 
     fun get(id: String, transaction: Transaction): Either<StoreError, RELATION> {
         return read("""MATCH (from)-[r:${relationType.name}{id:'$id'}]->(to) RETURN r;""",
@@ -348,7 +347,11 @@ class ChangeableRelationStore<FROM : HasId, TO : HasId, RELATION : HasId>(privat
 // Usage: output = re.replace(input, "$1$2$3")
 val re = Regex("""([,{])\s*"([^"]+)"\s*(:)""")
 
-class UniqueRelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType: RelationType<FROM, RELATION, TO>) {
+class UniqueRelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType: RelationType<FROM, RELATION, TO>) : BaseRelationStore() {
+
+    init {
+        relationType.relationStore = this
+    }
 
     // If relation does not exists, then it creates new relation.
     fun createIfAbsent(fromId: String, toId: String, transaction: Transaction): Either<StoreError, Unit> {
@@ -549,43 +552,6 @@ object Graph {
         }.let(transform)
     }
 }
-
-fun <R> readTransaction(action: ReadTransaction.() -> R): R =
-        Neo4jClient.driver.session(READ)
-                .use { session ->
-                    session.readTransaction { transaction ->
-                        val primeTransaction = PrimeTransaction(transaction)
-                        val result = action(ReadTransaction(primeTransaction))
-                        primeTransaction.close()
-                        result
-                    }
-                }
-
-fun <R> writeTransaction(action: WriteTransaction.() -> R): R =
-        Neo4jClient.driver.session(WRITE)
-                .use { session ->
-                    session.writeTransaction { transaction ->
-                        val primeTransaction = PrimeTransaction(transaction)
-                        val result = action(WriteTransaction(primeTransaction))
-                        primeTransaction.close()
-                        result
-                    }
-                }
-
-suspend fun <R> suspendedWriteTransaction(action: suspend WriteTransaction.() -> R): R =
-        Neo4jClient.driver.session(WRITE)
-                .use { session ->
-                    val transaction = session.beginTransaction()
-                    val primeTransaction = PrimeTransaction(transaction)
-                    val result = action(WriteTransaction(primeTransaction))
-                    primeTransaction.success()
-                    primeTransaction.close()
-                    transaction.close()
-                    result
-                }
-
-data class ReadTransaction(val transaction: PrimeTransaction)
-data class WriteTransaction(val transaction: PrimeTransaction)
 
 //
 // Object mapping functions

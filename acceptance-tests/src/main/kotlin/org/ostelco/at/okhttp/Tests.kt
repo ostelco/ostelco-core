@@ -7,6 +7,7 @@ import org.ostelco.at.common.StripePayment
 import org.ostelco.at.common.createCustomer
 import org.ostelco.at.common.createSubscription
 import org.ostelco.at.common.enableRegion
+import org.ostelco.at.common.expectedPlanProduct
 import org.ostelco.at.common.expectedProducts
 import org.ostelco.at.common.getLogger
 import org.ostelco.at.common.randomInt
@@ -240,6 +241,7 @@ class BundlesAndPurchasesTest {
             val freeProduct = Product()
                     .sku("2GB_FREE_ON_JOINING")
                     .price(Price().amount(0).currency(""))
+                    .payment(emptyMap<String, String>())
                     .properties(mapOf(
                             "noOfBytes" to "2_147_483_648",
                             "productClass" to "SIMPLE_DATA"))
@@ -603,7 +605,7 @@ class SingaporeKycTest {
             assertEquals(
                     "http://ext-myinfo-emulator:8080/authorise" +
                             "?client_id=STG2-MYINFO-SELF-TEST" +
-                            "&attributes=name,sex,dob,residentialstatus,nationality,mobileno,email,regadd" +
+                            "&attributes=name,sex,dob,residentialstatus,nationality,mobileno,email,mailadd" +
                             "&redirect_uri=http://localhost:3001/callback",
                     myInfoConfig.url)
 
@@ -631,7 +633,7 @@ class SingaporeKycTest {
 
             val personData: String = jacksonObjectMapper().writeValueAsString(client.getCustomerMyInfoData("authCode"))
 
-            val expectedPersonData = """{"name":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"TANXIAOHUI"},"sex":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"F"},"nationality":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"SG"},"dob":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"1970-05-17"},"email":{"lastupdated":"2018-08-23","source":"4","classification":"C","value":"myinfotesting@gmail.com"},"mobileno":{"lastupdated":"2018-08-23","code":"65","source":"4","classification":"C","prefix":"+","nbr":"97399245"},"regadd":{"country":"SG","unit":"128","street":"BEDOKNORTHAVENUE4","lastupdated":"2018-03-20","block":"102","postal":"460102","source":"1","classification":"C","floor":"09","building":"PEARLGARDEN"},"uinfin":"S9812381D"}"""
+            val expectedPersonData = """{"name":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"TANXIAOHUI"},"sex":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"F"},"nationality":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"SG"},"dob":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"1970-05-17"},"email":{"lastupdated":"2018-08-23","source":"4","classification":"C","value":"myinfotesting@gmail.com"},"mobileno":{"lastupdated":"2018-08-23","code":"65","source":"4","classification":"C","prefix":"+","nbr":"97399245"},"mailadd":{"country":"SG","unit":"128","street":"BEDOKNORTHAVENUE4","lastupdated":"2018-03-20","block":"102","postal":"460102","source":"1","classification":"C","floor":"09","building":"PEARLGARDEN"},"uinfin":"S9812381D"}"""
             assertEquals(expectedPersonData, personData, "MyInfo PersonData do not match")
 
             run {
@@ -837,6 +839,7 @@ class ReferralTest {
             val freeProductForReferred = Product()
                     .sku("1GB_FREE_ON_REFERRED")
                     .price(Price().amount(0).currency("NOK"))
+                    .payment(emptyMap<String, String>())
                     .properties(mapOf(
                             "noOfBytes" to "1_000_000_000",
                             "productClass" to "SIMPLE_DATA"))
@@ -849,7 +852,35 @@ class ReferralTest {
     }
 }
 
-// TODO Kjell: add okhttp acceptance tests for PlanTest
+class PlanTest {
+
+    @Test
+    fun `okhttp test - POST purchase plan`() {
+
+        val email = "purchase-${randomInt()}@test.com"
+        var customerId = ""
+        try {
+            customerId = createCustomer(name = "Test Purchase Plan User", email = email).id
+            enableRegion(email = email, region = "sg")
+
+            val client = clientForSubject(subject = email)
+            val sourceId = StripePayment.createPaymentTokenId()
+
+            client.purchaseProduct("PLAN_1000SGD_YEAR", sourceId, false)
+
+            Thread.sleep(200) // wait for 200 ms for balance to be updated in db
+
+            val purchaseRecords = client.purchaseHistory
+
+            purchaseRecords.sortBy { it.timestamp }
+
+            assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
+            assertEquals(expectedPlanProduct, purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
+        } finally {
+            StripePayment.deleteCustomer(customerId = customerId)
+        }
+    }
+}
 
 class GraphQlTests {
 

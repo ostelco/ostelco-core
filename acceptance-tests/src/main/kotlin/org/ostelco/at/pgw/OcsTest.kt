@@ -179,6 +179,7 @@ class OcsTest {
     }
 
     //@Test
+    // This is disabled until this is implemented in the store
     fun multiRatingGroupsInitUserUnknown() {
 
         val client = testClient ?: fail("Test client is null")
@@ -260,8 +261,8 @@ class OcsTest {
     }
 
 
-    @Test
-    fun creditControlRequestInitTerminateNoCredit() {
+    // @Test Final-Unit-Indication is not in use
+    fun creditControlRequestInitTerminateNoCreditFUI() {
 
         val email = "ocs-${randomInt()}@test.com"
         createCustomer(name = "Test OCS User", email = email)
@@ -347,6 +348,131 @@ class OcsTest {
         }
 
         // If P-GW tries another CCR-I we should reply DIAMETER_CREDIT_LIMIT_REACHED
+
+        session = client.createSession() ?: fail("Failed to create session")
+        request = client.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session
+        ) ?: fail("Failed to create request")
+
+
+        // Requesting one more bucket, the balance should be zero now
+        TestHelper.createInitRequest(request.avps, msisdn, BUCKET_SIZE, ratingGroup, serviceIdentifier)
+
+        client.sendNextRequest(request, session)
+
+        waitForAnswer()
+
+        // First request should reserve the full balance
+        run {
+            assertEquals(DIAMETER_SUCCESS, client.resultCodeAvp?.integer32?.toLong())
+            val resultAvps = client.resultAvps ?: fail("Missing AVPs")
+            assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
+            assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
+            assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+            val resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
+            assertEquals(DIAMETER_CREDIT_LIMIT_REACHED, resultMSCC.grouped.getAvp(Avp.RESULT_CODE).integer32.toLong())
+            assertEquals(serviceIdentifier.toLong(), resultMSCC.grouped.getAvp(Avp.SERVICE_IDENTIFIER_CCA).integer32.toLong())
+            assertEquals(ratingGroup.toLong(), resultMSCC.grouped.getAvp(Avp.RATING_GROUP).integer32.toLong())
+            val granted = resultMSCC.grouped.getAvp(Avp.GRANTED_SERVICE_UNIT)
+            assertEquals(0L, granted.grouped.getAvp(Avp.CC_TOTAL_OCTETS).unsigned64)
+        }
+    }
+
+
+    @Test
+    fun creditControlRequestInitTerminateNoCredit() {
+
+        val email = "ocs-${randomInt()}@test.com"
+        createCustomer(name = "Test OCS User", email = email)
+
+        val msisdn = createSubscription(email = email)
+
+        val ratingGroup = 10
+        val serviceIdentifier = 1
+
+        val client = testClient ?: fail("Test client is null")
+
+        var session = client.createSession() ?: fail("Failed to create session")
+        var request = client.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session
+        ) ?: fail("Failed to create request")
+
+
+        // Requesting one more bucket then the balance for the user
+        TestHelper.createInitRequest(request.avps, msisdn, INITIAL_BALANCE + BUCKET_SIZE, ratingGroup, serviceIdentifier)
+
+        client.sendNextRequest(request, session)
+
+        waitForAnswer()
+
+        // First request should reserve the full balance
+        run {
+            assertEquals(DIAMETER_SUCCESS, client.resultCodeAvp?.integer32?.toLong())
+            val resultAvps = client.resultAvps ?: fail("Missing AVPs")
+            assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
+            assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
+            assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+            val resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
+            assertEquals(DIAMETER_SUCCESS, resultMSCC.grouped.getAvp(Avp.RESULT_CODE).integer32.toLong())
+            assertEquals(serviceIdentifier.toLong(), resultMSCC.grouped.getAvp(Avp.SERVICE_IDENTIFIER_CCA).integer32.toLong())
+            assertEquals(ratingGroup.toLong(), resultMSCC.grouped.getAvp(Avp.RATING_GROUP).integer32.toLong())
+            val granted = resultMSCC.grouped.getAvp(Avp.GRANTED_SERVICE_UNIT)
+            assertEquals(INITIAL_BALANCE, granted.grouped.getAvp(Avp.CC_TOTAL_OCTETS).unsigned64)
+        }
+
+        // Next request should deny request and grant no quota
+
+        val updateRequest = client.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session
+        ) ?: fail("Failed to create request")
+
+        TestHelper.createUpdateRequest(updateRequest.avps, msisdn, BUCKET_SIZE, INITIAL_BALANCE, ratingGroup, serviceIdentifier)
+
+        client.sendNextRequest(updateRequest, session)
+
+        waitForAnswer()
+
+        run {
+            assertEquals(DIAMETER_SUCCESS, client.resultCodeAvp?.integer32?.toLong())
+            val resultAvps = client.resultAvps ?: fail("Missing AVPs")
+            assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
+            assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
+            assertEquals(RequestType.UPDATE_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+            val resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
+            assertEquals(DIAMETER_CREDIT_LIMIT_REACHED, resultMSCC.grouped.getAvp(Avp.RESULT_CODE).integer32.toLong())
+            assertEquals(serviceIdentifier.toLong(), resultMSCC.grouped.getAvp(Avp.SERVICE_IDENTIFIER_CCA).integer32.toLong())
+            assertEquals(ratingGroup.toLong(), resultMSCC.grouped.getAvp(Avp.RATING_GROUP).integer32.toLong())
+            val granted = resultMSCC.grouped.getAvp(Avp.GRANTED_SERVICE_UNIT)
+            assertEquals(0L, granted.grouped.getAvp(Avp.CC_TOTAL_OCTETS).unsigned64)
+        }
+
+        // Simulate UE disconnect by P-GW sending CCR-Terminate
+        val terminateRequest = client.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session
+        ) ?: fail("Failed to create request")
+        TestHelper.createTerminateRequest(terminateRequest.avps, msisdn)
+
+        client.sendNextRequest(terminateRequest, session)
+
+        waitForAnswer()
+
+        run {
+            assertEquals(DIAMETER_SUCCESS, client.resultCodeAvp?.integer32?.toLong())
+            val resultAvps = client.resultAvps ?: fail("Missing AVPs")
+            assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
+            assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
+            assertEquals(RequestType.TERMINATION_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+        }
+
+        // If UE attach again and P-GW tries another CCR-I we should get DIAMETER_CREDIT_LIMIT_REACHED
 
         session = client.createSession() ?: fail("Failed to create session")
         request = client.createRequest(
@@ -466,8 +592,8 @@ class OcsTest {
         val session = client.createSession() ?: fail("Failed to create session")
 
         // This test assume that the default bucket size is set to 4000000L
-        simpleCreditControlRequestInit(session, msisdn,-1L, DEFAULT_REQUESTED_SERVICE_UNIT, ratingGroup, serviceIdentifier)
-        simpleCreditControlRequestUpdate(session, msisdn, -1L, DEFAULT_REQUESTED_SERVICE_UNIT, DEFAULT_REQUESTED_SERVICE_UNIT, ratingGroup, serviceIdentifier)
+        simpleCreditControlRequestInit(session, msisdn,0L, DEFAULT_REQUESTED_SERVICE_UNIT, ratingGroup, serviceIdentifier)
+        simpleCreditControlRequestUpdate(session, msisdn, 0L, DEFAULT_REQUESTED_SERVICE_UNIT, DEFAULT_REQUESTED_SERVICE_UNIT, ratingGroup, serviceIdentifier)
 
         val request = client.createRequest(
                 DEST_REALM,
@@ -484,6 +610,44 @@ class OcsTest {
         assertEquals(DIAMETER_SUCCESS, client.resultCodeAvp!!.integer32.toLong())
         val resultAvps = client.resultAvps
         assertEquals(RequestType.TERMINATION_REQUEST.toLong(), resultAvps!!.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+    }
+
+
+
+    @Test
+    fun simpleCreditControlRequestInitUpdateNoRSU() {
+
+        val email = "ocs-${randomInt()}@test.com"
+        createCustomer(name = "Test OCS User", email = email)
+
+        val msisdn = createSubscription(email = email)
+
+        val ratingGroup = 10
+        val serviceIdentifier = -1
+
+        val client = testClient ?: fail("Test client is null")
+
+        val session = client.createSession() ?: fail("Failed to create session")
+
+        // This test assume that the default bucket size is set to 4000000L
+        simpleCreditControlRequestInit(session, msisdn,0L, DEFAULT_REQUESTED_SERVICE_UNIT, ratingGroup, serviceIdentifier)
+
+        val request = client.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session
+        )
+
+        TestHelper.createUpdateRequest(request!!.avps, msisdn, -1L, DEFAULT_REQUESTED_SERVICE_UNIT, ratingGroup, serviceIdentifier)
+
+        client.sendNextRequest(request, session)
+
+        waitForAnswer()
+
+        assertEquals(DIAMETER_SUCCESS, client.resultCodeAvp!!.integer32.toLong())
+        val resultAvps = client.resultAvps
+        assertEquals(RequestType.UPDATE_REQUEST.toLong(), resultAvps!!.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+        assertEquals(86400L, resultAvps.getAvp(Avp.VALIDITY_TIME).integer32.toLong())
     }
 
 

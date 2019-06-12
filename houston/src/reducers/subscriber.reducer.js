@@ -18,6 +18,21 @@ export const subscriber = handleActions(
   defaultState
 );
 
+export const context = handleActions(
+  {
+    [actions.contextByEmailRequest]: (state, action) => ({
+      loading: true
+    }),
+    [actions.contextByEmailSuccess]: (state, action) => ({
+      ...action.payload
+    }),
+    [actions.contextByEmailFailure]: (state, action) => ({
+      ...action.payload
+    })
+  },
+  defaultState
+);
+
 export const subscriptions = handleActions(
   {
     [actions.subscriptionsRequest]: (state, action) => ({

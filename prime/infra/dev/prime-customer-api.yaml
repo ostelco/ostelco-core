@@ -46,6 +46,17 @@ paths:
       security:
         - auth0_jwt: []
         - firebase: []
+  "/uuid":
+    get:
+      description: "Get a random uuid."
+      produces:
+        - application/json
+      operationId: "getRandomUUID"
+      responses:
+        200:
+          description: "Get the random uuid."
+          schema:
+            $ref: '#/definitions/UuidMap'
   "/customer":
     get:
       description: "Get customer info (email-id present in the bearer token)."
@@ -724,6 +735,13 @@ definitions:
         $ref: '#/definitions/Customer'
       regions:
         $ref: '#/definitions/RegionDetailsList'
+  UuidMap:
+    type: object
+    properties:
+      uuid:
+        type: string
+    required:
+      - uuid
   Customer:
     type: object
     properties:
@@ -848,6 +866,8 @@ definitions:
         type: string
       price:
         $ref: '#/definitions/Price'
+      payment:
+        type: object
       properties:
         type: object
       presentation:
@@ -939,39 +959,6 @@ definitions:
     type: array
     items:
       $ref: '#/definitions/Person'
-  Plan:
-    type: object
-    properties:
-      name:
-        description: "An unique name representing the plan"
-        type: string
-      price:
-        $ref: '#/definitions/Price'
-      interval:
-        description: "The recurring period for the plan"
-        type: string
-        enum: [ day, week, month, year ]
-      intervalCount:
-        description: "Number of intervals in a period"
-        type: integer
-        default: 1
-        minimum: 1
-      properties:
-        description: "Free form key/value pairs"
-        type: object
-        additionalProperties: true
-      presentation:
-        description: "Pretty print version of plan"
-        type: object
-        additionalProperties: true
-    required:
-      - name
-      - price
-      - interval
-  PlanList:
-    type: array
-    items:
-      $ref: '#/definitions/Plan'
   GraphQLRequest:
     type: object
     properties:
