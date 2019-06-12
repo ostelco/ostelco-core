@@ -22,7 +22,8 @@ func main() {
 
 func generatePostingCurlscript(url string, payload string) {
 	fmt.Printf("#!/bin/bash\n")
-	fmt.Printf("curl -X POST -d @-  %s <<EOF\n", url)
+	// XXX Parameterize initial state, the other alternative is NOT_ACTIVATED
+	fmt.Printf("curl -X POST -d @-  %s?initialHssState=ACTIVATED <<EOF\n", url)
 	fmt.Printf("%s", payload)
 	fmt.Print(("\nEOF"))
 }
@@ -48,7 +49,7 @@ func luhnChecksum(number int) int {
 
 func generateCsvPayload(batch Batch) string {
 	var sb strings.Builder
-	sb.WriteString("ICCID, IMSI, MSISDN, PIN1, PIN2, PIN3, PUK1, PUK2, PUK3\n")
+	sb.WriteString("ICCID, IMSI, MSISDN, PIN1, PIN2, PUK1, PUK2, PROFILE\n")
 
 	var iccidWithoutLuhnChecksum = batch.firstIccid
 
@@ -57,7 +58,7 @@ func generateCsvPayload(batch Batch) string {
 	for i := 0; i < batch.length; i++ {
 
 		iccid := fmt.Sprintf("%d%1d", iccidWithoutLuhnChecksum, luhnChecksum(iccidWithoutLuhnChecksum))
-		line := fmt.Sprintf("%s, %d, %d,,,,,,\n", iccid, imsi, msisdn)
+		line := fmt.Sprintf("%s, %d, %d,,,,,%s\n", iccid, imsi, msisdn, batch.profileType)
 		sb.WriteString(line)
 
 		iccidWithoutLuhnChecksum += batch.iccidIncrement
