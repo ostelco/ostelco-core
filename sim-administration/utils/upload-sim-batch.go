@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"regexp"
 	. "strconv"
+	"strings"
 )
 
 func main() {
@@ -27,7 +28,23 @@ func main() {
 }
 
 func generateCsvPayload(batch Batch) string {
-	return "This is not a CSV payload"
+	var sb strings.Builder
+	sb.WriteString("ICCID, IMSI, MSISDN, PIN1, PIN2, PIN3, PUK1, PUK2, PUK3\n")
+
+	var iccid = batch.firstIccid
+	var imsi = batch.firstImsi
+	var msisdn = batch.firstMsisdn
+	for i := 0; i < batch.length; i++ {
+
+		line := fmt.Sprintf("%d, %d, %d,,,,,,\n", iccid, imsi, msisdn)
+		sb.WriteString(line)
+
+		iccid += batch.iccidIncrement
+		imsi += batch.imsiIncrement
+		msisdn += batch.msisdnIncrement
+	}
+
+	return sb.String()
 }
 
 func isICCID(s string) bool {
