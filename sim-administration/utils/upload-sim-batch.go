@@ -25,7 +25,7 @@ func generatePostingCurlscript(url string, payload string) {
 	// XXX Parameterize initial state, the other alternative is NOT_ACTIVATED
 	fmt.Printf("curl -X POST -d @-  %s?initialHssState=ACTIVATED <<EOF\n", url)
 	fmt.Printf("%s", payload)
-	fmt.Print(("\nEOF"))
+	fmt.Print(("EOF\n"))
 }
 
 func luhnChecksum(number int) int {
