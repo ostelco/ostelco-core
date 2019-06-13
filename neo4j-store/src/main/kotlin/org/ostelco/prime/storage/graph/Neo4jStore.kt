@@ -1020,7 +1020,8 @@ object Neo4jStoreSingleton : GraphStore {
                     val purchaseRecord = PurchaseRecord(
                             id = chargeId,
                             product = product,
-                            timestamp = Instant.now().toEpochMilli())
+                            timestamp = Instant.now().toEpochMilli(),
+                            properties = mapOf("invoiceId" to invoiceId))
 
                     /* If this step fails, the previously added 'removeInvoice' call added to the transaction
                     will ensure that the invoice will be voided. */
@@ -1180,8 +1181,9 @@ object Neo4jStoreSingleton : GraphStore {
                             }
                         }
 
-                /* Lookup in payment backend will fail if no value found for 'planId'. */
-                val planStripeId = plan.stripePlanId ?: SystemError(type = "", id = "", message = "")
+                /* Lookup in payment backend will fail if no value found for 'stripePlanId'. */
+                val planStripeId = plan.stripePlanId ?: SystemError(type = planEntity.name, id = "${plan.id}",
+                        message = "No reference to Stripe plan found in ${plan.id}")
                         .left()
                         .bind()
 
@@ -1371,10 +1373,7 @@ object Neo4jStoreSingleton : GraphStore {
     private fun createPurchaseRecordRelation(customerId: String,
                                              purchase: PurchaseRecord,
                                              transaction: Transaction): Either<StoreError, String> {
-        val invoiceId = if (purchase.properties.containsKey("invoiceId") && !purchase.properties["invoiceId"].isNullOrEmpty())
-            purchase.properties["invoiceId"]
-        else
-            null
+        val invoiceId = purchase.properties["invoiceId"]
 
         /* Avoid charging for the same invoice twice if invoice information
            is present. */
@@ -1411,7 +1410,7 @@ object Neo4jStoreSingleton : GraphStore {
             customerStore.getRelations(customerId, purchaseRecordRelation, transaction)
                     .map { records ->
                         records.find {
-                            it.properties.containsKey("invoiceId") && it.properties["invoiceId"] == invoiceId
+                            it.properties["invoiceId"] == invoiceId
                         }
                     }.leftIfNull { NotFoundError(type = purchaseRecordRelation.name, id = invoiceId) }
 
@@ -2143,6 +2142,7 @@ object Neo4jStoreSingleton : GraphStore {
                         properties = mapOf("invoiceId" to invoiceId)
                 )
 
+                /* Will exit if an existing purchase record matches on 'invoiceId'. */
                 createPurchaseRecordRelation(customerId, purchaseRecord, transaction)
                         .bind()
 

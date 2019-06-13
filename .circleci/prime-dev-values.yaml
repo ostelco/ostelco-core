@@ -134,7 +134,7 @@ prime:
   resources: 
     requests:
       cpu: 100m
-      memory: 300Mi  
+      memory: 300Mi
   livenessProbe: {}
   readinessProbe: {}
   annotations: 
@@ -147,7 +147,7 @@ canary: {}
   # weight: 25
   # headers: # only route requests with these headers to the canary service
   #   x-mode: canary
-  # tag: e449ed672
+  # tag: ""
 
 cloudsqlProxy:
   enabled: true
