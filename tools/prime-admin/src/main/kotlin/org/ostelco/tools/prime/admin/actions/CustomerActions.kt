@@ -9,6 +9,7 @@ import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.Identity
 import org.ostelco.prime.storage.NotFoundError
 import org.ostelco.prime.storage.ValidationError
+import org.ostelco.prime.storage.graph.adminStore
 import java.util.*
 
 //
@@ -25,6 +26,14 @@ fun createCustomer(email: String, nickname: String) {
                     contactEmail = email,
                     analyticsId = UUID.randomUUID().toString(),
                     referralId = UUID.randomUUID().toString()))
+            .mapLeft {
+                println(it.message)
+            }
+}
+
+fun deleteCustomer(email: String) {
+
+    adminStore.removeCustomer(identity = Identity(id = email, type = "EMAIL", provider = "email"))
             .mapLeft {
                 println(it.message)
             }

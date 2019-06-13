@@ -23,7 +23,7 @@ func generateEspEndpointCertificates(originalCertPath string, activeCertPath str
 		generateNewCertificate(originalCertPath, domainName)
 	}
 	if goscript.FileExists(activeCertPath) {
-		goscript.CopyFile(originalCertPath, activeCertPath)
+		_ = goscript.CopyFile(originalCertPath, activeCertPath)
 	}
 }
 
@@ -43,7 +43,7 @@ func distributeServiceAccountConfigs(
 	if !goscript.FileExists(serviceAccountJsonFilename) {
 		log.Fatalf("ERROR: : Could not find master service-account file'%s'", serviceAccountJsonFilename)
 	}
-	rootMd5, err := goscript.Hash_file_md5(serviceAccountJsonFilename)
+	rootMd5, err := goscript.HashFileMd5(serviceAccountJsonFilename)
 	if err != nil {
 		log.Fatalf("Could not calculate md5 from file '%s'", serviceAccountJsonFilename)
 	}
@@ -56,16 +56,16 @@ func distributeServiceAccountConfigs(
 		currentFilename := fmt.Sprintf("%s/%s", dir, serviceAccountJsonFilename)
 
 		if goscript.FileExists(currentFilename) {
-			localMd5, err := goscript.Hash_file_md5(serviceAccountJsonFilename)
+			localMd5, err := goscript.HashFileMd5(serviceAccountJsonFilename)
 			if err != nil {
 				log.Fatalf("ERROR: Could not calculate md5 from file '%s'", serviceAccountJsonFilename)
 			}
 
 			if localMd5 != rootMd5 {
-				goscript.CopyFile(serviceAccountJsonFilename, currentFilename)
+				_ = goscript.CopyFile(serviceAccountJsonFilename, currentFilename)
 			}
 		} else {
-			goscript.CopyFile(serviceAccountJsonFilename, currentFilename)
+			_ = goscript.CopyFile(serviceAccountJsonFilename, currentFilename)
 		}
 	}
 }
@@ -76,7 +76,7 @@ func generateDummyStripeEndpointSecretIfNotSet() {
 	// but it may cause build failure, so we set it to something.
 	if len(os.Getenv("STRIPE_ENDPOINT_SECRET")) == 0 {
 		log.Printf("Setting value of STRIPE_ENDPOINT_SECRET to 'thisIsARandomString'")
-		os.Setenv("STRIPE_ENDPOINT_SECRET", "thisIsARandomString")
+		_ = os.Setenv("STRIPE_ENDPOINT_SECRET", "thisIsARandomString")
 	}
 }
 

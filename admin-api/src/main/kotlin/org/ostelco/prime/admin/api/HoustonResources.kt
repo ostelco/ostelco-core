@@ -11,13 +11,18 @@ import org.ostelco.prime.appnotifier.AppNotifier
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
-import org.ostelco.prime.model.*
+import org.ostelco.prime.model.Bundle
+import org.ostelco.prime.model.Context
+import org.ostelco.prime.model.Customer
+import org.ostelco.prime.model.Identity
+import org.ostelco.prime.model.PurchaseRecord
+import org.ostelco.prime.model.ScanInformation
+import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.storage.AdminDataSource
-import java.net.URLDecoder
 import java.util.regex.Pattern
 import javax.validation.constraints.NotNull
 import javax.ws.rs.Consumes
@@ -498,8 +503,11 @@ class PlanResource {
     @POST
     @Produces("application/json")
     @Consumes("application/json")
-    fun create(plan: Plan): Response {
-        return storage.createPlan(plan).fold(
+    fun create(createPlanRequest: CreatePlanRequest): Response {
+        return storage.createPlan(
+                plan = createPlanRequest.plan,
+                stripeProductName = createPlanRequest.stripeProductName,
+                planProduct = createPlanRequest.planProduct).fold(
                 {
                     val err = ApiErrorMapper.mapStorageErrorToApiError("Failed to store plan",
                             ApiErrorCode.FAILED_TO_STORE_PLAN,

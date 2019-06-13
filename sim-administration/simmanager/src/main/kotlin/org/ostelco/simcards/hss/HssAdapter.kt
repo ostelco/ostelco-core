@@ -10,7 +10,9 @@ import io.grpc.ManagedChannelBuilder
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.simmanager.AdapterError
 import org.ostelco.prime.simmanager.SimManagerError
+import org.ostelco.simcards.admin.DummyHssConfig
 import org.ostelco.simcards.admin.HssConfig
+import org.ostelco.simcards.admin.SwtHssConfig
 import org.ostelco.simcards.admin.mapRight
 import org.ostelco.simcards.hss.profilevendors.api.HssServiceGrpc
 import org.ostelco.simcards.hss.profilevendors.api.ServiceHealthQuery
@@ -40,7 +42,7 @@ class HssGrpcAdapter(private val host: String, private val port: Int) : HssDispa
     init {
         val channel =
                 ManagedChannelBuilder.forAddress(host, port)
-                        .usePlaintext(true)
+                        .usePlaintext()
                         .build()
 
         this.blockingStub =
@@ -111,7 +113,18 @@ class DirectHssDispatcher(
     init {
 
         for (config in hssConfigs) {
-            adapters.add(SimpleHssDispatcher(name = config.name, httpClient = httpClient, config = config))
+            when (config) {
+                is SwtHssConfig -> {
+                    adapters.add(SimpleHssDispatcher(
+                            name = config.name,
+                            httpClient = httpClient,
+                            config = config
+                    ))
+                }
+                is DummyHssConfig -> {
+                    adapters.add(DummyHSSDispatcher(name = config.name))
+                }
+            }
         }
 
 
@@ -144,11 +157,11 @@ class DirectHssDispatcher(
     }
 
     override fun activate(hssName: String, iccid: String, msisdn: String): Either<SimManagerError, Unit> {
-        return getHssAdapterByName(hssName).activate(hssName= hssName, iccid = iccid, msisdn = msisdn)
+        return getHssAdapterByName(hssName).activate(hssName = hssName, iccid = iccid, msisdn = msisdn)
     }
 
     override fun suspend(hssName: String, iccid: String): Either<SimManagerError, Unit> {
-        return getHssAdapterByName(hssName).suspend(hssName=hssName, iccid = iccid)
+        return getHssAdapterByName(hssName).suspend(hssName = hssName, iccid = iccid)
     }
 }
 
@@ -158,7 +171,7 @@ class DirectHssDispatcher(
  */
 class SimManagerToHssDispatcherAdapter(
         val dispatcher: HssDispatcher,
-        val simInventoryDAO: SimInventoryDAO)  {
+        val simInventoryDAO: SimInventoryDAO) {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -194,7 +207,6 @@ class SimManagerToHssDispatcherAdapter(
             }
         }
     }
-
 
 
     fun activate(simEntry: SimEntry): Either<SimManagerError, Unit> {

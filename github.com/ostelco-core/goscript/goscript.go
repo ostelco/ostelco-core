@@ -93,8 +93,8 @@ func runCmdWithPiping(cmdTxt string) (result error) {
 	return nil
 }
 
-// Hash_file_md5 will read a file and return the MD5 checksum.
-func Hash_file_md5(filePath string) (string, error) {
+// HashFileMd5 will read a file and return the MD5 checksum.
+func HashFileMd5(filePath string) (string, error) {
 	//Initialize variable returnMD5String now in case an error has to be returned
 	var returnMD5String string
 
@@ -174,7 +174,7 @@ func AssertThatEnvironmentVariableaAreSet(variableNames ...string) {
 	log.Printf("Checking if environment variables are set...\n")
 	for key := range variableNames {
 		if len(os.Getenv(variableNames[key])) == 0 {
-			log.Fatalf("Environment variable not set'%s'", key)
+			log.Fatalf("Environment variable not set'%s'", variableNames[key])
 		}
 	}
 	log.Printf("   ... they are\n")
@@ -251,13 +251,22 @@ func isError(err error) bool {
 		fmt.Println(err.Error())
 	}
 
-	return (err != nil)
+	return err != nil
 }
 
+// XXX THis code seems to work, but it looks clunky. Please fix.
 func checkIfDockerIsRunning() bool {
 	cmd := "if [[  -z \"$( docker version | grep Version:) \" ]] ; then echo 'Docker not running' ; fi"
 	out, err := exec.Command("bash", "-c", cmd).Output()
-	return "Docker not running" != string(out) && err == nil
+	ostring := string(out)
+
+	if "Docker not running" == ostring && err == nil {
+		return false
+	}
+
+	cmd2 := "docker ps 2>&1  | grep 'Cannot connect to the Docker daemon'"
+	out, err = exec.Command("bash", "-c", cmd2).Output()
+	return (len(out) == 0 && err != nil)
 }
 
 // AssertDockerIsRunning will terminate the program with exit code 1 if docker is not

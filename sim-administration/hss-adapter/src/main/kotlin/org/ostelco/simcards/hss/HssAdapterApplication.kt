@@ -1,6 +1,7 @@
 package org.ostelco.simcards.hss
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.dropwizard.Application
 import io.dropwizard.Configuration
 import io.dropwizard.client.HttpClientBuilder
@@ -48,8 +49,8 @@ class HssAdapterApplication : Application<HssAdapterApplicationConfiguration>() 
         return "HSS adapter service"
     }
 
-    override fun initialize(bootstrap: Bootstrap<HssAdapterApplicationConfiguration>?) {
-        // nothing to do yet
+    override fun initialize(bootstrap: Bootstrap<HssAdapterApplicationConfiguration>) {
+        bootstrap.objectMapper.registerModule(KotlinModule())
     }
 
     override fun run(configuration: HssAdapterApplicationConfiguration,
@@ -57,8 +58,7 @@ class HssAdapterApplication : Application<HssAdapterApplicationConfiguration>() 
 
         val httpClient = HttpClientBuilder(env)
                 .using(configuration.httpClient)
-                .build("${getName()} http client")
-        val jerseyEnv = env.jersey()
+                .build("$name http client")
 
         val myHssService = ManagedHssGrpcService(
                 port = 9000,

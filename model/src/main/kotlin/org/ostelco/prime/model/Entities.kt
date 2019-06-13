@@ -1,13 +1,15 @@
 package org.ostelco.prime.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.core.JsonToken
-import com.fasterxml.jackson.databind.DeserializationContext
-import com.fasterxml.jackson.databind.JsonDeserializer
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.google.cloud.datastore.Blob
 import com.google.firebase.database.Exclude
+import org.ostelco.prime.model.PaymentProperties.LABEL
+import org.ostelco.prime.model.PaymentProperties.TAX_REGION_ID
+import org.ostelco.prime.model.PaymentProperties.TYPE
+import org.ostelco.prime.model.ProductProperties.NO_OF_BYTES
+import org.ostelco.prime.model.ProductProperties.PRODUCT_CLASS
+import org.ostelco.prime.model.ProductProperties.SEGMENT_IDS
 import java.util.*
 
 
@@ -232,26 +234,70 @@ data class Product(
     override val id: String
         @JsonIgnore
         get() = sku
+
+    // Values from Payment map
+
+    val paymentType: PaymentType?
+        @Exclude
+        @JsonIgnore
+        get() = payment[TYPE.s]?.let(PaymentType::valueOf)
+
+    val paymentLabel: String
+        @Exclude
+        @JsonIgnore
+        get() = payment[LABEL.s] ?: sku
+
+    val paymentTaxRegionId: String?
+        @Exclude
+        @JsonIgnore
+        get() = payment[TAX_REGION_ID.s]
+
+    // Values from Properties map
+
+    val productClass: ProductClass?
+        @Exclude
+        @JsonIgnore
+        get() = properties[PRODUCT_CLASS.s]?.let(ProductClass::valueOf)
+
+    val noOfBytes: Long
+        @Exclude
+        @JsonIgnore
+        get() = properties[NO_OF_BYTES.s]?.replace("_", "")?.toLongOrNull() ?: 0L
+
+    val segmentIds: Collection<String>
+        @Exclude
+        @JsonIgnore
+        get() = properties[SEGMENT_IDS.s]?.split(",") ?: emptyList()
 }
 
-data class ProductClass(
-        override val id: String,
-        val properties: List<String> = listOf()) : HasId
+enum class ProductProperties(val s: String) {
+    PRODUCT_CLASS("productClass"),
+    NO_OF_BYTES("noOfBytes"),
+    SEGMENT_IDS("segmentIds")
+}
+
+enum class ProductClass {
+    SIMPLE_DATA,
+    MEMBERSHIP
+}
+
+enum class PaymentProperties(val s: String) {
+    TYPE("type"),
+    LABEL("label"),
+    TAX_REGION_ID("taxRegionId")
+}
+
+enum class PaymentType {
+    SUBSCRIPTION
+}
 
 // Note: The 'name' value becomes the name (sku) of the corresponding product in Stripe.
 data class Plan(
-        val name: String,
-        val price: Price,
-        val payment: Map<String, String> = emptyMap(),
+        override val id: String,
+        val stripePlanId: String? = null,
+        val stripeProductId: String? = null,
         val interval: String,
-        val intervalCount: Long = 1L,
-        val properties: Map<String, String> = emptyMap(),
-        val presentation: Map<String, String> = emptyMap()) : HasId {
-
-    override val id: String
-        @JsonIgnore
-        get() = name
-}
+        val intervalCount: Long = 1L) : HasId
 
 data class RefundRecord(
         override val id: String,

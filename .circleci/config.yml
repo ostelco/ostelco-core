@@ -260,7 +260,8 @@ jobs:
             /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
             helm repo update
-            helm upgrade prime ostelco/prime --version 0.6.3 --install --namespace dev \
+            helm upgrade prime ostelco/prime --version 0.6.3 --install \
+             --namespace dev \
              -f .circleci/prime-dev-values.yaml \
              --set prime.tag=${CIRCLE_SHA1:0:9} 
 
@@ -316,8 +317,13 @@ jobs:
             /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
             helm repo update
-            helm upgrade prime ostelco/prime --version 0.6.3 --install --namespace prod \
-             -f .circleci/prime-prod-values.yaml  --set-string canary.tag=${CIRCLE_SHA1:0:9} --set canary.weight=100
+            helm upgrade prime ostelco/prime --version 0.6.3 --install \
+             --namespace prod \
+             -f .circleci/prime-prod-values.yaml \
+             --set prime.tag=${CIRCLE_SHA1:0:9}
+
+#             --set-string canary.tag=${CIRCLE_SHA1:0:9} \
+#             --set canary.weight=0
 
       - run:
           name: notify slack on failure
@@ -346,19 +352,19 @@ workflows:
       - build-image:
           requires:
             - build-code
-#      - update-dev-endpoints:
-#          requires:
-#            - build-image
-      - deploy-to-dev:
+      - update-dev-endpoints:
           requires:
             - build-image
+      - deploy-to-dev:
+          requires:
+            - update-dev-endpoints
       - approve-prod-deploy:
           type: approval
           requires:
             - deploy-to-dev
-#      - update-prod-endpoints:
-#          requires:
-#            - approve-prod-deploy
-      - deploy-canary:
+      - update-prod-endpoints:
           requires:
             - approve-prod-deploy
+      - deploy-canary:
+          requires:
+            - update-prod-endpoints

@@ -69,7 +69,9 @@ func generateCsvPayload(batch Batch) string {
 	return sb.String()
 }
 
-func isICCID(s string) bool {
+
+
+func  isICCID(s string) bool {
 	match, _ := regexp.MatchString("^\\d{18}\\d?$", s)
 	return match
 }
@@ -80,7 +82,10 @@ func checkICCIDSyntax(name string, potentialIccid string) {
 	}
 }
 
-func isIMSI(s string) bool {
+
+
+
+func  isIMSI(s string) bool {
 	match, _ := regexp.MatchString("^\\d{15}$", s)
 	return match
 }
@@ -91,7 +96,8 @@ func checkIMSISyntax(name string, potentialIMSI string) {
 	}
 }
 
-func isMSISDN(s string) bool {
+
+func  isMSISDN(s string) bool {
 	match, _ := regexp.MatchString("^\\d+$", s)
 	return match
 }
@@ -145,7 +151,6 @@ func trimSuffix(s string, suffixLen int) string {
 }
 
 func parseCommandLine() Batch {
-
 	//
 	// Set up command line parsing
 	//
@@ -160,7 +165,9 @@ func parseCommandLine() Batch {
 	firstMsisdn := flag.String("first-msisdn", "Not a valid MSISDN", "First MSISDN in batch")
 	lastMsisdn := flag.String("last-msisdn", "Not a valid MSISDN", "Last MSISDN in batch")
 	profileType := flag.String("profile-type", "Not a valid sim profile type", "SIM profile type")
+
 	url := flag.String("url", "http://<NotAValidURL>/", "Not a valid url type")
+
 
 	//
 	// Parse input according to spec above
@@ -172,11 +179,13 @@ func parseCommandLine() Batch {
 	// semantic sanity.
 	//
 
+
 	// tbd :(field integrity, if 19 digit ICCID, check and then remove
 	// luhn luhnChecksum. Check that ranges are ranges, and span the same number
 	// of entities, if at all possible, check that ranges are within constraints
 	// set by some external database of valid ranges (typically for an operator)
 	// check that the profile type can be found in some config file somewhere.
+
 
 	checkICCIDSyntax("first-iccid", *firstIccid)
 	checkICCIDSyntax("last-iccid", *lastIccid)
@@ -184,6 +193,7 @@ func parseCommandLine() Batch {
 	checkIMSISyntax("first-imsi", *firstIMSI)
 	checkMSISDNSyntax("last-msisdn", *lastMsisdn)
 	checkMSISDNSyntax("first-msisdn", *firstMsisdn)
+
 	checkURLSyntax("url", *url)
 	checkProfileType("profile-type", *profileType)
 

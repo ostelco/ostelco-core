@@ -14,6 +14,8 @@ import org.neo4j.driver.v1.AccessMode.WRITE
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.appnotifier.AppNotifier
 import org.ostelco.prime.dsl.DSL.job
+import org.ostelco.prime.kts.engine.KtsServiceFactory
+import org.ostelco.prime.kts.engine.reader.ClasspathResourceTextReader
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.CustomerRegionStatus.APPROVED
 import org.ostelco.prime.model.CustomerRegionStatus.PENDING
@@ -27,6 +29,7 @@ import org.ostelco.prime.model.KycType.NRIC_FIN
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
+import org.ostelco.prime.model.ProductProperties.NO_OF_BYTES
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Region
 import org.ostelco.prime.model.RegionDetails
@@ -93,12 +96,12 @@ class Neo4jStoreTest {
             create {
                 Product(sku = "2GB_FREE_ON_JOINING",
                         price = Price(0, ""),
-                        properties = mapOf("noOfBytes" to "2_147_483_648"))
+                        properties = mapOf(NO_OF_BYTES.s to "2_147_483_648"))
             }
             create {
                 Product(sku = "1GB_FREE_ON_REFERRED",
                         price = Price(0, ""),
-                        properties = mapOf("noOfBytes" to "1_073_741_824"))
+                        properties = mapOf(NO_OF_BYTES.s to "1_073_741_824"))
             }
             create {
                 Segment(id = getSegmentNameFromCountryCode(REGION))
@@ -200,7 +203,7 @@ class Neo4jStoreTest {
         // prep
         job {
             create { Region(REGION_CODE, "Norway") }
-            create { createProduct(sku = sku, amount = 24900, taxRegionId = "no") }
+            create { createProduct(sku = sku, taxRegionId = "no") }
         }.mapLeft { fail(it.message) }
 
         val offer = Offer(
@@ -297,7 +300,7 @@ class Neo4jStoreTest {
                 identity = IDENTITY,
                 customer = CUSTOMER).isRight())
 
-        val product = createProduct("1GB_249NOK", 24900)
+        val product = createProduct("1GB_249NOK")
         val now = Instant.now().toEpochMilli()
 
         // prep
@@ -326,10 +329,10 @@ class Neo4jStoreTest {
 
         // prep
         job {
-            create { createProduct("1GB_249NOK", 24900) }
-            create { createProduct("2GB_299NOK", 29900) }
-            create { createProduct("3GB_349NOK", 34900) }
-            create { createProduct("5GB_399NOK", 39900) }
+            create { createProduct("1GB_249NOK") }
+            create { createProduct("2GB_299NOK") }
+            create { createProduct("3GB_349NOK") }
+            create { createProduct("5GB_399NOK") }
         }.mapLeft { fail(it.message) }
 
         val segment = Segment(
@@ -349,7 +352,7 @@ class Neo4jStoreTest {
                 { fail(it.message) },
                 { products ->
                     assertEquals(1, products.size)
-                    assertEquals(createProduct("3GB_349NOK", 34900), products.values.first())
+                    assertEquals(createProduct("3GB_349NOK"), products.values.first())
                 })
 
         Neo4jStoreSingleton.getProduct(IDENTITY, "2GB_299NOK").bimap(
@@ -362,13 +365,13 @@ class Neo4jStoreTest {
 
         // existing products
         job {
-            create { createProduct("1GB_249NOK", 24900) }
-            create { createProduct("2GB_299NOK", 29900) }
+            create { createProduct("1GB_249NOK") }
+            create { createProduct("2GB_299NOK") }
         }.mapLeft { fail(it.message) }
 
         val products = listOf(
-                createProduct("3GB_349NOK", 34900),
-                createProduct("5GB_399NOK", 39900))
+                createProduct("3GB_349NOK"),
+                createProduct("5GB_399NOK"))
 
         val segments = listOf(Segment(id = "segment_1"), Segment(id = "segment_2"))
 
@@ -383,14 +386,14 @@ class Neo4jStoreTest {
 
         // existing products
         job {
-            create { createProduct("1GB_249NOK", 24900) }
-            create { createProduct("2GB_299NOK", 29900) }
+            create { createProduct("1GB_249NOK") }
+            create { createProduct("2GB_299NOK") }
         }.mapLeft { fail(it.message) }
 
         // new products in the offer
         val products = listOf(
-                createProduct("3GB_349NOK", 34900),
-                createProduct("5GB_399NOK", 39900))
+                createProduct("3GB_349NOK"),
+                createProduct("5GB_399NOK"))
 
         // new segment in the offer
         val segments = listOf(Segment(id = "segment_1"), Segment(id = "segment_2"))
@@ -1004,7 +1007,13 @@ class Neo4jStoreTest {
         fun start() {
             ConfigRegistry.config = Config(
                     host = "0.0.0.0",
-                    protocol = "bolt")
+                    protocol = "bolt",
+                    hssNameLookupService = KtsServiceFactory(
+                            serviceInterface = "org.ostelco.prime.storage.graph.HssNameLookupService",
+                            textReader = ClasspathResourceTextReader(
+                                    filename = "/HssNameLookupService.kts"
+                            )
+                    ))
             Neo4jClient.start()
         }
 

@@ -1,6 +1,7 @@
 package org.ostelco.simcards.smdpplus
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.dropwizard.Application
 import io.dropwizard.Configuration
 import io.dropwizard.client.HttpClientBuilder
@@ -8,14 +9,22 @@ import io.dropwizard.client.HttpClientConfiguration
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
 import org.apache.http.client.HttpClient
-import org.ostelco.dropwizardutils.*
+import org.ostelco.dropwizardutils.CertAuthConfig
+import org.ostelco.dropwizardutils.CertificateAuthorizationFilter
 import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
-import org.ostelco.sim.es2plus.*
+import org.ostelco.dropwizardutils.OpenapiResourceAdderConfig
+import org.ostelco.dropwizardutils.RBACService
+import org.ostelco.dropwizardutils.RolesConfig
+import org.ostelco.sim.es2plus.ES2PlusClient
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
+import org.ostelco.sim.es2plus.Es2ConfirmOrderResponse
+import org.ostelco.sim.es2plus.Es2DownloadOrderResponse
+import org.ostelco.sim.es2plus.EsTwoPlusConfig
+import org.ostelco.sim.es2plus.SmDpPlusServerResource
+import org.ostelco.sim.es2plus.SmDpPlusService
+import org.ostelco.sim.es2plus.eS2SuccessResponseHeader
 import org.slf4j.LoggerFactory
 import java.io.FileInputStream
-import javax.validation.Valid
-import javax.validation.constraints.NotNull
 
 
 /**
@@ -41,7 +50,7 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
     }
 
     override fun initialize(bootstrap: Bootstrap<SmDpPlusAppConfiguration>) {
-        // TODO: application initialization
+        bootstrap.objectMapper.registerModule(KotlinModule())
     }
 
     private lateinit var httpClient: HttpClient
@@ -108,7 +117,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
     private val entriesByImsi = mutableMapOf<String, SmDpSimEntry>()
     private val entriesByProfile = mutableMapOf<String, MutableSet<SmDpSimEntry>>()
 
-    private val originalEntries : MutableSet<SmDpSimEntry> = mutableSetOf()
+    private val originalEntries: MutableSet<SmDpSimEntry> = mutableSetOf()
 
     init {
         incomingEntries.forEach { originalEntries.add(it) }
@@ -122,7 +131,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
         entriesByProfile.clear()
         entriesByImsi.clear()
 
-        originalEntries.map{it.clone()}.forEach {
+        originalEntries.map { it.clone() }.forEach {
             entries.add(it)
             entriesByIccid[it.iccid] = it
             entriesByImsi[it.imsi] = it
@@ -138,7 +147,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
 
         // Just checking.  This shouldn't happen, but if the original entries were not
         // properly copied by toList, it could heasily happen.
-        entries.forEach { if (it.allocated) throw RuntimeException("Already allocated new entry $it")}
+        entries.forEach { if (it.allocated) throw RuntimeException("Already allocated new entry $it") }
     }
 
 
@@ -280,59 +289,44 @@ class SmDpPlusException(message: String) : Exception(message)
 /**
  * Configuration class for SM-DP+ emulator.
  */
-class SmDpPlusAppConfiguration : Configuration() {
+data class SmDpPlusAppConfiguration(
+        /**
+         * Configuring how the Open API representation of the
+         * served resources will be presenting itself (owner,
+         * license etc.)
+         */
+        @JsonProperty("es2plusClient")
+        val es2plusConfig: EsTwoPlusConfig = EsTwoPlusConfig(),
 
-    /**
-     * Configuring how the Open API representation of the
-     * served resources will be presenting itself (owner,
-     * license etc.)
-     */
-    @Valid
-    @NotNull
-    @JsonProperty("es2plusClient")
-    var es2plusConfig = EsTwoPlusConfig()
+        /**
+         * Configuring how the Open API representation of the
+         * served resources will be presenting itself (owner,
+         * license etc.)
+         */
+        val openApi: OpenapiResourceAdderConfig = OpenapiResourceAdderConfig(),
 
-    /**
-     * Configuring how the Open API representation of the
-     * served resources will be presenting itself (owner,
-     * license etc.)
-     */
-    @Valid
-    @NotNull
-    @JsonProperty("openApi")
-    var openApi = OpenapiResourceAdderConfig()
+        /**
+         * Path to file containing simulated SIM data.
+         */
+        val simBatchData: String = "",
 
-    /**
-     * Path to file containing simulated SIM data.
-     */
-    @Valid
-    @NotNull
-    @JsonProperty("simBatchData")
-    var simBatchData: String = ""
+        /**
+         * The httpClient we use to connect to other services, including
+         * ES2+ services
+         */
+        @JsonProperty("httpClient")
+        val httpClientConfiguration: HttpClientConfiguration = HttpClientConfiguration(),
 
-    /**
-     * The httpClient we use to connect to other services, including
-     * ES2+ services
-     */
-    @Valid
-    @NotNull
-    @JsonProperty("httpClient")
-    var httpClientConfiguration = HttpClientConfiguration()
+        /**
+         * Declaring the mapping between users and certificates, also
+         * which roles the users are assigned to.
+         */
+        @JsonProperty("certAuth")
+        val certConfig: CertAuthConfig = CertAuthConfig(),
 
-    /**
-     * Declaring the mapping between users and certificates, also
-     * which roles the users are assigned to.
-     */
-    @Valid
-    @JsonProperty("certAuth")
-    @NotNull
-    var certConfig = CertAuthConfig()
-
-    /**
-     * Declaring which roles we will permit
-     */
-    @Valid
-    @JsonProperty("roles")
-    @NotNull
-    var rolesConfig = RolesConfig()
-}
+        /**
+         * Declaring which roles we will permit
+         */
+        @JsonProperty("roles")
+        val rolesConfig: RolesConfig = RolesConfig()
+) : Configuration()
