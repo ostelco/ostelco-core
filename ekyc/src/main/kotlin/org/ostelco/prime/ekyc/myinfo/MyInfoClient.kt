@@ -3,6 +3,7 @@ package org.ostelco.prime.ekyc.myinfo
 import io.jsonwebtoken.Jwts
 import org.apache.cxf.rs.security.jose.jwe.JweCompactConsumer
 import org.apache.cxf.rs.security.jose.jwe.JweUtils
+import org.apache.http.HttpResponse
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity
@@ -24,6 +25,7 @@ import java.security.spec.X509EncodedKeySpec
 import java.time.Instant
 import java.util.*
 import javax.ws.rs.core.MediaType
+import kotlin.system.measureTimeMillis
 
 class MyInfoClient : MyInfoKycService by MyInfoClientSingleton
 
@@ -37,13 +39,14 @@ object MyInfoClientSingleton : MyInfoKycService {
                     "&attributes=${config.myInfoPersonDataAttributes}" +
                     "&redirect_uri=${config.myInfoRedirectUri}")
 
-    override fun getPersonData(authorisationCode: String): String {
+    override fun getPersonData(authorisationCode: String): String? {
 
         // Call /token API to get access_token
         val tokenApiResponse = getToken(authorisationCode = authorisationCode)
-                .let { content ->
+                ?.let { content ->
                     objectMapper.readValue(content, TokenApiResponse::class.java)
                 }
+                ?: return null
 
         // extract uin_fin out of "subject" of claims of access_token
         val claims = getClaims(tokenApiResponse.accessToken)
@@ -55,7 +58,7 @@ object MyInfoClientSingleton : MyInfoKycService {
                 accessToken = tokenApiResponse.accessToken)
     }
 
-    private fun getToken(authorisationCode: String): String =
+    private fun getToken(authorisationCode: String): String? =
             sendSignedRequest(
                     httpMethod = POST,
                     path = "/token",
@@ -77,7 +80,7 @@ object MyInfoClientSingleton : MyInfoKycService {
             .parseClaimsJws(accessToken)
 
 
-    private fun getPersonData(uinFin: String, accessToken: String): String =
+    private fun getPersonData(uinFin: String, accessToken: String): String? =
             sendSignedRequest(
                     httpMethod = GET,
                     path = "/person/$uinFin",
@@ -93,7 +96,7 @@ object MyInfoClientSingleton : MyInfoKycService {
             httpMethod: HttpMethod,
             path: String,
             queryParams: Map<String, String>,
-            accessToken: String? = null): String {
+            accessToken: String? = null): String? {
 
         val queryParamsString = queryParams.entries.joinToString("&") { """${it.key}=${URLEncoder.encode(it.value, StandardCharsets.US_ASCII)}""" }
 
@@ -179,10 +182,17 @@ object MyInfoClientSingleton : MyInfoKycService {
             request.addHeader("Content-Type", MediaType.APPLICATION_FORM_URLENCODED)
         }
 
-        val response = myInfoClient.execute(request).also {
-            if (it.statusLine.statusCode != 200) {
-                logger.info("response: $httpMethod status: ${it.statusLine}")
-            }
+        var response: HttpResponse? = null
+
+        val latency = measureTimeMillis {
+            response = myInfoClient.execute(request)
+        }
+
+        logger.info("Latency is $latency ms for MyInfo $httpMethod")
+
+        val statusCode  = response?.statusLine?.statusCode
+        if (statusCode != 200) {
+            logger.info("response: $httpMethod status: ${response?.statusLine}")
         }
 
         val content = response
@@ -190,10 +200,11 @@ object MyInfoClientSingleton : MyInfoKycService {
                 ?.content
                 ?.readAllBytes()
                 ?.let { String(it) }
-                ?.also {
-                    logger.info("$httpMethod Response content: $it")
-                }
-                ?: ""
+
+        if (content == null || statusCode != 200) {
+            logger.info("$httpMethod Response content: $content")
+            return null
+        }
 
         if (config.myInfoApiEnableSecurity && httpMethod == GET) {
             return decodeJweCompact(content)
