@@ -177,7 +177,7 @@ func parseCommandLine() Batch {
 		flag.String(
 			"initial-hlr-activation-status-of-profiles",
 			"ACTIVATED",
-			"Initial hss activation state.  Legal values are ACTIVE and NOT_ACTIVATED.")
+			"Initial hss activation state.  Legal values are ACTIVATED and NOT_ACTIVATED.")
 
 	//
 	// Parse input according to spec above
