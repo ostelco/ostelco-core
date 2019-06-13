@@ -16,14 +16,18 @@ func main() {
 	batch := parseCommandLine()
 	var csvPayload string = generateCsvPayload(batch)
 
+
+
+
 	generatePostingCurlscript(batch.url, csvPayload)
-	// Send it along using a HTTP post to the correct endpoint  URL, and check the return value.
+
 }
 
 func generatePostingCurlscript(url string, payload string) {
 	fmt.Printf("#!/bin/bash\n")
+
 	// XXX Parameterize initial state, the other alternative is NOT_ACTIVATED
-	fmt.Printf("curl -X POST -d @-  %s?initialHssState=ACTIVATED <<EOF\n", url)
+	fmt.Printf("curl -X PUT -d @-  %s?initialHssState=ACTIVATED <<EOF\n", url)
 	fmt.Printf("%s", payload)
 	fmt.Print(("EOF\n"))
 }
@@ -160,12 +164,33 @@ func parseCommandLine() Batch {
 	lastMsisdn := flag.String("last-msisdn", "Not a valid MSISDN", "Last MSISDN in batch")
 	profileType := flag.String("profile-type", "Not a valid sim profile type", "SIM profile type")
 
-	uploadUrl := flag.String("uploadUrl", "http://<NotAValidURL>/", "Not a valid uploadUrl type")
+	// XXX Legal values are Loltel and M1 at this time, how to configure that
+	//     flexibly?
+
+	hssVendor := flag.String("hss-vendor", "M1", "The HSS vendor")
+	uploadHostname :=
+		flag.String("upload-hostname", "localhost", "host to upload batch to")
+	uploadPortnumber :=
+		flag.String("upload-portnumber", "8080", "port to upload to")
+
+	profileVendor :=
+		flag.String("profile-vendor", "Idemia", "Vendor of SIM profiles")
+
+	initialHlrActivationStatusOfProfiles :=
+		flag.String(
+			"initial-hlr-activation-status-of-profiles",
+			"ACTIVE",
+			"Initial hss activation state.  Legal values are ACTIVE and NOT_ACTIVE.")
+
 
 	//
 	// Parse input according to spec above
 	//
 	flag.Parse()
+
+
+	uploadUrl := fmt.Sprintf("http://%s:%s/ostelco/sim-inventory/%s/import-batch/profilevendor/%s?initialHssState=%sdd",
+		*uploadHostname, *uploadPortnumber, *hssVendor, *profileVendor, *initialHlrActivationStatusOfProfiles)
 
 	//
 	// Check parameters for syntactic correctness and
@@ -179,7 +204,7 @@ func parseCommandLine() Batch {
 	checkMSISDNSyntax("last-msisdn", *lastMsisdn)
 	checkMSISDNSyntax("first-msisdn", *firstMsisdn)
 
-	checkURLSyntax("uploadUrl", *uploadUrl)
+	checkURLSyntax("uploadUrl", uploadUrl)
 	checkProfileType("profile-type", *profileType)
 
 	// Convert to integers, and get lengths
@@ -213,7 +238,7 @@ func parseCommandLine() Batch {
 	// Return a correctly parsed batch
 	return Batch{
 		profileType:     *profileType,
-		url:             *uploadUrl,
+		url:             uploadUrl,
 		length:          Abs(iccidlen),
 		firstIccid:      firstIccidInt,
 		iccidIncrement:  Sign(iccidlen),
