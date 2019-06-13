@@ -781,9 +781,9 @@ object Neo4jStoreSingleton : GraphStore {
                 simProfiles.forEach { simProfile ->
                     val subscriptions = simProfileStore.getRelatedFrom(simProfile.id, subscriptionSimProfileRelation, transaction).bind()
                     subscriptions.forEach { subscription ->
-                        subscriptionStore.delete(subscription.id, transaction).bind()
+                        delete(Subscription::class, subscription.id).bind()
                     }
-                    simProfileStore.delete(simProfile.id, transaction).bind()
+                    delete(SimProfile::class, simProfile.id).bind()
                 }
             }.fix()
         }.unsafeRunSync()
@@ -2040,7 +2040,7 @@ object Neo4jStoreSingleton : GraphStore {
                 /* Not removing the product due to purchase references. */
 
                 /* Removing the plan will remove the plan itself and all relations going to it. */
-                plansStore.delete(plan.id, transaction)
+                delete(Plan::class, plan.id)
                         .bind()
 
                 /* Lookup in payment backend will fail if no value found for 'planId'. */
