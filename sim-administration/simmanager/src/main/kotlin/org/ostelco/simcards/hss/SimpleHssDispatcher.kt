@@ -13,7 +13,7 @@ import org.ostelco.prime.simmanager.AdapterError
 import org.ostelco.prime.simmanager.ForbiddenError
 import org.ostelco.prime.simmanager.NotUpdatedError
 import org.ostelco.prime.simmanager.SimManagerError
-import org.ostelco.simcards.admin.HssConfig
+import org.ostelco.simcards.admin.SwtHssConfig
 import javax.ws.rs.core.MediaType
 
 
@@ -23,7 +23,7 @@ import javax.ws.rs.core.MediaType
  * is done "out of band", e.g. by preactivating before inserting into
  * the sim  manager.
  */
-class DummyHSSDispatcher(val name: String, config: HssConfig): HssDispatcher {
+class DummyHSSDispatcher(val name: String): HssDispatcher {
     override fun iAmHealthy(): Boolean = true
     override fun name() = name
     override fun activate(hssName: String, iccid: String, msisdn: String): Either<SimManagerError, Unit> =
@@ -40,7 +40,7 @@ class DummyHSSDispatcher(val name: String, config: HssConfig): HssDispatcher {
  */
 class SimpleHssDispatcher(val name: String,
                           val httpClient: CloseableHttpClient,
-                          val config: HssConfig) : HssDispatcher {
+                          val config: SwtHssConfig) : HssDispatcher {
 
     private val logger by getLogger()
 

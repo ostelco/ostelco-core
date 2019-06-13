@@ -16,6 +16,7 @@ import org.ostelco.simcards.admin.ApiRegistry.simInventoryApi
 import org.ostelco.simcards.admin.ConfigRegistry.config
 import org.ostelco.simcards.admin.ResourceRegistry.simInventoryResource
 import org.ostelco.simcards.hss.DirectHssDispatcher
+import org.ostelco.simcards.hss.DummyHSSDispatcher
 import org.ostelco.simcards.hss.HealthCheckRegistrar
 import org.ostelco.simcards.hss.HssDispatcher
 import org.ostelco.simcards.hss.HssGrpcAdapter
@@ -55,11 +56,6 @@ class SimAdministrationModule : PrimeModule {
 
     override fun init(env: Environment) {
 
-        // XXX Monkeypatch validation. Please find a way to
-        //     do this automatic.
-        config.hssVendors.forEach(HssConfig::validate)
-
-
         val factory = JdbiFactory()
         val jdbi = factory.build(env,
                 config.database, "postgresql")
@@ -85,7 +81,6 @@ class SimAdministrationModule : PrimeModule {
         jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
 
 
-
         val dispatcher = makeHssDispatcher(
                 hssAdapterConfig = config.hssAdapter,
                 hssVendorConfigs = config.hssVendors,
@@ -96,7 +91,7 @@ class SimAdministrationModule : PrimeModule {
                     }
                 })
 
-        var hssAdapters = SimManagerToHssDispatcherAdapter(
+        val hssAdapters = SimManagerToHssDispatcherAdapter(
                 dispatcher = dispatcher,
                 simInventoryDAO = this.DAO
         )
@@ -118,29 +113,45 @@ class SimAdministrationModule : PrimeModule {
             httpClient: CloseableHttpClient,
             healthCheckRegistrar: HealthCheckRegistrar): HssDispatcher {
 
-        if (hssAdapterConfig != null) {
-            return HssGrpcAdapter(
-                    host = hssAdapterConfig.hostname,
-                    port = hssAdapterConfig.port)
-        } else if (hssVendorConfigs != null) {
-
-            val dispatchers = mutableSetOf<HssDispatcher>()
-
-            for (config in config.hssVendors) {
-               // XXX
-                dispatchers.add(
-                        SimpleHssDispatcher(
-                                name = config.hssNameUsedInAPI,
-                                httpClient = httpClient,
-                                config = config))
+        when {
+            hssAdapterConfig != null -> {
+                return HssGrpcAdapter(
+                        host = hssAdapterConfig.hostname,
+                        port = hssAdapterConfig.port)
             }
+            hssVendorConfigs.isNotEmpty() -> {
 
-            return DirectHssDispatcher(
-                    hssConfigs = config.hssVendors,
-                    httpClient = httpClient,
-                    healthCheckRegistrar = healthCheckRegistrar)
-        } else {
-            throw RuntimeException("Unable to find HSS adapter config, please check config")
+                val dispatchers = mutableSetOf<HssDispatcher>()
+
+                for (hssConfig in config.hssVendors) {
+                    when (hssConfig) {
+                        is SwtHssConfig -> {
+                            dispatchers.add(
+                                    SimpleHssDispatcher(
+                                            name = hssConfig.hssNameUsedInAPI,
+                                            httpClient = httpClient,
+                                            config = hssConfig
+                                    )
+                            )
+                        }
+                        is DummyHssConfig -> {
+                            dispatchers.add(
+                                    DummyHSSDispatcher(
+                                            name = hssConfig.name
+                                    )
+                            )
+                        }
+                    }
+                }
+
+                return DirectHssDispatcher(
+                        hssConfigs = config.hssVendors,
+                        httpClient = httpClient,
+                        healthCheckRegistrar = healthCheckRegistrar)
+            }
+            else -> {
+                throw RuntimeException("Unable to find HSS adapter config, please check config")
+            }
         }
     }
 }
