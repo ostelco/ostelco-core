@@ -2,10 +2,23 @@
 <configuration>
 
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-    <encoder class="net.logstash.logback.encoder.LogstashEncoder" >
-      <fieldNames>
-        <level>severity</level>
-      </fieldNames>
+    <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder" >
+      <providers>
+        <timestamp>
+          <fieldName>timestamp</fieldName>
+        </timestamp>
+        <message/>
+        <loggerName>
+          <fieldName>logger</fieldName>
+        </loggerName>
+        <threadName>
+          <fieldName>thread</fieldName>
+        </threadName>
+        <logLevel>
+          <fieldName>severity</fieldName>
+        </logLevel>
+        <mdc/>
+      </providers>
     </encoder>
   </appender>
 
