@@ -55,7 +55,7 @@ func generateCsvPayload(batch Batch) string {
 
 	var imsi = batch.firstImsi
 	var msisdn = batch.firstMsisdn
-	for i := 0; i < batch.length; i++ {
+	for i := 0; i <= batch.length; i++ {
 
 		iccid := fmt.Sprintf("%d%1d", iccidWithoutLuhnChecksum, luhnChecksum(iccidWithoutLuhnChecksum))
 		line := fmt.Sprintf("%s, %d, %d,,,,,%s\n", iccid, imsi, msisdn, batch.profileType)
