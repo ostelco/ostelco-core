@@ -25,6 +25,7 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 
 class PubSubClient(
         private val ocsAsyncRequestConsumer: OcsAsyncRequestConsumer,
@@ -67,7 +68,10 @@ class PubSubClient(
         }
     }
 
-    override fun stop() = activatePublisher?.shutdown() ?: Unit
+    override fun stop() {
+        activatePublisher?.shutdown()
+        activatePublisher?.awaitTermination(1, TimeUnit.MINUTES)
+    }
 
     fun activate(msisdn: String) {
         val activateResponse = ActivateResponse.newBuilder()
