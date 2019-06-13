@@ -54,6 +54,12 @@ class SimAdministrationModule : PrimeModule {
     fun getDAO() = DAO
 
     override fun init(env: Environment) {
+
+        // XXX Monkeypatch validation. Please find a way to
+        //     do this automatic.
+        config.hssVendors.forEach(HssConfig::validate)
+
+
         val factory = JdbiFactory()
         val jdbi = factory.build(env,
                 config.database, "postgresql")
@@ -77,6 +83,8 @@ class SimAdministrationModule : PrimeModule {
         simInventoryResource = SimInventoryResource(simInventoryApi)
         jerseyEnv.register(simInventoryResource)
         jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
+
+
 
         val dispatcher = makeHssDispatcher(
                 hssAdapterConfig = config.hssAdapter,
@@ -119,6 +127,7 @@ class SimAdministrationModule : PrimeModule {
             val dispatchers = mutableSetOf<HssDispatcher>()
 
             for (config in config.hssVendors) {
+               // XXX
                 dispatchers.add(
                         SimpleHssDispatcher(
                                 name = config.hssNameUsedInAPI,

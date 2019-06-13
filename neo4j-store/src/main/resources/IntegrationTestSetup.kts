@@ -2,23 +2,15 @@
 import org.ostelco.prime.dsl.DSL.job
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.Offer
-import org.ostelco.prime.model.PaymentProperties.LABEL
-import org.ostelco.prime.model.PaymentProperties.TAX_REGION_ID
-import org.ostelco.prime.model.PaymentProperties.TYPE
-import org.ostelco.prime.model.PaymentType.SUBSCRIPTION
-import org.ostelco.prime.model.Plan
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
-import org.ostelco.prime.model.ProductClass.MEMBERSHIP
 import org.ostelco.prime.model.ProductClass.SIMPLE_DATA
 import org.ostelco.prime.model.ProductProperties.NO_OF_BYTES
 import org.ostelco.prime.model.ProductProperties.PRODUCT_CLASS
-import org.ostelco.prime.model.ProductProperties.SEGMENT_IDS
 import org.ostelco.prime.model.Region
 import org.ostelco.prime.model.Segment
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.atomicCreateOffer
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.createIndex
-import org.ostelco.prime.storage.graph.adminStore
 import org.ostelco.prime.storage.graph.createProduct
 import org.ostelco.prime.storage.graph.getSegmentNameFromCountryCode
 

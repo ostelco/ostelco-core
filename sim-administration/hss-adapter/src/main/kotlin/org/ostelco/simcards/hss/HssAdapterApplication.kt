@@ -60,6 +60,11 @@ class HssAdapterApplication : Application<HssAdapterApplicationConfiguration>() 
                 .build("${getName()} http client")
         val jerseyEnv = env.jersey()
 
+        // Monkeypatch validation of HSS vendor configs
+        // XXX If anyone knows how to make this part of the
+        //     default config parsing mechanism, then pray tell!
+        configuration.hssVendors.forEach(HssConfig::validate)
+
         val myHssService = ManagedHssGrpcService(
                 port = 9000,
                 env = env,

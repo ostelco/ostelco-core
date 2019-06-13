@@ -31,6 +31,14 @@ fun createCustomer(email: String, nickname: String) {
             }
 }
 
+fun deleteCustomer(email: String) {
+
+    adminStore.removeCustomer(identity = Identity(id = email, type = "EMAIL", provider = "email"))
+            .mapLeft {
+                println(it.message)
+            }
+}
+
 fun createSubscription(
         email: String,
         regionCode: String,

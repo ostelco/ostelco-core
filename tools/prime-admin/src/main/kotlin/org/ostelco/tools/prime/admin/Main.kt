@@ -2,7 +2,6 @@ package org.ostelco.tools.prime.admin
 
 import org.ostelco.prime.PrimeApplication
 import org.ostelco.tools.prime.admin.modules.DwEnvModule
-import java.util.concurrent.TimeUnit.SECONDS
 
 /**
  * Update `config/config.yaml` to point to valid Neo4j store and Postgres.
@@ -14,13 +13,19 @@ fun main() {
     try {
         doActions()
     } finally {
-        DwEnvModule.env.applicationContext.shutdown().get(10, SECONDS)
+        DwEnvModule.env.applicationContext.server.stop()
     }
 }
 
 fun doActions() {
 
+//    check()
+//    sync()
+//    setup()
+//    index()
+
 //    createCustomer(email = "", nickname = "")
+//    deleteCustomer(email = "")
 
     // link to region
 
