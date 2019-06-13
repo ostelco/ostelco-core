@@ -48,7 +48,24 @@ class ImeiInmemoryDbTest {
 
     @Test
     fun getImeiResult() {
+        val result = imeiLookup.getImeiInformation("001007323123750")
+        assertEquals(true, result.isRight())
+    }
+
+    fun getImeiSvResult() {
         val result = imeiLookup.getImeiInformation("0010073231237501")
         assertEquals(true, result.isRight())
+    }
+
+    @Test
+    fun getImeiShortFailure() {
+        val result = imeiLookup.getImeiInformation("001007323")
+        assertEquals(true, result.isLeft())
+    }
+
+    @Test
+    fun getImeiLargeFailure() {
+        val result = imeiLookup.getImeiInformation("00100732312375012")
+        assertEquals(true, result.isLeft())
     }
 }
