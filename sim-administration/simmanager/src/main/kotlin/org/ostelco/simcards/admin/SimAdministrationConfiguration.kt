@@ -75,7 +75,14 @@ class HssAdapterConfig {
 
 
 enum class HSSType {
-    DUMMY, WG2
+    // A type of HSS that is incapable of doing any actions (they will all fail),
+    // but _is_ capable of being referred to in the database schema.  Useful for
+    // HSSes that we don't  have API access to, and for which we get pre-activated
+    // profiles.
+    DUMMY,
+
+    // The old "Software Telco" HSS interface.
+    SWT
 }
 
 /**
@@ -88,7 +95,7 @@ class HssConfig {
 
     /**
      * To differentiate between types of HSSes with potentially different
-     * APIs.   The  current implementation types are "dummy" and "wg2".
+     * APIs.   The  current implementation types are "DUMMY" and "SWT".
      */
     @Valid
     @NotNull
@@ -105,7 +112,7 @@ class HssConfig {
 
 
     //
-    //   Parameters that only make sense if the type is "wg2"
+    //   Parameters that only make sense if the type is "SWT"
     //
     /**
      * The name of the hss used when contacting the HSS over the API.
@@ -151,7 +158,7 @@ class HssConfig {
 
     fun validate() {
         return when(type) {
-            HSSType.WG2 -> validateAsWg2Config()
+            HSSType.SWT -> validateAsWg2Config()
             HSSType.DUMMY -> validateAsDummyConfig()
         }
     }

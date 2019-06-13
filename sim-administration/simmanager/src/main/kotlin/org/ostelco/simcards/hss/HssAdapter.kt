@@ -113,7 +113,7 @@ class DirectHssDispatcher(
 
         for (config in hssConfigs) {
             when (config.type) {
-                HSSType.WG2 -> adapters.add(SimpleHssDispatcher(name = config.name, httpClient = httpClient, config = config))
+                HSSType.SWT -> adapters.add(SimpleHssDispatcher(name = config.name, httpClient = httpClient, config = config))
                 HSSType.DUMMY -> adapters.add(DummyHSSDispatcher(name = config.name, config = config))
                 else -> throw IllegalStateException("Unknown hss type ${config.type}")
             }
