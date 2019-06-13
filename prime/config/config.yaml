@@ -89,13 +89,13 @@ modules:
           # this is a "SWT" style endpoint, so we should configure parameters
           # accordingly.
           hlrType: SWT
-	      # This name, starting with a lowercase "l" is used in the
-	      # api itself, and must match whatever the API expects
-	      # the bss to be identified as.
-	      hssNameUsedInAPI: loltel
-	      endpoint: ${WG2_ENDPOINT}
-	      userId: ${WG2_USER}
-	      apiKey: ${WG2_API_KEY}
+              # This name, starting with a lowercase "l" is used in the
+              # api itself, and must match whatever the API expects
+              # the bss to be identified as.
+              hssNameUsedInAPI: loltel
+              endpoint: ${WG2_ENDPOINT}
+              userId: ${WG2_USER}
+              apiKey: ${WG2_API_KEY}
         - name: M1
           hlrType: DUMMY
       profileVendors:
