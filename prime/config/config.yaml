@@ -85,12 +85,10 @@ modules:
         contactEmail: rmz@telenordigital.com
         resourcePackage: org.ostelco
       hlrs:
+        - name: Loltel
           # this is a "SWT" style endpoint, so we should configure parameters
           # accordingly.
-        - hlrType: SWT
-          # This name, starting with a uppercase "L", needs to match whatever is present
-          # in the database, and is used to identify HSSes.
-          name: Loltel
+          hlrType: SWT
           # This name, starting with a lowercase "l" is used in the
           # api itself, and must match whatever the API expects
           # the bss to be identified as.
@@ -98,6 +96,8 @@ modules:
           endpoint: ${WG2_ENDPOINT}
           userId: ${WG2_USER}
           apiKey: ${WG2_API_KEY}
+        - name: M1
+          hlrType: DUMMY
       profileVendors:
         - name: Idemia
           es2plusEndpoint: ${ES2PLUS_ENDPOINT}

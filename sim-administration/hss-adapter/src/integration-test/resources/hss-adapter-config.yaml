@@ -1,7 +1,6 @@
 logging:
   level: INFO
 
-
 hlrs:
   - name: Foo
     hlrType: SWT

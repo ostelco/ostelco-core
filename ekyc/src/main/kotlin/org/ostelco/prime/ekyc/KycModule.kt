@@ -38,5 +38,5 @@ object ConfigRegistry {
 }
 
 object Registry {
-    lateinit var myInfoClient: HttpClient;
+    lateinit var myInfoClient: HttpClient
 }

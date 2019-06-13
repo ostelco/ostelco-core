@@ -50,12 +50,14 @@ class HssAdapterConfig {
 }
 
 
+
 /**
  * Class used to input configuration data to the sim manager, that it
  * will use when communicating with HSS (Home Subscriber Service) entities
  * that keep track of authentication information used to authenticate
  * SIM profiles.
  */
+
 @JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "hlrType")
 sealed class HssConfig(
         /**
