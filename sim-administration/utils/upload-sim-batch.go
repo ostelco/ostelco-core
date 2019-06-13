@@ -27,8 +27,8 @@ func  isICCID(s string) bool {
 }
 
 func checkICCIDSyntax(name string, potentialIccid string) {
-	if (!isICCID(potentialIccid)) {
-		log.Fatal("Not a valid %s ICCID: '%s'.  Must be 18 or 19 digits.", name, potentialIccid)
+	if !isICCID(potentialIccid) {
+		log.Fatalf("Not a valid %s ICCID: '%s'.  Must be 18 or 19 digits.", name, potentialIccid)
 	}
 }
 
@@ -39,8 +39,8 @@ func  isIMSI(s string) bool {
 }
 
 func checkIMSISyntax(name string, potentialIMSI string) {
-	if (!isIMSI(potentialIMSI)) {
-		log.Fatal("Not a valid %s IMSI: '%s'.  Must be 15 digits.", name, potentialIMSI)
+	if !isIMSI(potentialIMSI) {
+		log.Fatalf("Not a valid %s IMSI: '%s'.  Must be 15 digits.", name, potentialIMSI)
 	}
 }
 
@@ -50,8 +50,8 @@ func  isMSISDN(s string) bool {
 }
 
 func checkMSISDNSyntax(name string, potentialMSISDN string) {
-	if (!isMSISDN(potentialMSISDN)) {
-		log.Fatal("Not a valid %s MSISDN: '%s'.  Must be non-empty sequence of digits.", name, potentialMSISDN)
+	if !isMSISDN(potentialMSISDN) {
+		log.Fatalf("Not a valid %s MSISDN: '%s'.  Must be non-empty sequence of digits.", name, potentialMSISDN)
 	}
 }
 

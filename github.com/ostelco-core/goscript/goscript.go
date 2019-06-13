@@ -93,8 +93,8 @@ func runCmdWithPiping(cmdTxt string) (result error) {
 	return nil
 }
 
-// Hash_file_md5 will read a file and return the MD5 checksum.
-func Hash_file_md5(filePath string) (string, error) {
+// HashFileMd5 will read a file and return the MD5 checksum.
+func HashFileMd5(filePath string) (string, error) {
 	//Initialize variable returnMD5String now in case an error has to be returned
 	var returnMD5String string
 
@@ -174,7 +174,7 @@ func AssertThatEnvironmentVariableaAreSet(variableNames ...string) {
 	log.Printf("Checking if environment variables are set...\n")
 	for key := range variableNames {
 		if len(os.Getenv(variableNames[key])) == 0 {
-			log.Fatalf("Environment variable not set'%s'", key)
+			log.Fatalf("Environment variable not set'%s'", variableNames[key])
 		}
 	}
 	log.Printf("   ... they are\n")
@@ -251,7 +251,7 @@ func isError(err error) bool {
 		fmt.Println(err.Error())
 	}
 
-	return (err != nil)
+	return err != nil
 }
 
 // XXX THis code seems to work, but it looks clunky. Please fix.

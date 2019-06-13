@@ -1,6 +1,5 @@
 package org.ostelco.prime.admin
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.assertj.core.api.Assertions
 import org.junit.Test
 import org.ostelco.prime.admin.api.KYCResource
@@ -21,7 +20,7 @@ class KYCResourceTest {
             Assertions.assertThat(id.similarity).isEqualTo(Similarity.MATCH)
             Assertions.assertThat(id.validity).isEqualTo(true)
         }
-        Assertions.assertThat(id).isNotNull()
+        Assertions.assertThat(id).isNotNull
     }
 
     @Test
@@ -33,7 +32,7 @@ class KYCResourceTest {
             Assertions.assertThat(id.similarity).isEqualTo(Similarity.MATCH)
             Assertions.assertThat(id.validity).isEqualTo(true)
         }
-        Assertions.assertThat(id).isNotNull()
+        Assertions.assertThat(id).isNotNull
     }
 
     @Test
@@ -45,7 +44,7 @@ class KYCResourceTest {
             Assertions.assertThat(id.similarity).isEqualTo(Similarity.MATCH)
             Assertions.assertThat(id.validity).isEqualTo(false)
         }
-        Assertions.assertThat(id).isNotNull()
+        Assertions.assertThat(id).isNotNull
     }
 
     @Test
@@ -57,7 +56,7 @@ class KYCResourceTest {
             Assertions.assertThat(id.similarity).isEqualTo(Similarity.MATCH)
             Assertions.assertThat(id.validity).isEqualTo(false)
         }
-        Assertions.assertThat(id).isNotNull()
+        Assertions.assertThat(id).isNotNull
     }
 
     @Test
@@ -85,7 +84,7 @@ class KYCResourceTest {
             Assertions.assertThat(id.similarity).isEqualTo(Similarity.NO_MATCH)
             Assertions.assertThat(id.validity).isEqualTo(true)
         }
-        Assertions.assertThat(id).isNotNull()
+        Assertions.assertThat(id).isNotNull
     }
 
     @Test
@@ -97,7 +96,7 @@ class KYCResourceTest {
             Assertions.assertThat(id.similarity).isEqualTo(Similarity.NO_MATCH)
             Assertions.assertThat(id.validity).isEqualTo(true)
         }
-        Assertions.assertThat(id).isNotNull()
+        Assertions.assertThat(id).isNotNull
     }
 
     @Test
@@ -109,7 +108,7 @@ class KYCResourceTest {
             val result = """{"similarity":"NO_MATCH","validity":true,"reason":null,"handwrittenNoteMatches":null}"""
             Assertions.assertThat(objectMapper.writeValueAsString(id)).isEqualTo(result)
         }
-        Assertions.assertThat(id).isNotNull()
+        Assertions.assertThat(id).isNotNull
     }
 
     @Test
@@ -138,6 +137,6 @@ class KYCResourceTest {
             """"lastName":"Nordmann","dob":"1988-01-23","rejectReason":{"similarity":"NO_MATCH","validity":true,"reason":null,"handwrittenNoteMatches":null}}}"""
             Assertions.assertThat(objectMapper.writeValueAsString(scanInformation)).isEqualTo(result)
         }
-        Assertions.assertThat(id).isNotNull()
+        Assertions.assertThat(id).isNotNull
     }
 }
