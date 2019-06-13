@@ -4,7 +4,7 @@ import org.ostelco.prime.model.MyInfoConfig
 
 interface MyInfoKycService {
     fun getConfig() : MyInfoConfig
-    fun getPersonData(authorisationCode: String) : String
+    fun getPersonData(authorisationCode: String) : String?
 }
 
 interface DaveKycService {
