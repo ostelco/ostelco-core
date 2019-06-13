@@ -28,8 +28,8 @@ allprojects {
 }
 
 subprojects {
-  sourceCompatibility = 11
-  targetCompatibility = 11
+  sourceCompatibility = 12
+  targetCompatibility = 12
   tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
   }
@@ -71,6 +71,12 @@ subprojects {
     testcontainersVersion = "1.11.3"
     tinkVersion = "1.2.2"
     zxingVersion = "3.4.0"
+  }
+
+  tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+    kotlinOptions {
+      jvmTarget = "1.8"
+    }
   }
 }
 
