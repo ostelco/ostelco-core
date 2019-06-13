@@ -16,9 +16,6 @@ func main() {
 	batch := parseCommandLine()
 	var csvPayload string = generateCsvPayload(batch)
 
-
-
-
 	generatePostingCurlscript(batch.url, csvPayload)
 
 }
@@ -27,7 +24,7 @@ func generatePostingCurlscript(url string, payload string) {
 	fmt.Printf("#!/bin/bash\n")
 
 	// XXX Parameterize initial state, the other alternative is NOT_ACTIVATED
-	fmt.Printf("curl -X PUT -d @-  %s?initialHssState=ACTIVATED <<EOF\n", url)
+	fmt.Printf("curl  -H 'Content-Type: text/plain' -X PUT -d @-  %s?initialHssState=ACTIVATED <<EOF\n", url)
 	fmt.Printf("%s", payload)
 	fmt.Print(("EOF\n"))
 }
@@ -182,12 +179,10 @@ func parseCommandLine() Batch {
 			"ACTIVE",
 			"Initial hss activation state.  Legal values are ACTIVE and NOT_ACTIVE.")
 
-
 	//
 	// Parse input according to spec above
 	//
 	flag.Parse()
-
 
 	uploadUrl := fmt.Sprintf("http://%s:%s/ostelco/sim-inventory/%s/import-batch/profilevendor/%s?initialHssState=%sdd",
 		*uploadHostname, *uploadPortnumber, *hssVendor, *profileVendor, *initialHlrActivationStatusOfProfiles)
