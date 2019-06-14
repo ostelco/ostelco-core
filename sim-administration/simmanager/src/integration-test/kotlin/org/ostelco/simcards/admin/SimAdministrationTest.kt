@@ -400,4 +400,7 @@ class SimAdministrationTest {
         assertEquals(ProvisionState.RESERVED, getSimEntryByICCIDFromLoadedBatch("8901000000000000985")?.provisionState)
         assertEquals(ProvisionState.RESERVED, getSimEntryByICCIDFromLoadedBatch("8901000000000000993")?.provisionState)
     }
+
+    // XXX MISSING TEST:  SHould test periodic updater also in cases where
+    //      either HSS or SM-DP+ entries are pre-allocated.
 }
