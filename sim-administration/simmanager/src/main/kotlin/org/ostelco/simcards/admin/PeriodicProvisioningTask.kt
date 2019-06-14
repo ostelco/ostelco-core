@@ -94,7 +94,7 @@ class PreallocateProfilesTask(
                                              simProfileName: String,
                                              profileStats: SimProfileKeyStatistics) : Either<SimManagerError, Any> {
 
-        logger.debug("batchPreprovisionSimProfiles hssEntry='$hssEntry', simProfileName='$simProfileName', profileStats=$profileStats")
+        logger.debug("batchPreprovisionSimProfiles hssEntry='$hssEntry', simProfileName='$simProfileName', profileStats='$profileStats.'")
 
         val noOfProfilesToActuallyAllocate =
                 Math.min(maxNoOfProfileToAllocate.toLong(), profileStats.noOfUnallocatedEntries)

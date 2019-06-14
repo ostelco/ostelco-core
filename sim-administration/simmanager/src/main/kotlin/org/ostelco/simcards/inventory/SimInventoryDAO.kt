@@ -288,7 +288,7 @@ class SimInventoryDAO(private val db: SimInventoryDBWrapperImpl) : SimInventoryD
             }.unsafeRunSync()
 }
 
-class SimProfileKeyStatistics(
+data class SimProfileKeyStatistics(
         val noOfEntries: Long,
         val noOfUnallocatedEntries: Long,
         val noOfReleasedEntries: Long,
