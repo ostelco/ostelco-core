@@ -16,7 +16,6 @@ import org.ostelco.prime.simmanager.NotUpdatedError
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.sim.es2plus.*
 import org.ostelco.simcards.admin.ProfileVendorConfig
-import org.ostelco.simcards.inventory.HssState
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SmDpPlusState
@@ -74,7 +73,7 @@ data class ProfileVendorAdapter(
                       dao: SimInventoryDAO,
                       simEntry: SimEntry): Either<SimManagerError, SimEntry> {
         val header = ES2RequestHeader(
-                functionRequesterIdentifier = config.requesterIndentifier,
+                functionRequesterIdentifier = config.requesterIdentifier,
                 functionCallIdentifier = "downloadOrder"
         )
         val body = Es2PlusDownloadOrder(
@@ -150,7 +149,7 @@ data class ProfileVendorAdapter(
                      eid: String? = null,
                      simEntry: SimEntry): Either<SimManagerError, SimEntry> {
         val header = ES2RequestHeader(
-                functionRequesterIdentifier = config.requesterIndentifier,
+                functionRequesterIdentifier = config.requesterIdentifier,
                 functionCallIdentifier = UUID.randomUUID().toString()
         )
         val body = Es2ConfirmOrder(
@@ -266,7 +265,7 @@ data class ProfileVendorAdapter(
         }
 
         val header = ES2RequestHeader(
-                functionRequesterIdentifier = config.requesterIndentifier,
+                functionRequesterIdentifier = config.requesterIdentifier,
                 functionCallIdentifier = UUID.randomUUID().toString()
         )
         val body = Es2PlusProfileStatus(

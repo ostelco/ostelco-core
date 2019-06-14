@@ -1,5 +1,6 @@
 package org.ostelco.simcards.admin
 
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.dropwizard.Application
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor
 import io.dropwizard.configuration.SubstitutingSourceProvider
@@ -36,6 +37,7 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
                 bootstrap.configurationSourceProvider,
                 EnvironmentVariableSubstitutor(false)
         )
+        bootstrap.objectMapper.registerModule(KotlinModule())
     }
 
     override fun run(config: SimAdministrationConfiguration,

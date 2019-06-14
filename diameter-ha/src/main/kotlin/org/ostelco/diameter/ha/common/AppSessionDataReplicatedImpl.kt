@@ -2,13 +2,17 @@ package org.ostelco.diameter.ha.common
 
 import org.jdiameter.api.ApplicationId
 import org.jdiameter.api.acc.ClientAccSession
+import org.jdiameter.api.app.AppSession
 import org.jdiameter.common.api.app.IAppSessionData
 import org.ostelco.diameter.ha.logger
-import java.io.*
-import java.lang.IllegalStateException
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.io.ObjectInputStream
+import java.io.ObjectOutputStream
+import java.io.Serializable
 import java.nio.ByteBuffer
 import java.util.*
-import org.jdiameter.api.app.AppSession
 
 
 
@@ -16,7 +20,7 @@ open class AppSessionDataReplicatedImpl(val id: String, val replicatedStorage: R
 
     private val logger by logger()
 
-    private val APID = "APID"
+    private val apiId = "apiId"
 
     fun setAppSessionIface(iface: Class<out AppSession>) {
         storeValue(SIFACE, toBase64String(iface))
@@ -36,7 +40,7 @@ open class AppSessionDataReplicatedImpl(val id: String, val replicatedStorage: R
      */
     override fun setApplicationId(applicationId: ApplicationId?) {
         if (applicationId != null) {
-            storeValue(APID, toBase64String(applicationId))
+            storeValue(apiId, toBase64String(applicationId))
         }
     }
 
@@ -46,7 +50,7 @@ open class AppSessionDataReplicatedImpl(val id: String, val replicatedStorage: R
      * @return the Application-Id
      */
     override fun getApplicationId(): ApplicationId {
-        val value = getValue(APID)
+        val value = getValue(apiId)
         if (value != null) {
             return fromBase64String(value) as ApplicationId
         } else {

@@ -21,8 +21,8 @@ import org.ostelco.prime.storage.legacy.Products
 
 class EventProcessorTest {
 
-    private val EMAIL = "foo@bar.com"
-    private val NO_OF_BYTES = 4711L
+    private val dummyEmail = "foo@bar.com"
+    private val noOfBytes = 4711L
 
     @Rule
     @JvmField
@@ -38,7 +38,7 @@ class EventProcessorTest {
 
         Mockito.`when`<Either<StoreError, Product>>(storage
                 .getProduct(
-                        Identity(id = EMAIL, type = "EMAIL", provider = "email"),
+                        Identity(id = dummyEmail, type = "dummyEmail", provider = "email"),
                         Products.DATA_TOPUP_3GB.sku))
                 .thenReturn(Either.right(Products.DATA_TOPUP_3GB))
 
@@ -49,12 +49,12 @@ class EventProcessorTest {
     fun testPrimeEventReleaseReservedDataBucket() {
         val primeEvent = OcsEvent()
         primeEvent.messageType = RELEASE_RESERVED_BUCKET
-        primeEvent.bundleId = EMAIL
-        primeEvent.bundleBytes = NO_OF_BYTES
+        primeEvent.bundleId = dummyEmail
+        primeEvent.bundleBytes = noOfBytes
 
         processor.onEvent(primeEvent, 0L, false)
 
-        Mockito.verify<ClientDataSource>(storage).updateBundle(safeEq(Bundle(EMAIL, NO_OF_BYTES)))
+        Mockito.verify<ClientDataSource>(storage).updateBundle(safeEq(Bundle(dummyEmail, noOfBytes)))
     }
 
     // https://github.com/mockito/mockito/issues/1255
