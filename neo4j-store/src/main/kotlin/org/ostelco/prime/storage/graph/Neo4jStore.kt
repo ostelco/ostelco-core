@@ -1635,7 +1635,13 @@ object Neo4jStoreSingleton : GraphStore {
                         kycStatus = KycStatus.PENDING).bind()
 
                 val personData = try {
-                    myInfoKycService.getPersonData(authorisationCode).right()
+                    myInfoKycService.getPersonData(authorisationCode)
+                            ?.right()
+                            ?: SystemError(
+                                    type = "MyInfo Auth Code",
+                                    id = authorisationCode,
+                                    message = "Failed to fetched MyInfo"
+                            ).left()
                 } catch (e: Exception) {
                     logger.error("Failed to fetched MyInfo using authCode = $authorisationCode", e)
                     SystemError(
