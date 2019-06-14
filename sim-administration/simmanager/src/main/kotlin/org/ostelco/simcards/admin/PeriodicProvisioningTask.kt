@@ -3,6 +3,7 @@ package org.ostelco.simcards.admin
 import arrow.core.Either
 import arrow.core.fix
 import arrow.core.left
+import arrow.core.right
 import arrow.effects.IO
 import arrow.instances.either.monad.flatMap
 import arrow.instances.either.monad.monad
@@ -91,16 +92,18 @@ class PreallocateProfilesTask(
 
     private fun batchPreprovisionSimProfiles(hssEntry: HssEntry,
                                              simProfileName: String,
-                                             profileStats: SimProfileKeyStatistics) {
+                                             profileStats: SimProfileKeyStatistics) : Either<SimManagerError, Any> {
+
+        logger.debug("batchPreprovisionSimProfiles hssEntry='$hssEntry', simProfileName='$simProfileName', profileStats=$profileStats")
+
         val noOfProfilesToActuallyAllocate =
                 Math.min(maxNoOfProfileToAllocate.toLong(), profileStats.noOfUnallocatedEntries)
 
+        logger.debug("preprovisioning for profileName='${simProfileName}', HSS with ID/name ${hssEntry.id}/${hssEntry.name}. noOfProfilesToActuallyAllocate= $noOfProfilesToActuallyAllocate")
+
         for (i in 1..noOfProfilesToActuallyAllocate) {
 
-            // XXX This is all well, if allocation doesn't fail, but if it fails, it will try the
-            //     same profile forever, so something else should be done e.g. setting the
-            //     state of the profile to "provision failed" or something of that nature, so that it
-            //     is possible to move along.   This is an error in the logic of this code.
+            logger.debug("preprovisioning for profileName='${simProfileName}', HSS with ID/name ${hssEntry.id}/${hssEntry.name}. Iteration index = $i")
             simInventoryDAO.findNextNonProvisionedSimProfileForHss(hssId = hssEntry.id, profile = simProfileName)
                     .flatMap { simEntry ->
                         logger.debug("preprovisioning for profileName='${simProfileName}', HSS with ID/name ${hssEntry.id}/${hssEntry.name} simEntry with ICCID=${simEntry.iccid}, id = ${simEntry.id}")
@@ -117,6 +120,7 @@ class PreallocateProfilesTask(
                         }
                     }
         }
+        return "ok".right()
     }
 
     /**
