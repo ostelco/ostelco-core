@@ -136,7 +136,7 @@ class PreallocateProfilesTask(
                 val hssEntries: Collection<HssEntry> = simInventoryDAO.getHssEntries()
                         .bind()
 
-                hssEntries.forEach{hssEntry ->
+                hssEntries.forEach { hssEntry ->
                     logger.debug("Start of prealloacation for HSS with ID/name ${hssEntry.id}/${hssEntry.name}")
                     val simProfileNames: Collection<String> = simInventoryDAO.getProfileNamesForHssById(hssEntry.id)
                             .bind()
@@ -146,12 +146,16 @@ class PreallocateProfilesTask(
                         val profileStats = simInventoryDAO.getProfileStats(hssEntry.id, simProfileName)
                                 .bind()
 
-                        logger.debug("Profiles ready for use: ${hssEntry.id}/${hssEntry.name}/${simProfileName} = ${profileStats.noOfEntriesAvailableForImmediateUse}")
-                        if (profileStats.noOfEntriesAvailableForImmediateUse < lowWaterMark) {
-                            logger.info("Preallocating new SIM batch with HLR {} and with profile {}",
-                                    hssEntry.name, simProfileName)
+                        if (profileStats.noOfUnallocatedEntries == 0L) {
+                            logger.error("No  more unallocated  profiles of type $simProfileName for HSS with ID/name ${hssEntry.id}/${hssEntry.name}")
+                        } else {
+                            logger.debug("Profiles ready for use: ${hssEntry.id}/${hssEntry.name}/${simProfileName} = ${profileStats.noOfEntriesAvailableForImmediateUse}")
+                            if (profileStats.noOfEntriesAvailableForImmediateUse < lowWaterMark) {
+                                logger.info("Preallocating new SIM batch with HLR {} and with profile {}",
+                                        hssEntry.name, simProfileName)
 
-                            batchPreprovisionSimProfiles(hssEntry = hssEntry, simProfileName = simProfileName, profileStats = profileStats)
+                                batchPreprovisionSimProfiles(hssEntry = hssEntry, simProfileName = simProfileName, profileStats = profileStats)
+                            }
                         }
                     }
                 }
