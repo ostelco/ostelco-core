@@ -132,12 +132,12 @@ prime:
     - 8082 
     - 8083 
   resources: 
-#    limits:
-#      cpu: 200m
-#      memory: 400Mi
+    limits:
+      cpu: 1000m
+      memory: 4Gi
     requests:
-      cpu: 100m
-      memory: 300Mi
+      cpu: 400m
+      memory: 1Gi
   livenessProbe: {}
     # path: /
     # port: 8081
