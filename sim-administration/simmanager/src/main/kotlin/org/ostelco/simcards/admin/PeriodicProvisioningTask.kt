@@ -109,14 +109,19 @@ class PreallocateProfilesTask(
      */
     public fun preAllocateSimProfiles() {
         IO {
+            logger.debug("Start of prealloacation")
+
             Either.monad<SimManagerError>().binding {
                 val hssEntries: Collection<HssEntry> = simInventoryDAO.getHssEntries()
                         .bind()
 
                 hssEntries.forEach{hssEntry ->
+                    logger.debug("Start of prealloacation for HSS with ID/name ${hssEntry.id}/${hssEntry.name}")
                     val simProfileNames: Collection<String> = simInventoryDAO.getProfileNamesForHssById(hssEntry.id)
                             .bind()
                     for (simProfileName in simProfileNames) {
+                        logger.debug("Start of prealloacation for HSS with ID/name ${hssEntry.id}/${hssEntry.name}, sim profile named '${simProfileName}'")
+
                         val profileStats = simInventoryDAO.getProfileStats(hssEntry.id, simProfileName)
                                 .bind()
 
