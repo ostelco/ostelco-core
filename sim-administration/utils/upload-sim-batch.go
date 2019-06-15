@@ -18,6 +18,9 @@ func main() {
 
 	generatePostingCurlscript(batch.url, csvPayload)
 
+	fmt.Print("# ---------\n")
+	fmt.Print(generateUpdateStatementForBuggyEntries(batch))
+
 }
 
 func generatePostingCurlscript(url string, payload string) {
@@ -28,8 +31,42 @@ func generatePostingCurlscript(url string, payload string) {
 	fmt.Printf("%s", payload)
 	fmt.Print(("EOF\n"))
 }
+func generateControlDigit(luhnString string) int {
+	controlDigit := calculateChecksum(luhnString, true) % 10
 
-func luhnChecksum(number int) int {
+	if controlDigit != 0 {
+		controlDigit = 10 - controlDigit
+	}
+
+	return controlDigit
+}
+
+func calculateChecksum(luhnString string, double bool) int {
+	source := strings.Split(luhnString, "")
+	checksum := 0
+
+	for i := len(source) - 1; i > -1; i-- {
+		t, _ := ParseInt(source[i], 10, 8)
+		n := int(t)
+
+		if double {
+			n = n * 2
+		}
+
+		double = !double
+
+		if n >= 10 {
+			n = n - 9
+		}
+
+		checksum += n
+	}
+
+	return checksum
+}
+
+// A buggy algorithm that was once used to generate batches.
+func buggyLuhnChecksum(number int) int {
 	var luhn int
 
 	for i := 0; number > 0; i++ {
@@ -48,6 +85,29 @@ func luhnChecksum(number int) int {
 	return luhn % 10
 }
 
+func LuhnChecksum(number int) int {
+	return generateControlDigit(Itoa(number))
+}
+
+func generateUpdateStatementForBuggyEntries(batch Batch) string {
+	var sb strings.Builder
+	var iccidWithoutLuhnChecksum = batch.firstIccid
+
+	for i := 0; i <= batch.length; i++ {
+
+		correctIccid := fmt.Sprintf("%d%1d", iccidWithoutLuhnChecksum, LuhnChecksum(iccidWithoutLuhnChecksum))
+		buggyIccid := fmt.Sprintf("%d%1d", iccidWithoutLuhnChecksum, buggyLuhnChecksum(iccidWithoutLuhnChecksum))
+
+		if correctIccid != buggyIccid {
+			line := fmt.Sprintf("UPDATE sim_entries SET iccid='%s' WHERE iccid='%s';\n", correctIccid, buggyIccid)
+			sb.WriteString(line)
+		}
+		iccidWithoutLuhnChecksum += batch.iccidIncrement
+	}
+
+	return sb.String()
+}
+
 func generateCsvPayload(batch Batch) string {
 	var sb strings.Builder
 	sb.WriteString("ICCID, IMSI, MSISDN, PIN1, PIN2, PUK1, PUK2, PROFILE\n")
@@ -58,7 +118,7 @@ func generateCsvPayload(batch Batch) string {
 	var msisdn = batch.firstMsisdn
 	for i := 0; i <= batch.length; i++ {
 
-		iccid := fmt.Sprintf("%d%1d", iccidWithoutLuhnChecksum, luhnChecksum(iccidWithoutLuhnChecksum))
+		iccid := fmt.Sprintf("%d%1d", iccidWithoutLuhnChecksum, LuhnChecksum(iccidWithoutLuhnChecksum))
 		line := fmt.Sprintf("%s, %d, %d,,,,,%s\n", iccid, imsi, msisdn, batch.profileType)
 		sb.WriteString(line)
 
@@ -117,7 +177,7 @@ func isProfileName(s string) bool {
 
 func checkProfileType(name string, potentialProfileName string) {
 	if !isProfileName(potentialProfileName) {
-		log.Fatal("Not a valid %s MSISDN: '%s'. Must be uppercase characters, numbers and underscores", name, potentialProfileName)
+		log.Fatalf("Not a valid %s MSISDN: '%s'. Must be uppercase characters, numbers and underscores. ", name, potentialProfileName)
 	}
 }
 
