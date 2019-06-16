@@ -133,6 +133,12 @@ class Neo4jStorageTest {
                             textReader = ClasspathResourceTextReader(
                                     filename = "/HssNameLookupService.kts"
                             )
+                    ),
+                    onNewCustomerAction = KtsServiceFactory(
+                            serviceInterface = "org.ostelco.prime.storage.graph.OnNewCustomerAction",
+                            textReader = ClasspathResourceTextReader(
+                                    filename = "/OnNewCustomerAction.kts"
+                            )
                     )
             )
 

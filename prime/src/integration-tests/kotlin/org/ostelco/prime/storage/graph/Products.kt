@@ -8,6 +8,9 @@ object Products {
 
     val DATA_TOPUP_3GB = Product("DataTopup3GB",
             Price(30000, "NOK"),
-            mapOf("noOfBytes" to "3_000_000_000"),
+            mapOf(
+                    "productClass" to "SIMPLE_DATA",
+                    "noOfBytes" to "3_000_000_000"
+            ),
             emptyMap())
 }
