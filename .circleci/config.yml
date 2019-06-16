@@ -11,7 +11,7 @@ jobs:
     steps:
       - checkout
       - run:
-          name: upgrading Java to open-jdk-11
+          name: upgrading Java to open-jdk-12
           command: |
             # sudo apt update; sudo apt install -y wget
             sudo wget https://cdn.azul.com/zulu/bin/zulu12.2.3-ca-jdk12.0.1-linux_x64.tar.gz -O /tmp/zulu12.2.3-ca-jdk12.0.1-linux_x64.tar.gz
