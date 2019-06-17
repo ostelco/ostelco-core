@@ -88,6 +88,10 @@ shadowJar {
   version = null
 }
 
+task version {
+  println version
+}
+
 test {
   testLogging {
     exceptionFormat = 'full'
