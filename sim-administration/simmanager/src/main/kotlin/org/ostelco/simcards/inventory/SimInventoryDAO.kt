@@ -272,7 +272,7 @@ class SimInventoryDAO(private val db: SimInventoryDBWrapperImpl) : SimInventoryD
                     val keyValuePairs = mutableMapOf<String, Long>()
 
                     getProfileStatsAsKeyValuePairs(hssId = hssId, simProfile = simProfile).bind()
-                            .forEach { keyValuePairs.put(it.key, it.value) }
+                            .forEach { keyValuePairs[it.key] = it.value }
 
                     val noOfEntries = keyValuePairs["NO_OF_ENTRIES"]!!
                     val noOfUnallocatedEntries = keyValuePairs["NO_OF_UNALLOCATED_ENTRIES"]!!
