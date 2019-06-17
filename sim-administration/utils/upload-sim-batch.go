@@ -28,10 +28,6 @@ func main() {
 	var csvPayload string = generateCsvPayload(batch)
 
 	generatePostingCurlscript(batch.url, csvPayload)
-
-	fmt.Print("# ---------\n")
-	fmt.Print(generateUpdateStatementForBuggyEntries(batch))
-
 }
 
 func generatePostingCurlscript(url string, payload string) {
@@ -76,51 +72,8 @@ func calculateChecksum(luhnString string, double bool) int {
 	return checksum
 }
 
-// A buggy algorithm that was once used to generate batches.
-func buggyLuhnChecksum(number int) int {
-	var luhn int
-
-	for i := 0; number > 0; i++ {
-		cur := number % 10
-
-		if i%2 == 0 { // even
-			cur = cur * 2
-			if cur > 9 {
-				cur = cur%10 + cur/10
-			}
-		}
-
-		luhn += cur
-		number = number / 10
-	}
-	return luhn % 10
-}
-
 func LuhnChecksum(number int) int {
 	return generateControlDigit(Itoa(number))
-}
-
-func generateUpdateStatementForBuggyEntries(batch Batch) string {
-	var sb strings.Builder
-	var iccidWithoutLuhnChecksum = batch.firstIccid
-
-	for i := 0; i <= batch.length; i++ {
-
-		correctIccid := fmt.Sprintf("%d%1d", iccidWithoutLuhnChecksum, LuhnChecksum(iccidWithoutLuhnChecksum))
-		buggyIccid := fmt.Sprintf("%d%1d", iccidWithoutLuhnChecksum, buggyLuhnChecksum(iccidWithoutLuhnChecksum))
-
-		if correctIccid != buggyIccid {
-			line := fmt.Sprintf("UPDATE sim_entries SET iccid='%s' , provisionstate='AVAILABLE' WHERE iccid='%s' AND  provisionstate='ALLOCATION_FAILED';\n", correctIccid, buggyIccid)
-			// XXX Add an AND with the profile, hss, etc. to avoid updating things that shouldn't be updated.
-
-			sb.WriteString(line)
-		} else {
-			sb.WriteString(fmt.Sprintf("-- ICCID = %s is correct\n", correctIccid))
-		}
-		iccidWithoutLuhnChecksum += batch.iccidIncrement
-	}
-
-	return sb.String()
 }
 
 func generateCsvPayload(batch Batch) string {
