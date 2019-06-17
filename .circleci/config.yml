@@ -49,7 +49,7 @@ jobs:
       # run gradle build. Skipping neo4j tests as they fail
       - run:
           name: Build entire repo
-          command: ./gradlew clean build -info -s -x :neo4j-store:test
+          command: ./gradlew build -info -s -x :neo4j-store:test
       - run:
           name: Push Gradle cache
           command: |
@@ -146,7 +146,7 @@ jobs:
             javac -version
       - run:
           name: Gradle Build Prime
-          command:  ./gradlew clean prime:build -info -s -x test -x integration
+          command:  ./gradlew prime:build -info -s -x test -x integration
       # - run:
       #     name: Gradle Build OCSGW 
       #     command: |
@@ -249,7 +249,7 @@ jobs:
         environment:
           PROJECT: pi-ostelco-dev
           CLUSTER: pi-dev
-          ZONE: europe-west1-c
+          ZONE: europe-west1
           SERVICE_ACCOUNT: terraform-dev-cluster@pi-ostelco-dev.iam.gserviceaccount.com
     steps:
       - checkout
