@@ -9,8 +9,8 @@
 
 
 DEPS="gradle openssl"
-for dep in $DEPS ; do
-    if [[ -z "$(which $dep)" ]] ; then
+for dep in ${DEPS} ; do
+    if [[ -z "$(which ${dep})" ]] ; then
 	echo "$0  ERROR:  Missing dependency $dep"
 	exit 1
     fi
@@ -22,7 +22,7 @@ done
 
 PSA_DIRS=$(grep -i prime-service-account.json $(find . -name '.gitignore') | awk -F: '{print $1}' | sort | uniq | sed 's/.gitignore//g')
 
-for PSA_DIR in $PSA_DIRS ; do
+for PSA_DIR in ${PSA_DIRS} ; do
     PSA_FILE="${PSA_DIR}prime-service-account.json"
     if [[ ! -f "$PSA_FILE" ]] ; then
 	echo "$0 ERROR:   Expected to find $PSA_FILE, but didn't.  Cannot run regression tests."

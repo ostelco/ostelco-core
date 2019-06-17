@@ -56,8 +56,8 @@ else
   projectId="${GCP_PROJECT_ID}"
 fi
 
-csvfile=$projectId-dataconsumption-export/${exportId}-resultsegment-pseudoanonymized.csv
-outputCsvfile=$projectId-dataconsumption-export/${exportId}-resultsegment-cleartext.csv
+csvfile=${projectId}-dataconsumption-export/${exportId}-resultsegment-pseudoanonymized.csv
+outputCsvfile=${projectId}-dataconsumption-export/${exportId}-resultsegment-cleartext.csv
 inputSubscriberTable=exported_pseudonyms.${exportId}_pseudo_subscriber
 subscriberPseudonymsTable=exported_pseudonyms.${exportId}_subscriber
 outputSubscriberTable=exported_pseudonyms.${exportId}_clear_subscriber
@@ -67,7 +67,7 @@ outputSubscriberTable=exported_pseudonyms.${exportId}_clear_subscriber
 ##
 
 echo "$0: INFO Importing data from csv $csvfile"
-bq --location=EU load --replace --source_format=CSV $projectId:$inputSubscriberTable gs://$csvfile /subscriber-schema.json
+bq --location=EU load --replace --source_format=CSV ${projectId}:${inputSubscriberTable} gs://${csvfile} /subscriber-schema.json
 echo "Exported data to $inputSubscriberTable"
 
 
@@ -88,14 +88,14 @@ CREATE TEMP FUNCTION URLDECODE(url STRING) AS ((
 SELECT
    DISTINCT(sub.subscriberId) as pseudoId, URLDECODE(ps.subscriberId) as subscriberId
 FROM
-   \`$inputSubscriberTable\` as sub
+   \`${inputSubscriberTable}\` as sub
 JOIN
-  \`$subscriberPseudonymsTable\` as ps
+  \`${subscriberPseudonymsTable}\` as ps
 ON  ps.pseudoid = sub.subscriberId
 EOM
 
 # Run the query using bq & dump results to the new table
-bq --location=EU --format=none query --destination_table $outputSubscriberTable --replace --use_legacy_sql=false $sqlForJoin
+bq --location=EU --format=none query --destination_table ${outputSubscriberTable} --replace --use_legacy_sql=false ${sqlForJoin}
 echo "$0 INFO: Created table $outputSubscriberTable"
 
 
@@ -104,5 +104,5 @@ echo "$0 INFO: Created table $outputSubscriberTable"
 ##
 
 echo "$0 INFO: Exporting data to csv $outputCsvfile"
-bq --location=EU extract --destination_format=CSV $outputSubscriberTable gs://$outputCsvfile
+bq --location=EU extract --destination_format=CSV ${outputSubscriberTable} gs://${outputCsvfile}
 echo "$0 INFO: Exported data to gs://$outputCsvfile"

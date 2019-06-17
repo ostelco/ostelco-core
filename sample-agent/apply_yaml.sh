@@ -42,8 +42,8 @@ fi
 
 DEPENDENCIES="gcloud kubectl gsutil curl"
 
-for dep in $DEPENDENCIES ; do
-   if [[ -z $(which $dep) ]] ; then
+for dep in ${DEPENDENCIES} ; do
+   if [[ -z $(which ${dep}) ]] ; then
      echo "ERROR: Could not find dependency $dep"
    fi
 done
@@ -77,7 +77,7 @@ OFFER_IMPORTER_URL=http://127.0.0.1:8080/import/offer
 
 
 EXPECTED_FROM_GET_TO_IMPORT='{"code":405,"message":"HTTP 405 Method Not Allowed"}'
-RESULT_FROM_GET_PROBE="$(curl $OFFER_IMPORTER_URL 2>/dev/null)"
+RESULT_FROM_GET_PROBE="$(curl ${OFFER_IMPORTER_URL} 2>/dev/null)"
 
 if [[ "$EXPECTED_FROM_GET_TO_IMPORT"  != "$RESULT_FROM_GET_PROBE" ]] ; then
     echo "$0  ERROR: Did not get expected result when probing importer, bailing out"
@@ -93,11 +93,11 @@ fi
 ## (assuming the kubectl port forwarding is enabled)
 
 if [[ "$IMPORT_TYPE" = "segments" ]] ; then
-    curl -X PUT -H "Content-type: text/vnd.yaml" --data-binary @$YAML_SCRIPTNAME $SEGMENT_IMPORTER_URL
+    curl -X PUT -H "Content-type: text/vnd.yaml" --data-binary @${YAML_SCRIPTNAME} ${SEGMENT_IMPORTER_URL}
     exit 0
 fi
 
 if [[ "$IMPORT_TYPE" = "offer" ]] ; then
-    curl -X POST -H "Content-type: text/vnd.yaml" --data-binary @$YAML_SCRIPTNAME $OFFER_IMPORTER_URL
+    curl -X POST -H "Content-type: text/vnd.yaml" --data-binary @${YAML_SCRIPTNAME} ${OFFER_IMPORTER_URL}
     exit 0
 fi

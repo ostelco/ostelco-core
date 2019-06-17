@@ -107,7 +107,7 @@ class PreallocateProfilesTask(
      * allocation of profiles so that if possible, there will be tasks available for
      * provisioning.
      */
-    public fun preAllocateSimProfiles() {
+    fun preAllocateSimProfiles() {
         IO {
             Either.monad<SimManagerError>().binding {
                 val hssEntries: Collection<HssEntry> = simInventoryDAO.getHssEntries()

@@ -88,6 +88,7 @@ configurations {
 }
 
 protobuf {
+    //noinspection GroovyAssignabilityCheck
     plugins {
         grpc {
             artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion"

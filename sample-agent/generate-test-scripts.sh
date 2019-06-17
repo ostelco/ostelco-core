@@ -35,7 +35,7 @@ if [[ ! -d "$TARGET_DIR" ]] ; then
 fi
 
 
-cat > $TARGET_DIR/init1.yml <<EOF
+cat > ${TARGET_DIR}/init1.yml <<EOF
 createOffer:
   id: demoOffer1
   createProducts:
@@ -51,11 +51,11 @@ createOffer:
       priceLabel: 200 NOK
       productLabel: +1GB
   createSegments:
-    - id: $SEGMENT_1
+    - id: ${SEGMENT_1}
 EOF
 
 
-cat > $TARGET_DIR/init2.yml <<EOF
+cat > ${TARGET_DIR}/init2.yml <<EOF
 createOffer:
   id: demoOffer2
   createProducts:
@@ -71,10 +71,10 @@ createOffer:
       priceLabel: 200 NOK
       productLabel: +2GB
   createSegments:
-    - id: $SEGMENT_2
+    - id: ${SEGMENT_2}
 EOF
 
-cat > $TARGET_DIR/init3.yml <<EOF
+cat > ${TARGET_DIR}/init3.yml <<EOF
 createOffer:
   id: demoOffer3
   createProducts:
@@ -91,43 +91,43 @@ createOffer:
       priceLabel: 50 NOK
       productLabel: +1GB
   createSegments:
-    - id: $SEGMENT_3
+    - id: ${SEGMENT_3}
 EOF
 
-cat > $TARGET_DIR/step1.yml <<EOF
+cat > ${TARGET_DIR}/step1.yml <<EOF
 updateSegments:
-  - id: $SEGMENT_1
+  - id: ${SEGMENT_1}
     subscribers:
-      - $USER_2
-  - id: $SEGMENT_2
+      - ${USER_2}
+  - id: ${SEGMENT_2}
     subscribers:
-      - $USER_1
-  - id: $SEGMENT_3
-EOF
-
-
-cat > $TARGET_DIR/step2.yml <<EOF
-updateSegments:
-  - id: $SEGMENT_1
-    subscribers:
-      - $USER_2
-  - id: $SEGMENT_2
-    subscribers:
-      - $USER_1
-  - id: $SEGMENT_3
-    subscribers:
-      - $USER_1
+      - ${USER_1}
+  - id: ${SEGMENT_3}
 EOF
 
 
-cat > $TARGET_DIR/reset.yml <<EOF
+cat > ${TARGET_DIR}/step2.yml <<EOF
 updateSegments:
-  - id: $SEGMENT_1
+  - id: ${SEGMENT_1}
     subscribers:
-      - $USER_1
-      - $USER_2
-  - id: $SEGMENT_2
-  - id: $SEGMENT_3
+      - ${USER_2}
+  - id: ${SEGMENT_2}
+    subscribers:
+      - ${USER_1}
+  - id: ${SEGMENT_3}
+    subscribers:
+      - ${USER_1}
+EOF
+
+
+cat > ${TARGET_DIR}/reset.yml <<EOF
+updateSegments:
+  - id: ${SEGMENT_1}
+    subscribers:
+      - ${USER_1}
+      - ${USER_2}
+  - id: ${SEGMENT_2}
+  - id: ${SEGMENT_3}
 EOF
 
 echo "$0: INFO Successfully created demo scripts in directyory $TARGET_DIR"

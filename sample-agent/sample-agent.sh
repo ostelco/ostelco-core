@@ -34,7 +34,7 @@ trap "exit 1" TERM
 export TOP_PID=$$
 
 function die() {
-    kill -s TERM $TOP_PID
+    kill -s TERM ${TOP_PID}
 }
 
 #
@@ -43,8 +43,8 @@ function die() {
 
 DEPENDENCIES="gcloud kubectl gsutil"
 
-for dep in $DEPENDENCIES ; do
-    if [[ -z $(which $dep) ]] ; then
+for dep in ${DEPENDENCIES} ; do
+    if [[ -z $(which ${dep}) ]] ; then
         echo "ERROR: Could not find dependency $dep"
     fi
 done
@@ -110,15 +110,15 @@ function runScriptOnExporterPod {
 
     # Fail if the exec failed
     retVal=$?
-    if [[ $retVal -ne 0 ]]; then
+    if [[ ${retVal} -ne 0 ]]; then
 	echo "ERROR: Failed to $intentDescription"
-	cat $TEMPFILE
-	rm $TEMPFILE
+	cat ${TEMPFILE}
+	rm ${TEMPFILE}
 	die
     fi
 
     # Return result by setting resutlvar to be the temporary filename
-    echo $TEMPFILE
+    echo ${TEMPFILE}
 }
 
 
@@ -134,13 +134,13 @@ function exportDataFromExporterPod {
 	die
     fi
 
-    local exportId="$(grep "Starting export job for" $tmpfilename | awk '{print $5}' |  sed 's/\r$//' )"
+    local exportId="$(grep "Starting export job for" ${tmpfilename} | awk '{print $5}' |  sed 's/\r$//' )"
 
     if [[ -z "$exportId" ]] ; then
 	echo "$0  Could not get export  batch from exporter pod"
     fi
-    rm $tmpfilename
-    echo $exportId
+    rm ${tmpfilename}
+    echo ${exportId}
 }
 
 function mapPseudosToUserids {
@@ -149,7 +149,7 @@ function mapPseudosToUserids {
     local tmpfile="$(runScriptOnExporterPod "/map_subscribers.sh $exportid" "mapping pseudoids to subscriber ids")"
     ##    [[ -f "$tmpfile" ]] && rm "$tmpfile"
     echo "LOG FROM MAPPING IS:"
-    cat $tmpfile
+    cat ${tmpfile}
 }
 
 #
@@ -251,7 +251,7 @@ done
 ##
 
 SEGMENT_TMPFILE_PSEUDO="$(importedCsvFilename "$EXPORT_ID" "$TARGET_DIR" "tmpsegment-pseudo")"
-awk -F, '!/^subscriberId/{print $1'} $(importedCsvFilename "$EXPORT_ID" "$TARGET_DIR" "sub2msisdn") > $SEGMENT_TMPFILE_PSEUDO
+awk -F, '!/^subscriberId/{print $1'} $(importedCsvFilename "$EXPORT_ID" "$TARGET_DIR" "sub2msisdn") > ${SEGMENT_TMPFILE_PSEUDO}
 
 
 ##
@@ -269,7 +269,7 @@ RESULT_SEGMENT_SINGLE_COLUMN="$(importedCsvFilename "$EXPORT_ID" "$TARGET_DIR"  
 
 # Copy the  segment pseudo file to gs
 
-gsutil cp $SEGMENT_TMPFILE_PSEUDO $RESULT_SEGMENT_PSEUDO_GS
+gsutil cp ${SEGMENT_TMPFILE_PSEUDO} ${RESULT_SEGMENT_PSEUDO_GS}
 
 # Then run the script that will convert it into a none-anonymized
 # file and fetch the results from gs:/
@@ -280,7 +280,7 @@ gsutil cp "$RESULT_SEGMENT_CLEAR_GS" "$RESULT_SEGMENT_CLEAR"
 echo "Just placed the results in the file $RESULT_SEGMENT_CLEAR"
 # Then extract only the column we need (the real userids)
 
-awk -F, '!/^pseudoId/{print $2'} $RESULT_SEGMENT_CLEAR > $RESULT_SEGMENT_SINGLE_COLUMN
+awk -F, '!/^pseudoId/{print $2'} ${RESULT_SEGMENT_CLEAR} > ${RESULT_SEGMENT_SINGLE_COLUMN}
 
 
 ##
@@ -290,7 +290,7 @@ awk -F, '!/^pseudoId/{print $2'} $RESULT_SEGMENT_CLEAR > $RESULT_SEGMENT_SINGLE_
 
 IMPORTFILE_YML=tmpfile.yml
 
-cat > $IMPORTFILE_YML <<EOF
+cat > ${IMPORTFILE_YML} <<EOF
 producingAgent:
   name: Simple agent
   version: 1.0
@@ -308,14 +308,14 @@ EOF
 
 # Adding the list of subscribers in clear text (indented six spaces
 # with a leading "-" as per YAML list syntax.
-awk '{print "      - " $1}'  $RESULT_SEGMENT_SINGLE_COLUMN >> $IMPORTFILE_YML
+awk '{print "      - " $1}'  ${RESULT_SEGMENT_SINGLE_COLUMN} >> ${IMPORTFILE_YML}
 
 ##
 ## Send it to the importer
 ## (assuming the kubectl port forwarding is enabled)
 
 IMPORTER_URL=http://127.0.0.1:8080/importer
-curl -H "Content-type: text/vnd.yaml" --data-binary @$IMPORTFILE_YML $IMPORTER_URL
+curl -H "Content-type: text/vnd.yaml" --data-binary @${IMPORTFILE_YML} ${IMPORTER_URL}
 
 
 ##

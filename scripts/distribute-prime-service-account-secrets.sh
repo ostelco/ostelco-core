@@ -13,7 +13,7 @@ fi
 
 echo; echo "======> Creating prime-service-account.json file, using the env variable PRIME_SERVICE_ACCOUNT_SECRETS_FILE"
 for LOCATION in $(find . -name .gitignore  -exec grep prime-service-account.json  '{}' '+' ); do
-  DIR_NAME=$(dirname $LOCATION)
+  DIR_NAME=$(dirname ${LOCATION})
   echo "Creating secrets file: ${DIR_NAME}/prime-service-account.json ..."
   echo ${PRIME_SERVICE_ACCOUNT_SECRETS_FILE} | base64 -d >  ${DIR_NAME}/prime-service-account.json
   ls -l ${DIR_NAME}/prime-service-account.json

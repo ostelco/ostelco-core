@@ -100,7 +100,7 @@ class SimAdministrationModule : PrimeModule {
                 simInventoryDAO = this.DAO,
                 httpClient = httpClient,
                 hssAdapterProxy = hssAdapters,
-                profileVendors = config.profileVendors));
+                profileVendors = config.profileVendors))
     }
 
 

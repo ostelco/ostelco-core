@@ -94,7 +94,7 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
     }
 
     fun reset() {
-        this.smdpPlusService.reset();
+        this.smdpPlusService.reset()
     }
 }
 

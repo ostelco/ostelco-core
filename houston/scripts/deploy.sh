@@ -7,8 +7,8 @@ set -e
 
 DEPENDENCIES="firebase"
 
-for dep in $DEPENDENCIES ; do
-    if [[ -z $(which $dep) ]] ; then
+for dep in ${DEPENDENCIES} ; do
+    if [[ -z $(which ${dep}) ]] ; then
         echo "ERROR: Could not find dependency $dep"
     fi
 done

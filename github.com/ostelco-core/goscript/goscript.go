@@ -266,7 +266,7 @@ func checkIfDockerIsRunning() bool {
 
 	cmd2 := "docker ps 2>&1  | grep 'Cannot connect to the Docker daemon'"
 	out, err = exec.Command("bash", "-c", cmd2).Output()
-	return (len(out) == 0 && err != nil)
+	return len(out) == 0 && err != nil
 }
 
 // AssertDockerIsRunning will terminate the program with exit code 1 if docker is not
