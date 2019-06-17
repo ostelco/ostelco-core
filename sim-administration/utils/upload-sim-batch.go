@@ -110,8 +110,12 @@ func generateUpdateStatementForBuggyEntries(batch Batch) string {
 		buggyIccid := fmt.Sprintf("%d%1d", iccidWithoutLuhnChecksum, buggyLuhnChecksum(iccidWithoutLuhnChecksum))
 
 		if correctIccid != buggyIccid {
-			line := fmt.Sprintf("UPDATE sim_entries SET iccid='%s' WHERE iccid='%s';\n", correctIccid, buggyIccid)
+			line := fmt.Sprintf("UPDATE sim_entries SET iccid='%s' , provisionstate='AVAILABLE' WHERE iccid='%s' AND  provisionstate='ALLOCATION_FAILED';\n", correctIccid, buggyIccid)
+			// XXX Add an AND with the profile, hss, etc. to avoid updating things that shouldn't be updated.
+
 			sb.WriteString(line)
+		} else {
+			sb.WriteString(fmt.Sprintf("-- ICCID = %s is correct\n", correctIccid))
 		}
 		iccidWithoutLuhnChecksum += batch.iccidIncrement
 	}
