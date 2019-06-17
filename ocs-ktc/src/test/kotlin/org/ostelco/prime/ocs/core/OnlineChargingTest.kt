@@ -17,7 +17,7 @@ class OnlineChargingTest {
 
     @Ignore
     @Test
-    fun `load test OnlineCharging directly`() = runBlocking {
+    fun `load test OnlineCharging directly`(): Unit = runBlocking {
 
         // Add delay to DB call and skip analytics and low balance notification
         OnlineCharging.loadUnitTest = true

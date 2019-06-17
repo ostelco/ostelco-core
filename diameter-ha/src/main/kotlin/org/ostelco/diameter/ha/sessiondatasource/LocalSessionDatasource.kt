@@ -42,7 +42,7 @@ class LocalSessionDatasource(container: IContainer) : ISessionDatasource {
     private val logger by logger()
     private val localDataSource: ISessionDatasource = LocalDataSource()
 
-    protected var appSessionDataFactories = HashMap<Class<out IAppSessionData>, IAppSessionDataFactory<out IAppSessionData>>()
+    protected var appSessionDataFactories: HashMap<Class<out IAppSessionData>, IAppSessionDataFactory<out IAppSessionData>> = HashMap<Class<out IAppSessionData>, IAppSessionDataFactory<out IAppSessionData>>()
 
     init {
         appSessionDataFactories[IAuthSessionData::class.java] = AuthLocalSessionDataFactory()

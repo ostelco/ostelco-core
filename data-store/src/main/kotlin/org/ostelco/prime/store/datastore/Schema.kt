@@ -157,7 +157,7 @@ class EntityStore<T>(
         return returnList
     }
 
-    fun delete(keyString: String) = datastore.delete(keyFactory.newKey(keyString))
+    fun delete(keyString: String): Unit = datastore.delete(keyFactory.newKey(keyString))
 
     fun close() {
         localDatastoreHelper?.stop()

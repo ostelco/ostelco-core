@@ -45,9 +45,9 @@ object RelationRegistry {
         relationStoreMap[relation] = relationStore
     }
 
-    fun getRelationType(relation: Relation) = relationTypeMap[relation]
+    fun getRelationType(relation: Relation): RelationType<out HasId, *, out HasId>? = relationTypeMap[relation]
 
-    fun <FROM : HasId> getRelationTypeFrom(from: KClass<FROM>) = relationFromTypeMap[from]
+    fun <FROM : HasId> getRelationTypeFrom(from: KClass<FROM>): RelationType<out HasId, *, out HasId>? = relationFromTypeMap[from]
 
-    fun <TO : HasId> getRelationTypeTo(to: KClass<TO>) = relationToTypeMap[to]
+    fun <TO : HasId> getRelationTypeTo(to: KClass<TO>): RelationType<out HasId, *, out HasId>? = relationToTypeMap[to]
 }

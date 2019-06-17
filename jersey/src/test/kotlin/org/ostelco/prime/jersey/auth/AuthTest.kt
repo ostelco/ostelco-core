@@ -12,6 +12,7 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.ostelco.prime.jersey.auth.helpers.AccessToken
 import org.ostelco.prime.jersey.auth.helpers.TestApp
+import org.ostelco.prime.jersey.auth.helpers.TestConfig
 import javax.ws.rs.client.Client
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
@@ -81,7 +82,7 @@ class AuthTest {
 
         @JvmField
         @ClassRule
-        val RULE = DropwizardAppRule(TestApp::class.java, ResourceHelpers.resourceFilePath("test.yaml"),
+        val RULE: DropwizardAppRule<TestConfig> = DropwizardAppRule(TestApp::class.java, ResourceHelpers.resourceFilePath("test.yaml"),
                 ConfigOverride.config("secret", key))
 
         @BeforeClass

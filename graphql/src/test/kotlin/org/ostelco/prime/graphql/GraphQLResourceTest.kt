@@ -56,7 +56,7 @@ class GraphQLResourceTest {
 
     companion object {
 
-        val AUTHENTICATOR = mock(OAuthAuthenticator::class.java)
+        val AUTHENTICATOR: OAuthAuthenticator? = mock(OAuthAuthenticator::class.java)
 
         @JvmField
         @ClassRule

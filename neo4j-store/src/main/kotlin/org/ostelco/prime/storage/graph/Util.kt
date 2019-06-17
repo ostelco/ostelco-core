@@ -10,7 +10,7 @@ import org.ostelco.prime.storage.AdminDataSource
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 
-val adminStore by lazy { getResource<AdminDataSource>() }
+val adminStore: AdminDataSource by lazy { getResource<AdminDataSource>() }
 
 // Helper for naming of default segments based on country code.
 fun getSegmentNameFromCountryCode(countryCode: String): String = "country-$countryCode".toLowerCase()

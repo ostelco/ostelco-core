@@ -70,7 +70,7 @@ class Config {
     @Valid
     @NotNull
     @get:JsonProperty("jerseyClient")
-    val jerseyClientConfiguration = JerseyClientConfiguration()
+    val jerseyClientConfiguration: JerseyClientConfiguration = JerseyClientConfiguration()
 
     @JsonProperty("authenticationCachePolicy")
     fun setAuthenticationCachePolicy(spec: String) {

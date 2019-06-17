@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit
 
 object OnlineCharging : OcsAsyncRequestConsumer {
 
-    var loadUnitTest = false
+    var loadUnitTest: Boolean = false
     private val loadAcceptanceTest = System.getenv("LOAD_TESTING") == "true"
 
     private val storage: ClientDataSource = getResource()

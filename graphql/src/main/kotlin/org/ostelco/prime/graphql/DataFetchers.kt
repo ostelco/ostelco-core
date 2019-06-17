@@ -8,7 +8,7 @@ import org.ostelco.prime.model.Identity
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.ClientDataSource
 
-val clientDataSource by lazy { getResource<ClientDataSource>() }
+val clientDataSource: ClientDataSource by lazy { getResource<ClientDataSource>() }
 
 
 class ContextDataFetcher : DataFetcher<Map<String, Any>> {

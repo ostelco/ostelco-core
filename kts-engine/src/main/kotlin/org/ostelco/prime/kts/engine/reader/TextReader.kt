@@ -18,5 +18,5 @@ data class ClasspathResourceTextReader(val filename: String) : TextReader {
 
 @JsonTypeName("file")
 data class FileTextReader(val filename: String) : TextReader {
-    override fun readText() = java.io.FileReader(filename).readText()
+    override fun readText(): String = java.io.FileReader(filename).readText()
 }

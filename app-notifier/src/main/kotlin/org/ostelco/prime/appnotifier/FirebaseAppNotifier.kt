@@ -15,7 +15,7 @@ import org.ostelco.prime.storage.ClientDataSource
 class FirebaseAppNotifier: AppNotifier {
     private val logger by getLogger()
 
-    val listOfFailureCodes = listOf(
+    val listOfFailureCodes: List<String> = listOf(
             "messaging/invalid-recipient",
             "messaging/invalid-registration-token",
             "messaging/registration-token-not-registered"

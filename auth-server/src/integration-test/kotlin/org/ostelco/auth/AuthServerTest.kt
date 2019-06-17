@@ -17,7 +17,7 @@ class AuthServerTest {
 
         @JvmField
         @ClassRule
-        val RULE = DropwizardAppRule(
+        val RULE: DropwizardAppRule<AuthServerConfig> = DropwizardAppRule(
                 AuthServerApplication::class.java,
                 ResourceHelpers.resourceFilePath("config.yaml"))
     }

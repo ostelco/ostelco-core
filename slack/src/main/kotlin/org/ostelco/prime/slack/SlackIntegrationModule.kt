@@ -33,7 +33,7 @@ class SlackIntegrationModule : PrimeModule {
 }
 
 object Registry {
-    var isInitialized = false
+    var isInitialized: Boolean = false
     lateinit var slackWebHookClient: SlackWebHookClient
     lateinit var channel: String
     lateinit var userName: String
@@ -49,7 +49,7 @@ class NotificationsConfig {
     lateinit var webHookUri: String
 
     @JsonProperty("httpClient")
-    var httpClientConfiguration = HttpClientConfiguration()
+    var httpClientConfiguration: HttpClientConfiguration = HttpClientConfiguration()
 
     @JsonProperty
     var channel: String = "general"

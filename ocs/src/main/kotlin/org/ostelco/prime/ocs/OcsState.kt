@@ -22,7 +22,7 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<OcsEvent> {
     private val logger by getLogger()
 
     // this is public for prime:integration tests
-    val msisdnToBundleIdMap = HashMap<String, String>()
+    val msisdnToBundleIdMap: HashMap<String, String> = HashMap<String, String>()
     private val bundleIdToMsisdnMap = HashMap<String, MutableSet<String>>()
 
     private val bundleBalanceMap = HashMap<String, Long>()

@@ -15,6 +15,9 @@ object AnalyticsReporter : EventHandler<OcsEvent> {
 
     private val analyticsReporter by lazy { getResource<AnalyticsService>() }
 
+    /**
+     *  React to incoming OCS events.
+     */
     override fun onEvent(
             event: OcsEvent,
             sequence: Long,

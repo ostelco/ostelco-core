@@ -134,11 +134,11 @@ class MyInfoClientTest {
 
         @JvmStatic
         @BeforeClass
-        fun beforeClass() = SUPPORT.before()
+        fun beforeClass(): Unit = SUPPORT.before()
 
         @JvmStatic
         @AfterClass
-        fun afterClass() = SUPPORT.after()
+        fun afterClass(): Unit = SUPPORT.after()
     }
 }
 
