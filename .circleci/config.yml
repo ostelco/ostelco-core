@@ -49,7 +49,7 @@ jobs:
       # run gradle build. Skipping neo4j tests as they fail
       - run:
           name: Build entire repo
-          command: ./gradlew clean build -info -s -x :neo4j-store:test
+          command: ./gradlew --build-cache build -info -s -x :neo4j-store:test
       - run:
           name: Push Gradle cache
           command: |
@@ -146,7 +146,7 @@ jobs:
             javac -version
       - run:
           name: Gradle Build Prime
-          command:  ./gradlew clean prime:build -info -s -x test -x integration
+          command:  ./gradlew --build-cache prime:build -info -s -x test -x integration
       # - run:
       #     name: Gradle Build OCSGW 
       #     command: |
@@ -158,6 +158,9 @@ jobs:
             rm -fr ~/.gradle/caches/*/plugin-resolution/
             tar -czvf  ~/caches.tar.gz  -C ~/.gradle/caches .
             gsutil cp  ~/caches.tar.gz gs://pi-ostelco-core-gradle-cache
+      - run: 
+          name: Persist Prime version
+          command: ./gradlew -q version > prime_version      
 
       - persist_to_workspace:
           root: ~/project/
@@ -194,7 +197,8 @@ jobs:
           name: build Prime docker image and push image to GCR
           command: |
             gcloud auth configure-docker --quiet
-            TAG=${CIRCLE_SHA1:0:9}
+            PRIME_VERSION=$(cat prime_version)
+            TAG=$PRIME_VERSION-${CIRCLE_SHA1:0:9}
             cd prime
             docker build -t eu.gcr.io/pi-ostelco-dev/prime:$TAG .
             docker push eu.gcr.io/pi-ostelco-dev/prime:$TAG  
@@ -249,14 +253,18 @@ jobs:
         environment:
           PROJECT: pi-ostelco-dev
           CLUSTER: pi-dev
-          ZONE: europe-west1-c
+          ZONE: europe-west1
           SERVICE_ACCOUNT: terraform-dev-cluster@pi-ostelco-dev.iam.gserviceaccount.com
     steps:
-      - checkout
+      - attach_workspace:
+          # Must be absolute path or relative path from working_directory
+          at: ~/project
 
       - run:
           name: deploy prime to the dev cluster
           command: |
+            PRIME_VERSION=$(cat prime_version)
+            TAG=$PRIME_VERSION-${CIRCLE_SHA1:0:9}
             export GOOGLE_CREDENTIALS=${PI_DEV_CLUSTER_CREDENTIALS}
             /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
@@ -264,7 +272,7 @@ jobs:
             helm upgrade prime ostelco/prime --version 0.6.3 --install \
              --namespace dev \
              -f .circleci/prime-dev-values.yaml \
-             --set prime.tag=${CIRCLE_SHA1:0:9} 
+             --set prime.tag=$TAG 
 
       - run:
           name: notify slack on failure
@@ -310,10 +318,14 @@ jobs:
           SERVICE_ACCOUNT: terraform-manage-cluster-from@pi-ostelco-prod.iam.gserviceaccount.com
 
     steps:
-      - checkout
+      - attach_workspace:
+          # Must be absolute path or relative path from working_directory
+          at: ~/project
       - run:
           name: deploy canary prime to the prod cluster
           command: |
+            PRIME_VERSION=$(cat prime_version)
+            TAG=$PRIME_VERSION-${CIRCLE_SHA1:0:9}
             export GOOGLE_CREDENTIALS=${PI_PROD_CLUSTER_CREDENTIALS}
             /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
@@ -321,7 +333,7 @@ jobs:
             helm upgrade prime ostelco/prime --version 0.6.3 --install \
              --namespace prod \
              -f .circleci/prime-prod-values.yaml \
-             --set prime.tag=${CIRCLE_SHA1:0:9}
+             --set prime.tag=$TAG
 
 #             --set-string canary.tag=${CIRCLE_SHA1:0:9} \
 #             --set canary.weight=0
