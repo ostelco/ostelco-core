@@ -49,7 +49,7 @@ jobs:
       # run gradle build. Skipping neo4j tests as they fail
       - run:
           name: Build entire repo
-          command: ./gradlew build -info -s -x :neo4j-store:test
+          command: ./gradlew --build-cache build -info -s -x :neo4j-store:test
       - run:
           name: Push Gradle cache
           command: |
@@ -146,7 +146,7 @@ jobs:
             javac -version
       - run:
           name: Gradle Build Prime
-          command:  ./gradlew prime:build -info -s -x test -x integration
+          command:  ./gradlew --build-cache prime:build -info -s -x test -x integration
       # - run:
       #     name: Gradle Build OCSGW 
       #     command: |
@@ -198,7 +198,7 @@ jobs:
           command: |
             gcloud auth configure-docker --quiet
             PRIME_VERSION=$(cat prime_version)
-            TAG=Prime-$PRIME_VERSION-${CIRCLE_SHA1:0:9}
+            TAG=$PRIME_VERSION-${CIRCLE_SHA1:0:9}
             cd prime
             docker build -t eu.gcr.io/pi-ostelco-dev/prime:$TAG .
             docker push eu.gcr.io/pi-ostelco-dev/prime:$TAG  
@@ -264,7 +264,7 @@ jobs:
           name: deploy prime to the dev cluster
           command: |
             PRIME_VERSION=$(cat prime_version)
-            TAG=Prime-$PRIME_VERSION-${CIRCLE_SHA1:0:9}
+            TAG=$PRIME_VERSION-${CIRCLE_SHA1:0:9}
             export GOOGLE_CREDENTIALS=${PI_DEV_CLUSTER_CREDENTIALS}
             /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
@@ -325,7 +325,7 @@ jobs:
           name: deploy canary prime to the prod cluster
           command: |
             PRIME_VERSION=$(cat prime_version)
-            TAG=Prime-$PRIME_VERSION-${CIRCLE_SHA1:0:9}
+            TAG=$PRIME_VERSION-${CIRCLE_SHA1:0:9}
             export GOOGLE_CREDENTIALS=${PI_PROD_CLUSTER_CREDENTIALS}
             /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
