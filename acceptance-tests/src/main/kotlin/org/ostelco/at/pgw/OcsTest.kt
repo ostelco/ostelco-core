@@ -127,7 +127,7 @@ class OcsTest {
                 session
         ) ?: fail("Failed to create request")
 
-        TestHelper.createInitRequestMultiRatingGroups(request.getAvps(), msisdn, 5000L)
+        TestHelper.createInitRequestMultiRatingGroups(request.avps, msisdn, 5000L)
 
         testClient.sendNextRequest(request, session)
 
@@ -136,21 +136,20 @@ class OcsTest {
         val result = testClient.getAnswer(session.sessionId)
         assertEquals(DIAMETER_SUCCESS, result?.resultCode)
         val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
-        assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String())
-        assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String())
-        assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32().toLong())
+        assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
+        assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
+        assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
         val resultMSCCs = resultAvps.getAvps(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
         assertEquals(3, resultMSCCs.size().toLong())
         for (i in 0 until resultMSCCs.size()) {
-            val mscc = resultMSCCs.getAvpByIndex(i).getGrouped()
-            assertEquals(DIAMETER_SUCCESS, mscc.getAvp(Avp.RESULT_CODE).getInteger32().toLong())
+            val mscc = resultMSCCs.getAvpByIndex(i).grouped
+            assertEquals(DIAMETER_SUCCESS, mscc.getAvp(Avp.RESULT_CODE).integer32.toLong())
             val granted = mscc.getAvp(Avp.GRANTED_SERVICE_UNIT)
-            assertEquals(5000L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64())
-            val serviceIdentifier = mscc.getAvp(Avp.SERVICE_IDENTIFIER_CCA).getUnsigned32().toInt()
-            when (serviceIdentifier) {
-                1 -> assertEquals(10, mscc.getAvp(Avp.RATING_GROUP).getUnsigned32())
-                2 -> assertEquals(12, mscc.getAvp(Avp.RATING_GROUP).getUnsigned32())
-                4 -> assertEquals(14, mscc.getAvp(Avp.RATING_GROUP).getUnsigned32())
+            assertEquals(5000L, granted.grouped.getAvp(Avp.CC_TOTAL_OCTETS).unsigned64)
+            when (mscc.getAvp(Avp.SERVICE_IDENTIFIER_CCA).unsigned32.toInt()) {
+                1 -> assertEquals(10, mscc.getAvp(Avp.RATING_GROUP).unsigned32)
+                2 -> assertEquals(12, mscc.getAvp(Avp.RATING_GROUP).unsigned32)
+                4 -> assertEquals(14, mscc.getAvp(Avp.RATING_GROUP).unsigned32)
                 else -> fail("Unexpected Service-Identifier")
             }
         }
@@ -167,7 +166,7 @@ class OcsTest {
                 session
         ) ?: fail("Failed to create request")
 
-        TestHelper.createInitRequestMultiRatingGroups(request.getAvps(), "4794763521", 5000L)
+        TestHelper.createInitRequestMultiRatingGroups(request.avps, "4794763521", 5000L)
 
         testClient.sendNextRequest(request, session)
 
@@ -176,21 +175,20 @@ class OcsTest {
         val result = testClient.getAnswer(session.sessionId)
         assertEquals(DIAMETER_USER_UNKNOWN, result?.resultCode)
         val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
-        assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String())
-        assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String())
-        assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32().toLong())
+        assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
+        assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
+        assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
         val resultMSCCs = resultAvps.getAvps(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
         assertEquals(3, resultMSCCs.size().toLong())
         for (i in 0 until resultMSCCs.size()) {
-            val mscc = resultMSCCs.getAvpByIndex(i).getGrouped()
-            assertEquals(DIAMETER_USER_UNKNOWN, mscc.getAvp(Avp.RESULT_CODE).getInteger32().toLong())
+            val mscc = resultMSCCs.getAvpByIndex(i).grouped
+            assertEquals(DIAMETER_USER_UNKNOWN, mscc.getAvp(Avp.RESULT_CODE).integer32.toLong())
             val granted = mscc.getAvp(Avp.GRANTED_SERVICE_UNIT)
-            assertEquals(0L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64())
-            val serviceIdentifier = mscc.getAvp(Avp.SERVICE_IDENTIFIER_CCA).getUnsigned32().toInt()
-            when (serviceIdentifier) {
-                1 -> assertEquals(10, mscc.getAvp(Avp.RATING_GROUP).getUnsigned32())
-                2 -> assertEquals(12, mscc.getAvp(Avp.RATING_GROUP).getUnsigned32())
-                4 -> assertEquals(14, mscc.getAvp(Avp.RATING_GROUP).getUnsigned32())
+            assertEquals(0L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).unsigned64)
+            when (mscc.getAvp(Avp.SERVICE_IDENTIFIER_CCA).unsigned32.toInt()) {
+                1 -> assertEquals(10, mscc.getAvp(Avp.RATING_GROUP).unsigned32)
+                2 -> assertEquals(12, mscc.getAvp(Avp.RATING_GROUP).unsigned32)
+                4 -> assertEquals(14, mscc.getAvp(Avp.RATING_GROUP).unsigned32)
                 else -> fail("Unexpected Service-Identifier")
             }
         }
@@ -507,7 +505,7 @@ class OcsTest {
 
         run {
             val result = testClient.getAnswer(session.sessionId)
-            assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+            assertEquals(DIAMETER_USER_UNKNOWN, result?.resultCode)
             val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
             assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
             assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
@@ -555,7 +553,7 @@ class OcsTest {
     }
 
     @Test
-    fun CreditControlRequestInitUpdateAndTerminateNoRequestedServiceUnit() {
+    fun creditControlRequestInitUpdateAndTerminateNoRequestedServiceUnit() {
 
         val email = "ocs-${randomInt()}@test.com"
         createCustomer(name = "Test OCS User", email = email)
@@ -629,19 +627,17 @@ class OcsTest {
 
     private fun waitForAnswer(sessionId: String) {
 
-        val client = testClient ?: fail("Test client is null")
-
         var i = 0
-        while (!client.isAnswerReceived(sessionId) && i < 10) {
+        while (!testClient.isAnswerReceived(sessionId) && i < 10) {
             i++
             try {
-                Thread.sleep(500)
+                sleep(500)
             } catch (e: InterruptedException) {
                 logger.error("Start Failed", e)
             }
 
         }
-        assertEquals(true, client.isAnswerReceived(sessionId))
+        assertEquals(true, testClient.isAnswerReceived(sessionId))
     }
 
     companion object {
@@ -661,7 +657,7 @@ class OcsTest {
         lateinit var testClient: TestClient
 
         //configuration file
-        private val configFile = "client-jdiameter-config.xml"
+        private const val configFile = "client-jdiameter-config.xml"
 
         @BeforeClass @JvmStatic fun setup() {
             testClient = TestClient()
