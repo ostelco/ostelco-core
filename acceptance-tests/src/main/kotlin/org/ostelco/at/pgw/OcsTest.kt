@@ -27,23 +27,6 @@ class OcsTest {
 
     private val logger by getLogger()
 
-    //configuration file
-    private val configFile = "client-jdiameter-config.xml"
-
-    private var testClient: TestClient? = null
-
-    @BeforeClass
-    fun setUp() {
-        testClient = TestClient()
-        testClient?.initStack("/", configFile)
-    }
-
-    @AfterClass
-    fun tearDown() {
-        testClient?.shutdown()
-        testClient = null
-    }
-
     private fun simpleCreditControlRequestInit(session : Session,
                                                msisdn : String,
                                                requestedBucketSize : Long,
@@ -51,9 +34,7 @@ class OcsTest {
                                                ratingGroup : Int,
                                                serviceIdentifier : Int) {
 
-        val client = testClient ?: fail("Test client is null")
-
-        val request = client.createRequest(
+        val request = testClient.createRequest(
                 DEST_REALM,
                 DEST_HOST,
                 session
@@ -61,11 +42,11 @@ class OcsTest {
 
         TestHelper.createInitRequest(request.avps, msisdn, requestedBucketSize, ratingGroup, serviceIdentifier)
 
-        client.sendNextRequest(request, session)
+        testClient.sendNextRequest(request, session)
 
         waitForAnswer(session.sessionId)
 
-        val result = client.getAnswer(session.sessionId)
+        val result = testClient.getAnswer(session.sessionId)
         assertEquals(DIAMETER_SUCCESS, result?.resultCode)
         val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
         assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
@@ -91,9 +72,7 @@ class OcsTest {
                                                  ratingGroup : Int,
                                                  serviceIdentifier : Int) {
 
-        val client = testClient ?: fail("Test client is null")
-
-        val request = client.createRequest(
+        val request = testClient.createRequest(
                 DEST_REALM,
                 DEST_HOST,
                 session
@@ -101,11 +80,11 @@ class OcsTest {
 
         TestHelper.createUpdateRequest(request.avps, msisdn, requestedBucketSize, usedBucketSize, ratingGroup, serviceIdentifier)
 
-        client.sendNextRequest(request, session)
+        testClient.sendNextRequest(request, session)
 
         waitForAnswer(session.sessionId)
 
-        val result = client.getAnswer(session.sessionId)
+        val result = testClient.getAnswer(session.sessionId)
         assertEquals(DIAMETER_SUCCESS, result?.resultCode)
         val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
         assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
@@ -141,10 +120,8 @@ class OcsTest {
 
         val msisdn = createSubscription(email = email)
 
-        val client = testClient ?: fail("Test client is null")
-
-        val session = client.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
-        val request = client.createRequest(
+        val session = testClient.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
+        val request = testClient.createRequest(
                 DEST_REALM,
                 DEST_HOST,
                 session
@@ -152,11 +129,11 @@ class OcsTest {
 
         TestHelper.createInitRequestMultiRatingGroups(request.getAvps(), msisdn, 5000L)
 
-        client.sendNextRequest(request, session)
+        testClient.sendNextRequest(request, session)
 
         waitForAnswer(session.sessionId)
 
-        val result = client.getAnswer(session.sessionId)
+        val result = testClient.getAnswer(session.sessionId)
         assertEquals(DIAMETER_SUCCESS, result?.resultCode)
         val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
         assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String())
@@ -183,10 +160,8 @@ class OcsTest {
     // This is disabled until this is implemented in the store
     fun multiRatingGroupsInitUserUnknown() {
 
-        val client = testClient ?: fail("Test client is null")
-
-        val session = client.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
-        val request = client.createRequest(
+        val session = testClient.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
+        val request = testClient.createRequest(
                 DEST_REALM,
                 DEST_HOST,
                 session
@@ -194,11 +169,11 @@ class OcsTest {
 
         TestHelper.createInitRequestMultiRatingGroups(request.getAvps(), "4794763521", 5000L)
 
-        client.sendNextRequest(request, session)
+        testClient.sendNextRequest(request, session)
 
         waitForAnswer(session.sessionId)
 
-        val result = client.getAnswer(session.sessionId)
+        val result = testClient.getAnswer(session.sessionId)
         assertEquals(DIAMETER_USER_UNKNOWN, result?.resultCode)
         val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
         assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String())
@@ -229,19 +204,17 @@ class OcsTest {
 
         val msisdn = createSubscription(email = email)
 
-        val client = testClient ?: fail("Test client is null")
-
         val ratingGroup = 10
         val serviceIdentifier = 1
 
-        val session = client.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
+        val session = testClient.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
         simpleCreditControlRequestInit(session, msisdn, BUCKET_SIZE, BUCKET_SIZE, ratingGroup, serviceIdentifier)
         assertEquals(INITIAL_BALANCE - BUCKET_SIZE, getBalance(email = email), message = "Incorrect balance after init")
 
         simpleCreditControlRequestUpdate(session, msisdn, BUCKET_SIZE, BUCKET_SIZE, BUCKET_SIZE, ratingGroup, serviceIdentifier)
         assertEquals(INITIAL_BALANCE - 2 * BUCKET_SIZE, getBalance(email = email), message = "Incorrect balance after update")
 
-        val request = client.createRequest(
+        val request = testClient.createRequest(
                 DEST_REALM,
                 DEST_HOST,
                 session
@@ -249,11 +222,11 @@ class OcsTest {
 
         TestHelper.createTerminateRequest(request.avps, msisdn, BUCKET_SIZE, ratingGroup, serviceIdentifier)
 
-        client.sendNextRequest(request, session)
+        testClient.sendNextRequest(request, session)
 
         waitForAnswer(session.sessionId)
 
-        val result = client.getAnswer(session.sessionId)
+        val result = testClient.getAnswer(session.sessionId)
         assertEquals(DIAMETER_SUCCESS, result?.resultCode)
         val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
         assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
@@ -275,10 +248,8 @@ class OcsTest {
         val ratingGroup = 10
         val serviceIdentifier = 1
 
-        val client = testClient ?: fail("Test client is null")
-
-        var session = client.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
-        var request = client.createRequest(
+        var session = testClient.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
+        var request = testClient.createRequest(
                 DEST_REALM,
                 DEST_HOST,
                 session
@@ -288,13 +259,13 @@ class OcsTest {
         // Requesting one more bucket then the balance for the user
         TestHelper.createInitRequest(request.avps, msisdn, INITIAL_BALANCE + BUCKET_SIZE, ratingGroup, serviceIdentifier)
 
-        client.sendNextRequest(request, session)
+        testClient.sendNextRequest(request, session)
 
         waitForAnswer(session.sessionId)
 
         // First request should reserve the full balance
         run {
-            val result = client.getAnswer(session.sessionId)
+            val result = testClient.getAnswer(session.sessionId)
             assertEquals(DIAMETER_SUCCESS, result?.resultCode)
             val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
             assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
@@ -311,7 +282,7 @@ class OcsTest {
         }
         // There is 2 step in graceful shutdown. First OCS send terminate in Final-Unit-Indication, then P-GW report used units in a final update
 
-        val updateRequest = client.createRequest(
+        val updateRequest = testClient.createRequest(
                 DEST_REALM,
                 DEST_HOST,
                 session
@@ -319,12 +290,12 @@ class OcsTest {
 
         TestHelper.createUpdateRequestFinal(updateRequest.avps, msisdn, INITIAL_BALANCE, ratingGroup, serviceIdentifier)
 
-        client.sendNextRequest(updateRequest, session)
+        testClient.sendNextRequest(updateRequest, session)
 
         waitForAnswer(session.sessionId)
 
         run {
-            val result = client.getAnswer(session.sessionId)
+            val result = testClient.getAnswer(session.sessionId)
             assertEquals(DIAMETER_SUCCESS, result?.resultCode)
             val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
             assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
@@ -333,19 +304,19 @@ class OcsTest {
         }
 
         // Last step is P-GW sending CCR-Terminate
-        val terminateRequest = client.createRequest(
+        val terminateRequest = testClient.createRequest(
                 DEST_REALM,
                 DEST_HOST,
                 session
         ) ?: fail("Failed to create request")
         TestHelper.createTerminateRequest(terminateRequest.avps, msisdn)
 
-        client.sendNextRequest(terminateRequest, session)
+        testClient.sendNextRequest(terminateRequest, session)
 
         waitForAnswer(session.sessionId)
 
         run {
-            val result = client.getAnswer(session.sessionId)
+            val result = testClient.getAnswer(session.sessionId)
             assertEquals(DIAMETER_SUCCESS, result?.resultCode)
             val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
             assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
@@ -355,8 +326,8 @@ class OcsTest {
 
         // If P-GW tries another CCR-I we should reply DIAMETER_CREDIT_LIMIT_REACHED
 
-        session = client.createSession(object{}.javaClass.enclosingMethod.name + "-2") ?: fail("Failed to create session")
-        request = client.createRequest(
+        session = testClient.createSession(object{}.javaClass.enclosingMethod.name + "-2") ?: fail("Failed to create session")
+        request = testClient.createRequest(
                 DEST_REALM,
                 DEST_HOST,
                 session
@@ -366,13 +337,13 @@ class OcsTest {
         // Requesting one more bucket, the balance should be zero now
         TestHelper.createInitRequest(request.avps, msisdn, BUCKET_SIZE, ratingGroup, serviceIdentifier)
 
-        client.sendNextRequest(request, session)
+        testClient.sendNextRequest(request, session)
 
         waitForAnswer(session.sessionId)
 
         // First request should reserve the full balance
         run {
-            val result = client.getAnswer(session.sessionId)
+            val result = testClient.getAnswer(session.sessionId)
             assertEquals(DIAMETER_SUCCESS, result?.resultCode)
             val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
             assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
@@ -399,10 +370,8 @@ class OcsTest {
         val ratingGroup = 10
         val serviceIdentifier = 1
 
-        val client = testClient ?: fail("Test client is null")
-
-        var session = client.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
-        var request = client.createRequest(
+        var session = testClient.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
+        var request = testClient.createRequest(
                 DEST_REALM,
                 DEST_HOST,
                 session
@@ -412,13 +381,13 @@ class OcsTest {
         // Requesting one more bucket then the balance for the user
         TestHelper.createInitRequest(request.avps, msisdn, INITIAL_BALANCE + BUCKET_SIZE, ratingGroup, serviceIdentifier)
 
-        client.sendNextRequest(request, session)
+        testClient.sendNextRequest(request, session)
 
         waitForAnswer(session.sessionId)
 
         // First request should reserve the full balance
         run {
-            val result = client.getAnswer(session.sessionId)
+            val result = testClient.getAnswer(session.sessionId)
             assertEquals(DIAMETER_SUCCESS, result?.resultCode)
             val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
             assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
@@ -434,7 +403,7 @@ class OcsTest {
 
         // Next request should deny request and grant no quota
 
-        val updateRequest = client.createRequest(
+        val updateRequest = testClient.createRequest(
                 DEST_REALM,
                 DEST_HOST,
                 session
@@ -442,12 +411,12 @@ class OcsTest {
 
         TestHelper.createUpdateRequest(updateRequest.avps, msisdn, BUCKET_SIZE, INITIAL_BALANCE, ratingGroup, serviceIdentifier)
 
-        client.sendNextRequest(updateRequest, session)
+        testClient.sendNextRequest(updateRequest, session)
 
         waitForAnswer(session.sessionId)
 
         run {
-            val result = client.getAnswer(session.sessionId)
+            val result = testClient.getAnswer(session.sessionId)
             assertEquals(DIAMETER_SUCCESS, result?.resultCode)
             val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
             assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
@@ -462,19 +431,19 @@ class OcsTest {
         }
 
         // Simulate UE disconnect by P-GW sending CCR-Terminate
-        val terminateRequest = client.createRequest(
+        val terminateRequest = testClient.createRequest(
                 DEST_REALM,
                 DEST_HOST,
                 session
         ) ?: fail("Failed to create request")
         TestHelper.createTerminateRequest(terminateRequest.avps, msisdn)
 
-        client.sendNextRequest(terminateRequest, session)
+        testClient.sendNextRequest(terminateRequest, session)
 
         waitForAnswer(session.sessionId)
 
         run {
-            val result = client.getAnswer(session.sessionId)
+            val result = testClient.getAnswer(session.sessionId)
             assertEquals(DIAMETER_SUCCESS, result?.resultCode)
             val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
             assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
@@ -484,8 +453,8 @@ class OcsTest {
 
         // If UE attach again and P-GW tries another CCR-I we should get DIAMETER_CREDIT_LIMIT_REACHED
 
-        session = client.createSession(object{}.javaClass.enclosingMethod.name + "-2") ?: fail("Failed to create session")
-        request = client.createRequest(
+        session = testClient.createSession(object{}.javaClass.enclosingMethod.name + "-2") ?: fail("Failed to create session")
+        request = testClient.createRequest(
                 DEST_REALM,
                 DEST_HOST,
                 session
@@ -495,13 +464,13 @@ class OcsTest {
         // Requesting one more bucket, the balance should be zero now
         TestHelper.createInitRequest(request.avps, msisdn, BUCKET_SIZE, ratingGroup, serviceIdentifier)
 
-        client.sendNextRequest(request, session)
+        testClient.sendNextRequest(request, session)
 
         waitForAnswer(session.sessionId)
 
         // First request should reserve the full balance
         run {
-            val result = client.getAnswer(session.sessionId)
+            val result = testClient.getAnswer(session.sessionId)
             assertEquals(DIAMETER_SUCCESS, result?.resultCode)
             val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
             assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
@@ -521,10 +490,8 @@ class OcsTest {
     @Test
     fun creditControlRequestInitUnknownUser() {
 
-        val client = testClient ?: fail("Test client is null")
-
-        val session = client.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
-        val request = client.createRequest(
+        val session = testClient.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
+        val request = testClient.createRequest(
                 DEST_REALM,
                 DEST_HOST,
                 session
@@ -534,12 +501,12 @@ class OcsTest {
         // Requesting bucket for msisdn not in our system
         TestHelper.createInitRequest(request.avps, "93682751", BUCKET_SIZE, 10, 1)
 
-        client.sendNextRequest(request, session)
+        testClient.sendNextRequest(request, session)
 
         waitForAnswer(session.sessionId)
 
         run {
-            val result = client.getAnswer(session.sessionId)
+            val result = testClient.getAnswer(session.sessionId)
             assertEquals(DIAMETER_SUCCESS, result?.resultCode)
             val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
             assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
@@ -556,10 +523,8 @@ class OcsTest {
 
         val msisdn = createSubscription(email = email)
 
-        val client = testClient ?: fail("Test client is null")
-
-        val session = client.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
-        val request = client.createRequest(
+        val session = testClient.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
+        val request = testClient.createRequest(
                 DEST_REALM,
                 DEST_HOST,
                 session
@@ -570,12 +535,12 @@ class OcsTest {
 
         TestHelper.createInitRequest(request.avps, msisdn, BUCKET_SIZE, ratingGroup, serviceIdentifier)
 
-        client.sendNextRequest(request, session)
+        testClient.sendNextRequest(request, session)
 
         waitForAnswer(session.sessionId)
 
         run {
-            val result = client.getAnswer(session.sessionId)
+            val result = testClient.getAnswer(session.sessionId)
             assertEquals(DIAMETER_SUCCESS, result?.resultCode)
             val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
             assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
@@ -600,15 +565,13 @@ class OcsTest {
         val ratingGroup = 10
         val serviceIdentifier = -1
 
-        val client = testClient ?: fail("Test client is null")
-
-        val session = client.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
+        val session = testClient.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
 
         // This test assume that the default bucket size is set to 4000000L
         simpleCreditControlRequestInit(session, msisdn,0L, DEFAULT_REQUESTED_SERVICE_UNIT, ratingGroup, serviceIdentifier)
         simpleCreditControlRequestUpdate(session, msisdn, 0L, DEFAULT_REQUESTED_SERVICE_UNIT, DEFAULT_REQUESTED_SERVICE_UNIT, ratingGroup, serviceIdentifier)
 
-        val request = client.createRequest(
+        val request = testClient.createRequest(
                 DEST_REALM,
                 DEST_HOST,
                 session
@@ -616,11 +579,11 @@ class OcsTest {
 
         TestHelper.createTerminateRequest(request!!.avps, msisdn, DEFAULT_REQUESTED_SERVICE_UNIT, ratingGroup, serviceIdentifier)
 
-        client.sendNextRequest(request, session)
+        testClient.sendNextRequest(request, session)
 
         waitForAnswer(session.sessionId)
 
-        val result = client.getAnswer(session.sessionId)
+        val result = testClient.getAnswer(session.sessionId)
         assertEquals(DIAMETER_SUCCESS, result?.resultCode)
         val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
         assertEquals(RequestType.TERMINATION_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
@@ -639,14 +602,12 @@ class OcsTest {
         val ratingGroup = 10
         val serviceIdentifier = -1
 
-        val client = testClient ?: fail("Test client is null")
-
-        val session = client.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
+        val session = testClient.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
 
         // This test assume that the default bucket size is set to 4000000L
         simpleCreditControlRequestInit(session, msisdn,0L, DEFAULT_REQUESTED_SERVICE_UNIT, ratingGroup, serviceIdentifier)
 
-        val request = client.createRequest(
+        val request = testClient.createRequest(
                 DEST_REALM,
                 DEST_HOST,
                 session
@@ -654,11 +615,11 @@ class OcsTest {
 
         TestHelper.createUpdateRequest(request!!.avps, msisdn, -1L, DEFAULT_REQUESTED_SERVICE_UNIT, ratingGroup, serviceIdentifier)
 
-        client.sendNextRequest(request, session)
+        testClient.sendNextRequest(request, session)
 
         waitForAnswer(session.sessionId)
 
-        val result = client.getAnswer(session.sessionId)
+        val result = testClient.getAnswer(session.sessionId)
         assertEquals(DIAMETER_SUCCESS, result?.resultCode)
         val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
         assertEquals(RequestType.UPDATE_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
@@ -695,5 +656,21 @@ class OcsTest {
         private const val DIAMETER_SUCCESS = 2001L
         private const val DIAMETER_CREDIT_LIMIT_REACHED = 4012L
         private const val DIAMETER_USER_UNKNOWN = 5030L
+
+        // variables you initialize for the class later in the @BeforeClass method:
+        lateinit var testClient: TestClient
+
+        //configuration file
+        private val configFile = "client-jdiameter-config.xml"
+
+        @BeforeClass @JvmStatic fun setup() {
+            testClient = TestClient()
+            testClient.initStack("/", configFile)
+        }
+
+        @AfterClass @JvmStatic fun teardown() {
+            testClient.shutdown()
+        }
+
     }
 }
