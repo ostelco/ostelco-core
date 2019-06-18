@@ -625,13 +625,14 @@ class OcsTest {
     }
 
 
+    // pubsub answer can take up to 10 seconds on the emulator
     private fun waitForAnswer(sessionId: String) {
 
         var i = 0
-        while (!testClient.isAnswerReceived(sessionId) && i < 10) {
+        while (!testClient.isAnswerReceived(sessionId) && i < 100) {
             i++
             try {
-                sleep(500)
+                sleep(1000)
             } catch (e: InterruptedException) {
                 logger.error("Start Failed", e)
             }
