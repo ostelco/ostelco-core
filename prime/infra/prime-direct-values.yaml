@@ -45,7 +45,7 @@ prime:
     STRIPE_EVENT_RECURRING_PAYMENT_SUBSCRIPTION: stripe-event-recurring-payment-sub
     GCP_PROJECT_ID: pi-ostelco-dev
     ACTIVATE_TOPIC_ID: ocs-activate
-    CCR_SUBSCRIPTION_ID: ocs-ccr-sub
+    CCR_SUBSCRIPTION_ID: ocs-ccr-prime-direct-sub
     GOOGLE_APPLICATION_CREDENTIALS: /secret/prime-service-account.json
     MY_INFO_API_URI: https://myinfosgstg.api.gov.sg/test/v2
     MY_INFO_API_REALM: direct
