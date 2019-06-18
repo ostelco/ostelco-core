@@ -629,14 +629,13 @@ class OcsTest {
     private fun waitForAnswer(sessionId: String) {
 
         var i = 0
-        while (!testClient.isAnswerReceived(sessionId) && i < 100) {
+        while (!testClient.isAnswerReceived(sessionId) && i < 1000) {
             i++
             try {
-                sleep(1000)
+                sleep(100)
             } catch (e: InterruptedException) {
                 logger.error("Start Failed", e)
             }
-
         }
         assertEquals(true, testClient.isAnswerReceived(sessionId))
     }

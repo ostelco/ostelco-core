@@ -434,10 +434,10 @@ public class OcsApplicationTest {
 
     private void waitForAnswer(String sessionId) {
         int i = 0;
-        while (!client.isAnswerReceived(sessionId) && i<10) {
+        while (!client.isAnswerReceived(sessionId) && i<100) {
             i++;
             try {
-                Thread.sleep(500);
+                Thread.sleep(50);
             } catch (InterruptedException e) {
                 // continue
             }
@@ -447,10 +447,10 @@ public class OcsApplicationTest {
 
     private void waitForRequest(String sessionId) {
         int i = 0;
-        while (!client.isRequestReceived(sessionId) && i<10) {
+        while (!client.isRequestReceived(sessionId) && i<100) {
             i++;
             try {
-                Thread.sleep(500);
+                Thread.sleep(50);
             } catch (InterruptedException e) {
                 // continue
             }
