@@ -9,15 +9,20 @@ import org.junit.AfterClass
 import org.junit.Assert.assertNotNull
 import org.junit.BeforeClass
 import org.junit.ClassRule
+import org.junit.Ignore
 import org.junit.Test
 
-class TestPrimeConfig {
+class PrimeConfigTest {
 
     /**
      * Do nothing.
      * This test will just start and stop the server.
      * It will validate config file in 'src/integration-tests/resources/config.yaml'
+     *
+     * This test is Ignored because it is interfering with [PrimeConfigCheck]
+     * Preferring [PrimeConfigCheck] over [PrimeConfigTest] since former is testing with the real config file.
      */
+    @Ignore
     @Test
     fun test() {
         assertNotNull(SUPPORT)

@@ -20,7 +20,7 @@ sourceSets {
   }
 }
 
-version = "1.47.1"
+version = "1.48.1"
 
 repositories {
   maven {
@@ -86,6 +86,10 @@ shadowJar {
   classifier = "uber"
   zip64 true
   version = null
+}
+
+task version {
+  println version
 }
 
 test {
