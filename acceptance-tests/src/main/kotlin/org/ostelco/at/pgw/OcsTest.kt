@@ -2,9 +2,7 @@ package org.ostelco.at.pgw
 
 import org.jdiameter.api.Avp
 import org.jdiameter.api.Session
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
+import org.junit.*
 import org.ostelco.at.common.createCustomer
 import org.ostelco.at.common.createSubscription
 import org.ostelco.at.common.getLogger
@@ -34,13 +32,13 @@ class OcsTest {
 
     private var testClient: TestClient? = null
 
-    @Before
+    @BeforeClass
     fun setUp() {
         testClient = TestClient()
         testClient?.initStack("/", configFile)
     }
 
-    @After
+    @AfterClass
     fun tearDown() {
         testClient?.shutdown()
         testClient = null
@@ -65,10 +63,11 @@ class OcsTest {
 
         client.sendNextRequest(request, session)
 
-        waitForAnswer()
+        waitForAnswer(session.sessionId)
 
-        assertEquals(DIAMETER_SUCCESS, client.resultCodeAvp?.integer32?.toLong())
-        val resultAvps = client.resultAvps ?: fail("Missing AVPs")
+        val result = client.getAnswer(session.sessionId)
+        assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+        val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
         assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
         assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
         assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
@@ -104,10 +103,11 @@ class OcsTest {
 
         client.sendNextRequest(request, session)
 
-        waitForAnswer()
+        waitForAnswer(session.sessionId)
 
-        assertEquals(DIAMETER_SUCCESS, client.resultCodeAvp?.integer32?.toLong())
-        val resultAvps = client.resultAvps ?: fail("Missing AVPs")
+        val result = client.getAnswer(session.sessionId)
+        assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+        val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
         assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
         assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
         assertEquals(RequestType.UPDATE_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
@@ -143,7 +143,7 @@ class OcsTest {
 
         val client = testClient ?: fail("Test client is null")
 
-        val session = client.createSession() ?: fail("Failed to create session")
+        val session = client.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
         val request = client.createRequest(
                 DEST_REALM,
                 DEST_HOST,
@@ -154,11 +154,12 @@ class OcsTest {
 
         client.sendNextRequest(request, session)
 
-        waitForAnswer()
+        waitForAnswer(session.sessionId)
 
-        assertEquals(DIAMETER_SUCCESS, client.resultCodeAvp!!.getInteger32().toLong())
-        val resultAvps = client.resultAvps
-        assertEquals(DEST_HOST, resultAvps!!.getAvp(Avp.ORIGIN_HOST).getUTF8String())
+        val result = client.getAnswer(session.sessionId)
+        assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+        val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
+        assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String())
         assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String())
         assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32().toLong())
         val resultMSCCs = resultAvps.getAvps(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
@@ -184,7 +185,7 @@ class OcsTest {
 
         val client = testClient ?: fail("Test client is null")
 
-        val session = client.createSession() ?: fail("Failed to create session")
+        val session = client.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
         val request = client.createRequest(
                 DEST_REALM,
                 DEST_HOST,
@@ -195,11 +196,12 @@ class OcsTest {
 
         client.sendNextRequest(request, session)
 
-        waitForAnswer()
+        waitForAnswer(session.sessionId)
 
-        assertEquals(DIAMETER_USER_UNKNOWN, client.resultCodeAvp!!.getInteger32().toLong())
-        val resultAvps = client.resultAvps
-        assertEquals(DEST_HOST, resultAvps!!.getAvp(Avp.ORIGIN_HOST).getUTF8String())
+        val result = client.getAnswer(session.sessionId)
+        assertEquals(DIAMETER_USER_UNKNOWN, result?.resultCode)
+        val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
+        assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String())
         assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String())
         assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32().toLong())
         val resultMSCCs = resultAvps.getAvps(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
@@ -232,7 +234,7 @@ class OcsTest {
         val ratingGroup = 10
         val serviceIdentifier = 1
 
-        val session = client.createSession() ?: fail("Failed to create session")
+        val session = client.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
         simpleCreditControlRequestInit(session, msisdn, BUCKET_SIZE, BUCKET_SIZE, ratingGroup, serviceIdentifier)
         assertEquals(INITIAL_BALANCE - BUCKET_SIZE, getBalance(email = email), message = "Incorrect balance after init")
 
@@ -249,10 +251,11 @@ class OcsTest {
 
         client.sendNextRequest(request, session)
 
-        waitForAnswer()
+        waitForAnswer(session.sessionId)
 
-        assertEquals(DIAMETER_SUCCESS, client.resultCodeAvp?.integer32?.toLong())
-        val resultAvps = client.resultAvps ?: fail("Missing AVPs")
+        val result = client.getAnswer(session.sessionId)
+        assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+        val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
         assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
         assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
         assertEquals(RequestType.TERMINATION_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
@@ -274,7 +277,7 @@ class OcsTest {
 
         val client = testClient ?: fail("Test client is null")
 
-        var session = client.createSession() ?: fail("Failed to create session")
+        var session = client.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
         var request = client.createRequest(
                 DEST_REALM,
                 DEST_HOST,
@@ -287,12 +290,13 @@ class OcsTest {
 
         client.sendNextRequest(request, session)
 
-        waitForAnswer()
+        waitForAnswer(session.sessionId)
 
         // First request should reserve the full balance
         run {
-            assertEquals(DIAMETER_SUCCESS, client.resultCodeAvp?.integer32?.toLong())
-            val resultAvps = client.resultAvps ?: fail("Missing AVPs")
+            val result = client.getAnswer(session.sessionId)
+            assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+            val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
             assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
             assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
             assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
@@ -317,11 +321,12 @@ class OcsTest {
 
         client.sendNextRequest(updateRequest, session)
 
-        waitForAnswer()
+        waitForAnswer(session.sessionId)
 
         run {
-            assertEquals(DIAMETER_SUCCESS, client.resultCodeAvp?.integer32?.toLong())
-            val resultAvps = client.resultAvps ?: fail("Missing AVPs")
+            val result = client.getAnswer(session.sessionId)
+            assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+            val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
             assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
             assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
             assertEquals(RequestType.UPDATE_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
@@ -337,11 +342,12 @@ class OcsTest {
 
         client.sendNextRequest(terminateRequest, session)
 
-        waitForAnswer()
+        waitForAnswer(session.sessionId)
 
         run {
-            assertEquals(DIAMETER_SUCCESS, client.resultCodeAvp?.integer32?.toLong())
-            val resultAvps = client.resultAvps ?: fail("Missing AVPs")
+            val result = client.getAnswer(session.sessionId)
+            assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+            val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
             assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
             assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
             assertEquals(RequestType.TERMINATION_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
@@ -349,7 +355,7 @@ class OcsTest {
 
         // If P-GW tries another CCR-I we should reply DIAMETER_CREDIT_LIMIT_REACHED
 
-        session = client.createSession() ?: fail("Failed to create session")
+        session = client.createSession(object{}.javaClass.enclosingMethod.name + "-2") ?: fail("Failed to create session")
         request = client.createRequest(
                 DEST_REALM,
                 DEST_HOST,
@@ -362,12 +368,13 @@ class OcsTest {
 
         client.sendNextRequest(request, session)
 
-        waitForAnswer()
+        waitForAnswer(session.sessionId)
 
         // First request should reserve the full balance
         run {
-            assertEquals(DIAMETER_SUCCESS, client.resultCodeAvp?.integer32?.toLong())
-            val resultAvps = client.resultAvps ?: fail("Missing AVPs")
+            val result = client.getAnswer(session.sessionId)
+            assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+            val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
             assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
             assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
             assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
@@ -394,7 +401,7 @@ class OcsTest {
 
         val client = testClient ?: fail("Test client is null")
 
-        var session = client.createSession() ?: fail("Failed to create session")
+        var session = client.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
         var request = client.createRequest(
                 DEST_REALM,
                 DEST_HOST,
@@ -407,12 +414,13 @@ class OcsTest {
 
         client.sendNextRequest(request, session)
 
-        waitForAnswer()
+        waitForAnswer(session.sessionId)
 
         // First request should reserve the full balance
         run {
-            assertEquals(DIAMETER_SUCCESS, client.resultCodeAvp?.integer32?.toLong())
-            val resultAvps = client.resultAvps ?: fail("Missing AVPs")
+            val result = client.getAnswer(session.sessionId)
+            assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+            val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
             assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
             assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
             assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
@@ -436,11 +444,12 @@ class OcsTest {
 
         client.sendNextRequest(updateRequest, session)
 
-        waitForAnswer()
+        waitForAnswer(session.sessionId)
 
         run {
-            assertEquals(DIAMETER_SUCCESS, client.resultCodeAvp?.integer32?.toLong())
-            val resultAvps = client.resultAvps ?: fail("Missing AVPs")
+            val result = client.getAnswer(session.sessionId)
+            assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+            val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
             assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
             assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
             assertEquals(RequestType.UPDATE_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
@@ -462,11 +471,12 @@ class OcsTest {
 
         client.sendNextRequest(terminateRequest, session)
 
-        waitForAnswer()
+        waitForAnswer(session.sessionId)
 
         run {
-            assertEquals(DIAMETER_SUCCESS, client.resultCodeAvp?.integer32?.toLong())
-            val resultAvps = client.resultAvps ?: fail("Missing AVPs")
+            val result = client.getAnswer(session.sessionId)
+            assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+            val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
             assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
             assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
             assertEquals(RequestType.TERMINATION_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
@@ -474,7 +484,7 @@ class OcsTest {
 
         // If UE attach again and P-GW tries another CCR-I we should get DIAMETER_CREDIT_LIMIT_REACHED
 
-        session = client.createSession() ?: fail("Failed to create session")
+        session = client.createSession(object{}.javaClass.enclosingMethod.name + "-2") ?: fail("Failed to create session")
         request = client.createRequest(
                 DEST_REALM,
                 DEST_HOST,
@@ -487,12 +497,13 @@ class OcsTest {
 
         client.sendNextRequest(request, session)
 
-        waitForAnswer()
+        waitForAnswer(session.sessionId)
 
         // First request should reserve the full balance
         run {
-            assertEquals(DIAMETER_SUCCESS, client.resultCodeAvp?.integer32?.toLong())
-            val resultAvps = client.resultAvps ?: fail("Missing AVPs")
+            val result = client.getAnswer(session.sessionId)
+            assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+            val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
             assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
             assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
             assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
@@ -512,7 +523,7 @@ class OcsTest {
 
         val client = testClient ?: fail("Test client is null")
 
-        val session = client.createSession() ?: fail("Failed to create session")
+        val session = client.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
         val request = client.createRequest(
                 DEST_REALM,
                 DEST_HOST,
@@ -525,11 +536,12 @@ class OcsTest {
 
         client.sendNextRequest(request, session)
 
-        waitForAnswer()
+        waitForAnswer(session.sessionId)
 
         run {
-            assertEquals(DIAMETER_USER_UNKNOWN, client.resultCodeAvp?.integer32?.toLong())
-            val resultAvps = client.resultAvps ?: fail("Missing AVPs")
+            val result = client.getAnswer(session.sessionId)
+            assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+            val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
             assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
             assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
             assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
@@ -546,7 +558,7 @@ class OcsTest {
 
         val client = testClient ?: fail("Test client is null")
 
-        val session = client.createSession() ?: fail("Failed to create session")
+        val session = client.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
         val request = client.createRequest(
                 DEST_REALM,
                 DEST_HOST,
@@ -560,11 +572,12 @@ class OcsTest {
 
         client.sendNextRequest(request, session)
 
-        waitForAnswer()
+        waitForAnswer(session.sessionId)
 
         run {
-            assertEquals(DIAMETER_SUCCESS, client.resultCodeAvp?.integer32?.toLong())
-            val resultAvps = client.resultAvps ?: fail("Missing AVPs")
+            val result = client.getAnswer(session.sessionId)
+            assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+            val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
             assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
             assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
             assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
@@ -589,7 +602,7 @@ class OcsTest {
 
         val client = testClient ?: fail("Test client is null")
 
-        val session = client.createSession() ?: fail("Failed to create session")
+        val session = client.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
 
         // This test assume that the default bucket size is set to 4000000L
         simpleCreditControlRequestInit(session, msisdn,0L, DEFAULT_REQUESTED_SERVICE_UNIT, ratingGroup, serviceIdentifier)
@@ -605,11 +618,12 @@ class OcsTest {
 
         client.sendNextRequest(request, session)
 
-        waitForAnswer()
+        waitForAnswer(session.sessionId)
 
-        assertEquals(DIAMETER_SUCCESS, client.resultCodeAvp!!.integer32.toLong())
-        val resultAvps = client.resultAvps
-        assertEquals(RequestType.TERMINATION_REQUEST.toLong(), resultAvps!!.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+        val result = client.getAnswer(session.sessionId)
+        assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+        val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
+        assertEquals(RequestType.TERMINATION_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
     }
 
 
@@ -627,7 +641,7 @@ class OcsTest {
 
         val client = testClient ?: fail("Test client is null")
 
-        val session = client.createSession() ?: fail("Failed to create session")
+        val session = client.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
 
         // This test assume that the default bucket size is set to 4000000L
         simpleCreditControlRequestInit(session, msisdn,0L, DEFAULT_REQUESTED_SERVICE_UNIT, ratingGroup, serviceIdentifier)
@@ -642,21 +656,22 @@ class OcsTest {
 
         client.sendNextRequest(request, session)
 
-        waitForAnswer()
+        waitForAnswer(session.sessionId)
 
-        assertEquals(DIAMETER_SUCCESS, client.resultCodeAvp!!.integer32.toLong())
-        val resultAvps = client.resultAvps
-        assertEquals(RequestType.UPDATE_REQUEST.toLong(), resultAvps!!.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+        val result = client.getAnswer(session.sessionId)
+        assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+        val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
+        assertEquals(RequestType.UPDATE_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
         assertEquals(86400L, resultAvps.getAvp(Avp.VALIDITY_TIME).integer32.toLong())
     }
 
 
-    private fun waitForAnswer() {
+    private fun waitForAnswer(sessionId: String) {
 
         val client = testClient ?: fail("Test client is null")
 
         var i = 0
-        while (!client.isAnswerReceived && i < 10) {
+        while (!client.isAnswerReceived(sessionId) && i < 10) {
             i++
             try {
                 Thread.sleep(500)
@@ -665,7 +680,7 @@ class OcsTest {
             }
 
         }
-        assertEquals(true, client.isAnswerReceived)
+        assertEquals(true, client.isAnswerReceived(sessionId))
     }
 
     companion object {

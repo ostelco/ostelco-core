@@ -30,6 +30,9 @@ class TestClient : EventListener<Request, Answer> {
 
     private val logger by getLogger()
 
+    private var answerMap: HashMap<String, Result> = HashMap()
+    private var requestMap: HashMap<String, Result> = HashMap()
+
     companion object {
 
         // definition of codes, IDs
@@ -38,14 +41,6 @@ class TestClient : EventListener<Request, Answer> {
         private const val commandCode = 272 // Credit-Control
     }
 
-    // The result for the request
-    var resultAvps: AvpSet? = null
-        private set
-
-    // The resultcode AVP for the request
-    var resultCodeAvp: Avp? = null
-        private set
-
     private val authAppId = ApplicationId.createByAuthAppId(applicationID)
 
     // Diameter stack
@@ -53,14 +48,6 @@ class TestClient : EventListener<Request, Answer> {
 
     // session factory
     private lateinit var factory: SessionFactory
-
-    // set if an answer to a Request has been received
-    var isAnswerReceived = false
-        private set
-
-    // set if a request has been received
-    var isRequestReceived = false
-        private set
 
     // Parse stack configuration
     private lateinit var config: Configuration
@@ -89,9 +76,8 @@ class TestClient : EventListener<Request, Answer> {
             network.addNetworkReqListener(
                     NetworkReqListener { request ->
                         logger.info("Got a request")
-                        resultAvps = request.avps
-                        DiameterUtilities().printAvps(resultAvps)
-                        isRequestReceived = true
+                        requestMap.put(request.sessionId, Result(request.avps, null))
+                        DiameterUtilities().printAvps(request.avps)
                         null
                     },
                     this.authAppId) //passing our example app id.
@@ -124,13 +110,6 @@ class TestClient : EventListener<Request, Answer> {
     }
 
     /**
-     * Reset Request test
-     */
-    fun initRequestTest() {
-        this.isRequestReceived = false
-    }
-
-    /**
      * Create a new Request for the current Session
      *
      * @param destinationRealm Destination Realm
@@ -148,13 +127,12 @@ class TestClient : EventListener<Request, Answer> {
     /**
      * Create a new DIAMETER session
      */
-    fun createSession() : Session? {
+    fun createSession(sessionId: String) : Session? {
         try {
-            // FIXME martin: Need better way to make sure the session can be created
             if (!stack.isActive) {
                 logger.warn("Stack not active")
             }
-            return this.factory.getNewSession("BadCustomSessionId;" + System.currentTimeMillis() + ";0")
+            return this.factory.getNewSession("CustomSessionId;$sessionId;0")
         } catch (e: InternalException) {
             logger.error("Start Failed", e)
         } catch (e: InterruptedException) {
@@ -170,7 +148,7 @@ class TestClient : EventListener<Request, Answer> {
      * @return false if send failed
      */
     fun sendNextRequest(request: Request, session: Session?): Boolean {
-        isAnswerReceived = false
+        answerMap.remove(request.sessionId)
         if (session != null) {
             val ccr = JCreditControlRequestImpl(request)
             try {
@@ -192,11 +170,25 @@ class TestClient : EventListener<Request, Answer> {
         return false
     }
 
+    fun isRequestReceived(sessionId: String): Boolean {
+        return requestMap.containsKey(sessionId)
+    }
+
+    fun isAnswerReceived(sessionId: String): Boolean {
+        return answerMap.containsKey(sessionId)
+    }
+
+    fun getAnswer(sessionId: String) : Result? {
+        return answerMap.get(sessionId)
+    }
+
+    fun getRequest(sessionId: String) : Result? {
+        return requestMap.get(sessionId)
+    }
+
     override fun receivedSuccessMessage(request: Request, answer: Answer) {
         logger.info("Received answer")
-        resultAvps = answer.avps
-        resultCodeAvp = answer.resultCode
-        this.isAnswerReceived = true
+        answerMap.put(request.sessionId, Result(answer.avps, answer.resultCode.unsigned32))
     }
 
     override fun timeoutExpired(request: Request) {
@@ -217,3 +209,6 @@ class TestClient : EventListener<Request, Answer> {
         stack.destroy()
     }
 }
+
+
+data class Result(val resultAvps: AvpSet, val resultCode: Long?)
