@@ -116,7 +116,7 @@ modules:
           profile: OYA_M1_STANDARD
         - regex: "Loltel.android"
           profile: Loltel_ANDROID_1
-        - regex: "Loltel"
+        - regex: "Loltel.*"
           profile: LOLTEL_IPHONE_1
       database:
         driverClass: org.postgresql.Driver
