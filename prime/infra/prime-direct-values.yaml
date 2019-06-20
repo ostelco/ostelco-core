@@ -36,12 +36,12 @@ cronjobs:
 
 prime:
   image: eu.gcr.io/pi-ostelco-dev/prime
-  tag: 63114190f
+  tag: "" # it will be set from CI
   pullPolicy: Always
   configDataBucket: "gs://pi-ostelco-dev-prime-files/dev"
 
   env:
-    FIREBASE_ROOT_PATH: direct
+    FIREBASE_ROOT_PATH: dev
     NEO4J_HOST: neo4j-neo4j.neo4j.svc.cluster.local
     SLACK_CHANNEL: prime-alerts
     DATA_TRAFFIC_TOPIC: data-traffic
@@ -142,14 +142,13 @@ prime:
   resources: 
     requests:
       cpu: 300m
-      memory: 512Mi  
+      memory: 512Mi
   livenessProbe: {}
   readinessProbe: {}
   annotations: 
     prometheus.io/scrape: 'true'
     prometheus.io/path: '/prometheus-metrics'
     prometheus.io/port: '8081'  
-
 
 cloudsqlProxy:
   enabled: true
@@ -269,7 +268,7 @@ services:
       headers:
         x-mode: prime-direct
       # weight: 50   
-  
+
   dwadmin-service:
     name: dwadmin-service
     type: ClusterIP
@@ -294,7 +293,7 @@ services:
 certs:
   enabled: true
   dnsProvider: dev-clouddns
-  issuer: letsencrypt-production 
+  issuer: letsencrypt-production
   tlsSecretName: dev-oya-tls
   hosts:
     - '*.dev.oya.world'

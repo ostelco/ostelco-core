@@ -21,12 +21,7 @@ podAutoscaling:
         name: memory
         targetAverageUtilization: 70
 
-cronjobs: 
-  extractor: 
-    enabled: true
-    image: eu.gcr.io/pi-ostelco-dev/bq-metrics-extractor
-    tag: "1.3.212.1.0-2d41d62b-dev"  
-    dataset_project: pi-ostelco-prod
+cronjobs:
   shredder:
     enabled: true
     image: eu.gcr.io/pi-ostelco-dev/scaninfo-shredder
@@ -157,7 +152,6 @@ prime:
     prometheus.io/path: '/prometheus-metrics'
     prometheus.io/port: '8081'  
 
-
 cloudsqlProxy:
   enabled: true
   instanceConnectionName: "pi-ostelco-prod:europe-west1:sim-manager"
@@ -221,7 +215,7 @@ services:
     port: 443
     targetPort: 8443
     portName: grpc
-    
+
   api:
     name: api
     type: ClusterIP
@@ -233,7 +227,7 @@ services:
     ambassadorMappingOptions:
       timeout_ms: 600000
     canary: {}
- 
+
   metrics:
     name: metrics
     type: LoadBalancer
@@ -251,7 +245,7 @@ services:
     ambassadorMappingOptions:
       timeout_ms: 600000
     canary: {}
- 
+
   prime-alvin-api:
     name: alvin-api
     type: ClusterIP
