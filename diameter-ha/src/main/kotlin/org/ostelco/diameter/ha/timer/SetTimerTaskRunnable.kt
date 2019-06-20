@@ -11,7 +11,6 @@ class SetTimerTaskRunnable(task: ReplicatedTimerTask,
          get() = Type.SET
 
     override fun run() {
-        logger.debug("SetTimerTaskRunnable run")
         val previousTask = scheduler.getLocalRunningTasksMap().putIfAbsent(task.data.taskID, task)
         if (previousTask != null) {
             logger.debug("A task with id ${task.data.taskID} has already been added to the local tasks, not rescheduling")
