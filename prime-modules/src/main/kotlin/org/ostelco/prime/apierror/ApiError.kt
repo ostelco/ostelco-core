@@ -39,6 +39,7 @@ object ApiErrorMapper {
             // FIXME vihang: remove PaymentError from BadGatewayError
             is org.ostelco.prime.paymentprocessor.core.BadGatewayError -> InternalServerError(description, errorCode, paymentError)
             is org.ostelco.prime.paymentprocessor.core.NotFoundError -> NotFoundError(description, errorCode, paymentError)
+            is org.ostelco.prime.paymentprocessor.core.PaymentConfigurationError -> InternalServerError(description, errorCode, paymentError)
         }
     }
 

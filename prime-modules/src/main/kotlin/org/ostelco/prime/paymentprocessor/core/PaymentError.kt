@@ -11,3 +11,5 @@ class ForbiddenError(description: String, message: String? = null, error: Intern
 class NotFoundError(description: String, message: String? = null, error: InternalError? = null) : PaymentError(description, message, error)
 
 class BadGatewayError(description: String, message: String? = null, error: InternalError? = null) : PaymentError(description, message, error)
+
+class PaymentConfigurationError(description: String, message: String? = null, error: InternalError? = null) : PaymentError(description, message, error)

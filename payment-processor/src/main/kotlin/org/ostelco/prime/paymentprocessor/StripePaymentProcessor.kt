@@ -5,12 +5,6 @@ import arrow.core.Try
 import arrow.core.flatMap
 import arrow.core.left
 import arrow.core.right
-import com.stripe.exception.ApiConnectionException
-import com.stripe.exception.AuthenticationException
-import com.stripe.exception.CardException
-import com.stripe.exception.InvalidRequestException
-import com.stripe.exception.RateLimitException
-import com.stripe.exception.StripeException
 import com.stripe.model.Card
 import com.stripe.model.Charge
 import com.stripe.model.Customer
@@ -27,6 +21,7 @@ import com.stripe.model.TaxRate
 import com.stripe.net.RequestOptions
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
+import org.ostelco.prime.paymentprocessor.StripeUtils.either
 import org.ostelco.prime.paymentprocessor.core.BadGatewayError
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
 import org.ostelco.prime.paymentprocessor.core.InvoicePaymentInfo
@@ -46,7 +41,6 @@ import org.ostelco.prime.paymentprocessor.core.TaxRateInfo
 import java.math.BigDecimal
 import java.time.Instant
 import java.util.*
-
 
 class StripePaymentProcessor : PaymentProcessor {
 
@@ -388,9 +382,9 @@ class StripePaymentProcessor : PaymentProcessor {
 
     override fun createInvoice(customerId: String, taxRates: List<TaxRateInfo>, sourceId: String?): Either<PaymentError, InvoiceInfo> =
             createAndGetInvoiceDetails(customerId, taxRates, sourceId)
-                .flatMap {
-                    InvoiceInfo(it.id).right()
-                }
+                    .flatMap {
+                        InvoiceInfo(it.id).right()
+                    }
 
     override fun createInvoice(customerId: String, amount: Int, currency: String, description: String, taxRegionId: String?, sourceId: String?): Either<PaymentError, InvoiceInfo> =
             createInvoiceItem(customerId, amount, currency, description)
