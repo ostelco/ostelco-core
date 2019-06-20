@@ -103,8 +103,6 @@ class OcsTest {
     }
 
     private fun getBalance(email: String): Long {
-        sleep(200) // wait for 200 ms for balance to be updated in db
-
         return get<List<Bundle>> {
             path = "/bundles"
             this.email = email
@@ -207,10 +205,11 @@ class OcsTest {
 
         val session = testClient.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
         simpleCreditControlRequestInit(session, msisdn, BUCKET_SIZE, BUCKET_SIZE, ratingGroup, serviceIdentifier)
-        assertEquals(INITIAL_BALANCE - BUCKET_SIZE, getBalance(email = email), message = "Incorrect balance after init")
+        checkBalance(INITIAL_BALANCE - BUCKET_SIZE, email, "Incorrect balance after init")
 
         simpleCreditControlRequestUpdate(session, msisdn, BUCKET_SIZE, BUCKET_SIZE, BUCKET_SIZE, ratingGroup, serviceIdentifier)
-        assertEquals(INITIAL_BALANCE - 2 * BUCKET_SIZE, getBalance(email = email), message = "Incorrect balance after update")
+
+        checkBalance(INITIAL_BALANCE - 2 * BUCKET_SIZE, email, "Incorrect balance after update")
 
         val request = testClient.createRequest(
                 DEST_REALM,
@@ -231,7 +230,8 @@ class OcsTest {
         assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
         assertEquals(RequestType.TERMINATION_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
 
-        assertEquals(INITIAL_BALANCE - 2 * BUCKET_SIZE, getBalance(email = email), message = "Incorrect balance after terminate")
+
+        checkBalance(INITIAL_BALANCE - 2 * BUCKET_SIZE, email, "Incorrect balance after terminate")
     }
 
 
@@ -639,6 +639,23 @@ class OcsTest {
         }
         assertEquals(true, testClient.isAnswerReceived(sessionId))
     }
+
+    // pubsub answer can take up to 10 seconds on the emulator
+    private fun checkBalance(expected: Long, email: String, message: String) {
+
+        var i = 0
+        while (getBalance(email = email)!=expected && i < 500) {
+            i++
+            try {
+                sleep(200)
+            } catch (e: InterruptedException) {
+                logger.error("Start Failed", e)
+            }
+        }
+
+        assertEquals(expected, getBalance(email = email), message)
+    }
+
 
     companion object {
 
