@@ -315,6 +315,8 @@ interface AdminGraphStore {
     // Retrieve all scan information for the customer
     fun getAllScanInformation(identity: Identity): Either<StoreError, Collection<ScanInformation>>
 
+    fun approveRegionForCustomer(customerId: String, regionCode: String): Either<StoreError, Unit>
+
     // simple getAll
     // fun getOffers(): Collection<Offer>
     // fun getSegments(): Collection<Segment>
