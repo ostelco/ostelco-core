@@ -119,49 +119,9 @@ To avoid pipeline waiting time, you can take a short cut and deploy your feature
 
 **Steps:**
 
-1. Build the prime docker image from your feature branch and tag it with your custom tag (e.g. eu.gcr.io/pi-ostelco-dev/prime:feature-xyz)
+Run the [prime-direct deploy script](../script/helm-deploy-dev-direct.sh)
 
-2. Push the built image into the docker registry. 
-```bash
-# auth is needed since the docker registry is private
-$ gcloud auth login
-$ docker push eu.gcr.io/pi-ostelco-dev/prime:feature-xyz
-```
-
-3. [Install helm](https://helm.sh/docs/using_helm/#install-helm)
-
-4. Make your own copy of the helm values file.
-
-Copy the [prime-direct helm values file](prime-direct-values.yaml) and edit the DNS prefix in the `dnsPrefix` section with unique custom prefix (e.g. `feature-xyz-`). Make sure you have a dash at the end of your prefix.
-
-5. run the following helm commands:
-
-> Note: the helm release name must be unique. A good example might be feature name or developer name.
-
-> Note: you can change the helm chart version below to a specific version of the prime helm chart. 
-
-```bash 
-# the first command is only needed once
-$ helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
-$ helm repo update
-# if your kube context is not configured to point to the dev cluster, then configure it 
-$ kubectl config use-context gke_pi-ostelco-dev_europe-west1-c_pi-dev
-$ RELEASE_NAME=<some-unique-name>
-$ helm upgrade ${RELEASE_NAME} ostelco/prime --version 0.6.3 --install -f <path-to-your-custom-values-file> --set prime.tag=feature-xyz
-```
-you can then watch for your pods being created with this command:
-
-```bash 
-$ kubectl get pods -n dev -l release=${RELEASE_NAME} -w
-```
-
-Once your pods are in the `Running` state, you can test the APIs of your custom deployment on: feature-xyz-prime-api-name.test.oya.world (e.g. https://feature-xyz-api.test.oya.world)
-
-To delete your custom deployment:
-
-```bash
-$ helm delete --purge ${RELEASE_NAME}
-```
+-----
 
 ### Secrets
 
