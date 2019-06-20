@@ -2,16 +2,24 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-replicaCount: 2
+replicaCount: 3
 
 dnsPrefix: ""
 dnsSuffix: ".oya.world"
 
 podAutoscaling:
   enabled: true
-  minReplicas: 1
-  maxReplicas: 6
-  targetCPUUtilizationPercentage: 70
+  minReplicas: 3
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: 80
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: 70
 
 cronjobs: 
   extractor: 
@@ -28,7 +36,7 @@ cronjobs:
 
 prime:
   image: eu.gcr.io/pi-ostelco-dev/prime
-  tag: 634bac88 # stable tag
+  tag: "" # it will be set from CI
   pullPolicy: Always
   configDataBucket: "gs://pi-ostelco-prod-prime-files/prod"
 
@@ -136,8 +144,8 @@ prime:
 #      cpu: 200m
 #      memory: 400Mi
     requests:
-      cpu: 100m
-      memory: 300Mi
+      cpu: 300m
+      memory: 512Mi
   livenessProbe: {}
     # path: /
     # port: 8081
@@ -149,12 +157,6 @@ prime:
     prometheus.io/path: '/prometheus-metrics'
     prometheus.io/port: '8081'  
 
-
-canary: {}
-  # weight: 25
-  # headers: # only route requests with these headers to the canary service
-  #   x-mode: canary
-  # tag: ""
 
 cloudsqlProxy:
   enabled: true
@@ -230,6 +232,8 @@ services:
     grpcOrHttp2: true
     ambassadorMappingOptions:
       timeout_ms: 600000
+    canary: {}
+ 
   metrics:
     name: metrics
     type: LoadBalancer
@@ -246,6 +250,8 @@ services:
     host: houston-api # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
     ambassadorMappingOptions:
       timeout_ms: 600000
+    canary: {}
+ 
   prime-alvin-api:
     name: alvin-api
     type: ClusterIP
@@ -255,12 +261,15 @@ services:
     host: alvin-api # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
     ambassadorMappingOptions:
       timeout_ms: 600000
+    canary: {}
+
   dwadmin-service:
     name: dwadmin-service
     type: ClusterIP
     port: 8081
     targetPort: 8081
     portName: http
+
   smdpplus:
     name: smdpplus
     type: ClusterIP
@@ -270,6 +279,7 @@ services:
     host: smdpplus
     clientCert: true
     caCert: smdp-cacert.prod # secretname.namespace
+    canary: {}
 
 certs:
   enabled: true
@@ -283,7 +293,8 @@ disruptionBudget:
   enabled: false
   minAvailable: 1
 
-nodeSelector: {}
+nodeSelector: 
+  target: prime
 
 tolerations: []
 

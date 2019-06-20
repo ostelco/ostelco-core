@@ -269,7 +269,7 @@ jobs:
             /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
             helm repo update
-            helm upgrade prime ostelco/prime --version 0.6.3 --install \
+            helm upgrade prime ostelco/prime --version 1.0.0 --install \
              --namespace dev \
              -f .circleci/prime-dev-values.yaml \
              --set prime.tag=$TAG 
@@ -330,9 +330,9 @@ jobs:
             /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
             helm repo update
-            helm upgrade prime ostelco/prime --version 0.6.3 --install \
+            helm upgrade prime ostelco/prime --version 1.0.0 --install \
              --namespace prod \
-             -f .circleci/prime-prod-values.yaml \
+             -f .circleci/prime-canary-values.yaml \
              --set prime.tag=$TAG
 
 #             --set-string canary.tag=${CIRCLE_SHA1:0:9} \
@@ -343,6 +343,37 @@ jobs:
           when: on_fail
           command: .circleci/notify-slack.sh on-PR-merge-to-master false
 
+  deploy-stable-prod:
+    docker:
+      - image: praqma/gcloud-kubectl-helm:v2.11.0
+        environment:
+          PROJECT: pi-ostelco-prod
+          CLUSTER: pi-prod
+          ZONE: europe-west1-c
+          SERVICE_ACCOUNT: terraform-manage-cluster-from@pi-ostelco-prod.iam.gserviceaccount.com
+
+    steps:
+      - attach_workspace:
+          # Must be absolute path or relative path from working_directory
+          at: ~/project
+      - run:
+          name: deploy stable prod prime to the prod cluster
+          command: |
+            PRIME_VERSION=$(cat prime_version)
+            TAG=$PRIME_VERSION-${CIRCLE_SHA1:0:9}
+            export GOOGLE_CREDENTIALS=${PI_PROD_CLUSTER_CREDENTIALS}
+            /authenticate.bash
+            helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
+            helm repo update
+            helm upgrade prime ostelco/prime --version 1.0.0 --install \
+             --namespace prod \
+             -f .circleci/prime-prod-values.yaml \
+             --set prime.tag=$TAG
+
+      - run:
+          name: notify slack on failure
+          when: on_fail
+          command: .circleci/notify-slack.sh on-PR-merge-to-master false      
 workflows:
   version: 2
   on-feature-branch-commit:
@@ -371,13 +402,20 @@ workflows:
       - deploy-to-dev:
           requires:
             - update-dev-endpoints
-      - approve-prod-deploy:
+      - approve-prod-canary-deploy:
           type: approval
           requires:
             - deploy-to-dev
       - update-prod-endpoints:
           requires:
-            - approve-prod-deploy
+            - approve-prod-canary-deploy
       - deploy-canary:
           requires:
             - update-prod-endpoints
+      - approve-prod-stable-deploy:
+          type: approval
+          requires:
+            - deploy-canary 
+      - deploy-stable-prod:
+          requires:
+            - approve-prod-stable-deploy           
