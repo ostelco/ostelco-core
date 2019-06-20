@@ -1,4 +1,4 @@
-# PROD values for prime.
+# PROD-CANARY values for prime.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
@@ -226,7 +226,9 @@ services:
     grpcOrHttp2: true
     ambassadorMappingOptions:
       timeout_ms: 600000
-    canary: {}
+    canary:
+      headers:
+        x-mode: canary
 
   metrics:
     name: metrics
@@ -244,7 +246,9 @@ services:
     host: houston-api # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
     ambassadorMappingOptions:
       timeout_ms: 600000
-    canary: {}
+    canary:
+      headers:
+        x-mode: canary
 
   prime-alvin-api:
     name: alvin-api
@@ -255,7 +259,9 @@ services:
     host: alvin-api # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
     ambassadorMappingOptions:
       timeout_ms: 600000
-    canary: {}
+    canary: 
+      headers:
+        x-mode: canary
 
   dwadmin-service:
     name: dwadmin-service
@@ -273,7 +279,9 @@ services:
     host: smdpplus
     clientCert: true
     caCert: smdp-cacert.prod # secretname.namespace
-    canary: {}
+    canary:
+      headers:
+        x-mode: canary
 
 certs:
   enabled: true
