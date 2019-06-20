@@ -42,7 +42,7 @@ fun deleteCustomer(email: String) {
 fun createSubscription(
         email: String,
         regionCode: String,
-        iccId: String = UUID.randomUUID().toString(),
+        iccId: String = "TEST-" + UUID.randomUUID().toString(),
         alias: String = "",
         msisdn: String) {
 
