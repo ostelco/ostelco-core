@@ -121,8 +121,8 @@ class PreallocateProfilesTask(
                                 .bind()
 
                         if (profileStats.noOfEntriesAvailableForImmediateUse < lowWaterMark) {
-                            logger.info("Preallocating new SIM batch with HLR {} and with profile {}.   profileStats = {}",
-                                    hssEntry.name, simProfileName, profileStats)
+                            logger.info("Preallocating new SIM batch with HLR {} and with profile {}.  lowWaterMark = {},  profileStats = {}",
+                                    hssEntry.name, simProfileName, lowWaterMark, profileStats)
 
                             batchPreprovisionSimProfiles(hssEntry = hssEntry, simProfileName = simProfileName, profileStats = profileStats)
                         }
