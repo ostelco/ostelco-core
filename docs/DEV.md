@@ -6,6 +6,12 @@
 ./gradlew dependencyUpdates -Drevision=release
 ```
 
+## Checking for dependency resolution
+
+```bash
+./gradlew :prime:dependencyInsight --configuration runtimeClasspath --dependency dependency-name
+```
+
 ## Package / Namespace naming convention
 
 ### Format

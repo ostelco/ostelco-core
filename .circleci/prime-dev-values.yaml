@@ -2,23 +2,26 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-replicaCount: 2
+replicaCount: 3
 
 dnsPrefix: ""
 dnsSuffix: ".dev.oya.world"
 
 podAutoscaling:
   enabled: true
-  minReplicas: 1
+  minReplicas: 3
   maxReplicas: 5
-  targetCPUUtilizationPercentage: 70
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: 80
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: 70
 
 cronjobs: 
-  extractor: 
-    enabled: true
-    image: eu.gcr.io/pi-ostelco-dev/bq-metrics-extractor
-    tag: "1.3.212.1.0-2d41d62b-dev"  
-    dataset_project: pi-ostelco-dev
   shredder:
     enabled: true
     image: eu.gcr.io/pi-ostelco-dev/scaninfo-shredder
@@ -28,7 +31,7 @@ cronjobs:
 
 prime:
   image: eu.gcr.io/pi-ostelco-dev/prime
-  tag: 9ca9ca976
+  tag: "" # it will be set from CI
   pullPolicy: Always
   configDataBucket: "gs://pi-ostelco-dev-prime-files/dev"
 
@@ -133,21 +136,14 @@ prime:
     - 8083 
   resources: 
     requests:
-      cpu: 100m
-      memory: 300Mi
+      cpu: 300m
+      memory: 512Mi
   livenessProbe: {}
   readinessProbe: {}
   annotations: 
     prometheus.io/scrape: 'true'
     prometheus.io/path: '/prometheus-metrics'
     prometheus.io/port: '8081'  
-
-
-canary: {}
-  # weight: 25
-  # headers: # only route requests with these headers to the canary service
-  #   x-mode: canary
-  # tag: ""
 
 cloudsqlProxy:
   enabled: true
@@ -212,8 +208,7 @@ services:
     port: 443
     targetPort: 8443
     portName: grpc
-    # host: ocs # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
-    # grpcOrHttp2: true
+
   api:
     name: api
     type: ClusterIP
@@ -224,15 +219,15 @@ services:
     grpcOrHttp2: true
     ambassadorMappingOptions:
       timeout_ms: 600000
+    canary: {}
+
   metrics:
     name: metrics
     type: LoadBalancer
     port: 443
     targetPort: 9443
     portName: grpc
-    # loadBalancerIP: x.y.z.n
-    # host: metrics # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
-    # grpcOrHttp2: true
+
   prime-houston-api:
     name: houston-api
     type: ClusterIP
@@ -242,6 +237,8 @@ services:
     host: houston-api # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
     ambassadorMappingOptions:
       timeout_ms: 600000
+    canary: {}
+
   prime-alvin-api:
     name: alvin-api
     type: ClusterIP
@@ -251,12 +248,15 @@ services:
     host: alvin-api # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
     ambassadorMappingOptions:
       timeout_ms: 600000
+    canary: {}
+
   dwadmin-service:
     name: dwadmin-service
     type: ClusterIP
     port: 8081
     targetPort: 8081
     portName: http
+
   smdpplus:
     name: smdpplus
     type: ClusterIP
@@ -266,6 +266,7 @@ services:
     host: smdpplus
     clientCert: true
     caCert: smdp-cacert.dev # secretname.namespace
+    canary: {}
 
 certs:
   enabled: true
@@ -279,7 +280,8 @@ disruptionBudget:
   enabled: false
   minAvailable: 1
 
-nodeSelector: {}
+nodeSelector: 
+  target: prime
 
 tolerations: []
 

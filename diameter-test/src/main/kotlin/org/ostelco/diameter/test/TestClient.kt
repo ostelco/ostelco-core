@@ -24,6 +24,7 @@ import org.ostelco.diameter.getLogger
 import org.ostelco.diameter.model.RequestType
 import org.ostelco.diameter.util.DiameterUtilities
 import java.util.concurrent.TimeUnit
+import kotlin.random.Random
 
 
 class TestClient : EventListener<Request, Answer> {
@@ -132,7 +133,7 @@ class TestClient : EventListener<Request, Answer> {
             if (!stack.isActive) {
                 logger.warn("Stack not active")
             }
-            return this.factory.getNewSession("CustomSessionId;$sessionId;0")
+            return this.factory.getNewSession("CustomSessionId;$sessionId;${Random.nextInt(0, 10000)}")
         } catch (e: InternalException) {
             logger.error("Start Failed", e)
         } catch (e: InterruptedException) {

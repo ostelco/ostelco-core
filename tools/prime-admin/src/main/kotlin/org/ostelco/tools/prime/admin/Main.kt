@@ -24,8 +24,8 @@ fun doActions() {
 //    setup()
 //    index()
 
-//    createCustomer(email = "", nickname = "")
-//    deleteCustomer(email = "")
+//    createCustomer(email = "", nickname = "").printLeft()
+//    deleteCustomer(email = "").printLeft()
 
     // link to region
 
@@ -34,7 +34,7 @@ fun doActions() {
 //            email = "",
 //            regionCode ="",
 //            alias = "",
-//            msisdn = "")
+//            msisdn = "").printLeft()
 
     // remove SimProfile
 
@@ -43,9 +43,9 @@ fun doActions() {
     // check bundle balance
 
     // Get region details
-//    getRegionDetails(email = "", regionCode = "")
+//    getRegionDetails(email = "", regionCode = "").print()
 
     // Get all region details
-//     getAllRegionDetails(email = "")
+//     getAllRegionDetails(email = "").print()
 
 }
