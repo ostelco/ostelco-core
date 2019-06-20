@@ -58,32 +58,31 @@ class ProtobufDataSource {
                         try {
                             session.sendCreditControlAnswer(ccrContext.createCCA(cca))
                         } catch (e: InternalException) {
-                            logger.error("Failed to send Credit-Control-Answer", e)
+                            logger.error("Failed to send Credit-Control-Answer msisdn {} requestId {}", answer.msisdn, answer.requestId, e)
                         } catch (e: IllegalDiameterStateException) {
-                            logger.error("Failed to send Credit-Control-Answer", e)
+                            logger.error("Failed to send Credit-Control-Answer msisdn {} requestId {}", answer.msisdn, answer.requestId, e)
                         } catch (e: RouteException) {
-                            logger.error("Failed to send Credit-Control-Answer", e)
+                            logger.error("Failed to send Credit-Control-Answer msisdn {} requestId {}", answer.msisdn, answer.requestId, e)
                         } catch (e: OverloadException) {
-                            logger.error("Failed to send Credit-Control-Answer", e)
+                            logger.error("Failed to send Credit-Control-Answer msisdn {} requestId {}", answer.msisdn, answer.requestId, e)
                         }
                     }
                 } else {
-                    logger.warn("No stored CCR or Session for {}", answer.requestId)
+                    logger.warn("No stored CCR or Session for [{}] [{}]", answer.msisdn, answer.requestId)
                 }
             } else {
-                logger.warn("Missing CreditControlContext for req id {}", answer.requestId)
+                logger.warn("Missing CreditControlContext for [{}] [{}]", answer.msisdn, answer.requestId)
             }
         } catch (e: Exception) {
-            logger.error("Credit-Control-Request failed ", e)
+            logger.error("Credit-Control-Request failed [{}] [{}]", answer.msisdn, answer.requestId, e)
         }
     }
 
     fun handleActivateResponse(activateResponse : ActivateResponse) {
 
-        logger.info("Active user {}", activateResponse.msisdn)
-
         if (sessionIdMap.containsKey(activateResponse.msisdn)) {
             val sessionContext = sessionIdMap[activateResponse.msisdn]
+            logger.info("Active user {} on session {}", activateResponse.msisdn, sessionContext?.sessionId)
             OcsServer.sendReAuthRequest(sessionContext)
         } else {
             logger.info("No session context stored for msisdn : {}", activateResponse.msisdn)
@@ -99,9 +98,8 @@ class ProtobufDataSource {
                     creditControlContext.creditControlRequest.serviceInformation[0].psInformation[0].sgsnMccMnc)
             sessionIdMap[creditControlContext.creditControlRequest.msisdn] = sessionContext
         } catch (e: Exception) {
-            logger.error("Failed to update session map", e)
+            logger.error("Failed to update session map []",creditControlContext.sessionId, e)
         }
-
     }
 
     private fun removeFromSessionMap(creditControlContext: CreditControlContext) {

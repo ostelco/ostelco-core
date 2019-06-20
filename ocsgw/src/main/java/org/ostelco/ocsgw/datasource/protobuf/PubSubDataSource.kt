@@ -100,7 +100,7 @@ class PubSubDataSource(
         val byteString = ByteString.copyFromUtf8(base64String)
 
         if (!byteString.isValidUtf8) {
-            logger.warn("Could not convert creditControlRequestInfo to UTF-8")
+            logger.warn("Could not convert creditControlRequestInfo to UTF-8 [{}]", creditControlRequestInfo.msisdn)
             return
         }
         val pubsubMessage = PubsubMessage.newBuilder()
