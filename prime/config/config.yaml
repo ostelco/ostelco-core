@@ -33,13 +33,21 @@ modules:
         connectionRequestTimeout: 1s
   - type: kyc
     config:
-      myInfoApiUri: ${MY_INFO_API_URI}
-      myInfoApiClientId: ${MY_INFO_API_CLIENT_ID}
-      myInfoApiClientSecret: ${MY_INFO_API_CLIENT_SECRET}
-      myInfoApiRealm: ${MY_INFO_API_REALM}
-      myInfoRedirectUri: ${MY_INFO_REDIRECT_URI}
-      myInfoServerPublicKey: ${MY_INFO_SERVER_PUBLIC_KEY}
-      myInfoClientPrivateKey: ${MY_INFO_CLIENT_PRIVATE_KEY}
+      myInfoV2:
+        myInfoApiUri: ${MY_INFO_V2_API_URI}
+        myInfoApiClientId: ${MY_INFO_API_CLIENT_ID}
+        myInfoApiClientSecret: ${MY_INFO_API_CLIENT_SECRET}
+        myInfoApiRealm: ${MY_INFO_API_REALM}
+        myInfoRedirectUri: ${MY_INFO_REDIRECT_URI}
+        myInfoServerPublicKey: ${MY_INFO_SERVER_PUBLIC_KEY}
+        myInfoClientPrivateKey: ${MY_INFO_CLIENT_PRIVATE_KEY}
+      myInfoV3:
+        myInfoApiUri: ${MY_INFO_V3_API_URI}
+        myInfoApiClientId: ${MY_INFO_API_CLIENT_ID}
+        myInfoApiClientSecret: ${MY_INFO_API_CLIENT_SECRET}
+        myInfoRedirectUri: ${MY_INFO_REDIRECT_URI}
+        myInfoServerPublicKey: ${MY_INFO_SERVER_PUBLIC_KEY}
+        myInfoClientPrivateKey: ${MY_INFO_CLIENT_PRIVATE_KEY}
   - type: neo4j
     config:
       host: ${NEO4J_HOST}

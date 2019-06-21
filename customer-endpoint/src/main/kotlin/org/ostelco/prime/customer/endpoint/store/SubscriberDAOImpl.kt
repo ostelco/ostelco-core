@@ -2,7 +2,7 @@ package org.ostelco.prime.customer.endpoint.store
 
 import arrow.core.Either
 import arrow.core.flatMap
-import arrow.core.right
+import org.ostelco.prime.activation.Activation
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.apierror.ApiErrorCode
 import org.ostelco.prime.apierror.ApiErrorMapper.mapPaymentErrorToApiError
@@ -12,14 +12,13 @@ import org.ostelco.prime.apierror.InternalServerError
 import org.ostelco.prime.apierror.NotFoundError
 import org.ostelco.prime.customer.endpoint.metrics.updateMetricsOnNewSubscriber
 import org.ostelco.prime.customer.endpoint.model.Person
-import org.ostelco.prime.ekyc.MyInfoKycService
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Context
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.Identity
-import org.ostelco.prime.model.MyInfoConfig
+import org.ostelco.prime.model.MyInfoApiVersion
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.RegionDetails
@@ -27,7 +26,6 @@ import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.SimProfile
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
-import org.ostelco.prime.activation.Activation
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.PlanAlredyPurchasedError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
@@ -442,14 +440,10 @@ class SubscriberDAOImpl : SubscriberDAO {
                 .mapLeft { mapStorageErrorToApiError("Failed to fetch scan information", ApiErrorCode.FAILED_TO_FETCH_SCAN_INFORMATION, it) }
     }
 
-    override fun getCustomerMyInfoData(identity: Identity, authorisationCode: String): Either<ApiError, String> {
-        return storage.getCustomerMyInfoData(identity, authorisationCode)
+    override fun getCustomerMyInfoData(identity: Identity, version: MyInfoApiVersion, authorisationCode: String): Either<ApiError, String> {
+        return storage.getCustomerMyInfoData(identity, version, authorisationCode)
                 .mapLeft { mapStorageErrorToApiError("Failed to fetch Customer Data from MyInfo", ApiErrorCode.FAILED_TO_FETCH_CUSTOMER_MYINFO_DATA, it) }
     }
-
-    private val myInfoKycService by lazy { getResource<MyInfoKycService>() }
-
-    override fun getMyInfoConfig(): Either<ApiError, MyInfoConfig> = myInfoKycService.getConfig().right()
 
     override fun checkNricFinIdUsingDave(identity: Identity, nricFinId: String): Either<ApiError, Unit> {
         return storage.checkNricFinIdUsingDave(identity, nricFinId)

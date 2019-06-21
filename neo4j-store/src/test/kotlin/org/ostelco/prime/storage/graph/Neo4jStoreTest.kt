@@ -927,6 +927,21 @@ class Neo4jStoreTest {
                 .fold({
                     fail("Failed to get Region Details - ${it.message}")
                 }, {
+                    assertEquals(PENDING, it.status)
+                })
+
+        Neo4jStoreSingleton.setKycStatus(
+                customerId = CUSTOMER.id,
+                regionCode = "sg",
+                kycType = ADDRESS_AND_PHONE_NUMBER)
+                .mapLeft { fail(it.message) }
+
+        Neo4jStoreSingleton.getRegionDetails(
+                identity = IDENTITY,
+                regionCode = "sg")
+                .fold({
+                    fail("Failed to get Region Details - ${it.message}")
+                }, {
                     assertEquals(APPROVED, it.status)
                 })
     }

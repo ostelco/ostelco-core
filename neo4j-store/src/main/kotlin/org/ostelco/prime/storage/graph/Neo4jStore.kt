@@ -50,6 +50,9 @@ import org.ostelco.prime.model.KycType.ADDRESS_AND_PHONE_NUMBER
 import org.ostelco.prime.model.KycType.JUMIO
 import org.ostelco.prime.model.KycType.MY_INFO
 import org.ostelco.prime.model.KycType.NRIC_FIN
+import org.ostelco.prime.model.MyInfoApiVersion
+import org.ostelco.prime.model.MyInfoApiVersion.V2
+import org.ostelco.prime.model.MyInfoApiVersion.V3
 import org.ostelco.prime.model.PaymentType.SUBSCRIPTION
 import org.ostelco.prime.model.Plan
 import org.ostelco.prime.model.Price
@@ -1605,12 +1608,14 @@ object Neo4jStoreSingleton : GraphStore {
     // eKYC - MyInfo
     //
 
-    private val myInfoKycService by lazy { getResource<MyInfoKycService>() }
+    private val myInfoKycV2Service by lazy { getResource<MyInfoKycService>("v2") }
+    private val myInfoKycV3Service by lazy { getResource<MyInfoKycService>("v3") }
 
     private val secureArchiveService by lazy { getResource<SecureArchiveService>() }
 
     override fun getCustomerMyInfoData(
             identity: org.ostelco.prime.model.Identity,
+            version: MyInfoApiVersion,
             authorisationCode: String): Either<StoreError, String> {
         return IO {
             Either.monad<StoreError>().binding {
@@ -1625,19 +1630,22 @@ object Neo4jStoreSingleton : GraphStore {
                         kycStatus = KycStatus.PENDING).bind()
 
                 val personData = try {
-                    myInfoKycService.getPersonData(authorisationCode)
+                    when(version) {
+                        V2 -> myInfoKycV2Service
+                        V3 -> myInfoKycV3Service
+                    }.getPersonData(authorisationCode)
                             ?.right()
                             ?: SystemError(
                                     type = "MyInfo Auth Code",
                                     id = authorisationCode,
-                                    message = "Failed to fetched MyInfo"
+                                    message = "Failed to fetched MyInfo $version"
                             ).left() as Either<SystemError, String>
                 } catch (e: Exception) {
-                    logger.error("Failed to fetched MyInfo using authCode = $authorisationCode", e)
+                    logger.error("Failed to fetched MyInfo $version using authCode = $authorisationCode", e)
                     SystemError(
                             type = "MyInfo Auth Code",
                             id = authorisationCode,
-                            message = "Failed to fetched MyInfo").left()
+                            message = "Failed to fetched MyInfo $version").left()
                 }.bind()
 
                 secureArchiveService.archiveEncrypted(
@@ -1822,7 +1830,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     private fun getApprovedKycTypeSetList(regionCode: String): List<Set<KycType>> {
         return when (regionCode) {
-            "sg" -> listOf(setOf(MY_INFO),
+            "sg" -> listOf(setOf(MY_INFO, ADDRESS_AND_PHONE_NUMBER),
                     setOf(JUMIO, NRIC_FIN, ADDRESS_AND_PHONE_NUMBER))
             else -> listOf(setOf(JUMIO))
         }

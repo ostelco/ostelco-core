@@ -6,6 +6,7 @@ import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.ChangeSegment
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.Identity
+import org.ostelco.prime.model.MyInfoApiVersion
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.Plan
 import org.ostelco.prime.model.Product
@@ -171,7 +172,7 @@ interface ClientGraphStore {
     /**
      * Get Customer Data from Singapore MyInfo Data using authorisationCode, and store and return it
      */
-    fun getCustomerMyInfoData(identity: Identity, authorisationCode: String): Either<StoreError, String>
+    fun getCustomerMyInfoData(identity: Identity, version: MyInfoApiVersion, authorisationCode: String): Either<StoreError, String>
 
     /**
      * Validate and store NRIC/FIN ID

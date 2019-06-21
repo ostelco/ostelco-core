@@ -3,6 +3,7 @@ package org.ostelco.prime.customer.endpoint.resources
 import arrow.core.Either
 import arrow.core.right
 import com.nhaarman.mockito_kotlin.argumentCaptor
+import com.nhaarman.mockito_kotlin.eq
 import io.dropwizard.auth.AuthDynamicFeature
 import io.dropwizard.auth.AuthValueFactoryProvider
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter.Builder
@@ -21,6 +22,7 @@ import org.ostelco.prime.customer.endpoint.store.SubscriberDAO
 import org.ostelco.prime.customer.endpoint.util.AccessToken
 import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.model.Identity
+import org.ostelco.prime.model.MyInfoApiVersion.V2
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.ScanStatus
 import java.util.*
@@ -97,7 +99,7 @@ class KycResourcesTest {
         val identityCaptor = argumentCaptor<Identity>()
         val authorisationCodeCaptor = argumentCaptor<String>()
 
-        `when`<Either<ApiError, String>>(DAO.getCustomerMyInfoData(identityCaptor.capture(), authorisationCodeCaptor.capture()))
+        `when`<Either<ApiError, String>>(DAO.getCustomerMyInfoData(identityCaptor.capture(), eq(V2), authorisationCodeCaptor.capture()))
                 .thenReturn("{}".right())
 
         val resp = RULE.target("regions/sg/kyc/myInfo/code123")
@@ -121,7 +123,7 @@ class KycResourcesTest {
         val identityCaptor = argumentCaptor<Identity>()
         val authorisationCodeCaptor = argumentCaptor<String>()
 
-        `when`<Either<ApiError, String>>(DAO.getCustomerMyInfoData(identityCaptor.capture(), authorisationCodeCaptor.capture()))
+        `when`<Either<ApiError, String>>(DAO.getCustomerMyInfoData(identityCaptor.capture(), eq(V2), authorisationCodeCaptor.capture()))
                 .thenReturn("{}".right())
 
         val resp = RULE.target("regions/no/kyc/myInfo/code123")

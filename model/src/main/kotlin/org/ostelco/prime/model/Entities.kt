@@ -79,6 +79,11 @@ enum class KycStatus {
 
 data class MyInfoConfig(val url: String)
 
+enum class MyInfoApiVersion {
+    V2,
+    V3
+}
+
 enum class ScanStatus {
     PENDING,   // scan results are pending
     REJECTED,  // scanned Id was rejected

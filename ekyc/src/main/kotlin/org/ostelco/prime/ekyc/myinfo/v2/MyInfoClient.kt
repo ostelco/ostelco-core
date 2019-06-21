@@ -1,4 +1,4 @@
-package org.ostelco.prime.ekyc.myinfo
+package org.ostelco.prime.ekyc.myinfo.v2
 
 import io.jsonwebtoken.Jwts
 import org.apache.cxf.rs.security.jose.jwe.JweCompactConsumer
@@ -7,11 +7,13 @@ import org.apache.http.HttpResponse
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity
-import org.ostelco.prime.ekyc.ConfigRegistry.config
 import org.ostelco.prime.ekyc.MyInfoKycService
 import org.ostelco.prime.ekyc.Registry.myInfoClient
+import org.ostelco.prime.ekyc.myinfo.ExtendedCompressionCodecResolver
+import org.ostelco.prime.ekyc.myinfo.HttpMethod
 import org.ostelco.prime.ekyc.myinfo.HttpMethod.GET
 import org.ostelco.prime.ekyc.myinfo.HttpMethod.POST
+import org.ostelco.prime.ekyc.myinfo.TokenApiResponse
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.model.MyInfoConfig
@@ -24,9 +26,12 @@ import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
 import java.time.Instant
 import java.util.*
+import javax.inject.Named
 import javax.ws.rs.core.MediaType
 import kotlin.system.measureTimeMillis
+import org.ostelco.prime.ekyc.ConfigRegistry.myInfoV2 as config
 
+@Named("v2")
 class MyInfoClient : MyInfoKycService by MyInfoClientSingleton
 
 object MyInfoClientSingleton : MyInfoKycService {
