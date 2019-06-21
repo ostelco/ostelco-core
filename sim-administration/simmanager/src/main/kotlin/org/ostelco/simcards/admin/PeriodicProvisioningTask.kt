@@ -87,7 +87,7 @@ class PreallocateProfilesTask(
 
         logger.info("Number of profiles to allocate: {}", noOfProfilesToActuallyAllocate)
 
-        if (noOfProfilesToActuallyAllocate == 0) {
+        if (noOfProfilesToActuallyAllocate == 0L) {
             logger.error("Could not find any profiles to allocate for hssname = '{}', profilename = '{}', profileStats = '{}'",
                     hssEntry.name,
                     simProfileName,
