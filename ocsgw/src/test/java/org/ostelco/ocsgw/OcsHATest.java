@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.ostelco.diameter.model.RequestType;
+import org.ostelco.diameter.test.Result;
 import org.ostelco.diameter.test.TestClient;
 import org.ostelco.diameter.test.TestHelper;
 import org.slf4j.Logger;
@@ -33,6 +34,8 @@ public class OcsHATest {
     private static final String OCS_REALM = "loltel";
     private static final String OCS_HOST_1 = "ocs_1";
     private static final String OCS_HOST_2 = "ocs_2";
+
+    private static final long DIAMETER_SUCCESS = 2001L;
 
     private static final String MSISDN = "4790300123";
 
@@ -158,11 +161,12 @@ public class OcsHATest {
 
         testPGW.sendNextRequest(request, session);
 
-        waitForAnswer();
+        waitForAnswer(session.getSessionId());
 
         try {
-            assertEquals(2001L, testPGW.getResultCodeAvp().getInteger32());
-            AvpSet resultAvps = testPGW.getResultAvps();
+            Result result = testPGW.getAnswer(session.getSessionId());
+            assertEquals(DIAMETER_SUCCESS, result.getResultCode().longValue());
+            AvpSet resultAvps = result.getResultAvps();
             assertEquals(host, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String());
             assertEquals(OCS_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String());
             assertEquals(RequestType.INITIAL_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
@@ -230,11 +234,12 @@ public class OcsHATest {
 
         testPGW.sendNextRequest(request, session);
 
-        waitForAnswer();
+        waitForAnswer(session.getSessionId());
 
         try {
-            assertEquals(2001L, testPGW.getResultCodeAvp().getInteger32());
-            AvpSet resultAvps = testPGW.getResultAvps();
+            Result result = testPGW.getAnswer(session.getSessionId());
+            assertEquals(DIAMETER_SUCCESS, result.getResultCode().longValue());
+            AvpSet resultAvps = result.getResultAvps();
             assertEquals(host, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String());
             assertEquals(OCS_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String());
             assertEquals(RequestType.UPDATE_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
@@ -257,7 +262,7 @@ public class OcsHATest {
      */
     @DisplayName("HA Credit-Control-Request Init Update and Terminate")
     public void haCreditControlRequestInitUpdateAndTerminate() {
-        Session session = testPGW.createSession();
+        Session session = testPGW.createSession(new Object() {}.getClass().getEnclosingMethod().getName());
         haCreditControlRequestInit(session, OCS_HOST_1);
 
         // Restart server 1 and continue when it is back online
@@ -282,11 +287,12 @@ public class OcsHATest {
 
         testPGW.sendNextRequest(request, session);
 
-        waitForAnswer();
+        waitForAnswer(session.getSessionId());
 
         try {
-            assertEquals(2001L, testPGW.getResultCodeAvp().getInteger32());
-            AvpSet resultAvps = testPGW.getResultAvps();
+            Result result = testPGW.getAnswer(session.getSessionId());
+            assertEquals(DIAMETER_SUCCESS, result.getResultCode().longValue());
+            AvpSet resultAvps = result.getResultAvps();
             assertEquals(OCS_HOST_2, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String());
             assertEquals(OCS_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String());
             assertEquals(RequestType.TERMINATION_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
@@ -298,9 +304,9 @@ public class OcsHATest {
         session.release();
     }
 
-    private void waitForAnswer() {
+    private void waitForAnswer(String sessionId) {
         int i = 0;
-        while (!testPGW.isAnswerReceived() && i<10) {
+        while (!testPGW.isAnswerReceived(sessionId) && i<10) {
             i++;
             try {
                 Thread.sleep(500);
@@ -308,6 +314,6 @@ public class OcsHATest {
                 // continue
             }
         }
-        assertEquals(true, testPGW.isAnswerReceived());
+        assertEquals(true, testPGW.isAnswerReceived(sessionId));
     }
 }

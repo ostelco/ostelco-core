@@ -12,6 +12,7 @@ import arrow.instances.either.monad.monad
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.appnotifier.AppNotifier
+import org.ostelco.prime.dsl.WriteTransaction
 import org.ostelco.prime.dsl.readTransaction
 import org.ostelco.prime.dsl.suspendedWriteTransaction
 import org.ostelco.prime.dsl.writeTransaction
@@ -159,10 +160,8 @@ object Neo4jStoreSingleton : GraphStore {
     private val productStore = Product::class.entityStore
 
     private val subscriptionEntity = Subscription::class.entityType
-    private val subscriptionStore = Subscription::class.entityStore
 
     private val bundleEntity = Bundle::class.entityType
-    private val bundleStore = Bundle::class.entityStore
 
     private val simProfileEntity = SimProfile::class.entityType
     private val simProfileStore = SimProfile::class.entityStore
@@ -267,6 +266,7 @@ object Neo4jStoreSingleton : GraphStore {
 
 
     private val hssNameLookup: HssNameLookupService = config.hssNameLookupService.getKtsService()
+    private val onNewCustomerAction: OnNewCustomerAction = config.onNewCustomerAction.getKtsService()
 
     // -------------
     // Client Store
@@ -330,8 +330,6 @@ object Neo4jStoreSingleton : GraphStore {
                 Unit.right()
             }
 
-    // TODO vihang: Move this logic to DSL + Rule Engine + Triggers, when they are ready
-    // >> BEGIN
     override fun addCustomer(identity: ModelIdentity, customer: Customer, referredBy: String?): Either<StoreError, Unit> = writeTransaction {
         // IO is used to represent operations that can be executed lazily and are capable of failing.
         // Here it runs IO synchronously and returning its result blocking the current thread.
@@ -343,29 +341,21 @@ object Neo4jStoreSingleton : GraphStore {
                 val bundleId = UUID.randomUUID().toString()
                 create { Identity(id = identity.id, type = identity.type) }.bind()
                 create { customer }.bind()
-                identifiesRelationStore.create(fromId = identity.id, relation = Identifies(provider = identity.provider), toId = customer.id, transaction = transaction).bind()
-                // Give 100 MB as free initial balance
-                val productId = "2GB_FREE_ON_JOINING"
-                val balance: Long = 2_147_483_648
+                identifiesRelationStore.create(
+                        fromId = identity.id,
+                        relation = Identifies(provider = identity.provider),
+                        toId = customer.id,
+                        transaction = transaction).bind()
+                create { Bundle(id = bundleId, balance = 0L) }.bind()
+                customerToBundleStore.create(customer.id, bundleId, transaction).bind()
                 if (referredBy != null) {
                     referredRelationStore.create(referredBy, customer.id, transaction).bind()
                 }
-                create { Bundle(bundleId, balance) }.bind()
-                val product = get(Product::class, productId).bind()
-                createPurchaseRecordRelation(
-                        customer.id,
-                        PurchaseRecord(
-                                id = UUID.randomUUID().toString(),
-                                product = product,
-                                timestamp = Instant.now().toEpochMilli()
-                        ),
-                        transaction)
-                customerToBundleStore.create(customer.id, bundleId, transaction).bind()
+                onNewCustomerAction.apply(identity = identity, customerId = customer.id, transaction = transaction).bind()
             }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
     }
-    // << END
 
     override fun updateCustomer(
             identity: org.ostelco.prime.model.Identity,
@@ -1025,7 +1015,7 @@ object Neo4jStoreSingleton : GraphStore {
 
                     /* If this step fails, the previously added 'removeInvoice' call added to the transaction
                     will ensure that the invoice will be voided. */
-                    createPurchaseRecordRelation(customer.id, purchaseRecord, transaction)
+                    createPurchaseRecordRelation(customer.id, purchaseRecord)
                             .mapLeft {
                                 logger.error("Failed to save purchase record for customer ${customer.id}, invoice-id $invoiceId, invoice will be voided in Stripe")
                                 BadGatewayError("Failed to save purchase record",
@@ -1039,32 +1029,12 @@ object Neo4jStoreSingleton : GraphStore {
                             status = "success")
                 }
 
-                when (product.productClass) {
-                    MEMBERSHIP -> {
-                        product.segmentIds.forEach { segmentId ->
-                            assignCustomerToSegment(customerId = customer.id,
-                                    segmentId = segmentId,
-                                    transaction = transaction)
-                                    .mapLeft {
-                                        logger.error("Failed to assign Customer to a Segment - {}", it.message)
-                                        BadGatewayError("Failed to assign Membership", error = it)
-                                    }
-                                    .bind()
-                        }
-                    }
-                    SIMPLE_DATA -> {
-                        /* Topup. */
-                        simpleDataProduct(
-                                customerId = customer.id,
-                                sku = product.sku,
-                                bytes = product.noOfBytes,
-                                transaction = transaction)
-                                .bind()
-                    }
-                    else -> {
-                        BadGatewayError("Missing product class in properties of product: $sku").left().bind()
-                    }
-                }
+                applyProduct(
+                        customerId = customer.id,
+                        product = product
+                ).mapLeft {
+                    BadGatewayError(description = it.message, error = it.error).left().bind()
+                }.bind()
 
                 ProductInfo(product.sku)
             }.fix()
@@ -1072,6 +1042,50 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
     // << END
+
+    fun WriteTransaction.applyProduct(customerId: String, product: Product) = IO {
+        Either.monad<StoreError>().binding {
+            when (product.productClass) {
+                MEMBERSHIP -> {
+                    product.segmentIds.forEach { segmentId ->
+                        assignCustomerToSegment(customerId = customerId,
+                                segmentId = segmentId,
+                                transaction = transaction)
+                                .mapLeft {
+                                    SystemError(
+                                            type = "Customer -> Segment",
+                                            id = "$customerId -> $segmentId",
+                                            message = "Failed to assign Membership",
+                                            error = it)
+                                }
+                                .bind()
+                    }
+                }
+                SIMPLE_DATA -> {
+                    /* Topup. */
+                    simpleDataProduct(
+                            customerId = customerId,
+                            sku = product.sku,
+                            bytes = product.noOfBytes,
+                            transaction = transaction)
+                            .mapLeft {
+                                SystemError(
+                                        type = "Customer",
+                                        id = product.sku,
+                                        message = "Failed to update balance for customer: $customerId",
+                                        error = it)
+                            }
+                            .bind()
+                }
+                else -> {
+                    SystemError(
+                            type = "Product",
+                            id = product.sku,
+                            message = "Missing product class in properties of product: ${product.sku}").left().bind()
+                }
+            }
+        }.fix()
+    }.unsafeRunSync()
 
     private fun fetchOrCreatePaymentProfile(customer: Customer): Either<PaymentError, ProfileInfo> =
             // Fetch/Create stripe payment profile for the customer.
@@ -1182,7 +1196,7 @@ object Neo4jStoreSingleton : GraphStore {
                         }
 
                 /* Lookup in payment backend will fail if no value found for 'stripePlanId'. */
-                val planStripeId = plan.stripePlanId ?: SystemError(type = planEntity.name, id = "${plan.id}",
+                val planStripeId = plan.stripePlanId ?: SystemError(type = planEntity.name, id = plan.id,
                         message = "No reference to Stripe plan found in ${plan.id}")
                         .left()
                         .bind()
@@ -1226,9 +1240,7 @@ object Neo4jStoreSingleton : GraphStore {
                                 trialEnd = subscriptionDetailsInfo.trialEnd),
                         toId = planId,
                         transaction = transaction)
-                        .flatMap {
-                            Either.right(plan)
-                        }.bind()
+                        .bind()
 
                 subscriptionDetailsInfo
             }.fix()
@@ -1324,9 +1336,9 @@ object Neo4jStoreSingleton : GraphStore {
             customerId: String,
             sku: String,
             bytes: Long,
-            transaction: PrimeTransaction): Either<PaymentError, Unit> = IO {
+            transaction: PrimeTransaction): Either<StoreError, Unit> = IO {
 
-        Either.monad<PaymentError>().binding {
+        Either.monad<StoreError>().binding {
 
             if (bytes == 0L) {
                 logger.error("Product with 0 bytes: sku = {}", sku)
@@ -1340,10 +1352,10 @@ object Neo4jStoreSingleton : GraphStore {
                             test = it.summary().counters().containsUpdates(),
                             ifTrue = {},
                             ifFalse = {
-                                logger.error("Failed to update balance during purchase for customer: {}", customerId)
-                                BadGatewayError(
-                                        description = "Failed to update balance during purchase for customer: $customerId",
-                                        message = "Failed to perform topup")
+                                logger.error("Failed to update balance for customer: {}", customerId)
+                                NotUpdatedError(
+                                        type = "Balance of Customer",
+                                        id = customerId)
                             })
                 }.bind()
             }
@@ -1366,13 +1378,13 @@ object Neo4jStoreSingleton : GraphStore {
 
     override fun addPurchaseRecord(customerId: String, purchase: PurchaseRecord): Either<StoreError, String> =
             writeTransaction {
-                createPurchaseRecordRelation(customerId, purchase, transaction)
+                createPurchaseRecordRelation(customerId, purchase)
                         .ifFailedThenRollback(transaction)
             }
 
-    private fun createPurchaseRecordRelation(customerId: String,
-                                             purchase: PurchaseRecord,
-                                             transaction: Transaction): Either<StoreError, String> {
+    fun WriteTransaction.createPurchaseRecordRelation(customerId: String,
+                                             purchase: PurchaseRecord): Either<StoreError, String> {
+
         val invoiceId = purchase.properties["invoiceId"]
 
         /* Avoid charging for the same invoice twice if invoice information
@@ -1389,7 +1401,7 @@ object Neo4jStoreSingleton : GraphStore {
                     }, {
                         ValidationError(type = purchaseRecordRelation.name,
                                 id = purchase.id,
-                                message = "A purchase record for ${purchase.product} for customer ${customerId} alread exists")
+                                message = "A purchase record for ${purchase.product} for customer $customerId already exists")
                                 .left()
                     })
         } else {
@@ -1480,6 +1492,7 @@ object Neo4jStoreSingleton : GraphStore {
                     toId = segmentId,
                     transaction = transaction).mapLeft { storeError ->
                 if (storeError is NotCreatedError && storeError.type == customerToSegmentRelation.name) {
+                    logger.error("Failed to assign Customer - {} to a Segment - {}", customerId, segmentId)
                     ValidationError(type = customerEntity.name, id = customerId, message = "Unsupported segment: $segmentId")
                 } else {
                     storeError
@@ -1584,7 +1597,7 @@ object Neo4jStoreSingleton : GraphStore {
                                         body = FCMStrings.JUMIO_IDENTITY_VERIFIED.s,
                                         data = extendedStatus
                                 )
-                                logger.info(NOTIFY_OPS_MARKER, "Jumio verification succeeded for ${customer.contactEmail} Info: ${extendedStatus}")
+                                logger.info(NOTIFY_OPS_MARKER, "Jumio verification succeeded for ${customer.contactEmail} Info: $extendedStatus")
                                 setKycStatus(
                                         customerId = customer.id,
                                         regionCode = scanInformation.countryCode.toLowerCase(),
@@ -1599,7 +1612,7 @@ object Neo4jStoreSingleton : GraphStore {
                             body = FCMStrings.JUMIO_IDENTITY_FAILED.s,
                             data = extendedStatus
                     )
-                    logger.warn(NOTIFY_OPS_MARKER, "Jumio verification failed for ${customer.contactEmail} Info: ${extendedStatus}")
+                    logger.warn(NOTIFY_OPS_MARKER, "Jumio verification failed for ${customer.contactEmail} Info: $extendedStatus")
                     setKycStatus(
                             customerId = customer.id,
                             regionCode = scanInformation.countryCode.toLowerCase(),
@@ -1852,6 +1865,21 @@ object Neo4jStoreSingleton : GraphStore {
     // ------------
     // Admin Store
     // ------------
+
+    override fun approveRegionForCustomer(
+            customerId: String,
+            regionCode: String): Either<StoreError, Unit> = writeTransaction {
+
+        customerRegionRelationStore.create(
+                fromId = customerId,
+                relation = CustomerRegion(
+                        status = APPROVED,
+                        kycStatusMap = getKycStatusMapForRegion(regionCode = regionCode)
+                ),
+                toId = regionCode,
+                transaction = transaction
+        )
+    }
 
     //
     // Balance (Customer - Subscription - Bundle)
@@ -2136,7 +2164,7 @@ object Neo4jStoreSingleton : GraphStore {
             chargeId: String,
             sku: String,
             amount: Long,
-            currency: String): Either<StoreError, Plan> = readTransaction {
+            currency: String): Either<StoreError, Plan> = writeTransaction {
         IO {
             Either.monad<StoreError>().binding {
                 val product = get(Product::class, sku).bind()
@@ -2149,7 +2177,7 @@ object Neo4jStoreSingleton : GraphStore {
                 )
 
                 /* Will exit if an existing purchase record matches on 'invoiceId'. */
-                createPurchaseRecordRelation(customerId, purchaseRecord, transaction)
+                createPurchaseRecordRelation(customerId, purchaseRecord)
                         .bind()
 
                 /* Offer products to the newly signed up subscriber. */
@@ -2233,7 +2261,6 @@ object Neo4jStoreSingleton : GraphStore {
     //
 
     private val offerEntity = Offer::class.entityType
-    private val offerStore = Offer::class.entityStore
 
     private val segmentEntity = Segment::class.entityType
     private val segmentStore = Segment::class.entityStore
@@ -2251,14 +2278,16 @@ object Neo4jStoreSingleton : GraphStore {
     // Segment
     //
     override fun createSegment(segment: org.ostelco.prime.model.Segment): Either<StoreError, Unit> = writeTransaction {
-        createSegment(segment, transaction)
+        createSegment(segment)
                 .ifFailedThenRollback(transaction)
     }
 
-    private fun createSegment(segment: org.ostelco.prime.model.Segment, transaction: Transaction): Either<StoreError, Unit> {
-        return segmentStore.create(Segment(id = segment.id), transaction)
-                .flatMap { customerToSegmentStore.create(segment.subscribers, segment.id, transaction) }
-    }
+    private fun WriteTransaction.createSegment(segment: org.ostelco.prime.model.Segment): Either<StoreError, Unit> =
+            create {
+                Segment(id = segment.id)
+            }.flatMap {
+                customerToSegmentStore.create(segment.subscribers, segment.id, transaction)
+            }
 
     override fun updateSegment(segment: org.ostelco.prime.model.Segment): Either<StoreError, Unit> = writeTransaction {
         updateSegment(segment, transaction)
@@ -2274,13 +2303,12 @@ object Neo4jStoreSingleton : GraphStore {
     // Offer
     //
     override fun createOffer(offer: org.ostelco.prime.model.Offer): Either<StoreError, Unit> = writeTransaction {
-        createOffer(offer, transaction)
+        createOffer(offer)
                 .ifFailedThenRollback(transaction)
     }
 
-    private fun createOffer(offer: org.ostelco.prime.model.Offer, transaction: Transaction): Either<StoreError, Unit> {
-        return offerStore
-                .create(Offer(id = offer.id), transaction)
+    private fun WriteTransaction.createOffer(offer: org.ostelco.prime.model.Offer): Either<StoreError, Unit> {
+        return create { Offer(id = offer.id) }
                 .flatMap { offerToSegmentStore.create(offer.id, offer.segments, transaction) }
                 .flatMap { offerToProductStore.create(offer.id, offer.products, transaction) }
     }
@@ -2326,7 +2354,7 @@ object Neo4jStoreSingleton : GraphStore {
 
                 products.forEach { product -> create { product }.bind() }
                 segments.forEach { segment -> create { segment }.bind() }
-                createOffer(actualOffer, transaction).bind()
+                createOffer(actualOffer).bind()
 
             }.fix()
         }.unsafeRunSync()
@@ -2338,11 +2366,11 @@ object Neo4jStoreSingleton : GraphStore {
      */
     override fun atomicCreateSegments(createSegments: Collection<org.ostelco.prime.model.Segment>): Either<StoreError, Unit> = writeTransaction {
 
-        createSegments.fold(
-                initial = Unit.right() as Either<StoreError, Unit>,
-                operation = { acc, segment ->
-                    acc.flatMap { createSegment(segment, transaction) }
-                })
+        IO {
+            Either.monad<StoreError>().binding {
+                createSegments.forEach { segment -> createSegment(segment).bind() }
+            }.fix()
+        }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
     }
 
@@ -2351,11 +2379,11 @@ object Neo4jStoreSingleton : GraphStore {
      */
     override fun atomicUpdateSegments(updateSegments: Collection<org.ostelco.prime.model.Segment>): Either<StoreError, Unit> = writeTransaction {
 
-        updateSegments.fold(
-                initial = Unit.right() as Either<StoreError, Unit>,
-                operation = { acc, segment ->
-                    acc.flatMap { updateSegment(segment, transaction) }
-                })
+        IO {
+            Either.monad<StoreError>().binding {
+                updateSegments.forEach { segment -> updateSegment(segment).bind() }
+            }.fix()
+        }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
     }
 

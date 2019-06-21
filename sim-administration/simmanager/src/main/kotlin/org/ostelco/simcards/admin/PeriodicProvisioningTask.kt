@@ -11,6 +11,7 @@ import com.google.common.collect.ImmutableMultimap
 import io.dropwizard.servlets.tasks.Task
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.simmanager.DatabaseError
 import org.ostelco.prime.simmanager.NotFoundError
 import org.ostelco.prime.simmanager.SimManagerError
@@ -48,10 +49,14 @@ class PreallocateProfilesTask(
     @Throws(Exception::class)
     override fun execute(parameters: ImmutableMultimap<String, String>, output: PrintWriter) {
         preAllocateSimProfiles()
+                .mapLeft { simManagerError ->
+                    logger.error(simManagerError.description)
+                    output.println(asJson(simManagerError))
+                }
     }
 
     private fun preProvisionSimProfile(hssEntry: HssEntry,
-                                       simEntry: SimEntry): Either<SimManagerError, Any> =
+                                       simEntry: SimEntry): Either<SimManagerError, SimEntry> =
             simInventoryDAO.getProfileVendorAdapterById(simEntry.profileVendorId)
                     .flatMap { profileVendorAdapter ->
 
@@ -67,6 +72,7 @@ class PreallocateProfilesTask(
                                     .left()
                         } else if (simEntry.hssState == HssState.NOT_ACTIVATED) {
                             logger.debug("Preallocating (HSS not activated) for HSS with ID/name ${hssEntry.id}/${hssEntry.name} simEntry with ICCID=${simEntry.iccid}")
+
                             profileVendorAdapter.activate(
                                     httpClient = httpClient,
                                     config = profileVendorConfig,
@@ -92,7 +98,7 @@ class PreallocateProfilesTask(
 
     private fun batchPreprovisionSimProfiles(hssEntry: HssEntry,
                                              simProfileName: String,
-                                             profileStats: SimProfileKeyStatistics) : Either<SimManagerError, Any> {
+                                             profileStats: SimProfileKeyStatistics): Either<SimManagerError, Any> {
 
         logger.debug("batchPreprovisionSimProfiles hssEntry='$hssEntry', simProfileName='$simProfileName', profileStats='$profileStats.'")
 
@@ -128,6 +134,7 @@ class PreallocateProfilesTask(
      * allocation of profiles so that if possible, there will be tasks available for
      * provisioning.
      */
+
     public fun preAllocateSimProfiles() {
         IO {
             logger.debug("Start of prealloacation")
@@ -157,10 +164,11 @@ class PreallocateProfilesTask(
                                 batchPreprovisionSimProfiles(hssEntry = hssEntry, simProfileName = simProfileName, profileStats = profileStats)
                             }
                         }
+
                     }
                 }
-            }.fix()
-        }.unsafeRunSync()
-    }
+            }
+        }.fix()
+    }.unsafeRunSync()
 }
 

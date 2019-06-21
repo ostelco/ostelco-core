@@ -16,6 +16,11 @@ modules:
         textReader:
           type: classpathResource
           filename: /HssNameLookupService.kts
+      onNewCustomerAction:
+        serviceInterface: org.ostelco.prime.storage.graph.OnNewCustomerAction
+        textReader:
+          type: classpathResource
+          filename: /OnNewCustomerAction.kts
 #  - type: sim-manager
 #    config:
 #      hlrs: []

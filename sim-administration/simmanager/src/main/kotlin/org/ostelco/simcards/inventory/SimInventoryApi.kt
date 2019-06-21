@@ -65,7 +65,7 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                 Either.monad<SimManagerError>().binding {
                     val hlrAdapter = dao.getHssEntryByName(hlrName)
                             .bind()
-                    val profile = getProfileForPhoneType(phoneType)
+                    val profile = getProfileType(hlrName, phoneType)
                             .bind()
                     val simEntry = dao.findNextReadyToUseSimProfileForHss(hlrAdapter.id, profile)
                             .bind()
@@ -132,12 +132,8 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                                     .left()
                     }
 
-    private fun getProfileForPhoneType(phoneType: String): Either<SimManagerError, String> {
-        val profile: String? = config.getProfileForPhoneType(phoneType)
-        return if (profile != null)
-            profile.right()
-        else
-            NotFoundError("Could not find configuration for phone type $phoneType")
-                    .left()
-    }
+    private fun getProfileType(hlrName: String, phoneType: String): Either<SimManagerError, String> = config
+            .getProfileForPhoneType(phoneType)
+            ?.right()
+            ?: NotFoundError("Could not find configuration for phone type='$phoneType', hlrName='$hlrName'").left()
 }

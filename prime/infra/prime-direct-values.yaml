@@ -2,16 +2,24 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-replicaCount: 1
+replicaCount: 3
 
-dnsPrefix: "prime-direct-"
-dnsSuffix: ".test.oya.world"
+dnsPrefix: ""
+dnsSuffix: ".dev.oya.world"
 
 podAutoscaling:
   enabled: false
-  #minReplicas: 1
-  #maxReplicas: 5
-  #targetCPUUtilizationPercentage: 70
+  # minReplicas: 1
+  # maxReplicas: 5
+  # metrics:
+  #   - type: Resource
+  #     resource:
+  #       name: cpu
+  #       targetAverageUtilization: 80
+  #   - type: Resource
+  #     resource:
+  #       name: memory
+  #       targetAverageUtilization: 70
 
 cronjobs: 
   extractor: 
@@ -28,12 +36,12 @@ cronjobs:
 
 prime:
   image: eu.gcr.io/pi-ostelco-dev/prime
-  tag: 63114190f
+  tag: "" # it will be set from CI
   pullPolicy: Always
   configDataBucket: "gs://pi-ostelco-dev-prime-files/dev"
 
   env:
-    FIREBASE_ROOT_PATH: direct
+    FIREBASE_ROOT_PATH: dev
     NEO4J_HOST: neo4j-neo4j.neo4j.svc.cluster.local
     SLACK_CHANNEL: prime-alerts
     DATA_TRAFFIC_TOPIC: data-traffic
@@ -45,7 +53,7 @@ prime:
     STRIPE_EVENT_RECURRING_PAYMENT_SUBSCRIPTION: stripe-event-recurring-payment-sub
     GCP_PROJECT_ID: pi-ostelco-dev
     ACTIVATE_TOPIC_ID: ocs-activate
-    CCR_SUBSCRIPTION_ID: ocs-ccr-sub
+    CCR_SUBSCRIPTION_ID: ocs-ccr-prime-direct-sub
     GOOGLE_APPLICATION_CREDENTIALS: /secret/prime-service-account.json
     MY_INFO_API_URI: https://myinfosgstg.api.gov.sg/test/v2
     MY_INFO_API_REALM: direct
@@ -133,21 +141,14 @@ prime:
     - 8083 
   resources: 
     requests:
-      cpu: 100m
-      memory: 300Mi  
+      cpu: 300m
+      memory: 512Mi
   livenessProbe: {}
   readinessProbe: {}
   annotations: 
     prometheus.io/scrape: 'true'
     prometheus.io/path: '/prometheus-metrics'
     prometheus.io/port: '8081'  
-
-
-canary: {}
-  # weight: 25
-  # headers: # only route requests with these headers to the canary service
-  #   x-mode: canary
-  # tag: e449ed672
 
 cloudsqlProxy:
   enabled: true
@@ -214,6 +215,7 @@ services:
     portName: grpc
     # host: ocs # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
     # grpcOrHttp2: true
+
   api:
     name: api
     type: ClusterIP
@@ -224,6 +226,11 @@ services:
     grpcOrHttp2: true
     ambassadorMappingOptions:
       timeout_ms: 600000
+    canary:
+      headers:
+        x-mode: prime-direct
+      # weight: 50   
+
   metrics:
     name: metrics
     type: LoadBalancer
@@ -233,6 +240,7 @@ services:
     # loadBalancerIP: x.y.z.n
     # host: metrics # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
     # grpcOrHttp2: true
+
   prime-houston-api:
     name: houston-api
     type: ClusterIP
@@ -240,6 +248,13 @@ services:
     targetPort: 9006
     portName: http
     host: houston-api # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
+    ambassadorMappingOptions:
+      timeout_ms: 600000
+    canary:
+      headers:
+        x-mode: prime-direct
+      # weight: 50   
+
   prime-alvin-api:
     name: alvin-api
     type: ClusterIP
@@ -247,12 +262,20 @@ services:
     targetPort: 9008
     portName: http
     host: alvin-api # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
+    ambassadorMappingOptions:
+      timeout_ms: 600000
+    canary:
+      headers:
+        x-mode: prime-direct
+      # weight: 50   
+
   dwadmin-service:
     name: dwadmin-service
     type: ClusterIP
     port: 8081
     targetPort: 8081
     portName: http
+
   smdpplus:
     name: smdpplus
     type: ClusterIP
@@ -262,20 +285,25 @@ services:
     host: smdpplus
     clientCert: true
     caCert: smdp-cacert.dev # secretname.namespace
+    canary:
+      headers:
+        x-mode: prime-direct
+      # weight: 50   
 
 certs:
   enabled: true
   dnsProvider: dev-clouddns
-  issuer: letsencrypt-production 
-  tlsSecretName: test-oya-tls
+  issuer: letsencrypt-production
+  tlsSecretName: dev-oya-tls
   hosts:
-    - '*.test.oya.world'
+    - '*.dev.oya.world'
 
 disruptionBudget: 
   enabled: false
   minAvailable: 1
 
-nodeSelector: {}
+nodeSelector: 
+  target: prime
 
 tolerations: []
 

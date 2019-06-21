@@ -137,6 +137,6 @@ class CreditControlContext(
     }
 
     fun logLatency() {
-        logger.info("Time from request to answer {} ms", System.currentTimeMillis() - requestTime)
+        logger.info("Time from request to answer {} ms. SessionId [{}]", System.currentTimeMillis() - requestTime, this.sessionId)
     }
 }

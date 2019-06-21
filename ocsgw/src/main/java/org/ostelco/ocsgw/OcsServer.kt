@@ -84,9 +84,9 @@ object OcsServer {
                         request.isProxiable = true
                         val avps = request.avps
                         avps.addAvp(Avp.RE_AUTH_REQUEST_TYPE, ReAuthRequestType.AUTHORIZE_ONLY.ordinal, true, false)
-                        logger.debug("Sent RAR")
                         val reAuthRequest = ReAuthRequestImpl(request)
                         ccaSession.sendReAuthRequest(reAuthRequest)
+                        logger.debug("Sent RAR [{}]", sessionContext?.sessionId)
                     } else {
                         logger.info("Invalid session")
                     }
@@ -95,13 +95,13 @@ object OcsServer {
                 logger.info("No session with ID {}", sessionContext?.sessionId)
             }
         } catch (e: InternalException) {
-            logger.warn("Failed to send Re-Auth Request", e)
+            logger.warn("Failed to send Re-Auth Request [{}]", sessionContext?.sessionId, e)
         } catch (e: IllegalDiameterStateException) {
-            logger.warn("Failed to send Re-Auth Request", e)
+            logger.warn("Failed to send Re-Auth Request [{}]", sessionContext?.sessionId, e)
         } catch (e: RouteException) {
-            logger.warn("Failed to send Re-Auth Request", e)
+            logger.warn("Failed to send Re-Auth Request [{}]", sessionContext?.sessionId, e)
         } catch (e: OverloadException) {
-            logger.warn("Failed to send Re-Auth Request", e)
+            logger.warn("Failed to send Re-Auth Request [{}]", sessionContext?.sessionId, e)
         }
 
     }

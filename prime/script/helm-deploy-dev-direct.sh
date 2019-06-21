@@ -5,7 +5,7 @@
 ##
 
 
-DEPENDENCIES="./gradlew docker sed grep tr awk gcloud helm"
+DEPENDENCIES="./gradlew docker grep tr awk gcloud helm"
 for DEP in $DEPENDENCIES; do
     if [[ -z "$(which $DEP)" ]] ; then
 	echo "$0  ERROR: Missing dependency $DEP"
@@ -64,13 +64,13 @@ docker push eu.gcr.io/${GCP_PROJECT_ID}/prime:${TAG}
 
 HELM_RELEASE_NAME="prime-direct"
 HELM_CHART="ostelco/prime"
-HELM_CHART_VERSION="0.6.3"
+HELM_CHART_VERSION="1.0.0"
 HELM_VALUES_FILE="prime/infra/prime-direct-values.yaml"
 
 #
-# Then deploy using kubectl.
+# Then deploy using helm.
 #
-echo "Deploying prime to GKE"
+echo "Deploying prime-direct to GKE"
 
 helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
 helm repo update

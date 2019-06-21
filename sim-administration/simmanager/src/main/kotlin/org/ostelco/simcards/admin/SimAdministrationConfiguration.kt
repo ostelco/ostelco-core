@@ -10,6 +10,8 @@ import io.dropwizard.client.HttpClientConfiguration
 import io.dropwizard.db.DataSourceFactory
 import io.dropwizard.jackson.Discoverable
 import org.ostelco.dropwizardutils.OpenapiResourceAdderConfig
+import org.ostelco.prime.getLogger
+import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import javax.validation.Valid
 
 
@@ -23,6 +25,8 @@ data class SimAdministrationConfiguration(
         val phoneTypes: List<PhoneTypeConfig>
 ) : Configuration() {
 
+    private val logger by getLogger()
+
     /* XXX Ideally the regex should be built when the config file is loaded,
        not when it is used. */
 
@@ -31,11 +35,17 @@ data class SimAdministrationConfiguration(
      * @param name  phone type/getProfileForPhoneType
      * @return  profile name
      */
-    fun getProfileForPhoneType(name: String): String = phoneTypes
-            .first {
-                name.matches(it.regex.toRegex(RegexOption.IGNORE_CASE))
-            }
-            .profile
+    fun getProfileForPhoneType(name: String): String? {
+        val result = phoneTypes
+                .firstOrNull {
+                    name.matches(it.regex.toRegex(RegexOption.IGNORE_CASE))
+                }
+                ?.profile
+        if (result == null) {
+            logger.warn(NOTIFY_OPS_MARKER, "Could not allocate profile for phone type = '$name'.")
+        }
+        return result
+    }
 }
 
 class HssAdapterConfig {
@@ -48,7 +58,6 @@ class HssAdapterConfig {
     @JsonProperty("port")
     var port: Int = 0
 }
-
 
 
 /**

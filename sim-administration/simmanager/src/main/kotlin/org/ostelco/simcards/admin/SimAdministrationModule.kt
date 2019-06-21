@@ -126,6 +126,11 @@ class SimAdministrationModule : PrimeModule {
                 for (hssConfig in config.hssVendors) {
                     when (hssConfig) {
                         is SwtHssConfig -> {
+
+
+                            if (!isLowerCase(hssConfig.hssNameUsedInAPI) ) {
+                                throw RuntimeException("hassNameUsedInAPI ('${hssConfig.hssNameUsedInAPI}' is not lowercase, this is a syntax error, aborting.")
+                            }
                             dispatchers.add(
                                     SimpleHssDispatcher(
                                             name = hssConfig.hssNameUsedInAPI,
@@ -154,6 +159,10 @@ class SimAdministrationModule : PrimeModule {
             }
         }
     }
+}
+
+fun  isLowerCase(str : String) : Boolean {
+    return str.toLowerCase().equals(str)
 }
 
 object ConfigRegistry {

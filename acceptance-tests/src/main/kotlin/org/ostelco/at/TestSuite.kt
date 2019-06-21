@@ -40,13 +40,10 @@ class TestSuite {
                                 org.ostelco.at.jersey.PurchaseTest::class.java,
                                 org.ostelco.at.jersey.PlanTest::class.java,
                                 org.ostelco.at.jersey.GraphQlTests::class.java,
-                                org.ostelco.at.jersey.JumioKycTest::class.java
+                                org.ostelco.at.jersey.JumioKycTest::class.java,
+                                org.ostelco.at.pgw.OcsTest::class.java
                         )
                 )
-            }
-
-            launch {
-                checkResult(JUnitCore.runClasses(org.ostelco.at.pgw.OcsTest::class.java))
             }
         }
     }
