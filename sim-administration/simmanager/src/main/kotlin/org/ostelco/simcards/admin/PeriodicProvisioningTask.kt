@@ -10,6 +10,7 @@ import com.google.common.collect.ImmutableMultimap
 import io.dropwizard.servlets.tasks.Task
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.simmanager.DatabaseError
 import org.ostelco.prime.simmanager.NotFoundError
 import org.ostelco.prime.simmanager.SimManagerError
@@ -46,10 +47,14 @@ class PreallocateProfilesTask(
     @Throws(Exception::class)
     override fun execute(parameters: ImmutableMultimap<String, String>, output: PrintWriter) {
         preAllocateSimProfiles()
+                .mapLeft { simManagerError ->
+                    logger.error(simManagerError.description)
+                    output.println(asJson(simManagerError))
+                }
     }
 
     private fun preProvisionSimProfile(hssEntry: HssEntry,
-                                       simEntry: SimEntry): Either<SimManagerError, Any> =
+                                       simEntry: SimEntry): Either<SimManagerError, SimEntry> =
             simInventoryDAO.getProfileVendorAdapterById(simEntry.profileVendorId)
                     .flatMap { profileVendorAdapter ->
 
@@ -79,6 +84,8 @@ class PreallocateProfilesTask(
         val noOfProfilesToActuallyAllocate =
                 Math.min(maxNoOfProfileToAllocate.toLong(), profileStats.noOfUnallocatedEntries)
 
+        logger.info("Number of profiles to allocate: {}", noOfProfilesToActuallyAllocate)
+
         for (i in 1..noOfProfilesToActuallyAllocate) {
 
             // XXX This is all well, if allocation doesn't fail, but if it fails, it will try the
@@ -107,29 +114,27 @@ class PreallocateProfilesTask(
      * allocation of profiles so that if possible, there will be tasks available for
      * provisioning.
      */
-    public fun preAllocateSimProfiles() {
-        IO {
-            Either.monad<SimManagerError>().binding {
-                val hssEntries: Collection<HssEntry> = simInventoryDAO.getHssEntries()
+    fun preAllocateSimProfiles() : Either<SimManagerError, Unit> = IO {
+        Either.monad<SimManagerError>().binding {
+            val hssEntries: Collection<HssEntry> = simInventoryDAO.getHssEntries()
+                    .bind()
+
+            hssEntries.forEach{ hssEntry ->
+                val simProfileNames: Collection<String> = simInventoryDAO.getProfileNamesForHssById(hssEntry.id)
                         .bind()
-
-                hssEntries.forEach{hssEntry ->
-                    val simProfileNames: Collection<String> = simInventoryDAO.getProfileNamesForHssById(hssEntry.id)
+                for (simProfileName in simProfileNames) {
+                    val profileStats = simInventoryDAO.getProfileStats(hssEntry.id, simProfileName)
                             .bind()
-                    for (simProfileName in simProfileNames) {
-                        val profileStats = simInventoryDAO.getProfileStats(hssEntry.id, simProfileName)
-                                .bind()
 
-                        if (profileStats.noOfEntriesAvailableForImmediateUse < lowWaterMark) {
-                            logger.info("Preallocating new SIM batch with HLR {} and with profile {}.  lowWaterMark = {},  profileStats = {}",
-                                    hssEntry.name, simProfileName, lowWaterMark, profileStats)
+                    if (profileStats.noOfEntriesAvailableForImmediateUse < lowWaterMark) {
+                        logger.info("Preallocating new SIM batch with HLR {} and with profile {}.  lowWaterMark = {},  profileStats = {}",
+                                hssEntry.name, simProfileName, lowWaterMark, profileStats)
 
-                            batchPreprovisionSimProfiles(hssEntry = hssEntry, simProfileName = simProfileName, profileStats = profileStats)
-                        }
+                        batchPreprovisionSimProfiles(hssEntry = hssEntry, simProfileName = simProfileName, profileStats = profileStats)
                     }
                 }
-            }.fix()
-        }.unsafeRunSync()
-    }
+            }
+        }.fix()
+    }.unsafeRunSync()
 }
 
