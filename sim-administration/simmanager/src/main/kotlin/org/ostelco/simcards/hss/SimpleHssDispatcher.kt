@@ -83,7 +83,7 @@ class SimpleHssDispatcher(val name: String,
         }
 
         val body = mapOf(
-                "bssid" to config.name,
+                "bssid" to config.hssNameUsedInAPI,
                 "iccid" to iccid,
                 "msisdn" to msisdn,
                 "userid" to config.userId
