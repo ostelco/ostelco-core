@@ -87,26 +87,34 @@ class PreallocateProfilesTask(
 
         logger.info("Number of profiles to allocate: {}", noOfProfilesToActuallyAllocate)
 
-        for (i in 1..noOfProfilesToActuallyAllocate) {
+        if (noOfProfilesToActuallyAllocate == 0) {
+            logger.error("Could not find any profiles to allocate for hssname = '{}', profilename = '{}', profileStats = '{}'",
+                    hssEntry.name,
+                    simProfileName,
+                    profileStats)
+        } else {
 
-            // XXX This is all well, if allocation doesn't fail, but if it fails, it will try the
-            //     same profile forever, so something else should be done e.g. setting the
-            //     state of the profile to "provision failed" or something of that nature, so that it
-            //     is possible to move along.   This is an error in the logic of this code.
-            simInventoryDAO.findNextNonProvisionedSimProfileForHss(hssId = hssEntry.id, profile = simProfileName)
-                    .flatMap { simEntry ->
-                        if (simEntry.id == null) {
-                            DatabaseError("This should never happen, since everything that is read from a database should have an ID")
-                                    .left()
-                        } else {
-                            preProvisionSimProfile(hssEntry, simEntry)
-                                    .mapLeft {
-                                        logger.error("Preallocation of SIM ICCID {} failed with error: {}}",
-                                                simEntry.iccid, it.description)
-                                        simInventoryDAO.setProvisionState(simEntry.id, ProvisionState.ALLOCATION_FAILED)
-                                    }
+            for (i in 1..noOfProfilesToActuallyAllocate) {
+
+                // XXX This is all well, if allocation doesn't fail, but if it fails, it will try the
+                //     same profile forever, so something else should be done e.g. setting the
+                //     state of the profile to "provision failed" or something of that nature, so that it
+                //     is possible to move along.   This is an error in the logic of this code.
+                simInventoryDAO.findNextNonProvisionedSimProfileForHss(hssId = hssEntry.id, profile = simProfileName)
+                        .flatMap { simEntry ->
+                            if (simEntry.id == null) {
+                                DatabaseError("This should never happen, since everything that is read from a database should have an ID")
+                                        .left()
+                            } else {
+                                preProvisionSimProfile(hssEntry, simEntry)
+                                        .mapLeft {
+                                            logger.error("Preallocation of SIM ICCID {} failed with error: {}",
+                                                    simEntry.iccid, it.description)
+                                            simInventoryDAO.setProvisionState(simEntry.id, ProvisionState.ALLOCATION_FAILED)
+                                        }
+                            }
                         }
-                    }
+            }
         }
     }
 
@@ -115,12 +123,12 @@ class PreallocateProfilesTask(
      * allocation of profiles so that if possible, there will be tasks available for
      * provisioning.
      */
-    fun preAllocateSimProfiles() : Either<SimManagerError, Unit> = IO {
+    fun preAllocateSimProfiles(): Either<SimManagerError, Unit> = IO {
         Either.monad<SimManagerError>().binding {
             val hssEntries: Collection<HssEntry> = simInventoryDAO.getHssEntries()
                     .bind()
 
-            hssEntries.forEach{ hssEntry ->
+            hssEntries.forEach { hssEntry ->
                 val simProfileNames: Collection<String> = simInventoryDAO.getProfileNamesForHssById(hssEntry.id)
                         .bind()
                 for (simProfileName in simProfileNames) {
