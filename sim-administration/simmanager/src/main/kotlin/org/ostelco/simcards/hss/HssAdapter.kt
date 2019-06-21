@@ -105,7 +105,6 @@ class DirectHssDispatcher(
         return "Direct HSS dispatcher serving HSS configurations with names: ${hssConfigs.map { it.name }}"
     }
 
-    val adapters = mutableSetOf<HssDispatcher>()
 
     private val hssAdaptersByName = mutableMapOf<String, HssDispatcher>()
     private val healthchecks = mutableSetOf<HssDispatcherHealthcheck>()
@@ -113,31 +112,27 @@ class DirectHssDispatcher(
     init {
 
         for (config in hssConfigs) {
-            when (config) {
-                is SwtHssConfig -> {
-                    adapters.add(SimpleHssDispatcher(
-                            name = config.hssNameUsedInAPI,
-                            httpClient = httpClient,
-                            config = config
-                    ))
-                }
-                is DummyHssConfig -> {
-                    adapters.add(DummyHSSDispatcher(name = config.name))
-                }
-            }
-        }
+            val dispatcher =
+                    when (config) {
+                        is SwtHssConfig ->
+                            SimpleHssDispatcher(
+                                    name = config.name,
+                                    httpClient = httpClient,
+                                    config = config)
 
 
-        for (adapter in adapters) {
+                        is DummyHssConfig ->
+                            DummyHSSDispatcher(name = config.name)
+                    }
 
-            val healthCheck = HssDispatcherHealthcheck(adapter.name(), adapter)
+            val healthCheck = HssDispatcherHealthcheck(config.name, dispatcher)
             healthchecks.add(healthCheck)
 
             healthCheckRegistrar?.registerHealthCheck(
-                    "HSS profilevendors for Hss named '${adapter.name()}'",
+                    "HSS profilevendors for Hss named '${config.name}'",
                     healthCheck)
 
-            hssAdaptersByName[adapter.name()] = adapter
+            hssAdaptersByName[config.name] = dispatcher
         }
     }
 
