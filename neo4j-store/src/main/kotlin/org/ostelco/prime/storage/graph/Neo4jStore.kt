@@ -1866,6 +1866,21 @@ object Neo4jStoreSingleton : GraphStore {
     // Admin Store
     // ------------
 
+    override fun approveRegionForCustomer(
+            customerId: String,
+            regionCode: String): Either<StoreError, Unit> = writeTransaction {
+
+        customerRegionRelationStore.create(
+                fromId = customerId,
+                relation = CustomerRegion(
+                        status = APPROVED,
+                        kycStatusMap = getKycStatusMapForRegion(regionCode = regionCode)
+                ),
+                toId = regionCode,
+                transaction = transaction
+        )
+    }
+
     //
     // Balance (Customer - Subscription - Bundle)
     //
