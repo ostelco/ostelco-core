@@ -1,5 +1,13 @@
 //usr/bin/env go run "$0" "$@"; exit "$?"
 
+// XXX This is an utility script to feed the prime with sim profiles.
+//     it  is actually a much better idea to extend the import functionality of
+//     prime to generate sequences and checksums, but that will require a major
+//     extension of a program that is soon going into production, so I'm keeping this
+//     complexity external for now. However, the existance of this program should be
+//     considered technical debt, and the debt can be internalizing the logic
+//     into prime.
+
 package main
 
 import (
@@ -8,8 +16,11 @@ import (
 	"log"
 	"net/url"
 	"regexp"
-	. "strconv"
 	"strings"
+)
+
+import (
+	. "strconv"
 )
 
 func main() {
@@ -17,7 +28,6 @@ func main() {
 	var csvPayload string = generateCsvPayload(batch)
 
 	generatePostingCurlscript(batch.url, csvPayload)
-
 }
 
 func generatePostingCurlscript(url string, payload string) {
@@ -28,24 +38,42 @@ func generatePostingCurlscript(url string, payload string) {
 	fmt.Printf("%s", payload)
 	fmt.Print(("EOF\n"))
 }
+func generateControlDigit(luhnString string) int {
+	controlDigit := calculateChecksum(luhnString, true) % 10
 
-func luhnChecksum(number int) int {
-	var luhn int
+	if controlDigit != 0 {
+		controlDigit = 10 - controlDigit
+	}
 
-	for i := 0; number > 0; i++ {
-		cur := number % 10
+	return controlDigit
+}
 
-		if i%2 == 0 { // even
-			cur = cur * 2
-			if cur > 9 {
-				cur = cur%10 + cur/10
-			}
+func calculateChecksum(luhnString string, double bool) int {
+	source := strings.Split(luhnString, "")
+	checksum := 0
+
+	for i := len(source) - 1; i > -1; i-- {
+		t, _ := ParseInt(source[i], 10, 8)
+		n := int(t)
+
+		if double {
+			n = n * 2
 		}
 
-		luhn += cur
-		number = number / 10
+		double = !double
+
+		if n >= 10 {
+			n = n - 9
+		}
+
+		checksum += n
 	}
-	return luhn % 10
+
+	return checksum
+}
+
+func LuhnChecksum(number int) int {
+	return generateControlDigit(Itoa(number))
 }
 
 func generateCsvPayload(batch Batch) string {
@@ -58,7 +86,7 @@ func generateCsvPayload(batch Batch) string {
 	var msisdn = batch.firstMsisdn
 	for i := 0; i <= batch.length; i++ {
 
-		iccid := fmt.Sprintf("%d%1d", iccidWithoutLuhnChecksum, luhnChecksum(iccidWithoutLuhnChecksum))
+		iccid := fmt.Sprintf("%d%1d", iccidWithoutLuhnChecksum, LuhnChecksum(iccidWithoutLuhnChecksum))
 		line := fmt.Sprintf("%s, %d, %d,,,,,%s\n", iccid, imsi, msisdn, batch.profileType)
 		sb.WriteString(line)
 
@@ -117,7 +145,7 @@ func isProfileName(s string) bool {
 
 func checkProfileType(name string, potentialProfileName string) {
 	if !isProfileName(potentialProfileName) {
-		log.Fatal("Not a valid %s MSISDN: '%s'. Must be uppercase characters, numbers and underscores", name, potentialProfileName)
+		log.Fatalf("Not a valid %s MSISDN: '%s'. Must be uppercase characters, numbers and underscores. ", name, potentialProfileName)
 	}
 }
 

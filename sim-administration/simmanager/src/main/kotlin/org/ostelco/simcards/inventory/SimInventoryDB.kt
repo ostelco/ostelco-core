@@ -227,6 +227,11 @@ interface SimInventoryDB {
                       WHERE hlrId = :hssId""")
     fun getProfileNamesForHss(hssId: Long): List<String>
 
+
+
+    // WHERE hlrId = 2 AND profile = 'OYA_M1_BF76' AND
+    // smdpPlusState <>  'DOWNLOADED' AND smdpPlusState <>  'INSTALLED' AND smdpPlusState <>  'ENABLED' AND  provisionState = 'AVAILABLE' AND matchingid is null
+
     /**
      * Get key numbers from a particular named Sim profile.
      * NOTE: This method is intended as an internal helper method for getProfileStats, its signature
@@ -237,8 +242,7 @@ interface SimInventoryDB {
         UNION
         SELECT 'NO_OF_UNALLOCATED_ENTRIES' AS KEY,  count(*)  AS VALUE  FROM sim_entries
                    WHERE hlrId = :hssId AND profile = :simProfile AND
-                         smdpPlusState =  :smdpUnallocatedState AND
-                         hlrState = :hlrUnallocatedState AND
+                         smdpPlusState <>  :smdpDownloadedState AND smdpPlusState <>  :smdpDownloadedState  AND smdpPlusState <>  :smdpEnabledState AND matchingid IS null AND
                          provisionState = :provisionedAvailableState
         UNION
         SELECT 'NO_OF_RELEASED_ENTRIES' AS KEY,  count(*)  AS VALUE  FROM sim_entries
@@ -262,6 +266,8 @@ interface SimInventoryDB {
             hssAllocatedState: String = HssState.ACTIVATED.name,
             smdpAllocatedState: String = SmDpPlusState.ALLOCATED.name,
             smdpDownloadedState: String = SmDpPlusState.DOWNLOADED.name,
+            smdpInstalledState: String = SmDpPlusState.INSTALLED.name,
+            smdpEnabledState: String = SmDpPlusState.ENABLED.name,
             provisionedAvailableState: String = ProvisionState.AVAILABLE.name): List<KeyValuePair>
 
 
