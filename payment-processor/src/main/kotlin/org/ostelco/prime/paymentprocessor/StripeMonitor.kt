@@ -48,7 +48,7 @@ class StripeMonitor {
      * subscriptions.
      * @return true if match
      */
-    fun checkEventSubscriptions(events: List<String>): Either<PaymentError, Boolean> =
+    fun checkEventSubscriptionList(events: List<String>): Either<PaymentError, Boolean> =
             fetchWebhookEndpoints(1)
                     .flatMap {
                         (it.size > 0 &&

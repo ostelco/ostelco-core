@@ -8,6 +8,7 @@ import org.hibernate.validator.constraints.NotEmpty
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.module.PrimeModule
 import org.ostelco.prime.paymentprocessor.publishers.StripeEventPublisher
+import org.ostelco.prime.paymentprocessor.resources.StripeMonitorResource
 import org.ostelco.prime.paymentprocessor.resources.StripeWebhookResource
 import org.ostelco.prime.paymentprocessor.subscribers.RecurringPaymentStripeEvent
 import org.ostelco.prime.paymentprocessor.subscribers.ReportStripeEvent
@@ -19,11 +20,19 @@ class PaymentProcessorModule : PrimeModule {
     private val logger by getLogger()
 
     private var isConfigInitialized = false
+    private var isMonitorConfigInitialized = false
+
 
     @JsonProperty("config")
     fun setConfig(config: PaymentProcessorConfig) {
         ConfigRegistry.config = config
         isConfigInitialized = true
+    }
+
+    @JsonProperty("monitor")
+    fun setConfig(config: MonitorConfig) {
+        ConfigRegistry.monitorConfig = config
+        isMonitorConfigInitialized = true
     }
 
     override fun init(env: Environment) {
@@ -37,9 +46,9 @@ class PaymentProcessorModule : PrimeModule {
         if (isConfigInitialized) {
             /* APIs. */
             env.jersey().register(StripeWebhookResource())
+            //env.jersey().register(StripeMonitorResource())
 
             /* Stripe events reporting. */
-
             env.lifecycle().manage(StripeEventPublisher)
             env.lifecycle().manage(StoreStripeEvent())
             env.lifecycle().manage(ReportStripeEvent())
@@ -88,6 +97,19 @@ class PaymentProcessorConfig {
     var hostport: String = "localhost:9090"
 }
 
+/* TODO: (kmm) Currently 'disabled' as monitoring code is WIP. */
+class MonitorConfig {
+    @JsonProperty("webhookUrl")
+    var webhookUrl: String = ""
+
+    @JsonProperty("webhookSubscribedToEvents")
+    var webhookEvents: List<String> = emptyList()
+
+    @JsonProperty("eventInterval")
+    val eventInterval: Long = 7200L
+}
+
 object ConfigRegistry {
     lateinit var config: PaymentProcessorConfig
+    lateinit var monitorConfig: MonitorConfig
 }
