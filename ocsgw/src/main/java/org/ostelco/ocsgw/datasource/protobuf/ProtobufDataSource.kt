@@ -12,10 +12,7 @@ import org.ostelco.diameter.model.CreditControlRequest
 import org.ostelco.diameter.model.MultipleServiceCreditControl
 import org.ostelco.diameter.model.ResultCode.DIAMETER_UNABLE_TO_COMPLY
 import org.ostelco.diameter.model.SessionContext
-import org.ostelco.ocs.api.ActivateResponse
-import org.ostelco.ocs.api.CreditControlAnswerInfo
-import org.ostelco.ocs.api.CreditControlRequestInfo
-import org.ostelco.ocs.api.CreditControlRequestType
+import org.ostelco.ocs.api.*
 import org.ostelco.ocsgw.OcsServer
 import org.ostelco.ocsgw.converter.ProtobufToDiameterConverter
 import org.ostelco.prime.metrics.api.OcsgwAnalyticsReport
@@ -120,22 +117,27 @@ class ProtobufDataSource {
 
     /**
      * A user will be blocked if one of the MSCC in the request could not be filled in the answer
+     * or if the resultCode is not DIAMETER_SUCCESS
      */
     private fun updateBlockedList(answer: CreditControlAnswerInfo, request: CreditControlRequest) {
+
+        if (answer.resultCode != ResultCode.DIAMETER_SUCCESS) {
+            blocked.add(answer.msisdn)
+            return
+        }
 
         for (mssAnswerInfo in answer.extraInfo.msccInfoList) {
             for (msccRequest in request.multipleServiceCreditControls) {
                 if (mssAnswerInfo.serviceIdentifier == msccRequest.serviceIdentifier && mssAnswerInfo.ratingGroup == msccRequest.ratingGroup) {
-                    if (updateBlockedList(mssAnswerInfo, msccRequest, answer.msisdn)) {
+                    if (updateBlockedListOnMscc(mssAnswerInfo, msccRequest, answer.msisdn)) {
                         return
                     }
                 }
             }
-
         }
     }
 
-    private fun updateBlockedList(msccAnswer: org.ostelco.ocs.api.MultipleServiceCreditControlInfo, msccRequest: MultipleServiceCreditControl, msisdn: String): Boolean {
+    private fun updateBlockedListOnMscc(msccAnswer: org.ostelco.ocs.api.MultipleServiceCreditControlInfo, msccRequest: MultipleServiceCreditControl, msisdn: String): Boolean {
         if (!msccRequest.requested.isEmpty()) {
             if (msccAnswer.balance < msccRequest.requested[0].total * 3) {
                 blocked.add(msisdn)
