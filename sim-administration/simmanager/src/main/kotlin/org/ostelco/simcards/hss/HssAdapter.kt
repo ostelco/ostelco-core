@@ -60,7 +60,6 @@ class HssGrpcAdapter(private val host: String, private val port: Int) : HssDispa
         return response.success
     }
 
-
     fun suspendViaGrpc(hssName: String, iccid: String): Boolean {
         val suspensionRequest = org.ostelco.simcards.hss.profilevendors.api.SuspensionRequest.newBuilder()
                 .setIccid(iccid)
