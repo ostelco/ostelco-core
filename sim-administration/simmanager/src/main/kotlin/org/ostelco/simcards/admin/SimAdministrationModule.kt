@@ -62,6 +62,7 @@ class SimAdministrationModule : PrimeModule {
                 .installPlugins()
         DAO = SimInventoryDAO(SimInventoryDBWrapperImpl(jdbi.onDemand(SimInventoryDB::class.java)))
 
+        // TODO:   Add healtcheck to this one.å
         val profileVendorCallbackHandler = SimInventoryCallbackService(DAO)
 
         val httpClient = HttpClientBuilder(env)
@@ -72,14 +73,13 @@ class SimAdministrationModule : PrimeModule {
         OpenapiResourceAdder.addOpenapiResourceToJerseyEnv(jerseyEnv, config.openApi)
         ES2PlusIncomingHeadersFilter.addEs2PlusDefaultFiltersAndInterceptors(jerseyEnv)
 
-        /* Create the SIM manager API. */
+        // Create the SIM manager API.
         simInventoryApi = SimInventoryApi(httpClient, config, DAO)
 
-        /* Add REST frontend. */
+        //Add REST frontend.
         simInventoryResource = SimInventoryResource(simInventoryApi)
         jerseyEnv.register(simInventoryResource)
         jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
-
 
         val dispatcher = makeHssDispatcher(
                 hssAdapterConfig = config.hssAdapter,

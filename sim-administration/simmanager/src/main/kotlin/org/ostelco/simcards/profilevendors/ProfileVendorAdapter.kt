@@ -6,6 +6,7 @@ import arrow.core.left
 import arrow.core.right
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import org.apache.http.client.methods.HttpUriRequest
 import org.apache.http.client.methods.RequestBuilder
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
@@ -68,6 +69,19 @@ data class ProfileVendorAdapter(
                         confirmOrder(httpClient, config, dao, eid, it)
                     }
 
+
+    private fun newRequest(config: ProfileVendorConfig, es2PlusCommand: String, payload: String?): HttpUriRequest? {
+        return RequestBuilder.post()
+                .setUri("${config.es2plusEndpoint}/${es2PlusCommand}")
+                .setHeader("User-Agent", "gsma-rsp-lpad")
+                .setHeader("X-Admin-Protocol", "gsma/rsp/v2.0.0")
+                .setHeader("Content-Type", MediaType.APPLICATION_JSON)
+                .setEntity(StringEntity(payload))
+                .build()
+    }
+
+    // XXX This and the next method are simply too much duplicate code for comfort.
+
     /**
      * Initiate activation of a SIM profile with an external Profile Vendor
      * by sending a SM-DP+ 'download-order' message.
@@ -78,9 +92,9 @@ data class ProfileVendorAdapter(
      * @return Updated SIM profile
      */
     private fun downloadOrder(httpClient: CloseableHttpClient,
-                      config: ProfileVendorConfig,
-                      dao: SimInventoryDAO,
-                      simEntry: SimEntry): Either<SimManagerError, SimEntry> {
+                              config: ProfileVendorConfig,
+                              dao: SimInventoryDAO,
+                              simEntry: SimEntry): Either<SimManagerError, SimEntry> {
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = config.requesterIdentifier,
                 functionCallIdentifier = "downloadOrder"
@@ -91,13 +105,7 @@ data class ProfileVendorAdapter(
         )
         val payload = mapper.writeValueAsString(body)
 
-        val request = RequestBuilder.post()
-                .setUri("${config.es2plusEndpoint}/downloadOrder")
-                .setHeader("User-Agent", "gsma-rsp-lpad")
-                .setHeader("X-Admin-Protocol", "gsma/rsp/v2.0.0")
-                .setHeader("Content-Type", MediaType.APPLICATION_JSON)
-                .setEntity(StringEntity(payload))
-                .build()
+        val request = newRequest(config, "downloadOrder", payload)
 
         logger.info("SM-DP+ 'order-download' message to service {} for ICCID {} starting.",
                 config.name,
@@ -157,10 +165,11 @@ data class ProfileVendorAdapter(
      * @return Updated SIM profile
      */
     private fun confirmOrder(httpClient: CloseableHttpClient,
-                     config: ProfileVendorConfig,
-                     dao: SimInventoryDAO,
-                     eid: String? = null,
-                     simEntry: SimEntry): Either<SimManagerError, SimEntry> {
+                             config: ProfileVendorConfig,
+                             dao: SimInventoryDAO,
+                             eid: String? = null,
+                             simEntry: SimEntry): Either<SimManagerError, SimEntry> {
+
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = config.requesterIdentifier,
                 functionCallIdentifier = UUID.randomUUID().toString()
@@ -173,13 +182,7 @@ data class ProfileVendorAdapter(
         )
         val payload = mapper.writeValueAsString(body)
 
-        val request = RequestBuilder.post()
-                .setUri("${config.es2plusEndpoint}/confirmOrder")
-                .setHeader("User-Agent", "gsma-rsp-lpad")
-                .setHeader("X-Admin-Protocol", "gsma/rsp/v2.0.0")
-                .setHeader("Content-Type", MediaType.APPLICATION_JSON)
-                .setEntity(StringEntity(payload))
-                .build()
+        val request = newRequest(config, "confirmOrder", payload)
 
         return try {
             httpClient.execute(request).use {
@@ -196,7 +199,6 @@ data class ProfileVendorAdapter(
                             NotUpdatedError("SM-DP+ 'order-confirm' to ${config.name} failed with status: ${status.header.functionExecutionStatus}")
                                     .left()
                         } else {
-                            // XXX Is just logging good enough?
                             if (status.eid.isNullOrEmpty()) {
                                 logger.warn("No EID returned from service {} for ICCID {} for SM-DP+ 'order-confirm' message (call-id: {})",
                                         config.name,
@@ -239,6 +241,7 @@ data class ProfileVendorAdapter(
                     .left()
         }
     }
+
 
     /**
      * Downloads the SM-DP+ 'profile status' information for an ICCID from
