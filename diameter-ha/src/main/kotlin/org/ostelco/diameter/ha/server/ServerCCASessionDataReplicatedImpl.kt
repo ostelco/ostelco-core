@@ -14,6 +14,8 @@ class ServerCCASessionDataReplicatedImpl(sessionId: String, replicatedStorage: R
     private val STATELESS = "STATELESS"
     private val STATE = "STATE"
 
+    private val localStoredState:HashMap<String,Any?> = HashMap()
+
     init {
         if (!replicatedStorage.exist(sessionId)) {
             setAppSessionIface(ServerCCASession::class.java)
@@ -22,14 +24,25 @@ class ServerCCASessionDataReplicatedImpl(sessionId: String, replicatedStorage: R
     }
 
     override fun isStateless(): Boolean {
+
+        if (localStoredState.containsKey(STATELESS)) {
+            return localStoredState.get(STATELESS) as Boolean
+        }
+
         return toPrimitive(getValue(STATELESS), true)
     }
 
     override fun setStateless(stateless: Boolean) {
+        localStoredState.put(STATELESS, stateless)
         storeValue(STATELESS, stateless.toString())
     }
 
     override fun getServerCCASessionState(): ServerCCASessionState {
+
+        if (localStoredState.containsKey(STATE)) {
+            return localStoredState.get(STATE) as ServerCCASessionState
+        }
+
         val value = getValue(STATE)
         if (value != null) {
             return ServerCCASessionState.valueOf(value)
@@ -39,16 +52,25 @@ class ServerCCASessionDataReplicatedImpl(sessionId: String, replicatedStorage: R
     }
 
     override fun setServerCCASessionState(state: ServerCCASessionState?) {
+
+        localStoredState.put(STATE, state)
         storeValue(STATE, state.toString())
     }
 
     override fun setTccTimerId(tccTimerId: Serializable?) {
+        
+        localStoredState.put(TCCID, tccTimerId)
         if (tccTimerId != null) {
             storeValue(TCCID, toBase64String(tccTimerId))
         }
     }
 
     override fun getTccTimerId(): Serializable? {
+
+        if (localStoredState.containsKey(TCCID)) {
+            return localStoredState.get(TCCID) as Serializable?
+        }
+
         val value = getValue(TCCID)
         if (value != null) {
             return fromBase64String(value)

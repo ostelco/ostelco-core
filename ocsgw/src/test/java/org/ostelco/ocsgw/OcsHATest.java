@@ -172,8 +172,8 @@ public class OcsHATest {
             assertEquals(RequestType.INITIAL_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
             Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
             assertEquals(2001L, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
-            assertEquals(1, resultMSCC.getGrouped().getAvp(Avp.SERVICE_IDENTIFIER_CCA).getUnsigned32());
-            assertEquals(10, resultMSCC.getGrouped().getAvp(Avp.RATING_GROUP).getUnsigned32());
+            assertEquals(10, resultMSCC.getGrouped().getAvp(Avp.SERVICE_IDENTIFIER_CCA).getUnsigned32());
+            assertEquals(1, resultMSCC.getGrouped().getAvp(Avp.RATING_GROUP).getUnsigned32());
             Avp granted = resultMSCC.getGrouped().getAvp(Avp.GRANTED_SERVICE_UNIT);
             assertEquals(500000L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
         } catch (AvpDataException e) {
@@ -261,6 +261,7 @@ public class OcsHATest {
      *  as the session would otherwise have been lost by ocsgw.
      */
     @DisplayName("HA Credit-Control-Request Init Update and Terminate")
+    //@Test
     public void haCreditControlRequestInitUpdateAndTerminate() {
         Session session = testPGW.createSession(new Object() {}.getClass().getEnclosingMethod().getName());
         haCreditControlRequestInit(session, OCS_HOST_1);
@@ -296,8 +297,6 @@ public class OcsHATest {
             assertEquals(OCS_HOST_2, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String());
             assertEquals(OCS_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String());
             assertEquals(RequestType.TERMINATION_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
-            Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
-            assertEquals(2001L, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
         } catch (AvpDataException e) {
             logger.error("Failed to get Result-Code", e);
         }
