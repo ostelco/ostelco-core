@@ -116,7 +116,7 @@ class DirectHssDispatcher(
             when (config) {
                 is SwtHssConfig -> {
                     adapters.add(SimpleHssDispatcher(
-                            name = config.name,
+                            name = config.hssNameUsedInAPI,
                             httpClient = httpClient,
                             config = config
                     ))

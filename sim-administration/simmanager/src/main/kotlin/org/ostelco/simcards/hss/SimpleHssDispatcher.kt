@@ -72,7 +72,7 @@ class SimpleHssDispatcher(val name: String,
 
         // Checking out the iccid value.
         if (iccid.isEmpty()) {
-            return NotUpdatedError("Empty ICCID value in SIM activation request to hssName ${config.name}")
+            return NotUpdatedError("Empty ICCID value in SIM activation request to hssName='${config.name}' (bssname ='${config.hssNameUsedInAPI}'")
                     .left()
         }
 
@@ -103,26 +103,26 @@ class SimpleHssDispatcher(val name: String,
                 when (it.statusLine.statusCode) {
                     201 -> {
                         logger.info("HLR activation message to BSSID {} for ICCID {} completed OK",
-                                config.name,
+                                config.hssNameUsedInAPI,
                                 iccid).right()
                     }
                     else -> {
                         logger.warn("HLR activation message to BSSID {} for ICCID {} failed with status ({}) {}",
-                                config.name,
+                                config.hssNameUsedInAPI,
                                 iccid,
                                 it.statusLine.statusCode,
                                 it.statusLine.reasonPhrase)
-                        NotUpdatedError("Failed to activate ICCID ${iccid} with BSSID ${config.name} (status-code: ${it.statusLine.statusCode})")
+                        NotUpdatedError("Failed to activate ICCID ${iccid} with BSSID ${config.hssNameUsedInAPI} (status-code: ${it.statusLine.statusCode})")
                                 .left()
                     }
                 }
             }
         } catch (e: Exception) {
             logger.error("HLR activation message to BSSID {} for ICCID {} failed with error: {}",
-                    config.name,
+                    config.hssNameUsedInAPI,
                     iccid,
                     e)
-            AdapterError("HLR activation message to BSSID ${config.name} for ICCID ${iccid} failed with error: ${e}")
+            AdapterError("HLR activation message to BSSID ${config.hssNameUsedInAPI} for ICCID ${iccid} failed with error: ${e}")
                     .left()
         }
     }
@@ -139,7 +139,7 @@ class SimpleHssDispatcher(val name: String,
         }
 
         if (iccid.isEmpty()) {
-            return NotUpdatedError("Illegal parameter in SIM deactivation request to BSSID ${config.name}")
+            return NotUpdatedError("Illegal parameter in SIM deactivation request to BSSID ${config.hssNameUsedInAPI}")
                     .left()
         }
 
@@ -157,14 +157,14 @@ class SimpleHssDispatcher(val name: String,
                     }
                     else -> {
                         logger.warn("HLR deactivation message to HSS ${config.name} for ICCID ${iccid} failed with status (${it.statusLine.statusCode}) ${it.statusLine.reasonPhrase}")
-                        NotUpdatedError("Failed to deactivate ICCID ${iccid} with BSSID ${config.name} (status-code: ${it.statusLine.statusCode}")
+                        NotUpdatedError("Failed to deactivate ICCID ${iccid} with BSSID ${config.hssNameUsedInAPI} (status-code: ${it.statusLine.statusCode}")
                                 .left()
                     }
                 }
             }
         } catch (e: Exception) {
-            logger.error("HLR deactivation message to BSSID ${config.name} for ICCID ${iccid} failed with error: ${e}")
-            AdapterError("HLR deactivation message to BSSID ${config.name} for ICCID ${iccid} failed with error: ${e}")
+            logger.error("HLR deactivation message to BSSID ${config.hssNameUsedInAPI} for ICCID ${iccid} failed with error: ${e}")
+            AdapterError("HLR deactivation message to BSSID ${config.hssNameUsedInAPI} for ICCID ${iccid} failed with error: ${e}")
                     .left()
         }
     }
