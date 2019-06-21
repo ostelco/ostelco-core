@@ -63,7 +63,8 @@ class PreallocateProfilesTask(
                         }
 
                         if (profileVendorConfig != null) {
-                            profileVendorAdapter.activate(httpClient = httpClient,
+                            profileVendorAdapter.activate(
+                                    httpClient = httpClient,
                                     config = profileVendorConfig,
                                     dao = simInventoryDAO,
                                     simEntry = simEntry)
