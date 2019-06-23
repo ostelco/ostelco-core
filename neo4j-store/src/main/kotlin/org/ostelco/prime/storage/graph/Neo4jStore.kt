@@ -1654,7 +1654,7 @@ object Neo4jStoreSingleton : GraphStore {
                                     type = "MyInfo Auth Code",
                                     id = authorisationCode,
                                     message = "Failed to fetched MyInfo"
-                            ).left()
+                            ).left() as Either<SystemError, String>
                 } catch (e: Exception) {
                     logger.error("Failed to fetched MyInfo using authCode = $authorisationCode", e)
                     SystemError(
@@ -1885,57 +1885,6 @@ object Neo4jStoreSingleton : GraphStore {
     // Balance (Customer - Subscription - Bundle)
     //
 
-    override fun getMsisdnToBundleMap(): Map<Subscription, Bundle> = readTransaction {
-        read("""
-                MATCH (subscription:${subscriptionEntity.name})-[:${subscriptionToBundleRelation.name}]->(bundle:${bundleEntity.name})<-[:${customerToBundleRelation.name}]-(:${customerEntity.name})
-                RETURN subscription, bundle
-                """.trimIndent(),
-                transaction) { result ->
-            result.list {
-                Pair(ObjectHandler.getObject(it["subscription"].asMap(), Subscription::class.java),
-                        ObjectHandler.getObject(it["bundle"].asMap(), Bundle::class.java))
-            }.toMap()
-        }
-    }
-
-    override fun getAllBundles(): Collection<Bundle> = readTransaction {
-        read("""
-                MATCH (:${customerEntity.name})-[:${customerToBundleRelation.name}]->(bundle:${bundleEntity.name})<-[:${subscriptionToBundleRelation.name}]-(:${subscriptionEntity.name})
-                RETURN bundle
-                """.trimIndent(),
-                transaction) { result ->
-            result.list {
-                ObjectHandler.getObject(it["bundle"].asMap(), Bundle::class.java)
-            }.toSet()
-        }
-    }
-
-    override fun getCustomerToBundleIdMap(): Map<Customer, Bundle> = readTransaction {
-        read("""
-                MATCH (customer:${customerEntity.name})-[:${customerToBundleRelation.name}]->(bundle:${bundleEntity.name})
-                RETURN customer, bundle
-                """.trimIndent(),
-                transaction) { result ->
-            result.list {
-                Pair(ObjectHandler.getObject(it["customer"].asMap(), Customer::class.java),
-                        ObjectHandler.getObject(it["bundle"].asMap(), Bundle::class.java))
-            }.toMap()
-        }
-    }
-
-    override fun getCustomerToMsisdnMap(): Map<Customer, Subscription> = readTransaction {
-        read("""
-                MATCH (customer:${customerEntity.name})-[:${subscriptionRelation.name}]->(subscription:${subscriptionEntity.name})
-                RETURN customer, subscription
-                """.trimIndent(),
-                transaction) { result ->
-            result.list {
-                Pair(ObjectHandler.getObject(it["customer"].asMap(), Customer::class.java),
-                        ObjectHandler.getObject(it["subscription"].asMap(), Subscription::class.java))
-            }.toMap()
-        }
-    }
-
     override fun getCustomerForMsisdn(msisdn: String): Either<StoreError, Customer> = readTransaction {
         read("""
                 MATCH (customer:${customerEntity.name})-[:${subscriptionRelation.name}]->(subscription:${subscriptionEntity.name} {msisdn: '$msisdn'})
@@ -2006,19 +1955,18 @@ object Neo4jStoreSingleton : GraphStore {
             Either.monad<StoreError>().binding {
 
                 get(Product::class, plan.id)
-                        .fold(
-                                { Unit.right() },
-                                {
-                                    Either.left(AlreadyExistsError(type = productEntity.name, id = "Failed to find product associated with plan ${plan.id}"))
-                                }
-                        ).bind()
+                        .map {
+                            AlreadyExistsError(type = productEntity.name, id = "Failed to find product associated with plan ${plan.id}")
+                                    .left()
+                                    .bind()
+                        }
+
                 get(Plan::class, plan.id)
-                        .fold(
-                                { Unit.right() },
-                                {
-                                    Either.left(AlreadyExistsError(type = planEntity.name, id = "Failed to find plan ${plan.id}"))
-                                }
-                        ).bind()
+                        .map {
+                            AlreadyExistsError(type = planEntity.name, id = "Failed to find plan ${plan.id}")
+                                    .left()
+                                    .bind()
+                        }
 
                 val productInfo = paymentProcessor.createProduct(stripeProductName)
                         .mapLeft {

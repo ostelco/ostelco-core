@@ -198,10 +198,6 @@ data class ConsumptionResult(val msisdnAnalyticsId: String, val granted: Long, v
 
 interface AdminGraphStore {
 
-    fun getMsisdnToBundleMap(): Map<Subscription, Bundle>
-    fun getAllBundles(): Collection<Bundle>
-    fun getCustomerToBundleIdMap(): Map<Customer, Bundle>
-    fun getCustomerToMsisdnMap(): Map<Customer, Subscription>
     fun getCustomerForMsisdn(msisdn: String): Either<StoreError, Customer>
 
     /**
