@@ -1,5 +1,6 @@
 package org.ostelco.prime.graphql
 
+import graphql.introspection.IntrospectionQuery
 import io.dropwizard.auth.AuthDynamicFeature
 import io.dropwizard.auth.AuthValueFactoryProvider
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter
@@ -37,7 +38,7 @@ class GraphQLResourceTest {
         val resp = RULE.target("/graphql")
                 .request(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
-                .post(Entity.json(GraphQLRequest(query = """{ context(id: "invalid@test.com") { customer { nickname, contactEmail } } }""")))
+                .post(Entity.json(GraphQLRequest(query = """{ context { customer { nickname, contactEmail } } }""")))
                 .readEntity(GraphQlResponse::class.java)
 
         Assert.assertEquals(email, resp.data?.context?.customer?.contactEmail)
@@ -46,12 +47,27 @@ class GraphQLResourceTest {
     @Test
     fun `test handleGet`() {
         val resp = RULE.target("/graphql")
-                .queryParam("query", URLEncoder.encode("""{context(id:"invalid@test.com"){customer{nickname,contactEmail}}}""", StandardCharsets.UTF_8.name()))
+                .queryParam("query", URLEncoder.encode("""{context{customer{nickname,contactEmail}}}""", StandardCharsets.UTF_8))
                 .request(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
                 .get(GraphQlResponse::class.java)
 
         Assert.assertEquals(email, resp.data?.context?.customer?.contactEmail)
+    }
+
+    @Test
+    fun `test introspection`() {
+        val resp = RULE.target("/graphql")
+                .request(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
+                .post(
+                        Entity.json(
+                                GraphQLRequest(query = IntrospectionQuery.INTROSPECTION_QUERY)
+                        )
+                )
+                .readEntity(String::class.java)
+
+        assert(resp.isNotBlank())
     }
 
     companion object {

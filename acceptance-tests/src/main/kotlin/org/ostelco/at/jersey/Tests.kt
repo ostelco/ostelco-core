@@ -9,6 +9,8 @@ import org.ostelco.at.common.enableRegion
 import org.ostelco.at.common.expectedPlanProduct
 import org.ostelco.at.common.expectedProducts
 import org.ostelco.at.common.getLogger
+import org.ostelco.at.common.graphqlGetQuery
+import org.ostelco.at.common.graphqlPostQuery
 import org.ostelco.at.common.randomInt
 import org.ostelco.prime.customer.model.ApplicationToken
 import org.ostelco.prime.customer.model.Bundle
@@ -59,7 +61,7 @@ class CustomerTest {
             val createdCustomer: Customer = post {
                 path = "/customer"
                 queryParams = mapOf(
-                        "contactEmail" to URLEncoder.encode(email, "UTF-8"),
+                        "contactEmail" to URLEncoder.encode(email, StandardCharsets.UTF_8),
                         "nickname" to nickname)
                 this.email = email
             }
@@ -85,7 +87,7 @@ class CustomerTest {
             val updatedCustomer: Customer = put {
                 path = "/customer"
                 queryParams = mapOf(
-                        "contactEmail" to URLEncoder.encode(email2, "UTF-8"),
+                        "contactEmail" to URLEncoder.encode(email2, StandardCharsets.UTF_8),
                         "nickname" to newName)
                 this.email = email
             }
@@ -727,7 +729,7 @@ class PurchaseTest {
             assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
             assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
 
-            val encodedEmail = URLEncoder.encode(email, "UTF-8")
+            val encodedEmail = URLEncoder.encode(email, StandardCharsets.UTF_8)
             val refundedProduct = put<ProductInfo> {
                 path = "/refund/$encodedEmail"
                 this.email = email
@@ -1222,7 +1224,7 @@ class JumioKycTest {
             }
             assertEquals("APPROVED", scanInformation.status, message = "Wrong status")
 
-            val encodedEmail = URLEncoder.encode(email, "UTF-8")
+            val encodedEmail = URLEncoder.encode(email, StandardCharsets.UTF_8)
             val scanInformationList = get<Collection<ScanInformation>> {
                 path = "/profiles/$encodedEmail/scans"
                 this.email = email
@@ -1322,7 +1324,7 @@ class JumioKycTest {
                     expected = mapOf(KycType.JUMIO.name to KycStatus.APPROVED),
                     actual = regionDetails.kycStatusMap)
 
-            val encodedEmail = URLEncoder.encode(email, "UTF-8")
+            val encodedEmail = URLEncoder.encode(email, StandardCharsets.UTF_8)
             val scanInformationList = get<Collection<ScanInformation>> {
                 path = "/profiles/$encodedEmail/scans"
                 this.email = email
@@ -1752,6 +1754,7 @@ class GraphQlTests {
     data class Context(
             val customer: Customer? = null,
             val bundles: Collection<Bundle>? = null,
+            val regions: Collection<RegionDetails>? = null,
             val subscriptions: Collection<Subscription>? = null,
             val products: Collection<Product>? = null,
             val purchases: Collection<PurchaseRecord>? = null)
@@ -1766,17 +1769,32 @@ class GraphQlTests {
         val email = "graphql-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createCustomer("Test GraphQL Endpoint", email).id
+            customerId = createCustomer("Test GraphQL POST Endpoint", email).id
+
+            enableRegion(email)
 
             val msisdn = createSubscription(email)
 
             val context = post<GraphQlResponse>(expectedResultCode = 200) {
                 path = "/graphql"
                 this.email = email
-                body = mapOf("query" to """{ context { customer { nickname contactEmail } subscriptions { msisdn } } }""")
+                body = mapOf("query" to graphqlPostQuery)
             }.data?.context
 
+            assertEquals(expected = "Test GraphQL POST Endpoint", actual = context?.customer?.nickname)
             assertEquals(expected = email, actual = context?.customer?.contactEmail)
+            assertEquals(expected = 2_147_483_648L, actual = context?.bundles?.first()?.balance)
+            assertEquals(expected = "no", actual = context?.regions?.first()?.region?.id)
+            assertEquals(expected = "Norway", actual = context?.regions?.first()?.region?.name)
+            assertEquals(expected = APPROVED, actual = context?.regions?.first()?.status)
+            assertEquals(
+                    expected = mapOf(KycType.JUMIO.name to KycStatus.APPROVED),
+                    actual = context?.regions?.first()?.kycStatusMap?.filterValues { it != null }
+            )
+            assertEquals(expected = "TEST-unknown", actual = context?.regions?.first()?.simProfiles?.first()?.iccId)
+            assertEquals(expected = "Dummy eSIM", actual = context?.regions?.first()?.simProfiles?.first()?.eSimActivationCode)
+            assertEquals(expected = "default", actual = context?.regions?.first()?.simProfiles?.first()?.alias)
+            assertEquals(expected = SimProfile.StatusEnum.INSTALLED, actual = context?.regions?.first()?.simProfiles?.first()?.status)
             assertEquals(expected = msisdn, actual = context?.subscriptions?.first()?.msisdn)
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -1789,17 +1807,32 @@ class GraphQlTests {
         val email = "graphql-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createCustomer("Test GraphQL Endpoint", email).id
+            customerId = createCustomer("Test GraphQL GET Endpoint", email).id
+
+            enableRegion(email)
 
             val msisdn = createSubscription(email)
 
             val context = get<GraphQlResponse> {
                 path = "/graphql"
                 this.email = email
-                queryParams = mapOf("query" to URLEncoder.encode("""{context{customer{nickname,contactEmail}subscriptions{msisdn}}}""", StandardCharsets.UTF_8.name()))
+                queryParams = mapOf("query" to URLEncoder.encode(graphqlGetQuery, StandardCharsets.UTF_8))
             }.data?.context
 
+            assertEquals(expected = "Test GraphQL GET Endpoint", actual = context?.customer?.nickname)
             assertEquals(expected = email, actual = context?.customer?.contactEmail)
+            assertEquals(expected = 2_147_483_648L, actual = context?.bundles?.first()?.balance)
+            assertEquals(expected = "no", actual = context?.regions?.first()?.region?.id)
+            assertEquals(expected = "Norway", actual = context?.regions?.first()?.region?.name)
+            assertEquals(expected = APPROVED, actual = context?.regions?.first()?.status)
+            assertEquals(
+                    expected = mapOf(KycType.JUMIO.name to KycStatus.APPROVED),
+                    actual = context?.regions?.first()?.kycStatusMap?.filterValues { it != null }
+            )
+            assertEquals(expected = "TEST-unknown", actual = context?.regions?.first()?.simProfiles?.first()?.iccId)
+            assertEquals(expected = "Dummy eSIM", actual = context?.regions?.first()?.simProfiles?.first()?.eSimActivationCode)
+            assertEquals(expected = "default", actual = context?.regions?.first()?.simProfiles?.first()?.alias)
+            assertEquals(expected = SimProfile.StatusEnum.INSTALLED, actual = context?.regions?.first()?.simProfiles?.first()?.status)
             assertEquals(expected = msisdn, actual = context?.subscriptions?.first()?.msisdn)
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)

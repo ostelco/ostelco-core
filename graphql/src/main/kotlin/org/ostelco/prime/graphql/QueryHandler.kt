@@ -14,7 +14,8 @@ class QueryHandler(schemaFile: File) {
     private val graphQL = SchemaGenerator()
             .makeExecutableSchema(
                     SchemaParser().parse(schemaFile),
-                    buildRuntimeWiring())
+                    buildRuntimeWiring()
+            )
             .let { GraphQL.newGraphQL(it).build() }
 
     fun execute(identity: Identity, query: String, operationName: String? = null, variables: Map<String, Any>? = null): ExecutionResult{

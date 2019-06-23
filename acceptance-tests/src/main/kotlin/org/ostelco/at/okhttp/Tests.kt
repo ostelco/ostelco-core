@@ -10,6 +10,8 @@ import org.ostelco.at.common.enableRegion
 import org.ostelco.at.common.expectedPlanProduct
 import org.ostelco.at.common.expectedProducts
 import org.ostelco.at.common.getLogger
+import org.ostelco.at.common.graphqlGetQuery
+import org.ostelco.at.common.graphqlPostQuery
 import org.ostelco.at.common.randomInt
 import org.ostelco.at.jersey.post
 import org.ostelco.at.okhttp.ClientFactory.clientForSubject
@@ -884,24 +886,53 @@ class PlanTest {
 
 class GraphQlTests {
 
+    private val logger by getLogger()
+
     @Test
     fun `okhttp test - POST graphql`() {
 
         val email = "graphql-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createCustomer("Test GraphQL Endpoint", email).id
+            customerId = createCustomer("Test GraphQL POST Endpoint", email).id
+
+            enableRegion(email)
 
             createSubscription(email)
 
             val client = clientForSubject(subject = email)
 
             val request = GraphQLRequest()
-            request.query = """{ context(id: "$email") { customer { nickname, contactEmail } } }"""
+            request.query = graphqlPostQuery
 
-            val map = client.graphql(request) as Map<String, *>
+            val map = client.graphqlPost(request) as Map<String, *>
 
-            println(map)
+            logger.info("GraphQL POST response {}", map)
+
+            assertNotNull(actual = map["data"], message = "Data is null")
+            assertNull(actual = map["error"], message = "Error is not null")
+        } finally {
+            StripePayment.deleteCustomer(customerId = customerId)
+        }
+    }
+
+    @Test
+    fun `okhttp test - GET graphql`() {
+
+        val email = "graphql-${randomInt()}@test.com"
+        var customerId = ""
+        try {
+            customerId = createCustomer("Test GraphQL GET Endpoint", email).id
+
+            enableRegion(email)
+
+            val msisdn = createSubscription(email)
+
+            val client = clientForSubject(subject = email)
+
+            val map = client.graphqlGet(graphqlGetQuery) as Map<String, *>
+
+            logger.info("GraphQL GET response {}", map)
 
             assertNotNull(actual = map["data"], message = "Data is null")
             assertNull(actual = map["error"], message = "Error is not null")
