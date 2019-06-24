@@ -139,7 +139,7 @@ prime:
 #      cpu: 200m
 #      memory: 400Mi
     requests:
-      cpu: 300m
+      cpu: 100m
       memory: 512Mi
   livenessProbe: {}
     # path: /

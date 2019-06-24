@@ -136,7 +136,7 @@ prime:
     - 8083 
   resources: 
     requests:
-      cpu: 300m
+      cpu: 100m
       memory: 512Mi
   livenessProbe: {}
   readinessProbe: {}
@@ -164,7 +164,7 @@ ocsEsp:
     http2_port: 9000
     ssl_port: 8443
   secretVolumes:
-    - secretName: test-oya-tls
+    - secretName: dev-oya-tls
       containerMountPath: /etc/nginx/ssl
       type: ssl
 
@@ -183,7 +183,7 @@ metricsEsp:
     http2_port: 9004
     ssl_port: 9443
   secretVolumes:
-    - secretName: test-oya-tls
+    - secretName: dev-oya-tls
       containerMountPath: /etc/nginx/ssl
       type: ssl
 
@@ -224,7 +224,6 @@ services:
     canary:
       headers:
         x-mode: prime-direct
-      # weight: 50   
 
   metrics:
     name: metrics
@@ -232,9 +231,6 @@ services:
     port: 443
     targetPort: 9443
     portName: grpc
-    # loadBalancerIP: x.y.z.n
-    # host: metrics # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
-    # grpcOrHttp2: true
 
   prime-houston-api:
     name: houston-api
@@ -246,9 +242,7 @@ services:
     ambassadorMappingOptions:
       timeout_ms: 600000
     canary:
-      headers:
-        x-mode: prime-direct
-      # weight: 50   
+      weight: 0
 
   prime-alvin-api:
     name: alvin-api
@@ -260,9 +254,7 @@ services:
     ambassadorMappingOptions:
       timeout_ms: 600000
     canary:
-      headers:
-        x-mode: prime-direct
-      # weight: 50   
+      weight: 0
 
   dwadmin-service:
     name: dwadmin-service
@@ -281,9 +273,7 @@ services:
     clientCert: true
     caCert: smdp-cacert.dev # secretname.namespace
     canary:
-      headers:
-        x-mode: prime-direct
-      # weight: 50   
+      weight: 0
 
 certs:
   enabled: true
