@@ -31,7 +31,7 @@ cronjobs:
 
 prime:
   image: eu.gcr.io/pi-ostelco-dev/prime
-  tag: "" # it will be set from CI
+  tag: "1.48.1-dev-53b5fabc" # it will be set from CI
   pullPolicy: Always
   configDataBucket: "gs://pi-ostelco-dev-prime-files/dev"
 
@@ -136,7 +136,7 @@ prime:
     - 8083 
   resources: 
     requests:
-      cpu: 300m
+      cpu: 100m
       memory: 512Mi
   livenessProbe: {}
   readinessProbe: {}
@@ -164,7 +164,7 @@ ocsEsp:
     http2_port: 9000
     ssl_port: 8443
   secretVolumes:
-    - secretName: test-oya-tls
+    - secretName: dev-oya-tls
       containerMountPath: /etc/nginx/ssl
       type: ssl
 
@@ -183,7 +183,7 @@ metricsEsp:
     http2_port: 9004
     ssl_port: 9443
   secretVolumes:
-    - secretName: test-oya-tls
+    - secretName: dev-oya-tls
       containerMountPath: /etc/nginx/ssl
       type: ssl
 
