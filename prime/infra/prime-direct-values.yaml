@@ -31,7 +31,7 @@ cronjobs:
 
 prime:
   image: eu.gcr.io/pi-ostelco-dev/prime
-  tag: "1.48.1-dev-53b5fabc" # it will be set from CI
+  tag: "" # it will be set from CI
   pullPolicy: Always
   configDataBucket: "gs://pi-ostelco-dev-prime-files/dev"
 
