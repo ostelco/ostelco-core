@@ -134,7 +134,10 @@ class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionData
 
     override fun getSessionListener(sessionId: String?): NetworkReqListener? {
         when {
-            localDataSource.exists(sessionId) -> return localDataSource.getSessionListener(sessionId)
+            localDataSource.exists(sessionId) -> {
+                logger.debug("Getting session listener from localDataSource for sessionId $sessionId")
+                return localDataSource.getSessionListener(sessionId)
+            }
             existReplicated(sessionId) -> {
                 logger.debug("Getting session listener from replicated external source for sessionId $sessionId")
                 makeLocal(sessionId)
@@ -181,6 +184,9 @@ class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionData
         if (sessionId != null) {
             sessionIdExist = redisStorage.exist(sessionId)
         }
+
+        logger.debug("existReplicated {} {}", sessionId, sessionIdExist)
+
         return sessionIdExist
     }
 }
