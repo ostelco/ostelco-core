@@ -38,7 +38,7 @@ class StripeMonitorResource(val monitor: StripeMonitor) {
             monitor.checkVersion()
                     .fold(
                             { failed(it, ApiErrorCode.FAILED_TO_CHECK_API_VERSION) },
-                            { ok(it) }
+                            { ok(mapOf("match" to it)) }
                     ).build()
 
     @GET
@@ -51,7 +51,7 @@ class StripeMonitorResource(val monitor: StripeMonitor) {
                 monitor.checkWebhookEnabled())
                     .fold(
                             { failed(it, ApiErrorCode.FAILED_TO_CHECK_WEBHOOK_ENABLED) },
-                            { ok(it) }
+                            { ok(mapOf("enabled" to it)) }
                     ).build()
 
     @GET
@@ -67,7 +67,7 @@ class StripeMonitorResource(val monitor: StripeMonitor) {
                     }
                     .fold(
                             { failed(it, ApiErrorCode.FAILED_TO_FETCH_SUBSCRIBED_TO_EVENTS) },
-                            { ok(it) }
+                            { ok(mapOf("subscribedEvents" to it)) }
                     ).build()
 
     @GET
@@ -80,7 +80,7 @@ class StripeMonitorResource(val monitor: StripeMonitor) {
                     }
                     .fold(
                             { failed(it, ApiErrorCode.FAILED_TO_CHECK_EVENTS_NOT_DELIVERED) },
-                            { ok(it) }
+                            { ok(mapOf("failedEvents" to it)) }
                     ).build()
 
     @GET
@@ -95,7 +95,7 @@ class StripeMonitorResource(val monitor: StripeMonitor) {
                     }
                     .fold(
                             { failed(it, ApiErrorCode.FAILED_TO_CHECK_EVENTS_NOT_DELIVERED) },
-                            { ok(it) }
+                            { ok(mapOf("fetchedEvents" to it)) }
                     ).build()
 
     /* Will actually never return an error as errors are swallowed, but
@@ -116,14 +116,8 @@ class StripeMonitorResource(val monitor: StripeMonitor) {
                     .plusSeconds(offset)
                     .atZone(ZoneOffset.UTC).toEpochSecond()
 
-    private fun ok(status: Boolean) =
-            Response.status(Response.Status.OK).entity(asJson(status))
-
-    private fun ok(cnt: Int) =
-            Response.status(Response.Status.OK).entity(asJson(cnt))
-
-    private fun ok(lst: List<String>) =
-            Response.status(Response.Status.OK).entity(asJson(lst))
+    private fun ok(value: Map<String, Any>) =
+            Response.status(Response.Status.OK).entity(asJson(value))
 
     private fun failed(error: PaymentError, code: ApiErrorCode): Response.ResponseBuilder =
             mapPaymentErrorToApiError(description = error.description,
