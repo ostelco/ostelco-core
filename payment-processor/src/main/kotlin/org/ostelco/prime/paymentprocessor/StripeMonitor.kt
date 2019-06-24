@@ -44,6 +44,31 @@ class StripeMonitor {
                     }
 
     /**
+     * Fetch list of subscribed to events from the first enabled webhook.
+     * @return list of subscribed to events
+     */
+    fun fetchEventSubscriptionList(): Either<PaymentError, List<String>> =
+            fetchWebhookEndpoints(1)
+                    .flatMap {
+                        if (it.size > 0)
+                            it.first().enabledEvents.toList().right()
+                        else
+                            emptyList<String>().right()
+                    }
+
+    /**
+     * Fetch list of subscribed to events from the webhook configured
+     * with the 'url' endpoint.
+     * @param url - URL of webhook
+     * @return list of subscribed to events
+     */
+    fun fetchEventSubscriptionList(url: String): Either<PaymentError, List<String>> =
+            fetchWebhookEndpoint(url)
+                    .flatMap {
+                            it.enabledEvents.toList().right()
+                    }
+
+    /**
      * Check if list of Stripe event subscriptions matches expected
      * subscriptions.
      * @return true if match
