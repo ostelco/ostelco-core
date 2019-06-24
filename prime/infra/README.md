@@ -4,6 +4,25 @@
 
 For direct developer deployment for testing, use the [helm-deploy-dev-direct.sh](../script/helm-deploy-dev-direct.sh) shell script. 
 
+To change traffic routing/distribution between prime-direct (in default namespace) and prime (in dev namespace):
+
+> By default, prime direct accepts requests on the same endpoints (with the http header: x-mode=prime-direct) as prime dev which is deployed by CI.
+
+- To set all traffic to prime-direct (without headers)
+```
+./prime/script/change-prime-direct-canary.sh <service name, e.g. api> full-weight
+```
+
+- To set all traffic to prime (without headers)
+```
+./prime/script/change-prime-direct-canary.sh <service name, e.g. api> zero-weight
+```
+
+- To set traffic with the header `x-mode=prime-direct` to prime direct:
+```
+./prime/script/change-prime-direct-canary.sh <service name, e.g. api> header
+```
+
 ----- 
 
 ## Dev deployment
