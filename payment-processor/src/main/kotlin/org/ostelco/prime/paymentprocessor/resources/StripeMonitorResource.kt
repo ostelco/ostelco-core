@@ -33,9 +33,9 @@ class StripeMonitorResource(val monitor: StripeMonitor) {
     private val publisher by lazy { getResource<StripeEventPublisher>() }
 
     @GET
-    @Path("version")
-    fun checkVersion(): Response =
-            monitor.checkVersion()
+    @Path("apiversion")
+    fun checkApiVersion(): Response =
+            monitor.checkApiVersion()
                     .fold(
                             { failed(it, ApiErrorCode.FAILED_TO_CHECK_API_VERSION) },
                             { ok(mapOf("match" to it)) }
@@ -55,7 +55,7 @@ class StripeMonitorResource(val monitor: StripeMonitor) {
                     ).build()
 
     @GET
-    @Path("webhook/events/subscribed")
+    @Path("webhook/events")
     fun getSubscribedToEvents(@QueryParam("url")
                      url: String? = null): Response =
             (if (url != null)
@@ -67,7 +67,7 @@ class StripeMonitorResource(val monitor: StripeMonitor) {
                     }
                     .fold(
                             { failed(it, ApiErrorCode.FAILED_TO_FETCH_SUBSCRIBED_TO_EVENTS) },
-                            { ok(mapOf("subscribedEvents" to it)) }
+                            { ok(mapOf("events" to it)) }
                     ).build()
 
     @GET
@@ -85,7 +85,7 @@ class StripeMonitorResource(val monitor: StripeMonitor) {
 
     @GET
     @Path("events/fetch/failed")
-    fun fetchUndeliveredEvents(@QueryParam("interval")
+    fun fetchEventsNotDeliverd(@QueryParam("interval")
                                interval: Long = 7200L): Response =
             monitor.fetchEvents(after = interval,
                     before = 0L,

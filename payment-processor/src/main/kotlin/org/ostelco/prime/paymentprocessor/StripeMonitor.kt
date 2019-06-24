@@ -32,7 +32,7 @@ class StripeMonitor {
      * reporting events (configured using the Stripe console).
      * @return true on match
      */
-    fun checkVersion(): Either<PaymentError, Boolean> =
+    fun checkApiVersion(): Either<PaymentError, Boolean> =
             fetchLastEvent()
                     .flatMap {
                         if (it.size > 0)
