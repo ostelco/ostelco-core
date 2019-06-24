@@ -98,7 +98,6 @@ func main() {
 		"acceptance-tests/config",
 		"dataflow-pipelines/config",
 		"ocsgw/config",
-		"bq-metrics-extractor/config",
 		"auth-server/config prime/config")
 	generateEspEndpointCertificates(
 		"certs/ocs.dev.ostelco.org/nginx.crt",

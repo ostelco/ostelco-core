@@ -1,6 +1,7 @@
 package org.ostelco.prime.admin.api
 
 import arrow.core.Either
+import arrow.core.left
 import io.dropwizard.auth.Auth
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.apierror.ApiErrorCode
@@ -164,7 +165,7 @@ class ProfilesResource {
             }
         } catch (e: Exception) {
             logger.error("Failed to get subscriptions for customer with identity - $identity", e)
-            Either.left(InternalServerError("Failed to get subscriptions", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS))
+            InternalServerError("Failed to get subscriptions", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS).left()
         }
     }
 
@@ -465,7 +466,7 @@ class NotifyResource {
             }
         } catch (e: Exception) {
             logger.error("Did not find msisdn for email $email", e)
-            Either.left(InternalServerError("Did not find subscription", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS))
+            InternalServerError("Did not find subscription", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS).left()
         }
     }
 }

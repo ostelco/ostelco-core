@@ -3,6 +3,7 @@ package org.ostelco.simcards.admin
 import arrow.core.Either
 import arrow.core.fix
 import arrow.core.left
+import arrow.core.right
 import arrow.effects.IO
 import arrow.instances.either.monad.flatMap
 import arrow.instances.either.monad.monad
@@ -14,6 +15,7 @@ import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.simmanager.DatabaseError
 import org.ostelco.prime.simmanager.NotFoundError
 import org.ostelco.prime.simmanager.SimManagerError
+import org.ostelco.prime.simmanager.SystemError
 import org.ostelco.simcards.hss.HssEntry
 import org.ostelco.simcards.hss.SimManagerToHssDispatcherAdapter
 import org.ostelco.simcards.inventory.HssState
@@ -62,7 +64,15 @@ class PreallocateProfilesTask(
                             it.name == profileVendorAdapter.name
                         }
 
-                        if (profileVendorConfig != null) {
+                        if (simEntry.id == null) {
+                            SystemError("simEntry.id == nulll for simEntry = ${simEntry}").left()
+                        } else if (profileVendorConfig == null) {
+                            NotFoundError("Failed to find configuration for SIM profile vendor ${profileVendorAdapter.name} " +
+                                    "and HLR ${hssEntry.name}")
+                                    .left()
+                        } else if (simEntry.hssState == HssState.NOT_ACTIVATED) {
+                            logger.debug("Preallocating (HSS not activated) for HSS with ID/name ${hssEntry.id}/${hssEntry.name} simEntry with ICCID=${simEntry.iccid}")
+
                             profileVendorAdapter.activate(
                                     httpClient = httpClient,
                                     config = profileVendorConfig,
@@ -70,44 +80,61 @@ class PreallocateProfilesTask(
                                     simEntry = simEntry)
                                     .flatMap {
                                         hssAdapterProxy.activate(simEntry)
-                                        simInventoryDAO.setHssState(simEntry.id!!, HssState.ACTIVATED)
                                     }
+                                    .flatMap {
+                                        simInventoryDAO.setHssState(simEntry.id, HssState.ACTIVATED)
+                                    }
+
                         } else {
-                            NotFoundError("Failed to find configuration for SIM profile vendor ${profileVendorAdapter.name} " +
-                                    "and HLR ${hssEntry.name}")
-                                    .left()
+                            logger.debug("Preallocating (HSS preactivated) for HSS with ID/name ${hssEntry.id}/${hssEntry.name} simEntry with ICCID=${simEntry.iccid}")
+                            profileVendorAdapter.activate(
+                                    httpClient = httpClient,
+                                    config = profileVendorConfig,
+                                    dao = simInventoryDAO,
+                                    simEntry = simEntry)
                         }
                     }
+
 
     private fun batchPreprovisionSimProfiles(hssEntry: HssEntry,
                                              simProfileName: String,
-                                             profileStats: SimProfileKeyStatistics) {
+                                             profileStats: SimProfileKeyStatistics): Either<SimManagerError, Any> {
+
+        logger.debug("batchPreprovisionSimProfiles hssEntry='$hssEntry', simProfileName='$simProfileName', profileStats='$profileStats.'")
+
         val noOfProfilesToActuallyAllocate =
                 Math.min(maxNoOfProfileToAllocate.toLong(), profileStats.noOfUnallocatedEntries)
 
-        logger.info("Number of profiles to allocate: {}", noOfProfilesToActuallyAllocate)
+        logger.debug("preprovisioning for profileName='${simProfileName}', HSS with ID/name ${hssEntry.id}/${hssEntry.name}. noOfProfilesToActuallyAllocate= $noOfProfilesToActuallyAllocate")
 
-        for (i in 1..noOfProfilesToActuallyAllocate) {
 
-            // XXX This is all well, if allocation doesn't fail, but if it fails, it will try the
-            //     same profile forever, so something else should be done e.g. setting the
-            //     state of the profile to "provision failed" or something of that nature, so that it
-            //     is possible to move along.   This is an error in the logic of this code.
-            simInventoryDAO.findNextNonProvisionedSimProfileForHss(hssId = hssEntry.id, profile = simProfileName)
-                    .flatMap { simEntry ->
-                        if (simEntry.id == null) {
-                            DatabaseError("This should never happen, since everything that is read from a database should have an ID")
-                                    .left()
-                        } else {
-                            preProvisionSimProfile(hssEntry, simEntry)
-                                    .mapLeft {
-                                        logger.error("Preallocation of SIM ICCID {} failed with error: {}}",
-                                                simEntry.iccid, it.description)
-                                        simInventoryDAO.setProvisionState(simEntry.id, ProvisionState.ALLOCATION_FAILED)
-                                    }
+        if (noOfProfilesToActuallyAllocate == 0L) {
+            logger.error("Could not find any profiles to allocate for hssname = '{}', profilename = '{}', profileStats = '{}'",
+                    hssEntry.name,
+                    simProfileName,
+                    profileStats)
+        } else
+            for (i in 1..noOfProfilesToActuallyAllocate) {
+
+                logger.debug("preprovisioning for profileName='${simProfileName}', HSS with ID/name ${hssEntry.id}/${hssEntry.name}. Iteration index = $i")
+                simInventoryDAO.findNextNonProvisionedSimProfileForHss(hssId = hssEntry.id, profile = simProfileName)
+                        .flatMap { simEntry ->
+                            logger.debug("preprovisioning for profileName='${simProfileName}', HSS with ID/name ${hssEntry.id}/${hssEntry.name} simEntry with ICCID=${simEntry.iccid}, id = ${simEntry.id}")
+                            if (simEntry.id == null) {
+                                DatabaseError("This should never happen, since everything that is read from a database should have an ID")
+                                        .left()
+                            } else {
+                                preProvisionSimProfile(hssEntry, simEntry)
+                                        .mapLeft {
+                                            logger.error("Preallocation of SIM ICCID {} failed with error: {}}",
+                                                    simEntry.iccid, it.description)
+                                            simInventoryDAO.setProvisionState(simEntry.id, ProvisionState.ALLOCATION_FAILED)
+                                        }
+
+                            }
                         }
-                    }
-        }
+            }
+        return "ok".right()
     }
 
     /**
@@ -115,27 +142,37 @@ class PreallocateProfilesTask(
      * allocation of profiles so that if possible, there will be tasks available for
      * provisioning.
      */
-    fun preAllocateSimProfiles() : Either<SimManagerError, Unit> = IO {
-        Either.monad<SimManagerError>().binding {
-            val hssEntries: Collection<HssEntry> = simInventoryDAO.getHssEntries()
-                    .bind()
+    public fun preAllocateSimProfiles(): Either<SimManagerError, Unit> =
+            IO {
+                logger.debug("Start of prealloacation")
 
-            hssEntries.forEach{ hssEntry ->
-                val simProfileNames: Collection<String> = simInventoryDAO.getProfileNamesForHssById(hssEntry.id)
-                        .bind()
-                for (simProfileName in simProfileNames) {
-                    val profileStats = simInventoryDAO.getProfileStats(hssEntry.id, simProfileName)
+                Either.monad<SimManagerError>().binding {
+                    val hssEntries: Collection<HssEntry> = simInventoryDAO.getHssEntries()
                             .bind()
+                    hssEntries.forEach { hssEntry ->
+                        logger.debug("Start of prealloacation for HSS with ID/name ${hssEntry.id}/${hssEntry.name}")
+                        val simProfileNames: Collection<String> = simInventoryDAO.getProfileNamesForHssById(hssEntry.id)
+                                .bind()
+                        for (simProfileName in simProfileNames) {
+                            logger.debug("Start of prealloacation for HSS with ID/name ${hssEntry.id}/${hssEntry.name}, sim profile named '${simProfileName}'")
 
-                    if (profileStats.noOfEntriesAvailableForImmediateUse < lowWaterMark) {
-                        logger.info("Preallocating new SIM batch with HLR {} and with profile {}.  lowWaterMark = {},  profileStats = {}",
-                                hssEntry.name, simProfileName, lowWaterMark, profileStats)
+                            val profileStats = simInventoryDAO.getProfileStats(hssEntry.id, simProfileName)
+                                    .bind()
 
-                        batchPreprovisionSimProfiles(hssEntry = hssEntry, simProfileName = simProfileName, profileStats = profileStats)
+                            if (profileStats.noOfUnallocatedEntries == 0L) {
+                                logger.error("No  more unallocated  profiles of type $simProfileName for HSS with ID/name ${hssEntry.id}/${hssEntry.name}")
+                            } else {
+                                logger.debug("Profiles ready for use: ${hssEntry.id}/${hssEntry.name}/${simProfileName} = ${profileStats.noOfEntriesAvailableForImmediateUse}")
+                                if (profileStats.noOfEntriesAvailableForImmediateUse < lowWaterMark) {
+                                    logger.info("Preallocating new SIM batch with HLR {} and with profile {}",
+                                            hssEntry.name, simProfileName)
+
+                                    batchPreprovisionSimProfiles(hssEntry = hssEntry, simProfileName = simProfileName, profileStats = profileStats)
+                                }
+                            }
+                        }
                     }
-                }
-            }
-        }.fix()
-    }.unsafeRunSync()
+                }.fix()
+            }.unsafeRunSync()
 }
 
