@@ -6,8 +6,8 @@
 
 
 DEPENDENCIES="./gradlew docker grep tr awk gcloud helm"
-for DEP in $DEPENDENCIES; do
-    if [[ -z "$(which $DEP)" ]] ; then
+for DEP in ${DEPENDENCIES}; do
+    if [[ -z "$(which ${DEP})" ]] ; then
 	echo "$0  ERROR: Missing dependency $DEP"
 	exit 1
     fi

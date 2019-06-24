@@ -9,17 +9,17 @@ To change traffic routing/distribution between prime-direct (in default namespac
 > By default, prime direct accepts requests on the same endpoints (with the http header: x-mode=prime-direct) as prime dev which is deployed by CI.
 
 - To set all traffic to prime-direct (without headers)
-```
+```bash
 ./prime/script/change-prime-direct-canary.sh <service name, e.g. api> full-weight
 ```
 
 - To set all traffic to prime (without headers)
-```
+```bash
 ./prime/script/change-prime-direct-canary.sh <service name, e.g. api> zero-weight
 ```
 
 - To set traffic with the header `x-mode=prime-direct` to prime direct:
-```
+```bash
 ./prime/script/change-prime-direct-canary.sh <service name, e.g. api> header
 ```
 

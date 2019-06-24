@@ -12,8 +12,8 @@ fi
 
 
 DEPENDENCIES="grep gcloud helm kubectl"
-for DEP in $DEPENDENCIES; do
-    if [[ -z "$(which $DEP)" ]] ; then
+for DEP in ${DEPENDENCIES}; do
+    if [[ -z "$(which ${DEP})" ]] ; then
 	echo "$0  ERROR: Missing dependency $DEP"
 	exit 1
     fi
@@ -34,7 +34,7 @@ SERVICE_NAME=$1
 CANARY_TYPE=$2
 HELM_SET_FLAG=" --set services.$SERVICE_NAME.canary"
 
-case $CANARY_TYPE in
+case ${CANARY_TYPE} in
 
   full-weight)
     echo "Setting prime direct traffic for [ $SERVICE_NAME ] service to %100."
@@ -78,4 +78,4 @@ echo "Upgrading prime-direct to GKE"
 
 helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
 helm repo update
-helm upgrade ${HELM_RELEASE_NAME} ${HELM_CHART} --version $HELM_CHART_VERSION --reuse-values $HELM_SET_FLAG
+helm upgrade ${HELM_RELEASE_NAME} ${HELM_CHART} --version ${HELM_CHART_VERSION} --reuse-values ${HELM_SET_FLAG}
