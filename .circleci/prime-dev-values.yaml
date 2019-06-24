@@ -136,7 +136,7 @@ prime:
     - 8083 
   resources: 
     requests:
-      cpu: 300m
+      cpu: 100m
       memory: 512Mi
   livenessProbe: {}
   readinessProbe: {}
