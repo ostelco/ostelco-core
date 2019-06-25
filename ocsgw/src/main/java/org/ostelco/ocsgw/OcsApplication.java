@@ -116,14 +116,14 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
 
     @Override
     public Answer processRequest(Request request) {
-        LOG.info("<< Received Request [{}]", request.getSessionId());
+        LOG.debug("[<<] Received Request [{}]", request.getSessionId());
         try {
             ServerCCASessionImpl session = sessionFactory.getNewAppSession(request.getSessionId(), ApplicationId.createByAuthAppId(4L), ServerCCASession.class);
             session.processRequest(request);
-            LOG.info("processRequest finished [{}]", request.getSessionId());
+            LOG.debug("processRequest finished [{}]", request.getSessionId());
         }
         catch (InternalException e) {
-            LOG.error(">< Failure handling received request.", e);
+            LOG.error("[><] Failure handling received request.", e);
         }
 
         return null;
@@ -136,15 +136,15 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
             case RequestType.INITIAL_REQUEST:
             case RequestType.UPDATE_REQUEST:
             case RequestType.TERMINATION_REQUEST:
-                LOG.info("<< Received Credit-Control-Request from P-GW [ {} ] [{}]", RequestType.getTypeAsString(request.getRequestTypeAVPValue()), session.getSessionId());
+                LOG.info("[<<] Received Credit-Control-Request from P-GW [ {} ] [{}]", RequestType.getTypeAsString(request.getRequestTypeAVPValue()), session.getSessionId());
                 try {
                     OcsServer.INSTANCE.handleRequest$ocsgw(session, request);
                 } catch (Exception e) {
-                    LOG.error(">< Failure processing Credit-Control-Request [" + RequestType.getTypeAsString(request.getRequestTypeAVPValue()) + "]", e);
+                    LOG.error("[><] Failure processing Credit-Control-Request [" + RequestType.getTypeAsString(request.getRequestTypeAVPValue()) + "]", e);
                 }
                 break;
             case RequestType.EVENT_REQUEST:
-                LOG.info("<< Received Credit-Control-Request [EVENT]");
+                LOG.info("[<<] Received Credit-Control-Request [EVENT]");
                 break;
             default:
                 break;
