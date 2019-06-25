@@ -234,39 +234,6 @@ gcloud endpoints services deploy prime/infra/dev/prime-customer-api.yaml
 
 ## Deploy to Dev cluster
 
-### Deploy monitoring
-
-```bash
-kubectl apply -f prime/infra/dev/monitoring.yaml
-
-# If the above command fails on creating clusterroles / clusterbindings you need to add a role to the user you are using to deploy
-# You can read more about it here https://github.com/coreos/prometheus-operator/issues/357
-kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user $(gcloud config get-value account)
-
-#
-kubectl apply -f prime/infra/dev/monitoring-pushgateway.yaml 
-```
-
-#### Prometheus dashboard
-```bash
-kubectl port-forward --namespace=monitoring $(kubectl get pods --namespace=monitoring | grep prometheus-core | awk '{print $1}') 9090
-```
-
-#### Grafana dashboard
-__`Has own its own load balancer and can be accessed directly. Discuss if this is OK or find and implement a different way of accessing the grafana dashboard.`__
-
-Can be accessed directly from external ip
-```bash
-kubectl get services --namespace=monitoring | grep grafana | awk '{print $4}'
-```
-
-#### Push gateway
-```bash
-# Push a metric to pushgateway:8080 (specified in the service declaration for pushgateway)
-kubectl run curl-it --image=radial/busyboxplus:curl -i --tty --rm
-echo "some_metric 4.71" | curl -v  --data-binary @- http://pushgateway:8080/metrics/job/some_job
-```
-
 ### Setup Neo4j
 
 ```bash

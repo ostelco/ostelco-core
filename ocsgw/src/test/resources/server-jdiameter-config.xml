@@ -13,9 +13,9 @@
     <FirmwareRevision value="1" />
     <Applications>
       <ApplicationID>
-        <VendorId value="10415"/>
+        <VendorId value="10416"/>
         <AuthApplId value="4"/>
-        <AcctApplId value="3"/>
+        <AcctApplId value="0"/>
       </ApplicationID>
     </Applications>
     <OverloadMonitor>
@@ -23,7 +23,7 @@
         <ApplicationID>
           <VendorId value="10415" />
           <AuthApplId value="4" />
-          <AcctApplId value="12645" />
+          <AcctApplId value="0" />
         </ApplicationID>
       </Entry>
     </OverloadMonitor>
@@ -68,7 +68,7 @@
       <ApplicationID>
         <VendorId value="10415" />
         <AuthApplId value="4" />
-        <AcctApplId value="3" />
+        <AcctApplId value="0" />
       </ApplicationID>
       </Realm>
     </Realms>

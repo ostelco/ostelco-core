@@ -12,6 +12,7 @@ import arrow.instances.either.monad.monad
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.appnotifier.AppNotifier
+import org.ostelco.prime.dsl.WriteTransaction
 import org.ostelco.prime.dsl.readTransaction
 import org.ostelco.prime.dsl.suspendedWriteTransaction
 import org.ostelco.prime.dsl.writeTransaction
@@ -33,16 +34,22 @@ import org.ostelco.prime.model.KycType.ADDRESS_AND_PHONE_NUMBER
 import org.ostelco.prime.model.KycType.JUMIO
 import org.ostelco.prime.model.KycType.MY_INFO
 import org.ostelco.prime.model.KycType.NRIC_FIN
-import org.ostelco.prime.model.Offer
+import org.ostelco.prime.model.PaymentType.SUBSCRIPTION
 import org.ostelco.prime.model.Plan
+import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
+import org.ostelco.prime.model.ProductClass.MEMBERSHIP
+import org.ostelco.prime.model.ProductClass.SIMPLE_DATA
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.RefundRecord
 import org.ostelco.prime.model.Region
 import org.ostelco.prime.model.RegionDetails
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.ScanStatus
-import org.ostelco.prime.model.Segment
+import org.ostelco.prime.model.SimEntry
+import org.ostelco.prime.model.SimProfileStatus
+import org.ostelco.prime.model.SimProfileStatus.AVAILABLE_FOR_DOWNLOAD
+import org.ostelco.prime.model.SimProfileStatus.INSTALLED
 import org.ostelco.prime.model.SimProfileStatus.NOT_READY
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
@@ -51,11 +58,13 @@ import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.BadGatewayError
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
+import org.ostelco.prime.paymentprocessor.core.InvoicePaymentInfo
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.PaymentStatus
 import org.ostelco.prime.paymentprocessor.core.PlanAlredyPurchasedError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import org.ostelco.prime.paymentprocessor.core.SubscriptionDetailsInfo
 import org.ostelco.prime.securearchive.SecureArchiveService
 import org.ostelco.prime.sim.SimManager
 import org.ostelco.prime.storage.AlreadyExistsError
@@ -69,6 +78,7 @@ import org.ostelco.prime.storage.ScanInformationStore
 import org.ostelco.prime.storage.StoreError
 import org.ostelco.prime.storage.SystemError
 import org.ostelco.prime.storage.ValidationError
+import org.ostelco.prime.storage.graph.ConfigRegistry.config
 import org.ostelco.prime.storage.graph.Graph.read
 import org.ostelco.prime.storage.graph.Graph.write
 import org.ostelco.prime.storage.graph.Graph.writeSuspended
@@ -88,7 +98,6 @@ import java.util.stream.Collectors
 import javax.ws.rs.core.MultivaluedMap
 import kotlin.collections.component1
 import kotlin.collections.component2
-import kotlin.collections.first
 import kotlin.collections.set
 import kotlin.reflect.KClass
 import org.ostelco.prime.model.Identity as ModelIdentity
@@ -107,8 +116,6 @@ enum class Relation(
     HAS_SIM_PROFILE(from = Customer::class, to = SimProfile::class),                    // (Customer) -[HAS_SIM_PROFILE]-> (SimProfile)
 
     SUBSCRIBES_TO_PLAN(from = Customer::class, to = Plan::class),                       // (Customer) -[SUBSCRIBES_TO_PLAN]-> (Plan)
-
-    HAS_PRODUCT(from = Plan::class, to = Product::class),                               // (Plan) -[HAS_PRODUCT]-> (Product)
 
     LINKED_TO_BUNDLE(from = Subscription::class, to = Bundle::class),                   // (Subscription) -[LINKED_TO_BUNDLE]-> (Bundle)
 
@@ -129,8 +136,6 @@ enum class Relation(
     SIM_PROFILE_FOR_REGION(from = SimProfile::class, to = Region::class),               // (SimProfile) -[SIM_PROFILE_FOR_REGION]-> (Region)
 
     SUBSCRIPTION_UNDER_SIM_PROFILE(from = Subscription::class, to = SimProfile::class), // (Subscription) -[SUBSCRIPTION_UNDER_SIM_PROFILE]-> (SimProfile)
-
-    LINKED_TO_REGION(from = Plan::class, to = Region::class);                           // (Plan) -[LINKED_TO_REGION]-> (Region)
 }
 
 class Neo4jStore : GraphStore by Neo4jStoreSingleton
@@ -138,6 +143,7 @@ class Neo4jStore : GraphStore by Neo4jStoreSingleton
 object Neo4jStoreSingleton : GraphStore {
 
     private val logger by getLogger()
+
     private val scanInformationDatastore by lazy { getResource<ScanInformationStore>() }
 
     //
@@ -154,10 +160,8 @@ object Neo4jStoreSingleton : GraphStore {
     private val productStore = Product::class.entityStore
 
     private val subscriptionEntity = Subscription::class.entityType
-    private val subscriptionStore = Subscription::class.entityStore
 
     private val bundleEntity = Bundle::class.entityType
-    private val bundleStore = Bundle::class.entityStore
 
     private val simProfileEntity = SimProfile::class.entityType
     private val simProfileStore = SimProfile::class.entityStore
@@ -246,13 +250,6 @@ object Neo4jStoreSingleton : GraphStore {
             dataClass = None::class.java)
     private val scanInformationRelationStore = UniqueRelationStore(scanInformationRelation)
 
-    private val planProductRelation = RelationType(
-            relation = Relation.HAS_PRODUCT,
-            from = planEntity,
-            to = productEntity,
-            dataClass = None::class.java)
-    private val planProductRelationStore = UniqueRelationStore(planProductRelation)
-
     private val simProfileRegionRelation = RelationType(
             relation = Relation.SIM_PROFILE_FOR_REGION,
             from = simProfileEntity,
@@ -267,11 +264,9 @@ object Neo4jStoreSingleton : GraphStore {
             dataClass = None::class.java)
     private val subscriptionSimProfileRelationStore = UniqueRelationStore(subscriptionSimProfileRelation)
 
-    private val planRegionRelation = RelationType(
-            relation = Relation.LINKED_TO_REGION,
-            from = planEntity,
-            to = regionEntity,
-            dataClass = None::class.java)
+
+    private val hssNameLookup: HssNameLookupService = config.hssNameLookupService.getKtsService()
+    private val onNewCustomerAction: OnNewCustomerAction = config.onNewCustomerAction.getKtsService()
 
     // -------------
     // Client Store
@@ -335,8 +330,6 @@ object Neo4jStoreSingleton : GraphStore {
                 Unit.right()
             }
 
-    // TODO vihang: Move this logic to DSL + Rule Engine + Triggers, when they are ready
-    // >> BEGIN
     override fun addCustomer(identity: ModelIdentity, customer: Customer, referredBy: String?): Either<StoreError, Unit> = writeTransaction {
         // IO is used to represent operations that can be executed lazily and are capable of failing.
         // Here it runs IO synchronously and returning its result blocking the current thread.
@@ -348,29 +341,21 @@ object Neo4jStoreSingleton : GraphStore {
                 val bundleId = UUID.randomUUID().toString()
                 create { Identity(id = identity.id, type = identity.type) }.bind()
                 create { customer }.bind()
-                identifiesRelationStore.create(fromId = identity.id, relation = Identifies(provider = identity.provider), toId = customer.id, transaction = transaction).bind()
-                // Give 100 MB as free initial balance
-                val productId = "2GB_FREE_ON_JOINING"
-                val balance: Long = 2_147_483_648
+                identifiesRelationStore.create(
+                        fromId = identity.id,
+                        relation = Identifies(provider = identity.provider),
+                        toId = customer.id,
+                        transaction = transaction).bind()
+                create { Bundle(id = bundleId, balance = 0L) }.bind()
+                customerToBundleStore.create(customer.id, bundleId, transaction).bind()
                 if (referredBy != null) {
                     referredRelationStore.create(referredBy, customer.id, transaction).bind()
                 }
-                create { Bundle(bundleId, balance) }.bind()
-                val product = get(Product::class, productId).bind()
-                createPurchaseRecordRelation(
-                        customer.id,
-                        PurchaseRecord(
-                                id = UUID.randomUUID().toString(),
-                                product = product,
-                                timestamp = Instant.now().toEpochMilli()
-                        ),
-                        transaction)
-                customerToBundleStore.create(customer.id, bundleId, transaction).bind()
+                onNewCustomerAction.apply(identity = identity, customerId = customer.id, transaction = transaction).bind()
             }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
     }
-    // << END
 
     override fun updateCustomer(
             identity: org.ostelco.prime.model.Identity,
@@ -380,29 +365,27 @@ object Neo4jStoreSingleton : GraphStore {
         getCustomer(identity = identity, transaction = transaction)
                 .flatMap { existingCustomer ->
                     update {
-                            existingCustomer.copy(
-                                    nickname = nickname ?: existingCustomer.nickname,
-                                    contactEmail = contactEmail ?: existingCustomer.contactEmail)
+                        existingCustomer.copy(
+                                nickname = nickname ?: existingCustomer.nickname,
+                                contactEmail = contactEmail ?: existingCustomer.contactEmail)
                     }
                 }
                 .ifFailedThenRollback(transaction)
     }
 
-    // TODO vihang: Should we also delete SimProfile attached to this user?
+    // TODO vihang: When we read and then delete, it fails when deserialization does not work.
     override fun removeCustomer(identity: org.ostelco.prime.model.Identity): Either<StoreError, Unit> = writeTransaction {
-        getCustomerId(identity = identity, transaction = transaction)
-                .flatMap { customerId ->
-                    identityStore.delete(id = identity.id, transaction = transaction)
-                    customerStore.exists(customerId, transaction)
-                            .flatMap {
-                                customerStore.getRelated(customerId, customerToBundleRelation, transaction)
-                                        .map { it.forEach { bundle -> bundleStore.delete(bundle.id, transaction) } }
-                                customerStore.getRelated(customerId, scanInformationRelation, transaction)
-                                        .map { it.forEach { scanInfo -> scanInformationStore.delete(scanInfo.id, transaction) } }
-                            }
-                            .flatMap { customerStore.delete(customerId, transaction) }
-                }
-                .ifFailedThenRollback(transaction)
+        write(query = """
+            MATCH (i:${identityEntity.name} {id:'${identity.id}'})-[:${identifiesRelation.name}]->(c:${customerEntity.name})
+            OPTIONAL MATCH (c)-[:${customerToBundleRelation.name}]->(b:${bundleEntity.name})
+            OPTIONAL MATCH (c)-[:${scanInformationRelation.name}]->(s:${scanInformationEntity.name})
+            DETACH DELETE i, c, b, s;
+        """.trimIndent(), transaction = transaction) { statementResult ->
+            Either.cond(
+                    test = statementResult.summary().counters().nodesDeleted() > 0,
+                    ifTrue = {},
+                    ifFalse = { NotFoundError(type = identityEntity.name, id = identity.id) })
+        }
     }
 
     //
@@ -457,7 +440,7 @@ object Neo4jStoreSingleton : GraphStore {
                             listOf(simProfileEntity.createEntity(record["sp"].asMap()))
                                     .mapNotNull { simProfile ->
                                         simManager.getSimProfile(
-                                                hlr = getHlr(regionCode = region.id),
+                                                hlr = hssNameLookup.getHssName(regionCode = region.id),
                                                 iccId = simProfile.iccId)
                                                 .map { simEntry ->
                                                     org.ostelco.prime.model.SimProfile(
@@ -499,7 +482,39 @@ object Neo4jStoreSingleton : GraphStore {
     // SIM Profile
     //
 
-    private val simManager by lazy { getResource<SimManager>() }
+
+    private val simManager = object : SimManager {
+
+        private val simManager by lazy { getResource<SimManager>() }
+
+        override fun allocateNextEsimProfile(hlr: String, phoneType: String?): Either<String, SimEntry> {
+            return if (hlr == "TEST" || phoneType == "TEST") {
+                SimEntry(
+                        iccId = "TEST-${UUID.randomUUID()}",
+                        status = AVAILABLE_FOR_DOWNLOAD,
+                        eSimActivationCode = "Dummy eSIM",
+                        msisdnList = emptyList()).right()
+            } else {
+                simManager.allocateNextEsimProfile(hlr, phoneType)
+            }
+        }
+
+        override fun getSimProfile(hlr: String, iccId: String): Either<String, SimEntry> {
+            return if (hlr == "TEST" || iccId.startsWith("TEST-")) {
+                SimEntry(
+                        iccId = iccId,
+                        status = INSTALLED,
+                        eSimActivationCode = "Dummy eSIM",
+                        msisdnList = emptyList()).right()
+            } else {
+                simManager.getSimProfile(hlr, iccId)
+            }
+        }
+
+        override fun getSimProfileStatusUpdates(onUpdate: (iccId: String, status: SimProfileStatus) -> Unit) {
+            return simManager.getSimProfileStatusUpdates(onUpdate)
+        }
+    }
 
     private val emailNotifier by lazy { getResource<EmailNotifier>() }
 
@@ -529,7 +544,7 @@ object Neo4jStoreSingleton : GraphStore {
                         customerId = customerId,
                         regionCode = regionCode.toLowerCase()).bind()
                 val region = get(Region::class, regionCode.toLowerCase()).bind()
-                val simEntry = simManager.allocateNextEsimProfile(hlr = getHlr(region.id.toLowerCase()), phoneType = profileType)
+                val simEntry = simManager.allocateNextEsimProfile(hlr = hssNameLookup.getHssName(region.id.toLowerCase()), phoneType = profileType)
                         .mapLeft { NotFoundError("eSIM profile", id = "Loltel") }
                         .bind()
                 val simProfile = SimProfile(id = UUID.randomUUID().toString(), iccId = simEntry.iccId)
@@ -615,8 +630,10 @@ object Neo4jStoreSingleton : GraphStore {
                                     relationType = simProfileRegionRelation,
                                     transaction = transaction)
                                     .bind()
-                                    .first()
-                            map[simProfile.id] = region.id
+                                    .firstOrNull()
+                            if (region != null) {
+                                map[simProfile.id] = region.id
+                            }
                         }
                     }
                     simProfiles
@@ -634,7 +651,7 @@ object Neo4jStoreSingleton : GraphStore {
                                             .bind()
 
                             val simEntry = simManager.getSimProfile(
-                                    hlr = getHlr(regionId),
+                                    hlr = hssNameLookup.getHssName(regionId),
                                     iccId = simProfile.iccId)
                                     .mapLeft { NotFoundError(type = simProfileEntity.name, id = simProfile.iccId) }
                                     .bind()
@@ -646,10 +663,6 @@ object Neo4jStoreSingleton : GraphStore {
                         }
                     }.fix()
         }.unsafeRunSync()
-    }
-
-    private fun getHlr(regionCode: String): String {
-        return "Loltel"
     }
 
     override fun updateSimProfile(
@@ -685,7 +698,7 @@ object Neo4jStoreSingleton : GraphStore {
             Either.monad<StoreError>().binding {
                 val simProfile = simProfileEither.bind()
                 val simEntry = simManager.getSimProfile(
-                        hlr = getHlr(regionCode),
+                        hlr = hssNameLookup.getHssName(regionCode),
                         iccId = iccId)
                         .mapLeft { NotFoundError(type = simProfileEntity.name, id = simProfile.iccId) }
                         .bind()
@@ -726,7 +739,7 @@ object Neo4jStoreSingleton : GraphStore {
             Either.monad<StoreError>().binding {
                 val (customer, simProfile) = infoEither.bind()
                 val simEntry = simManager.getSimProfile(
-                        hlr = getHlr(regionCode),
+                        hlr = hssNameLookup.getHssName(regionCode),
                         iccId = iccId)
                         .mapLeft {
                             NotFoundError(type = simProfileEntity.name, id = simProfile.iccId)
@@ -758,9 +771,9 @@ object Neo4jStoreSingleton : GraphStore {
                 simProfiles.forEach { simProfile ->
                     val subscriptions = simProfileStore.getRelatedFrom(simProfile.id, subscriptionSimProfileRelation, transaction).bind()
                     subscriptions.forEach { subscription ->
-                        subscriptionStore.delete(subscription.id, transaction).bind()
+                        delete(Subscription::class, subscription.id).bind()
                     }
-                    simProfileStore.delete(simProfile.id, transaction).bind()
+                    delete(SimProfile::class, simProfile.id).bind()
                 }
             }.fix()
         }.unsafeRunSync()
@@ -946,6 +959,134 @@ object Neo4jStoreSingleton : GraphStore {
     private val paymentProcessor by lazy { getResource<PaymentProcessor>() }
     private val analyticsReporter by lazy { getResource<AnalyticsService>() }
 
+    override fun purchaseProduct(identity: org.ostelco.prime.model.Identity,
+                                 sku: String,
+                                 sourceId: String?,
+                                 saveCard: Boolean): Either<PaymentError, ProductInfo> = writeTransaction {
+        IO {
+            Either.monad<PaymentError>().binding {
+
+                val customer = getCustomer(identity = identity, transaction = transaction)
+                        .mapLeft {
+                            org.ostelco.prime.paymentprocessor.core.NotFoundError(
+                                    "Failed to get customer data for customer with identity - $identity",
+                                    error = it)
+                        }.bind()
+
+                val product = getProduct(identity, sku)
+                        .mapLeft {
+                            org.ostelco.prime.paymentprocessor.core.NotFoundError("Product $sku is unavailable",
+                                    error = it)
+                        }
+                        .bind()
+
+                if (product.price.amount > 0) {
+                    val (chargeId, invoiceId) = when (product.paymentType) {
+                        SUBSCRIPTION -> {
+                            val subscriptionDetailsInfo = purchasePlan(
+                                    customer = customer,
+                                    sku = product.sku,
+                                    sourceId = sourceId,
+                                    saveCard = saveCard,
+                                    taxRegionId = product.paymentTaxRegionId,
+                                    transaction = transaction)
+                                    .bind()
+                            Pair(subscriptionDetailsInfo.chargeId, subscriptionDetailsInfo.invoiceId)
+                        }
+                        else -> {
+                            val invoicePaymentInfo = oneTimePurchase(
+                                    customer = customer,
+                                    sourceId = sourceId,
+                                    saveCard = saveCard,
+                                    sku = product.sku,
+                                    price = product.price,
+                                    taxRegionId = product.paymentTaxRegionId,
+                                    productLabel = product.paymentLabel,
+                                    transaction = transaction)
+                                    .bind()
+                            Pair(invoicePaymentInfo.chargeId, invoicePaymentInfo.id)
+                        }
+                    }
+                    val purchaseRecord = PurchaseRecord(
+                            id = chargeId,
+                            product = product,
+                            timestamp = Instant.now().toEpochMilli(),
+                            properties = mapOf("invoiceId" to invoiceId))
+
+                    /* If this step fails, the previously added 'removeInvoice' call added to the transaction
+                    will ensure that the invoice will be voided. */
+                    createPurchaseRecordRelation(customer.id, purchaseRecord)
+                            .mapLeft {
+                                logger.error("Failed to save purchase record for customer ${customer.id}, invoice-id $invoiceId, invoice will be voided in Stripe")
+                                BadGatewayError("Failed to save purchase record",
+                                        error = it)
+                            }.bind()
+
+                    /* TODO: While aborting transactions, send a record with "reverted" status. */
+                    analyticsReporter.reportPurchaseInfo(
+                            purchaseRecord = purchaseRecord,
+                            customerAnalyticsId = customer.analyticsId,
+                            status = "success")
+                }
+
+                applyProduct(
+                        customerId = customer.id,
+                        product = product
+                ).mapLeft {
+                    BadGatewayError(description = it.message, error = it.error).left().bind()
+                }.bind()
+
+                ProductInfo(product.sku)
+            }.fix()
+        }.unsafeRunSync()
+                .ifFailedThenRollback(transaction)
+    }
+    // << END
+
+    fun WriteTransaction.applyProduct(customerId: String, product: Product) = IO {
+        Either.monad<StoreError>().binding {
+            when (product.productClass) {
+                MEMBERSHIP -> {
+                    product.segmentIds.forEach { segmentId ->
+                        assignCustomerToSegment(customerId = customerId,
+                                segmentId = segmentId,
+                                transaction = transaction)
+                                .mapLeft {
+                                    SystemError(
+                                            type = "Customer -> Segment",
+                                            id = "$customerId -> $segmentId",
+                                            message = "Failed to assign Membership",
+                                            error = it)
+                                }
+                                .bind()
+                    }
+                }
+                SIMPLE_DATA -> {
+                    /* Topup. */
+                    simpleDataProduct(
+                            customerId = customerId,
+                            sku = product.sku,
+                            bytes = product.noOfBytes,
+                            transaction = transaction)
+                            .mapLeft {
+                                SystemError(
+                                        type = "Customer",
+                                        id = product.sku,
+                                        message = "Failed to update balance for customer: $customerId",
+                                        error = it)
+                            }
+                            .bind()
+                }
+                else -> {
+                    SystemError(
+                            type = "Product",
+                            id = product.sku,
+                            message = "Missing product class in properties of product: ${product.sku}").left().bind()
+                }
+            }
+        }.fix()
+    }.unsafeRunSync()
+
     private fun fetchOrCreatePaymentProfile(customer: Customer): Either<PaymentError, ProfileInfo> =
             // Fetch/Create stripe payment profile for the customer.
             paymentProcessor.getPaymentProfile(customer.id)
@@ -957,62 +1098,23 @@ object Neo4jStoreSingleton : GraphStore {
                             { profileInfo -> Either.right(profileInfo) }
                     )
 
-    override fun purchaseProduct(
-            identity: org.ostelco.prime.model.Identity,
-            sku: String,
-            sourceId: String?,
-            saveCard: Boolean): Either<PaymentError, ProductInfo> {
-
-        return getProduct(identity, sku).fold(
-                {
-                    Either.left(org.ostelco.prime.paymentprocessor.core.NotFoundError("Product $sku is unavailable",
-                            error = it))
-                },
-                {
-                    /* TODO: Complete support for 'product-class' and store plans as a
-                             'product' of product-class: 'PLAN'. */
-                    return if (it.properties.containsKey("productClass")
-                            && it.properties["productClass"].equals("PLAN", true)) {
-
-                        purchasePlan(
-                                identity = identity,
-                                product = it,
-                                sourceId = sourceId,
-                                saveCard = saveCard)
-                    } else {
-
-                        purchaseProduct(
-                                identity = identity,
-                                product = it,
-                                sourceId = sourceId,
-                                saveCard = saveCard)
-                    }
-                }
-        )
-    }
-
     /* Note: 'purchase-relation' info is first added when a successful purchase
              event has been received from Stripe. */
-    private fun purchasePlan(identity: org.ostelco.prime.model.Identity,
-                             product: Product,
+    private fun purchasePlan(customer: Customer,
+                             sku: String,
+                             taxRegionId: String?,
                              sourceId: String?,
-                             saveCard: Boolean): Either<PaymentError, ProductInfo> = writeTransaction {
-        IO {
+                             saveCard: Boolean,
+                             transaction: PrimeTransaction): Either<PaymentError, SubscriptionDetailsInfo> {
+        return IO {
             Either.monad<PaymentError>().binding {
-                val customer = getCustomer(identity = identity, transaction = transaction)
-                        .mapLeft {
-                            org.ostelco.prime.paymentprocessor.core.NotFoundError(
-                                    "Failed to get customer data for customer with identity - $identity",
-                                    error = it)
-                        }
-                        .bind()
 
                 /* Bail out if subscriber tries to buy an already bought plan.
                    Note: Already verified above that 'customer' (subscriber) exists. */
                 customerStore.getRelated(customer.id, purchaseRecordRelation, transaction)
-                        .map {
-                            if (it.any { x -> x.sku == product.sku }) {
-                                PlanAlredyPurchasedError("A subscription to plan ${product.sku} already exists")
+                        .map { products ->
+                            if (products.any { x -> x.sku == sku }) {
+                                PlanAlredyPurchasedError("A subscription to plan $sku already exists")
                                         .left().bind()
                             }
                         }
@@ -1025,7 +1127,7 @@ object Neo4jStoreSingleton : GraphStore {
                 /* With recurring payments, the payment card (source) must be stored. The
                    'saveCard' parameter is therefore ignored. */
                 if (!saveCard) {
-                    logger.warn("Ignoring request for deleting payment source after buying plan ${product.sku} for " +
+                    logger.warn("Ignoring request for deleting payment source after buying plan $sku for " +
                             "customer ${customer.id} as stored payment source is required when purchasing a plan")
                 }
 
@@ -1041,144 +1143,182 @@ object Neo4jStoreSingleton : GraphStore {
                     }
                 }
 
-                subscribeToPlan(identity, product.id)
+                subscribeToPlan(
+                        customerId = customer.id,
+                        planId = sku,
+                        taxRegionId = taxRegionId,
+                        transaction = transaction)
                         .mapLeft {
-                            BadGatewayError("Failed to subscribe ${customer.id} to plan ${product.id}",
+                            BadGatewayError("Failed to subscribe ${customer.id} to plan $sku",
                                     error = it)
                         }
-                        .flatMap {
-                            Either.right(ProductInfo(product.id))
-                        }.bind()
+                        .bind()
             }.fix()
         }.unsafeRunSync()
-                .ifFailedThenRollback(transaction)
     }
 
-    private fun purchaseProduct(identity: org.ostelco.prime.model.Identity,
-                                product: Product,
-                                sourceId: String?,
-                                saveCard: Boolean): Either<PaymentError, ProductInfo> = writeTransaction {
-        IO {
-            Either.monad<PaymentError>().binding {
+    private fun subscribeToPlan(
+            customerId: String,
+            planId: String,
+            taxRegionId: String?,
+            trialEnd: Long = 0L,
+            transaction: PrimeTransaction): Either<StoreError, SubscriptionDetailsInfo> {
 
-                val customer = getCustomer(identity = identity, transaction = transaction)
+        return IO {
+            Either.monad<StoreError>().binding {
+                val plan = plansStore.get(planId, transaction)
+                        .bind()
+                val profileInfo = paymentProcessor.getPaymentProfile(customerId)
                         .mapLeft {
-                            org.ostelco.prime.paymentprocessor.core.NotFoundError(
-                                    "Failed to get customer data for customer with identity - $identity",
+                            NotFoundError(type = planEntity.name, id = "Failed to subscribe $customerId to ${plan.id}",
                                     error = it)
                         }.bind()
 
-                /* A source must be associated with a payment profile with the payment vendor.
-                   Create the profile if it don't exists. */
-                fetchOrCreatePaymentProfile(customer)
+                /* At this point, we have either:
+                     1) A new subscription to a plan is being created.
+                     2) An attempt at buying a previously subscribed to plan but which has not been
+                        paid for.
+                   Both are OK. But in order to handle the second case correctly, the previous incomplete
+                   subscription must be removed before we can proceed with creating the new subscription.
+
+                   (In the second case there will be a "SUBSCRIBES_TO_PLAN" link between the customer
+                   object and the plan object, but no "PURCHASED" link to the plans "product" object.)
+
+                   The motivation for supporting the second case, is that it allows the subscriber to
+                   reattempt to buy a plan using a different payment source.
+
+                   Remove existing incomplete subscription if any. */
+                customerStore.getRelated(customerId, subscribesToPlanRelation, transaction)
+                        .map {
+                            if (it.any { x -> x.id == planId }) {
+                                removeSubscription(customerId, planId, invoiceNow = true)
+                            }
+                        }
+
+                /* Lookup in payment backend will fail if no value found for 'stripePlanId'. */
+                val planStripeId = plan.stripePlanId ?: SystemError(type = planEntity.name, id = plan.id,
+                        message = "No reference to Stripe plan found in ${plan.id}")
+                        .left()
                         .bind()
 
-                var addedSourceId: String? = null
+                val subscriptionDetailsInfo = paymentProcessor.createSubscription(
+                        planId = planStripeId,
+                        stripeCustomerId = profileInfo.id,
+                        trialEnd = trialEnd,
+                        taxRegionId = taxRegionId)
+                        .mapLeft {
+                            NotCreatedError(type = planEntity.name, id = "Failed to subscribe $customerId to ${plan.id}",
+                                    error = it)
+                        }.linkReversalActionToTransaction(transaction) {
+                            paymentProcessor.cancelSubscription(it.id)
+                        }.bind()
 
-                /* Add source if set and if it has not already been added to the payment profile. */
-                if (sourceId != null) {
-                    val sourceDetails = paymentProcessor.getSavedSources(customer.id)
-                            .mapLeft {
-                                BadGatewayError("Failed to fetch sources for user", error = it)
-                            }.bind()
-                    addedSourceId = sourceId
-
-                    if (!sourceDetails.any { sourceDetailsInfo -> sourceDetailsInfo.id == sourceId }) {
-                        addedSourceId = paymentProcessor.addSource(customer.id, sourceId)
-                                /* For the success case, saved source is removed after the invoice has been
-                                   paid if 'saveCard == false'. Make sure same happens even for failure
-                                   case by linking reversal action to transaction */
-                                .finallyDo(transaction) {
-                                    removePaymentSource(saveCard, customer.id, it.id)
-                                }.bind().id
+                /* Dispatch according to the charge result. */
+                when (subscriptionDetailsInfo.status) {
+                    PaymentStatus.PAYMENT_SUCCEEDED -> {
+                    }
+                    PaymentStatus.REQUIRES_PAYMENT_METHOD -> {
+                        NotCreatedError(type = planEntity.name, id = "Failed to subscribe $customerId to ${plan.id}",
+                                error = ForbiddenError("Payment method failed"))
+                                .left().bind()
+                    }
+                    PaymentStatus.REQUIRES_ACTION,
+                    PaymentStatus.TRIAL_START -> {
+                        /* No action required. Charge for the subscription will eventually
+                           be reported as a Stripe event. */
+                        logger.info(
+                                "Pending payment for subscription $planId for customer $customerId (${subscriptionDetailsInfo.status.name})")
                     }
                 }
 
-                /* Fetch 'tax' id to be applied. */
-                val taxRegionId = if (product.payment.containsKey("taxRegionId"))
-                    product.payment["taxRegionId"]
-                else
-                    null
+                /* Store information from payment backend for later use. */
+                subscribesToPlanRelationStore.create(
+                        fromId = customerId,
+                        relation = PlanSubscription(
+                                subscriptionId = subscriptionDetailsInfo.id,
+                                created = subscriptionDetailsInfo.created,
+                                trialEnd = subscriptionDetailsInfo.trialEnd),
+                        toId = planId,
+                        transaction = transaction)
+                        .bind()
 
-                /* Product presentation. */
-                val productLabel = if (product.presentation.containsKey("productLabel"))
-                        product.presentation["productLabel"] ?: product.sku
-                else
-                    product.sku
-
-                val invoice = paymentProcessor.createInvoice(customer.id, product.price.amount, product.price.currency, productLabel, taxRegionId, addedSourceId)
-                        .mapLeft {
-                            logger.error("Failed to create invoice for customer ${customer.id}, source $addedSourceId, sku ${product.sku}")
-                            it
-                        }.linkReversalActionToTransaction(transaction) {
-                            paymentProcessor.removeInvoice(it.id)
-                            logger.error(NOTIFY_OPS_MARKER,
-                                    """Failed to create or pay invoice for customer ${customer.id}, invoice-id: ${it.id}.
-                                       Verify that the invoice has been deleted or voided in Stripe dashboard.
-                                    """.trimIndent())
-                        }.bind()
-
-                /* Force immediate payment of the invoice. */
-                val paymentInfo = paymentProcessor.payInvoice(invoice.id)
-                        .mapLeft {
-                            logger.error("Payment of invoice ${invoice.id} failed for customer ${customer.id}.")
-                            it
-                        }.linkReversalActionToTransaction(transaction) {
-                            paymentProcessor.refundCharge(it.chargeId)
-                            logger.error(NOTIFY_OPS_MARKER,
-                                    """Refunded customer ${customer.id} for invoice: ${it.id}.
-                                       Verify that the invoice has been refunded in Stripe dashboard.
-                                    """.trimIndent())
-                        }.bind()
-
-                val purchaseRecord = PurchaseRecord(
-                        id = paymentInfo.chargeId,
-                        product = product,
-                        timestamp = Instant.now().toEpochMilli())
-
-                /* If this step fails, the previously added 'removeInvoice' call added to the transaction
-                   will ensure that the invoice will be voided. */
-                createPurchaseRecordRelation(customer.id, purchaseRecord, transaction)
-                        .mapLeft {
-                            logger.error("Failed to save purchase record for customer ${customer.id}, invoice-id ${invoice.id}, invoice will be voided in Stripe")
-                            BadGatewayError("Failed to save purchase record",
-                                    error = it)
-                        }.bind()
-
-                /* TODO: While aborting transactions, send a record with "reverted" status. */
-                analyticsReporter.reportPurchaseInfo(purchaseRecord = purchaseRecord,
-                        customerAnalyticsId = customer.analyticsId,
-                        status = "success")
-
-                /* Topup. */
-                val bytes = product.properties["noOfBytes"]?.replace("_", "")?.toLongOrNull() ?: 0L
-
-                if (bytes == 0L) {
-                    logger.error("Product with 0 bytes: sku = ${product.sku}")
-                }
-
-                /* Update balance with bought data. */
-                /* TODO: Add rollback in case of errors later on. */
-                write("""MATCH (cr:${customerEntity.name} { id:'${customer.id}' })-[:${customerToBundleRelation.name}]->(bundle:${bundleEntity.name})
-                         SET bundle.balance = toString(toInteger(bundle.balance) + $bytes)
-                      """.trimIndent(), transaction) {
-                    Either.cond(
-                            test = it.summary().counters().containsUpdates(),
-                            ifTrue = {},
-                            ifFalse = {
-                                logger.error("Failed to update balance during purchase for customer: ${customer.id}")
-                                BadGatewayError(
-                                        description = "Failed to update balance during purchase for customer: ${customer.id}",
-                                        message = "Failed to perform topup")
-                            })
-                }.bind()
-
-                ProductInfo(product.sku)
+                subscriptionDetailsInfo
             }.fix()
         }.unsafeRunSync()
-                .ifFailedThenRollback(transaction)
     }
-    // << END
+
+    private fun oneTimePurchase(
+            customer: Customer,
+            sourceId: String?,
+            saveCard: Boolean,
+            sku: String,
+            price: Price,
+            productLabel: String,
+            taxRegionId: String?,
+            transaction: PrimeTransaction): Either<PaymentError, InvoicePaymentInfo> = IO {
+
+        Either.monad<PaymentError>().binding {
+
+            /* A source must be associated with a payment profile with the payment vendor.
+               Create the profile if it don't exists. */
+            fetchOrCreatePaymentProfile(customer)
+                    .bind()
+
+            var addedSourceId: String? = null
+
+            /* Add source if set and if it has not already been added to the payment profile. */
+            if (sourceId != null) {
+                val sourceDetails = paymentProcessor.getSavedSources(customer.id)
+                        .mapLeft {
+                            BadGatewayError("Failed to fetch sources for user", error = it)
+                        }.bind()
+                addedSourceId = sourceId
+
+                if (!sourceDetails.any { sourceDetailsInfo -> sourceDetailsInfo.id == sourceId }) {
+                    addedSourceId = paymentProcessor.addSource(customer.id, sourceId)
+                            /* For the success case, saved source is removed after the invoice has been
+                               paid if 'saveCard == false'. Make sure same happens even for failure
+                               case by linking reversal action to transaction */
+                            .finallyDo(transaction) {
+                                removePaymentSource(saveCard, customer.id, it.id)
+                            }.bind().id
+                }
+            }
+
+            val invoice = paymentProcessor.createInvoice(
+                    customerId = customer.id,
+                    amount = price.amount,
+                    currency = price.currency,
+                    description = productLabel,
+                    taxRegionId = taxRegionId,
+                    sourceId = addedSourceId)
+                    .mapLeft {
+                        logger.error("Failed to create invoice for customer ${customer.id}, source $addedSourceId, sku $sku")
+                        it
+                    }.linkReversalActionToTransaction(transaction) {
+                        paymentProcessor.removeInvoice(it.id)
+                        logger.error(NOTIFY_OPS_MARKER,
+                                """Failed to create or pay invoice for customer ${customer.id}, invoice-id: ${it.id}.
+                                   Verify that the invoice has been deleted or voided in Stripe dashboard.
+                                """.trimIndent())
+                    }.bind()
+
+            /* Force immediate payment of the invoice. */
+            val invoicePaymentInfo = paymentProcessor.payInvoice(invoice.id)
+                    .mapLeft {
+                        logger.error("Payment of invoice ${invoice.id} failed for customer ${customer.id}.")
+                        it
+                    }.linkReversalActionToTransaction(transaction) {
+                        paymentProcessor.refundCharge(it.chargeId)
+                        logger.error(NOTIFY_OPS_MARKER,
+                                """Refunded customer ${customer.id} for invoice: ${it.id}.
+                                   Verify that the invoice has been refunded in Stripe dashboard.
+                                """.trimIndent())
+                    }.bind()
+
+            invoicePaymentInfo
+        }.fix()
+    }.unsafeRunSync()
 
     private fun removePaymentSource(saveCard: Boolean, paymentCustomerId: String, sourceId: String) {
         // In case we fail to remove saved source, we log it at error level.
@@ -1191,6 +1331,38 @@ object Neo4jStoreSingleton : GraphStore {
                     }
         }
     }
+
+    private fun simpleDataProduct(
+            customerId: String,
+            sku: String,
+            bytes: Long,
+            transaction: PrimeTransaction): Either<StoreError, Unit> = IO {
+
+        Either.monad<StoreError>().binding {
+
+            if (bytes == 0L) {
+                logger.error("Product with 0 bytes: sku = {}", sku)
+            } else {
+                /* Update balance with bought data. */
+                /* TODO: Add rollback in case of errors later on. */
+                write("""MATCH (cr:${customerEntity.name} { id:'$customerId' })-[:${customerToBundleRelation.name}]->(bundle:${bundleEntity.name})
+                     SET bundle.balance = toString(toInteger(bundle.balance) + $bytes)
+                  """.trimIndent(), transaction) {
+                    Either.cond(
+                            test = it.summary().counters().containsUpdates(),
+                            ifTrue = {},
+                            ifFalse = {
+                                logger.error("Failed to update balance for customer: {}", customerId)
+                                NotUpdatedError(
+                                        type = "Balance of Customer",
+                                        id = customerId)
+                            })
+                }.bind()
+            }
+
+            Unit
+        }.fix()
+    }.unsafeRunSync()
 
     //
     // Purchase Records
@@ -1206,17 +1378,14 @@ object Neo4jStoreSingleton : GraphStore {
 
     override fun addPurchaseRecord(customerId: String, purchase: PurchaseRecord): Either<StoreError, String> =
             writeTransaction {
-                createPurchaseRecordRelation(customerId, purchase, transaction)
+                createPurchaseRecordRelation(customerId, purchase)
                         .ifFailedThenRollback(transaction)
             }
 
-    private fun createPurchaseRecordRelation(customerId: String,
-                                             purchase: PurchaseRecord,
-                                             transaction: Transaction): Either<StoreError, String> {
-        val invoiceId = if (purchase.properties.containsKey("invoiceId") && !purchase.properties["invoiceId"].isNullOrEmpty())
-            purchase.properties["invoiceId"]
-        else
-            null
+    fun WriteTransaction.createPurchaseRecordRelation(customerId: String,
+                                             purchase: PurchaseRecord): Either<StoreError, String> {
+
+        val invoiceId = purchase.properties["invoiceId"]
 
         /* Avoid charging for the same invoice twice if invoice information
            is present. */
@@ -1232,7 +1401,7 @@ object Neo4jStoreSingleton : GraphStore {
                     }, {
                         ValidationError(type = purchaseRecordRelation.name,
                                 id = purchase.id,
-                                message = "A purchase record for ${purchase.product} for customer ${customerId} alread exists")
+                                message = "A purchase record for ${purchase.product} for customer $customerId already exists")
                                 .left()
                     })
         } else {
@@ -1253,7 +1422,7 @@ object Neo4jStoreSingleton : GraphStore {
             customerStore.getRelations(customerId, purchaseRecordRelation, transaction)
                     .map { records ->
                         records.find {
-                            it.properties.containsKey("invoiceId") && it.properties["invoiceId"] == invoiceId
+                            it.properties["invoiceId"] == invoiceId
                         }
                     }.leftIfNull { NotFoundError(type = purchaseRecordRelation.name, id = invoiceId) }
 
@@ -1305,25 +1474,26 @@ object Neo4jStoreSingleton : GraphStore {
                             transaction = transaction)
                     .flatMap {
                         if (status == APPROVED) {
-                            assignCustomerToRegionSegment(
+                            assignCustomerToSegment(
                                     customerId = customerId,
-                                    segmentName = getInitialSegmentNameForRegion(regionCode, transaction),
+                                    segmentId = getInitialSegmentNameForRegion(regionCode, transaction),
                                     transaction = transaction)
                         } else {
                             Unit.right()
                         }
                     }
 
-    private fun assignCustomerToRegionSegment(
+    private fun assignCustomerToSegment(
             customerId: String,
-            segmentName: String,
+            segmentId: String,
             transaction: Transaction): Either<StoreError, Unit> =
             customerToSegmentStore.create(
                     fromId = customerId,
-                    toId = segmentName,
+                    toId = segmentId,
                     transaction = transaction).mapLeft { storeError ->
                 if (storeError is NotCreatedError && storeError.type == customerToSegmentRelation.name) {
-                    ValidationError(type = customerEntity.name, id = customerId, message = "Unsupported segment: $segmentName")
+                    logger.error("Failed to assign Customer - {} to a Segment - {}", customerId, segmentId)
+                    ValidationError(type = customerEntity.name, id = customerId, message = "Unsupported segment: $segmentId")
                 } else {
                     storeError
                 }
@@ -1427,7 +1597,7 @@ object Neo4jStoreSingleton : GraphStore {
                                         body = FCMStrings.JUMIO_IDENTITY_VERIFIED.s,
                                         data = extendedStatus
                                 )
-                                logger.info(NOTIFY_OPS_MARKER, "Jumio verification succeeded for ${customer.contactEmail} Info: ${extendedStatus}")
+                                logger.info(NOTIFY_OPS_MARKER, "Jumio verification succeeded for ${customer.contactEmail} Info: $extendedStatus")
                                 setKycStatus(
                                         customerId = customer.id,
                                         regionCode = scanInformation.countryCode.toLowerCase(),
@@ -1442,7 +1612,7 @@ object Neo4jStoreSingleton : GraphStore {
                             body = FCMStrings.JUMIO_IDENTITY_FAILED.s,
                             data = extendedStatus
                     )
-                    logger.warn(NOTIFY_OPS_MARKER, "Jumio verification failed for ${customer.contactEmail} Info: ${extendedStatus}")
+                    logger.warn(NOTIFY_OPS_MARKER, "Jumio verification failed for ${customer.contactEmail} Info: $extendedStatus")
                     setKycStatus(
                             customerId = customer.id,
                             regionCode = scanInformation.countryCode.toLowerCase(),
@@ -1478,7 +1648,13 @@ object Neo4jStoreSingleton : GraphStore {
                         kycStatus = KycStatus.PENDING).bind()
 
                 val personData = try {
-                    myInfoKycService.getPersonData(authorisationCode).right()
+                    myInfoKycService.getPersonData(authorisationCode)
+                            ?.right()
+                            ?: SystemError(
+                                    type = "MyInfo Auth Code",
+                                    id = authorisationCode,
+                                    message = "Failed to fetched MyInfo"
+                            ).left() as Either<SystemError, String>
                 } catch (e: Exception) {
                     logger.error("Failed to fetched MyInfo using authCode = $authorisationCode", e)
                     SystemError(
@@ -1642,9 +1818,9 @@ object Neo4jStoreSingleton : GraphStore {
                 }
 
                 if (approvedNow) {
-                    assignCustomerToRegionSegment(
+                    assignCustomerToSegment(
                             customerId = customerId,
-                            segmentName = getInitialSegmentNameForRegion(regionCode, transaction),
+                            segmentId = getInitialSegmentNameForRegion(regionCode, transaction),
                             transaction = transaction).bind()
                 }
 
@@ -1690,60 +1866,24 @@ object Neo4jStoreSingleton : GraphStore {
     // Admin Store
     // ------------
 
+    override fun approveRegionForCustomer(
+            customerId: String,
+            regionCode: String): Either<StoreError, Unit> = writeTransaction {
+
+        customerRegionRelationStore.create(
+                fromId = customerId,
+                relation = CustomerRegion(
+                        status = APPROVED,
+                        kycStatusMap = getKycStatusMapForRegion(regionCode = regionCode)
+                ),
+                toId = regionCode,
+                transaction = transaction
+        )
+    }
+
     //
     // Balance (Customer - Subscription - Bundle)
     //
-
-    override fun getMsisdnToBundleMap(): Map<Subscription, Bundle> = readTransaction {
-        read("""
-                MATCH (subscription:${subscriptionEntity.name})-[:${subscriptionToBundleRelation.name}]->(bundle:${bundleEntity.name})<-[:${customerToBundleRelation.name}]-(:${customerEntity.name})
-                RETURN subscription, bundle
-                """.trimIndent(),
-                transaction) { result ->
-            result.list {
-                Pair(ObjectHandler.getObject(it["subscription"].asMap(), Subscription::class.java),
-                        ObjectHandler.getObject(it["bundle"].asMap(), Bundle::class.java))
-            }.toMap()
-        }
-    }
-
-    override fun getAllBundles(): Collection<Bundle> = readTransaction {
-        read("""
-                MATCH (:${customerEntity.name})-[:${customerToBundleRelation.name}]->(bundle:${bundleEntity.name})<-[:${subscriptionToBundleRelation.name}]-(:${subscriptionEntity.name})
-                RETURN bundle
-                """.trimIndent(),
-                transaction) { result ->
-            result.list {
-                ObjectHandler.getObject(it["bundle"].asMap(), Bundle::class.java)
-            }.toSet()
-        }
-    }
-
-    override fun getCustomerToBundleIdMap(): Map<Customer, Bundle> = readTransaction {
-        read("""
-                MATCH (customer:${customerEntity.name})-[:${customerToBundleRelation.name}]->(bundle:${bundleEntity.name})
-                RETURN customer, bundle
-                """.trimIndent(),
-                transaction) { result ->
-            result.list {
-                Pair(ObjectHandler.getObject(it["customer"].asMap(), Customer::class.java),
-                        ObjectHandler.getObject(it["bundle"].asMap(), Bundle::class.java))
-            }.toMap()
-        }
-    }
-
-    override fun getCustomerToMsisdnMap(): Map<Customer, Subscription> = readTransaction {
-        read("""
-                MATCH (customer:${customerEntity.name})-[:${subscriptionRelation.name}]->(subscription:${subscriptionEntity.name})
-                RETURN customer, subscription
-                """.trimIndent(),
-                transaction) { result ->
-            result.list {
-                Pair(ObjectHandler.getObject(it["customer"].asMap(), Customer::class.java),
-                        ObjectHandler.getObject(it["subscription"].asMap(), Subscription::class.java))
-            }.toMap()
-        }
-    }
 
     override fun getCustomerForMsisdn(msisdn: String): Either<StoreError, Customer> = readTransaction {
         read("""
@@ -1807,37 +1947,38 @@ object Neo4jStoreSingleton : GraphStore {
                 }
     }
 
-    override fun createPlan(plan: Plan): Either<StoreError, Plan> = writeTransaction {
+    override fun createPlan(
+            plan: Plan,
+            stripeProductName: String,
+            planProduct: Product): Either<StoreError, Plan> = writeTransaction {
         IO {
             Either.monad<StoreError>().binding {
 
                 get(Product::class, plan.id)
-                        .fold(
-                                { Unit.right() },
-                                {
-                                    Either.left(AlreadyExistsError(type = productEntity.name, id = "Failed to find product associated with plan ${plan.id}"))
-                                }
-                        ).bind()
+                        .map {
+                            AlreadyExistsError(type = productEntity.name, id = "Failed to find product associated with plan ${plan.id}")
+                                    .left()
+                                    .bind()
+                        }
+
                 get(Plan::class, plan.id)
-                        .fold(
-                                { Unit.right() },
-                                {
-                                    Either.left(AlreadyExistsError(type = planEntity.name, id = "Failed to find plan ${plan.id}"))
-                                }
-                        ).bind()
+                        .map {
+                            AlreadyExistsError(type = planEntity.name, id = "Failed to find plan ${plan.id}")
+                                    .left()
+                                    .bind()
+                        }
 
-                /* Plan/product presentation. */
-                val productLabel = plan.presentation["productLabel"]
-                        ?: plan.id
-
-                val productInfo = paymentProcessor.createProduct(productLabel)
+                val productInfo = paymentProcessor.createProduct(stripeProductName)
                         .mapLeft {
                             NotCreatedError(type = planEntity.name, id = "Failed to create plan ${plan.id}",
                                     error = it)
                         }.linkReversalActionToTransaction(transaction) {
                             paymentProcessor.removeProduct(it.id)
                         }.bind()
-                val planInfo = paymentProcessor.createPlan(productInfo.id, plan.price.amount, plan.price.currency,
+                val planInfo = paymentProcessor.createPlan(
+                        productInfo.id,
+                        planProduct.price.amount,
+                        planProduct.price.currency,
                         PaymentProcessor.Interval.valueOf(plan.interval.toUpperCase()), plan.intervalCount)
                         .mapLeft {
                             NotCreatedError(type = planEntity.name, id = "Failed to create plan ${plan.id}",
@@ -1850,23 +1991,18 @@ object Neo4jStoreSingleton : GraphStore {
                          sku - name of the plan
                          property value 'productClass' is set to "plan"
                    TODO: Update to new backend model. */
-                val product = Product(sku = plan.id, price = plan.price,
-                        payment = plan.payment,
-                        properties = plan.properties + mapOf(
-                                "productClass" to "PLAN",
-                                "interval" to plan.interval,
-                                "intervalCount" to plan.intervalCount.toString()),
-                        presentation = plan.presentation)
+                val product = planProduct.copy(
+                        payment = planProduct.payment + mapOf(
+                                "type" to SUBSCRIPTION.name)
+                )
 
                 /* Propagates errors from lower layer if any. */
                 create { product }.bind()
                 create {
-                    plan.copy(properties = plan.properties.plus(mapOf(
-                        "planId" to planInfo.id,
-                        "productId" to productInfo.id)))
+                    plan.copy(
+                            stripePlanId = planInfo.id,
+                            stripeProductId = productInfo.id)
                 }.bind()
-                planProductRelationStore.create(plan.id, product.id, transaction)
-                        .bind()
                 get(Plan::class, plan.id)
                         .bind()
             }.fix()
@@ -1882,124 +2018,58 @@ object Neo4jStoreSingleton : GraphStore {
                 /* The name of the product is the same as the name of the corresponding plan. */
                 get(Product::class, planId)
                         .bind()
-                plansStore.getRelated(id = plan.id, relationType = planProductRelation, transaction = transaction)
-                        .bind()
 
                 /* Not removing the product due to purchase references. */
 
                 /* Removing the plan will remove the plan itself and all relations going to it. */
-                plansStore.delete(plan.id, transaction)
+                delete(Plan::class, plan.id)
                         .bind()
 
                 /* Lookup in payment backend will fail if no value found for 'planId'. */
-                paymentProcessor.removePlan(plan.properties.getOrDefault("planId", "missing"))
-                        .mapLeft {
-                            NotDeletedError(type = planEntity.name, id = "Failed to delete ${plan.id}",
-                                    error = it)
-                        }.linkReversalActionToTransaction(transaction) {
-                            /* (Nothing to do.) */
-                        }.flatMap {
-                            Unit.right()
-                        }.bind()
+                plan.stripePlanId?.let { stripePlanId ->
+                    paymentProcessor.removePlan(stripePlanId)
+                            .mapLeft {
+                                NotDeletedError(type = planEntity.name, id = "Failed to delete ${plan.id}",
+                                        error = it)
+                            }.bind()
+                }
+
                 /* Lookup in payment backend will fail if no value found for 'productId'. */
-                paymentProcessor.removeProduct(plan.properties.getOrDefault("productId", "missing"))
-                        .mapLeft {
-                            NotDeletedError(type = planEntity.name, id = "Failed to delete ${plan.id}",
-                                    error = it)
-                        }.linkReversalActionToTransaction(transaction) {
-                            /* (Nothing to do.) */
-                        }.bind()
+                plan.stripeProductId?.let { stripeProductId ->
+                    paymentProcessor.removeProduct(stripeProductId)
+                            .mapLeft {
+                                NotDeletedError(type = planEntity.name, id = "Failed to delete ${plan.id}",
+                                        error = it)
+                            }.bind()
+                }
                 plan
             }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
     }
 
-    override fun subscribeToPlan(identity: org.ostelco.prime.model.Identity, planId: String, trialEnd: Long): Either<StoreError, Plan> = writeTransaction {
+    override fun subscribeToPlan(
+            identity: org.ostelco.prime.model.Identity,
+            planId: String,
+            trialEnd: Long): Either<StoreError, Unit> = writeTransaction {
+
         IO {
             Either.monad<StoreError>().binding {
+
                 val customer = getCustomer(identity = identity, transaction = transaction)
                         .bind()
-                val plan = get(Plan::class, planId)
+
+                val product = getProduct(identity, planId)
                         .bind()
-                plansStore.getRelated(id = plan.id, relationType = planProductRelation, transaction = transaction)
-                        .bind()
-                val profileInfo = paymentProcessor.getPaymentProfile(customer.id)
-                        .mapLeft {
-                            NotFoundError(type = planEntity.name, id = "Failed to subscribe ${customer.id} to ${plan.id}",
-                                    error = it)
-                        }.bind()
 
-                /* At this point, we have either:
-                     1) A new subscription to a plan is being created.
-                     2) An attempt at buying a previously subscribed to plan but which has not been
-                        paid for.
-                   Both are OK. But in order to handle the second case correctly, the previous incomplete
-                   subscription must be removed before we can proceed with creating the new subscription.
-
-                   (In the second case there will be a "SUBSCRIBES_TO_PLAN" link between the customer
-                   object and the plan object, but no "PURCHASED" link to the plans "product" object.)
-
-                   The motivation for supporting the second case, is that it allows the subscriber to
-                   reattempt to buy a plan using a different payment source.
-
-                   Remove existing incomplete subscription if any. */
-                customerStore.getRelated(customer.id, subscribesToPlanRelation, transaction)
-                        .map {
-                            if (it.any { x -> x.id == planId }) {
-                                removeSubscription(customer.id, planId, invoiceNow = true)
-                            }
-                        }
-
-                val taxRegionId = plan.payment["taxRegionId"]
-
-                /* Lookup in payment backend will fail if no value found for 'planId'. */
-                val subscriptionInfo = paymentProcessor.createSubscription(plan.properties.getOrDefault("planId", "missing"),
-                        profileInfo.id, trialEnd, taxRegionId)
-                        .mapLeft {
-                            NotCreatedError(type = planEntity.name, id = "Failed to subscribe ${customer.id} to ${plan.id}",
-                                    error = it)
-                        }.linkReversalActionToTransaction(transaction) {
-                            paymentProcessor.cancelSubscription(it.id)
-                        }.bind()
-
-                val product = plansStore.getRelated(plan.id, planProductRelation, transaction)
-                        .flatMap {
-                            it[0].right()
-                        }.bind()
-
-                /* Dispatch according to the charge result. */
-                when (subscriptionInfo.status) {
-                    PaymentStatus.PAYMENT_SUCCEEDED -> {
-                        subscriptionPaymentSucceeded(customer.id, subscriptionInfo.invoiceId, subscriptionInfo.chargeId, plan, product)
-                                .bind()
-                    }
-                    PaymentStatus.REQUIRES_PAYMENT_METHOD -> {
-                        NotCreatedError(type = planEntity.name, id = "Failed to subscribe ${customer.id} to ${plan.id}",
-                                error = ForbiddenError("Payment method failed"))
-                                .left().bind()
-                    }
-                    PaymentStatus.REQUIRES_ACTION,
-                    PaymentStatus.TRIAL_START -> {
-                        /* No action required. Charge for the subscription will eventually
-                           be reported as a Stripe event. */
-                        logger.info(
-                                "Pending payment for subscription ${planId} for customer ${customer.id} (${subscriptionInfo.status.name})")
-                    }
-                }
-
-                /* Store information from payment backend for later use. */
-                subscribesToPlanRelationStore.create(
-                        fromId = customer.id,
-                        relation = PlanSubscription(
-                                subscriptionId = subscriptionInfo.id,
-                                created = subscriptionInfo.created,
-                                trialEnd = subscriptionInfo.trialEnd),
-                        toId = planId,
+                subscribeToPlan(
+                        customerId = customer.id,
+                        planId = planId,
+                        taxRegionId = product.paymentTaxRegionId,
                         transaction = transaction)
-                        .flatMap {
-                            Either.right(plan)
-                        }.bind()
+                        .bind()
+
+                Unit
             }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
@@ -2036,19 +2106,17 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
 
-    override fun purchasedSubscription(customerId: String, invoiceId: String, chargeId: String, sku: String, amount: Long, currency: String): Either<StoreError, Plan> = readTransaction {
-        get(Product::class, sku)
-                .flatMap { product ->
-                    productStore.getRelatedFrom(id = sku, relationType = planProductRelation, transaction = transaction)
-                            .flatMap {
-                                subscriptionPaymentSucceeded(customerId, invoiceId, chargeId, it.first(), product)
-                            }
-                }
-    }
-
-    private fun subscriptionPaymentSucceeded(customerId: String, invoiceId: String, chargeId: String, plan: Plan, product: Product): Either<StoreError, Plan> = writeTransaction {
+    override fun purchasedSubscription(
+            customerId: String,
+            invoiceId: String,
+            chargeId: String,
+            sku: String,
+            amount: Long,
+            currency: String): Either<StoreError, Plan> = writeTransaction {
         IO {
             Either.monad<StoreError>().binding {
+                val product = get(Product::class, sku).bind()
+                val plan = get(Plan::class, sku).bind()
                 val purchaseRecord = PurchaseRecord(
                         id = chargeId,
                         product = product,
@@ -2056,19 +2124,19 @@ object Neo4jStoreSingleton : GraphStore {
                         properties = mapOf("invoiceId" to invoiceId)
                 )
 
-                createPurchaseRecordRelation(customerId, purchaseRecord, transaction)
+                /* Will exit if an existing purchase record matches on 'invoiceId'. */
+                createPurchaseRecordRelation(customerId, purchaseRecord)
                         .bind()
 
                 /* Offer products to the newly signed up subscriber. */
-                val segments = plan.properties["segments"]?.split(",")
-                        ?: emptyList()
-                segments.forEach { segmentName ->
-                    assignCustomerToRegionSegment(customerId = customerId,
-                            segmentName = segmentName,
+                product.segmentIds.forEach { segmentId ->
+                    assignCustomerToSegment(
+                            customerId = customerId,
+                            segmentId = segmentId,
                             transaction = transaction)
                             .bind()
                 }
-                logger.info("Customer ${customerId} completed payment of invoice ${invoiceId} for subscription to plan ${plan.id}")
+                logger.info("Customer $customerId completed payment of invoice $invoiceId for subscription to plan ${plan.id}")
 
                 plan
             }.fix()
@@ -2141,7 +2209,6 @@ object Neo4jStoreSingleton : GraphStore {
     //
 
     private val offerEntity = Offer::class.entityType
-    private val offerStore = Offer::class.entityStore
 
     private val segmentEntity = Segment::class.entityType
     private val segmentStore = Segment::class.entityStore
@@ -2158,22 +2225,24 @@ object Neo4jStoreSingleton : GraphStore {
     //
     // Segment
     //
-    override fun createSegment(segment: Segment): Either<StoreError, Unit> = writeTransaction {
-        createSegment(segment, transaction)
+    override fun createSegment(segment: org.ostelco.prime.model.Segment): Either<StoreError, Unit> = writeTransaction {
+        createSegment(segment)
                 .ifFailedThenRollback(transaction)
     }
 
-    private fun createSegment(segment: Segment, transaction: Transaction): Either<StoreError, Unit> {
-        return segmentStore.create(segment, transaction)
-                .flatMap { customerToSegmentStore.create(segment.subscribers, segment.id, transaction) }
-    }
+    private fun WriteTransaction.createSegment(segment: org.ostelco.prime.model.Segment): Either<StoreError, Unit> =
+            create {
+                Segment(id = segment.id)
+            }.flatMap {
+                customerToSegmentStore.create(segment.subscribers, segment.id, transaction)
+            }
 
-    override fun updateSegment(segment: Segment): Either<StoreError, Unit> = writeTransaction {
+    override fun updateSegment(segment: org.ostelco.prime.model.Segment): Either<StoreError, Unit> = writeTransaction {
         updateSegment(segment, transaction)
                 .ifFailedThenRollback(transaction)
     }
 
-    private fun updateSegment(segment: Segment, transaction: Transaction): Either<StoreError, Unit> {
+    private fun updateSegment(segment: org.ostelco.prime.model.Segment, transaction: Transaction): Either<StoreError, Unit> {
         return customerToSegmentStore.removeAll(toId = segment.id, transaction = transaction)
                 .flatMap { customerToSegmentStore.create(segment.subscribers, segment.id, transaction) }
     }
@@ -2181,14 +2250,13 @@ object Neo4jStoreSingleton : GraphStore {
     //
     // Offer
     //
-    override fun createOffer(offer: Offer): Either<StoreError, Unit> = writeTransaction {
-        createOffer(offer, transaction)
+    override fun createOffer(offer: org.ostelco.prime.model.Offer): Either<StoreError, Unit> = writeTransaction {
+        createOffer(offer)
                 .ifFailedThenRollback(transaction)
     }
 
-    private fun createOffer(offer: Offer, transaction: Transaction): Either<StoreError, Unit> {
-        return offerStore
-                .create(offer.id, transaction)
+    private fun WriteTransaction.createOffer(offer: org.ostelco.prime.model.Offer): Either<StoreError, Unit> {
+        return create { Offer(id = offer.id) }
                 .flatMap { offerToSegmentStore.create(offer.id, offer.segments, transaction) }
                 .flatMap { offerToProductStore.create(offer.id, offer.products, transaction) }
     }
@@ -2201,8 +2269,8 @@ object Neo4jStoreSingleton : GraphStore {
      * Create of Offer + Product + Segment
      */
     override fun atomicCreateOffer(
-            offer: Offer,
-            segments: Collection<Segment>,
+            offer: org.ostelco.prime.model.Offer,
+            segments: Collection<org.ostelco.prime.model.Segment>,
             products: Collection<Product>): Either<StoreError, Unit> = writeTransaction {
 
         // validation
@@ -2224,63 +2292,54 @@ object Neo4jStoreSingleton : GraphStore {
         }
         // end of validation
 
-        var result: Either<StoreError, Unit> = Unit.right()
-
-        result = products.fold(
-                initial = result,
-                operation = { acc, product ->
-                    acc.flatMap {
-                        create { product }
-                    }
-                })
-
-        result = segments.fold(
-                initial = result,
-                operation = { acc, segment ->
-                    acc.flatMap { createSegment(segment, transaction) }
-                })
-
-        val actualOffer = Offer(
+        val actualOffer = org.ostelco.prime.model.Offer(
                 id = offer.id,
                 products = productIds,
                 segments = segmentIds)
 
-        result
-                .flatMap { createOffer(actualOffer, transaction) }
+        IO {
+            Either.monad<StoreError>().binding {
+
+                products.forEach { product -> create { product }.bind() }
+                segments.forEach { segment -> create { segment }.bind() }
+                createOffer(actualOffer).bind()
+
+            }.fix()
+        }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
     }
 
     /**
      * Create Segments
      */
-    override fun atomicCreateSegments(createSegments: Collection<Segment>): Either<StoreError, Unit> = writeTransaction {
+    override fun atomicCreateSegments(createSegments: Collection<org.ostelco.prime.model.Segment>): Either<StoreError, Unit> = writeTransaction {
 
-        createSegments.fold(
-                initial = Unit.right() as Either<StoreError, Unit>,
-                operation = { acc, segment ->
-                    acc.flatMap { createSegment(segment, transaction) }
-                })
+        IO {
+            Either.monad<StoreError>().binding {
+                createSegments.forEach { segment -> createSegment(segment).bind() }
+            }.fix()
+        }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
     }
 
     /**
      * Update segments
      */
-    override fun atomicUpdateSegments(updateSegments: Collection<Segment>): Either<StoreError, Unit> = writeTransaction {
+    override fun atomicUpdateSegments(updateSegments: Collection<org.ostelco.prime.model.Segment>): Either<StoreError, Unit> = writeTransaction {
 
-        updateSegments.fold(
-                initial = Unit.right() as Either<StoreError, Unit>,
-                operation = { acc, segment ->
-                    acc.flatMap { updateSegment(segment, transaction) }
-                })
+        IO {
+            Either.monad<StoreError>().binding {
+                updateSegments.forEach { segment -> updateSegment(segment).bind() }
+            }.fix()
+        }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
     }
 
-    override fun atomicAddToSegments(addToSegments: Collection<Segment>): Either<StoreError, Unit> {
+    override fun atomicAddToSegments(addToSegments: Collection<org.ostelco.prime.model.Segment>): Either<StoreError, Unit> {
         TODO()
     }
 
-    override fun atomicRemoveFromSegments(removeFromSegments: Collection<Segment>): Either<StoreError, Unit> {
+    override fun atomicRemoveFromSegments(removeFromSegments: Collection<org.ostelco.prime.model.Segment>): Either<StoreError, Unit> {
         TODO()
     }
 
@@ -2304,8 +2363,16 @@ object Neo4jStoreSingleton : GraphStore {
 
     fun createIndex() = writeTransaction {
         write(query = "CREATE INDEX ON :${identityEntity.name}(id)", transaction = transaction) {}
+        write(query = "CREATE INDEX ON :${customerEntity.name}(id)", transaction = transaction) {}
+        write(query = "CREATE INDEX ON :${productEntity.name}(id)", transaction = transaction) {}
+        write(query = "CREATE INDEX ON :${productEntity.name}(sku)", transaction = transaction) {}
         write(query = "CREATE INDEX ON :${subscriptionEntity.name}(id)", transaction = transaction) {}
+        write(query = "CREATE INDEX ON :${subscriptionEntity.name}(msisdn)", transaction = transaction) {}
         write(query = "CREATE INDEX ON :${bundleEntity.name}(id)", transaction = transaction) {}
+        write(query = "CREATE INDEX ON :${simProfileEntity.name}(id)", transaction = transaction) {}
+        write(query = "CREATE INDEX ON :${planEntity.name}(id)", transaction = transaction) {}
+        write(query = "CREATE INDEX ON :${regionEntity.name}(id)", transaction = transaction) {}
+        write(query = "CREATE INDEX ON :${scanInformationEntity.name}(id)", transaction = transaction) {}
     }
 }
 

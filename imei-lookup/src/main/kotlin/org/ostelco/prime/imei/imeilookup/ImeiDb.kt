@@ -19,14 +19,14 @@ class ImeiDb : ImeiLookup by ImeiDdSingleton
 
 object ImeiDdSingleton : ImeiLookup {
 
-    private val TAC_IDX = 0
-    private val MARKETING_NAME_IDX = 1
-    private val MANUFACTURER_IDX = 2
-    private val BRAND_NAME_IDX = 9
-    private val MODEL_NAME_IDX = 10
-    private val OPERATING_SYSTEM_IDX = 11
-    private val DEVICE_TYPE_IDX = 15
-    private val OEM_IDX = 16
+    private const val TAC_IDX = 0
+    private const val MARKETING_NAME_IDX = 1
+    private const val MANUFACTURER_IDX = 2
+    private const val BRAND_NAME_IDX = 9
+    private const val MODEL_NAME_IDX = 10
+    private const val OPERATING_SYSTEM_IDX = 11
+    private const val DEVICE_TYPE_IDX = 15
+    private const val OEM_IDX = 16
 
     private val logger by getLogger()
 
@@ -34,7 +34,7 @@ object ImeiDdSingleton : ImeiLookup {
 
     override fun getImeiInformation(imei: String): Either<ImeiLookupError, Imei> {
 
-        if (!(15 <= imei.length) && (imei.length <= 16)) {
+        if (!((imei.length > 14) && (imei.length < 17))) {
             return Either.left(BadRequestError("Malformed IMEI. Size should be 15 digit for IMEI or 16 digit for IMEISV"))
         }
 
@@ -61,7 +61,7 @@ object ImeiDdSingleton : ImeiLookup {
             var line = fileReader.readLine()
             while (line != null) {
                 val tokens = line.split("|")
-                if (tokens.size > 0) {
+                if (tokens.isNotEmpty()) {
                     val imei = Imei(
                             tokens[TAC_IDX],
                             tokens[MARKETING_NAME_IDX],
@@ -71,7 +71,7 @@ object ImeiDdSingleton : ImeiLookup {
                             tokens[OPERATING_SYSTEM_IDX],
                             tokens[DEVICE_TYPE_IDX],
                             tokens[OEM_IDX])
-                    db.put(imei.tac, imei)
+                    db[imei.tac] = imei
                 }
                 line = fileReader.readLine()
             }

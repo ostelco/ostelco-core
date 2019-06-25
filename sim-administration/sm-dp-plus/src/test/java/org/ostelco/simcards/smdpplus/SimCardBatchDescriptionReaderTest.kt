@@ -7,6 +7,7 @@ import org.junit.Test
 import org.ostelco.simcards.IccidBasis
 import java.io.FileInputStream
 import java.io.PrintWriter
+import java.nio.charset.StandardCharsets
 
 
 class SimCardBatchDescriptorReaderTest {
@@ -40,7 +41,7 @@ class SimCardBatchDescriptorReaderTest {
         val iccidGen  = IccidGenerator(startSerialNum = 0)
         val profileName = "FooTel_STD"
 
-        val writer = PrintWriter("sample-sim-batch-for-sm-dp+.csv", "UTF-8")
+        val writer = PrintWriter("sample-sim-batch-for-sm-dp+.csv", StandardCharsets.UTF_8)
         writer.println("IMSI, ICCID, PROFILE")
         for (i in 1..100) {
             val imsi = imsiGen.next()

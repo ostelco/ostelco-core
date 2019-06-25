@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.ostelco.diameter.model.RequestType;
+import org.ostelco.diameter.test.Result;
 import org.ostelco.diameter.test.TestClient;
 import org.ostelco.diameter.test.TestHelper;
 import org.slf4j.Logger;
@@ -33,6 +34,8 @@ public class OcsHATest {
     private static final String OCS_REALM = "loltel";
     private static final String OCS_HOST_1 = "ocs_1";
     private static final String OCS_HOST_2 = "ocs_2";
+
+    private static final long DIAMETER_SUCCESS = 2001L;
 
     private static final String MSISDN = "4790300123";
 
@@ -158,18 +161,19 @@ public class OcsHATest {
 
         testPGW.sendNextRequest(request, session);
 
-        waitForAnswer();
+        waitForAnswer(session.getSessionId());
 
         try {
-            assertEquals(2001L, testPGW.getResultCodeAvp().getInteger32());
-            AvpSet resultAvps = testPGW.getResultAvps();
+            Result result = testPGW.getAnswer(session.getSessionId());
+            assertEquals(DIAMETER_SUCCESS, result.getResultCode().longValue());
+            AvpSet resultAvps = result.getResultAvps();
             assertEquals(host, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String());
             assertEquals(OCS_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String());
             assertEquals(RequestType.INITIAL_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
             Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
             assertEquals(2001L, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
-            assertEquals(1, resultMSCC.getGrouped().getAvp(Avp.SERVICE_IDENTIFIER_CCA).getUnsigned32());
-            assertEquals(10, resultMSCC.getGrouped().getAvp(Avp.RATING_GROUP).getUnsigned32());
+            assertEquals(10, resultMSCC.getGrouped().getAvp(Avp.SERVICE_IDENTIFIER_CCA).getUnsigned32());
+            assertEquals(1, resultMSCC.getGrouped().getAvp(Avp.RATING_GROUP).getUnsigned32());
             Avp granted = resultMSCC.getGrouped().getAvp(Avp.GRANTED_SERVICE_UNIT);
             assertEquals(500000L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
         } catch (AvpDataException e) {
@@ -230,11 +234,12 @@ public class OcsHATest {
 
         testPGW.sendNextRequest(request, session);
 
-        waitForAnswer();
+        waitForAnswer(session.getSessionId());
 
         try {
-            assertEquals(2001L, testPGW.getResultCodeAvp().getInteger32());
-            AvpSet resultAvps = testPGW.getResultAvps();
+            Result result = testPGW.getAnswer(session.getSessionId());
+            assertEquals(DIAMETER_SUCCESS, result.getResultCode().longValue());
+            AvpSet resultAvps = result.getResultAvps();
             assertEquals(host, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String());
             assertEquals(OCS_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String());
             assertEquals(RequestType.UPDATE_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
@@ -256,8 +261,9 @@ public class OcsHATest {
      *  as the session would otherwise have been lost by ocsgw.
      */
     @DisplayName("HA Credit-Control-Request Init Update and Terminate")
+    //@Test
     public void haCreditControlRequestInitUpdateAndTerminate() {
-        Session session = testPGW.createSession();
+        Session session = testPGW.createSession(new Object() {}.getClass().getEnclosingMethod().getName());
         haCreditControlRequestInit(session, OCS_HOST_1);
 
         // Restart server 1 and continue when it is back online
@@ -282,25 +288,24 @@ public class OcsHATest {
 
         testPGW.sendNextRequest(request, session);
 
-        waitForAnswer();
+        waitForAnswer(session.getSessionId());
 
         try {
-            assertEquals(2001L, testPGW.getResultCodeAvp().getInteger32());
-            AvpSet resultAvps = testPGW.getResultAvps();
+            Result result = testPGW.getAnswer(session.getSessionId());
+            assertEquals(DIAMETER_SUCCESS, result.getResultCode().longValue());
+            AvpSet resultAvps = result.getResultAvps();
             assertEquals(OCS_HOST_2, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String());
             assertEquals(OCS_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String());
             assertEquals(RequestType.TERMINATION_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
-            Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
-            assertEquals(2001L, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
         } catch (AvpDataException e) {
             logger.error("Failed to get Result-Code", e);
         }
         session.release();
     }
 
-    private void waitForAnswer() {
+    private void waitForAnswer(String sessionId) {
         int i = 0;
-        while (!testPGW.isAnswerReceived() && i<10) {
+        while (!testPGW.isAnswerReceived(sessionId) && i<10) {
             i++;
             try {
                 Thread.sleep(500);
@@ -308,6 +313,6 @@ public class OcsHATest {
                 // continue
             }
         }
-        assertEquals(true, testPGW.isAnswerReceived());
+        assertEquals(true, testPGW.isAnswerReceived(sessionId));
     }
 }

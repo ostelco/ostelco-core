@@ -1,66 +1,52 @@
 package org.ostelco.simcards.admin
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.fasterxml.jackson.annotation.JsonTypeInfo.As
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id
+import com.fasterxml.jackson.annotation.JsonTypeName
 import io.dropwizard.Configuration
 import io.dropwizard.client.HttpClientConfiguration
 import io.dropwizard.db.DataSourceFactory
+import io.dropwizard.jackson.Discoverable
 import org.ostelco.dropwizardutils.OpenapiResourceAdderConfig
+import org.ostelco.prime.getLogger
+import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import javax.validation.Valid
-import javax.validation.constraints.NotNull
 
 
-class SimAdministrationConfiguration : Configuration() {
-    @Valid
-    @NotNull
-    @JsonProperty("database")
-    val database: DataSourceFactory = DataSourceFactory()
+data class SimAdministrationConfiguration(
+        val database: DataSourceFactory = DataSourceFactory(),
+        val httpClient: HttpClientConfiguration = HttpClientConfiguration(),
+        val openApi: OpenapiResourceAdderConfig = OpenapiResourceAdderConfig(),
+        val profileVendors: List<ProfileVendorConfig>,
+        var hssAdapter: HssAdapterConfig? = null,
+        @JsonProperty("hlrs") val hssVendors: List<HssConfig>,
+        val phoneTypes: List<PhoneTypeConfig>
+) : Configuration() {
 
-    @Valid
-    @NotNull
-    @JsonProperty
-    val httpClient = HttpClientConfiguration()
-
-    @Valid
-    @NotNull
-    @JsonProperty("openApi")
-    val openApi = OpenapiResourceAdderConfig()
-
-    @Valid
-    @NotNull
-    @JsonProperty("profileVendors")
-    lateinit var profileVendors: List<ProfileVendorConfig>
-
-
-    @Valid
-    @JsonProperty("hssAdapter")
-    var hssAdapter: HssAdapterConfig? = null
-
-    // XXX Make this optional once the hssAdapter mechanism
-    //     has been made operational and stable.
-    @Valid
-    @NotNull
-    @JsonProperty("hlrs")
-    lateinit var hssVendors: List<HssConfig>
-
-    @Valid
-    @NotNull
-    @JsonProperty("phoneTypes")
-    lateinit var phoneTypes: List<PhoneTypeConfig>
+    private val logger by getLogger()
 
     /* XXX Ideally the regex should be built when the config file is loaded,
-           not when it is used. */
+       not when it is used. */
 
     /**
      * Get profile based on given phone type/getProfileForPhoneType.
      * @param name  phone type/getProfileForPhoneType
      * @return  profile name
      */
-    fun getProfileForPhoneType(name: String) = phoneTypes.filter { name.matches(it.regex.toRegex(RegexOption.IGNORE_CASE)) }
-            .map { it.profile }
-            .first()
+    fun getProfileForPhoneType(name: String): String? {
+        val result = phoneTypes
+                .firstOrNull {
+                    name.matches(it.regex.toRegex(RegexOption.IGNORE_CASE))
+                }
+                ?.profile
+        if (result == null) {
+            logger.warn(NOTIFY_OPS_MARKER, "Could not allocate profile for phone type = '$name'.")
+        }
+        return result
+    }
 }
-
-
 
 class HssAdapterConfig {
 
@@ -73,64 +59,68 @@ class HssAdapterConfig {
     var port: Int = 0
 }
 
-class HssConfig {
 
-    @Valid
-    // TODO: Make not null asap @NotNull
-    @JsonProperty("type")
-    lateinit var type: String
+/**
+ * Class used to input configuration data to the sim manager, that it
+ * will use when communicating with HSS (Home Subscriber Service) entities
+ * that keep track of authentication information used to authenticate
+ * SIM profiles.
+ */
 
-    @Valid
-    @NotNull
-    @JsonProperty("name")
-    lateinit var name: String
+@JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "hlrType")
+sealed class HssConfig(
+        /**
+         * The name of the HSS used when referring to it in the sim manager's database.
+         */
+        open val name: String
+) : Discoverable
 
-    @Valid
-    @NotNull
-    @JsonProperty("endpoint")
-    lateinit var endpoint: String
+/**
+ * To differentiate between types of HSSes with potentially different
+ * APIs.   The  current implementation types are "dummy" and "swt".
+ */
+@JsonTypeName("DUMMY")
+data class DummyHssConfig(
+        override val name: String
+) : HssConfig(name = name)
 
-    @Valid
-    @NotNull
-    @JsonProperty("userId")
-    lateinit var userId: String
+@JsonTypeName("SWT")
+data class SwtHssConfig(
 
-    @Valid
-    @NotNull
-    @JsonProperty("apiKey")
-    lateinit var apiKey: String
-}
+        /**
+         * The name of the HSS used when referring to it in the sim manager's database.
+         */
+        override val name: String,
 
-class ProfileVendorConfig {
-    @Valid
-    @NotNull
-    @JsonProperty("name")
-    lateinit var name: String
+        /**
+         * The name of the hss used when contacting the HSS over the API.
+         */
+        val hssNameUsedInAPI: String,
 
-    @Valid
-    @NotNull
-    @JsonProperty("es2plusEndpoint")
-    lateinit var es2plusEndpoint: String
+        /**
+         * An URL used to contact the HSS over
+         */
+        val endpoint: String,
 
-    @Valid
-    @NotNull
-    @JsonProperty("requesterIdentifier")
-    lateinit var requesterIndentifier: String
+        /**
+         * Userid used to authenticate towards the API.
+         */
+        val userId: String,
 
-    @Valid
-    @NotNull
-    @JsonProperty("es9plusEndpoint")
-    lateinit var es9plusEndpoint: String
-}
+        /**
+         * API key (secret) used when authenticating towards the API.
+         */
+        val apiKey: String
+) : HssConfig(name = name)
 
-class PhoneTypeConfig {
-    @Valid
-    @NotNull
-    @JsonProperty("regex")
-    lateinit var regex: String
+data class ProfileVendorConfig(
+        val name: String,
+        val es2plusEndpoint: String,
+        val requesterIdentifier: String,
+        val es9plusEndpoint: String
+)
 
-    @Valid
-    @NotNull
-    @JsonProperty("profile")
-    lateinit var profile: String
-}
+data class PhoneTypeConfig(
+        val regex: String,
+        val profile: String
+)

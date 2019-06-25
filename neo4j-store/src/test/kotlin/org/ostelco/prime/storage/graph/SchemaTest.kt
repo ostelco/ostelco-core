@@ -11,6 +11,8 @@ import org.junit.Test
 import org.neo4j.driver.v1.AccessMode.WRITE
 import org.ostelco.prime.dsl.writeTransaction
 import org.ostelco.prime.jsonmapper.objectMapper
+import org.ostelco.prime.kts.engine.KtsServiceFactory
+import org.ostelco.prime.kts.engine.reader.ClasspathResourceTextReader
 import org.ostelco.prime.model.HasId
 import org.ostelco.prime.storage.AlreadyExistsError
 import org.ostelco.prime.storage.graph.Relation.REFERRED
@@ -254,7 +256,20 @@ class SchemaTest {
         fun start() {
             ConfigRegistry.config = Config(
                     host = "0.0.0.0",
-                    protocol = "bolt")
+                    protocol = "bolt",
+                    hssNameLookupService = KtsServiceFactory(
+                            serviceInterface = "org.ostelco.prime.storage.graph.HssNameLookupService",
+                            textReader = ClasspathResourceTextReader(
+                                    filename = "/HssNameLookupService.kts"
+                            )
+                    ),
+                    onNewCustomerAction = KtsServiceFactory(
+                            serviceInterface = "org.ostelco.prime.storage.graph.OnNewCustomerAction",
+                            textReader = ClasspathResourceTextReader(
+                                    filename = "/OnNewCustomerAction.kts"
+                            )
+                    )
+            )
             Neo4jClient.start()
         }
 

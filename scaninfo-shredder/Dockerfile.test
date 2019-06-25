@@ -1,4 +1,4 @@
-FROM azul/zulu-openjdk:11.0.1-11.2
+FROM azul/zulu-openjdk:12.0.1
 
 LABEL maintainer="dev@redotter.sg"
 
@@ -9,7 +9,7 @@ LABEL maintainer="dev@redotter.sg"
 COPY script/start.sh /start.sh
 COPY config/prime-service-account.json /secret/prime-service-account.json
 COPY config/config.yaml /config/config.yaml
-COPY build/libs/bq-metrics-extractor-uber.jar /scaninfo-shredder.jar
+COPY build/libs/scaninfo-shredder-uber.jar /scaninfo-shredder.jar
 
 #
 # Load, then dump the standard java classes into the

@@ -20,7 +20,7 @@ sourceSets {
   }
 }
 
-version = "1.42.1"
+version = "1.48.6"
 
 repositories {
   maven {
@@ -55,7 +55,6 @@ dependencies {
   runtimeOnly "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"
   implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
   implementation "com.google.guava:guava:$guavaVersion"
-  implementation 'org.dhatim:dropwizard-prometheus:2.2.0'
 
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation "org.mockito:mockito-core:$mockitoVersion"
@@ -86,6 +85,10 @@ shadowJar {
   classifier = "uber"
   zip64 true
   version = null
+}
+
+task version {
+  println version
 }
 
 test {

@@ -9,6 +9,8 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.neo4j.driver.v1.AccessMode.WRITE
 import org.ostelco.prime.dsl.DSL.job
+import org.ostelco.prime.kts.engine.KtsServiceFactory
+import org.ostelco.prime.kts.engine.reader.ClasspathResourceTextReader
 import org.ostelco.prime.model.Region
 import org.ostelco.prime.storage.graph.Config
 import org.ostelco.prime.storage.graph.ConfigRegistry
@@ -78,7 +80,20 @@ class DSLTest {
         fun start() {
             ConfigRegistry.config = Config(
                     host = "0.0.0.0",
-                    protocol = "bolt")
+                    protocol = "bolt",
+                    hssNameLookupService = KtsServiceFactory(
+                            serviceInterface = "org.ostelco.prime.storage.graph.HssNameLookupService",
+                            textReader = ClasspathResourceTextReader(
+                                    filename = "/HssNameLookupService.kts"
+                            )
+                    ),
+                    onNewCustomerAction = KtsServiceFactory(
+                            serviceInterface = "org.ostelco.prime.storage.graph.OnNewCustomerAction",
+                            textReader = ClasspathResourceTextReader(
+                                    filename = "/OnNewCustomerAction.kts"
+                            )
+                    )
+            )
             Neo4jClient.start()
         }
 

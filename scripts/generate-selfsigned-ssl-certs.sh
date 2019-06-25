@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script generates a slefsigned SSL certificate for a given input domain.
+# This script generates a self  SSL certificate for a given input domain.
 
 #### input 
 DOMAIN_NAME=$1
@@ -8,7 +8,7 @@ DOMAIN_NAME=$1
 
 #### sanity check 
 if [ -z "${DOMAIN_NAME}" ]; then
-  echo "ERROR: No domain-name was provided in input. Aborting!"
+  echo "ERROR: No domain-name was provided in input. Aborting!"  > /dev/stderr
   exit 1
 fi
 ####
@@ -34,7 +34,8 @@ if [ -d ${CERTS_DIR} ]; then
   ls -l ${CERTS_DIR}
 
 else
-  echo "Could not find a matching domain name in certs for ${DOMAIN_NAME}"
+  echo "Could not find a matching domain name in certs for ${DOMAIN_NAME} in ${CERTS_DIR}"  > /dev/stderr
+  exit 1
 fi
 
 popd

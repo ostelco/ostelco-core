@@ -10,17 +10,37 @@ import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.simmanager.AdapterError
+import org.ostelco.prime.simmanager.ForbiddenError
 import org.ostelco.prime.simmanager.NotUpdatedError
 import org.ostelco.prime.simmanager.SimManagerError
-import org.ostelco.simcards.admin.HssConfig
+import org.ostelco.simcards.admin.SwtHssConfig
 import javax.ws.rs.core.MediaType
+
+
+/**
+ * This is an HSS that does nothing, but can be referred to in the
+ * database schema.  This is useful in the cases where we sim activation
+ * is done "out of band", e.g. by preactivating before inserting into
+ * the sim  manager.
+ */
+class DummyHSSDispatcher(val name: String): HssDispatcher {
+    override fun iAmHealthy(): Boolean = true
+    override fun name() = name
+    override fun activate(hssName: String, iccid: String, msisdn: String): Either<SimManagerError, Unit> =
+            ForbiddenError("DummyHSSDispatcher's activate  should never be invoked").left()
+
+    override fun suspend(hssName: String, iccid: String): Either<SimManagerError, Unit> =
+            ForbiddenError("DummyHSSDispatcher's suspend should never be invoked").left()
+}
+
+
 
 /**
  * An interface to a simple HSS REST based HSS.
  */
 class SimpleHssDispatcher(val name: String,
                           val httpClient: CloseableHttpClient,
-                          val config: HssConfig) : HssDispatcher {
+                          val config: SwtHssConfig) : HssDispatcher {
 
     private val logger by getLogger()
 
@@ -52,16 +72,18 @@ class SimpleHssDispatcher(val name: String,
 
         // Checking out the iccid value.
         if (iccid.isEmpty()) {
-            return NotUpdatedError("Empty ICCID value in SIM activation request to hssName ${config.name}")
+            return NotUpdatedError("Empty ICCID value in SIM activation request to hssName='${config.name}' (bssname ='${config.hssNameUsedInAPI}'")
                     .left()
         }
 
+        // XXX ICCID validation (as well as other types of validation) should be kept
+        //     in separate libraries, not as magic regexps in production code.
         if (!iccid.matches(Regex("^\\d{19,20}"))) {
             return NotUpdatedError("Ill formatted ICCID $iccid").left()
         }
 
         val body = mapOf(
-                "bssid" to config.name,
+                "bssid" to config.hssNameUsedInAPI,
                 "iccid" to iccid,
                 "msisdn" to msisdn,
                 "userid" to config.userId
@@ -81,26 +103,26 @@ class SimpleHssDispatcher(val name: String,
                 when (it.statusLine.statusCode) {
                     201 -> {
                         logger.info("HLR activation message to BSSID {} for ICCID {} completed OK",
-                                config.name,
+                                config.hssNameUsedInAPI,
                                 iccid).right()
                     }
                     else -> {
                         logger.warn("HLR activation message to BSSID {} for ICCID {} failed with status ({}) {}",
-                                config.name,
+                                config.hssNameUsedInAPI,
                                 iccid,
                                 it.statusLine.statusCode,
                                 it.statusLine.reasonPhrase)
-                        NotUpdatedError("Failed to activate ICCID ${iccid} with BSSID ${config.name} (status-code: ${it.statusLine.statusCode})")
+                        NotUpdatedError("Failed to activate ICCID ${iccid} with BSSID ${config.hssNameUsedInAPI} (status-code: ${it.statusLine.statusCode})")
                                 .left()
                     }
                 }
             }
         } catch (e: Exception) {
             logger.error("HLR activation message to BSSID {} for ICCID {} failed with error: {}",
-                    config.name,
+                    config.hssNameUsedInAPI,
                     iccid,
                     e)
-            AdapterError("HLR activation message to BSSID ${config.name} for ICCID ${iccid} failed with error: ${e}")
+            AdapterError("HLR activation message to BSSID ${config.hssNameUsedInAPI} for ICCID ${iccid} failed with error: ${e}")
                     .left()
         }
     }
@@ -117,7 +139,7 @@ class SimpleHssDispatcher(val name: String,
         }
 
         if (iccid.isEmpty()) {
-            return NotUpdatedError("Illegal parameter in SIM deactivation request to BSSID ${config.name}")
+            return NotUpdatedError("Illegal parameter in SIM deactivation request to BSSID ${config.hssNameUsedInAPI}")
                     .left()
         }
 
@@ -135,14 +157,14 @@ class SimpleHssDispatcher(val name: String,
                     }
                     else -> {
                         logger.warn("HLR deactivation message to HSS ${config.name} for ICCID ${iccid} failed with status (${it.statusLine.statusCode}) ${it.statusLine.reasonPhrase}")
-                        NotUpdatedError("Failed to deactivate ICCID ${iccid} with BSSID ${config.name} (status-code: ${it.statusLine.statusCode}")
+                        NotUpdatedError("Failed to deactivate ICCID ${iccid} with BSSID ${config.hssNameUsedInAPI} (status-code: ${it.statusLine.statusCode}")
                                 .left()
                     }
                 }
             }
         } catch (e: Exception) {
-            logger.error("HLR deactivation message to BSSID ${config.name} for ICCID ${iccid} failed with error: ${e}")
-            AdapterError("HLR deactivation message to BSSID ${config.name} for ICCID ${iccid} failed with error: ${e}")
+            logger.error("HLR deactivation message to BSSID ${config.hssNameUsedInAPI} for ICCID ${iccid} failed with error: ${e}")
+            AdapterError("HLR deactivation message to BSSID ${config.hssNameUsedInAPI} for ICCID ${iccid} failed with error: ${e}")
                     .left()
         }
     }

@@ -3,12 +3,6 @@ plugins {
   id "java-library"
 }
 
-tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
-  kotlinOptions {
-    jvmTarget = "1.8"
-  }
-}
-
 repositories {
   maven {
     url 'https://dl.bintray.com/palantir/releases' // docker-compose-rule is published on bintray
@@ -19,16 +13,8 @@ dependencies {
 
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinXCoroutinesVersion"
 
-  api "org.jetbrains.kotlin:kotlin-script-util:$kotlinVersion"
-  api "org.jetbrains.kotlin:kotlin-script-runtime:$kotlinVersion"
-
-  api "org.jetbrains.kotlin:kotlin-compiler-embeddable:$kotlinVersion"
-  api "org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:$kotlinVersion"
-
-  // api "org.jetbrains.kotlin:kotlin-compiler:$kotlinVersion"
-  // api "org.jetbrains.kotlin:kotlin-scripting-compiler:$kotlinVersion"
-
   implementation project(":prime-modules")
+  api project(":kts-engine")
   implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
 
   implementation "org.neo4j:neo4j-graphdb-api:$neo4jVersion"

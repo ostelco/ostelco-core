@@ -1,5 +1,5 @@
 
-[![Kotlin version badge](https://img.shields.io/badge/kotlin-1.3.31-blue.svg)](http://kotlinlang.org/)
+[![Kotlin version badge](https://img.shields.io/badge/kotlin-1.3.40-blue.svg)](http://kotlinlang.org/)
 [![Prime version](https://img.shields.io/github/tag/ostelco/ostelco-core.svg)](https://github.com/ostelco/ostelco-core/tags)
 [![GitHub license](https://img.shields.io/github/license/ostelco/ostelco-core.svg)](https://github.com/ostelco/ostelco-core/blob/master/LICENSE)
 
@@ -19,7 +19,6 @@ Mono Repository for core protocols and services around a OCS/BSS for packet data
  * [General Documentation](./docs/README.md)
  * [admin-api](./admin-api/README.md)
  * [auth-server](./auth-server/README.md)
- * [bq-metrics-extractor](./bq-metrics-extractor/README.md)
  * [client-api](./client-api/README.md)
  * [dataflow-pipelines](./dataflow-pipelines/README.md)
  * [diameter-stack](./diameter-stack/README.md)
@@ -28,7 +27,6 @@ Mono Repository for core protocols and services around a OCS/BSS for packet data
  * [neo4j-store](./neo4j-store/README.md)
  * [ocs-grpc-api](./ocs-grpc-api/README.md)
  * [ocsgw](./ocsgw/README.md)
- * [ostelco-lib](./ostelco-lib/README.md)
  * [payment-processor](./payment-processor/README.md)
  * [prime](./prime/README.md)
  * [infra](./prime/infra/README.md)

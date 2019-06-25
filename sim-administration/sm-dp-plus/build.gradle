@@ -32,12 +32,6 @@ dependencies {
     testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
 }
 
-tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
-}
-
 shadowJar {
     mainClassName = "org.ostelco.simcards.smdpplus.SmDpPlusApplication"
     mergeServiceFiles()

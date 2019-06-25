@@ -7,6 +7,9 @@ plugins {
 
 dependencies {
 
+    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+
     implementation project(":prime-modules")
 
     implementation project(":sim-administration:jersey-json-schema-validator")
@@ -27,8 +30,7 @@ dependencies {
     api "io.grpc:grpc-stub:$grpcVersion"
     api "io.grpc:grpc-core:$grpcVersion"
 
-    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
 
     // Dropwizard
     implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
@@ -65,12 +67,6 @@ dependencies {
     testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
     testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:$mockitoKotlinVersion"
     testImplementation "org.testcontainers:postgresql:$testcontainersVersion"
-}
-
-tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
 }
 
 sourceSets {

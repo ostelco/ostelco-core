@@ -1,5 +1,6 @@
 package org.ostelco.diameter.ha.common
 
+import io.lettuce.core.ClientOptions
 import io.lettuce.core.RedisClient
 import io.lettuce.core.RedisURI
 import io.lettuce.core.api.StatefulRedisConnection
@@ -16,34 +17,56 @@ class RedisStorage : ReplicatedStorage {
 
 
     override fun start() {
-        connection = redisClient.connect()
-        asyncCommands = connection.async()
+        redisClient.setOptions(ClientOptions.builder()
+                .autoReconnect(true)
+                .build())
+            connection = redisClient.connect()
+            asyncCommands = connection.async()
     }
 
     override fun storeValue(id: String, key: String, value: String) : Boolean {
-        asyncCommands.hset(id, key, value)
-        // Keys will be auto deleted from Redis if not updated within 3 days
-        asyncCommands.expire(id, 259200)
-        return true
+
+        if(connection.isOpen) {
+            asyncCommands.hset(id, key, value)
+            // Keys will be auto deleted from Redis if not updated within 3 days
+            asyncCommands.expire(id, 259200)
+            return true
+        }
+        return false
     }
 
     override fun getValue(id:String, key: String): String? {
-        return asyncCommands.hget(id,key).get(5, TimeUnit.SECONDS)
+        if (connection.isOpen) {
+            return asyncCommands.hget(id,key).get(5, TimeUnit.SECONDS)
+        }
+        return null
     }
 
     override fun removeValue(id:String, key: String) {
-        asyncCommands.hdel(id, key)
+
+        // All stored data has expire set, so it will not be dangling if connection is down
+        if (connection.isOpen) {
+            asyncCommands.hdel(id, key)
+        }
     }
 
     override fun removeId(id: String) {
-        val keys = asyncCommands.hkeys(id).get(5, TimeUnit.SECONDS)
-        keys.forEach { key ->
-            removeValue(id, key)
+
+        // All stored data has expire set, so it will not be dangling if connection is down
+        if (connection.isOpen) {
+            val keys = asyncCommands.hkeys(id).get(5, TimeUnit.SECONDS)
+            keys.forEach { key ->
+                removeValue(id, key)
+            }
         }
     }
 
     override fun exist(id: String) : Boolean {
-        return (asyncCommands.hlen(id).get(5, TimeUnit.SECONDS) > 0)
+        if (connection.isOpen) {
+            return (asyncCommands.hlen(id).get(5, TimeUnit.SECONDS) > 0)
+        } else {
+            return false
+        }
     }
 
     override fun stop() {

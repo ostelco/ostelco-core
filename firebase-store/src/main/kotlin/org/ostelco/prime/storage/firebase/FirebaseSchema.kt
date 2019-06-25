@@ -87,11 +87,11 @@ class EntityStore<E>(
     }
 
     fun urlEncode(value: String) =
-            URLEncoder.encode(value, StandardCharsets.UTF_8.name())
+            URLEncoder.encode(value, StandardCharsets.UTF_8)
                     .replace(oldValue = ".", newValue = "%2E")
 
     private fun urlDecode(value: String) =
-            URLDecoder.decode(value, StandardCharsets.UTF_8.name())
+            URLDecoder.decode(value, StandardCharsets.UTF_8)
                     .replace(oldValue = "%2E", newValue = ".")
 
     private fun exists(id: String, reference: EntityStore<E>.() -> DatabaseReference = { databaseReference }) = get(id, reference) != null

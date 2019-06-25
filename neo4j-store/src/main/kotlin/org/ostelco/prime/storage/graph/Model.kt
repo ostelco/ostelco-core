@@ -26,3 +26,7 @@ data class SimProfile(
         override val id: String,
         val iccId: String,
         val alias: String = "") : HasId
+
+data class Segment(override val id: String) : HasId
+
+data class Offer(override val id: String) : HasId

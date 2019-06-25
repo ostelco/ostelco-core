@@ -1,0 +1,24 @@
+#
+# To start this job, do
+#    kubectl create -f ./cronjob.yaml
+# https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/
+# TODO: sync with prime.yaml
+
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: preallocate-sim-profiles
+spec:
+  schedule: "*/1 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: preallocate-sim-profiles
+            image: gcr.io/gcp-runtimes/ubuntu_18_0_4
+            args:
+            - /bin/sh
+            - -c
+            - date; echo Triggering sim preallocation;  curl -vvv -sS -X POST http://prime-dwadmin-service:8081/tasks/preallocate_sim_profiles 2>&1
+          restartPolicy: OnFailure

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName
 import io.dropwizard.setup.Environment
 import org.apache.http.client.HttpClient
 import org.apache.http.impl.client.HttpClientBuilder
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.ostelco.prime.ekyc.Registry.myInfoClient
 import org.ostelco.prime.module.PrimeModule
 
@@ -17,8 +18,19 @@ class KycModule : PrimeModule {
     }
 
     override fun init(env: Environment) {
+        val connManager = PoolingHttpClientConnectionManager()
+
+        /* Defaults for httpclient:
+             max-total = 20
+             default-max-per-route = 2
+           Sets these to higher values as this is too low. */
+        /* TODO: Make this configurable or something - or maybe
+                 just follow up on the todo below... */
+        connManager.maxTotal = 1024
+        connManager.defaultMaxPerRoute = 1024
+
         // TODO change this to Dropwizard's HttpClientBuilder with appropriate timeout values
-        myInfoClient = HttpClientBuilder.create().build()
+        myInfoClient = HttpClientBuilder.create().setConnectionManager(connManager).build()
     }
 }
 
@@ -38,5 +50,5 @@ object ConfigRegistry {
 }
 
 object Registry {
-    lateinit var myInfoClient: HttpClient;
+    lateinit var myInfoClient: HttpClient
 }

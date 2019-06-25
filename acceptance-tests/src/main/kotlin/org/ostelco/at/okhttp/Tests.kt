@@ -7,8 +7,11 @@ import org.ostelco.at.common.StripePayment
 import org.ostelco.at.common.createCustomer
 import org.ostelco.at.common.createSubscription
 import org.ostelco.at.common.enableRegion
+import org.ostelco.at.common.expectedPlanProduct
 import org.ostelco.at.common.expectedProducts
 import org.ostelco.at.common.getLogger
+import org.ostelco.at.common.graphqlGetQuery
+import org.ostelco.at.common.graphqlPostQuery
 import org.ostelco.at.common.randomInt
 import org.ostelco.at.jersey.post
 import org.ostelco.at.okhttp.ClientFactory.clientForSubject
@@ -851,9 +854,39 @@ class ReferralTest {
     }
 }
 
-// TODO Kjell: add okhttp acceptance tests for PlanTest
+class PlanTest {
+
+    @Test
+    fun `okhttp test - POST purchase plan`() {
+
+        val email = "purchase-${randomInt()}@test.com"
+        var customerId = ""
+        try {
+            customerId = createCustomer(name = "Test Purchase Plan User", email = email).id
+            enableRegion(email = email, region = "sg")
+
+            val client = clientForSubject(subject = email)
+            val sourceId = StripePayment.createPaymentTokenId()
+
+            client.purchaseProduct("PLAN_1000SGD_YEAR", sourceId, false)
+
+            Thread.sleep(200) // wait for 200 ms for balance to be updated in db
+
+            val purchaseRecords = client.purchaseHistory
+
+            purchaseRecords.sortBy { it.timestamp }
+
+            assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
+            assertEquals(expectedPlanProduct, purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
+        } finally {
+            StripePayment.deleteCustomer(customerId = customerId)
+        }
+    }
+}
 
 class GraphQlTests {
+
+    private val logger by getLogger()
 
     @Test
     fun `okhttp test - POST graphql`() {
@@ -861,18 +894,45 @@ class GraphQlTests {
         val email = "graphql-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createCustomer("Test GraphQL Endpoint", email).id
+            customerId = createCustomer("Test GraphQL POST Endpoint", email).id
+
+            enableRegion(email)
 
             createSubscription(email)
 
             val client = clientForSubject(subject = email)
 
             val request = GraphQLRequest()
-            request.query = """{ context(id: "$email") { customer { nickname, contactEmail } } }"""
+            request.query = graphqlPostQuery
 
-            val map = client.graphql(request) as Map<String, *>
+            val map = client.graphqlPost(request) as Map<String, *>
 
-            println(map)
+            logger.info("GraphQL POST response {}", map)
+
+            assertNotNull(actual = map["data"], message = "Data is null")
+            assertNull(actual = map["error"], message = "Error is not null")
+        } finally {
+            StripePayment.deleteCustomer(customerId = customerId)
+        }
+    }
+
+    @Test
+    fun `okhttp test - GET graphql`() {
+
+        val email = "graphql-${randomInt()}@test.com"
+        var customerId = ""
+        try {
+            customerId = createCustomer("Test GraphQL GET Endpoint", email).id
+
+            enableRegion(email)
+
+            val msisdn = createSubscription(email)
+
+            val client = clientForSubject(subject = email)
+
+            val map = client.graphqlGet(graphqlGetQuery) as Map<String, *>
+
+            logger.info("GraphQL GET response {}", map)
 
             assertNotNull(actual = map["data"], message = "Data is null")
             assertNull(actual = map["error"], message = "Error is not null")

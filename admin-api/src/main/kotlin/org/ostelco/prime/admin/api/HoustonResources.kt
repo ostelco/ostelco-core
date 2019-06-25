@@ -1,6 +1,7 @@
 package org.ostelco.prime.admin.api
 
 import arrow.core.Either
+import arrow.core.left
 import io.dropwizard.auth.Auth
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.apierror.ApiErrorCode
@@ -11,13 +12,18 @@ import org.ostelco.prime.appnotifier.AppNotifier
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
-import org.ostelco.prime.model.*
+import org.ostelco.prime.model.Bundle
+import org.ostelco.prime.model.Context
+import org.ostelco.prime.model.Customer
+import org.ostelco.prime.model.Identity
+import org.ostelco.prime.model.PurchaseRecord
+import org.ostelco.prime.model.ScanInformation
+import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.storage.AdminDataSource
-import java.net.URLDecoder
 import java.util.regex.Pattern
 import javax.validation.constraints.NotNull
 import javax.ws.rs.Consumes
@@ -159,7 +165,7 @@ class ProfilesResource {
             }
         } catch (e: Exception) {
             logger.error("Failed to get subscriptions for customer with identity - $identity", e)
-            Either.left(InternalServerError("Failed to get subscriptions", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS))
+            InternalServerError("Failed to get subscriptions", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS).left()
         }
     }
 
@@ -460,7 +466,7 @@ class NotifyResource {
             }
         } catch (e: Exception) {
             logger.error("Did not find msisdn for email $email", e)
-            Either.left(InternalServerError("Did not find subscription", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS))
+            InternalServerError("Did not find subscription", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS).left()
         }
     }
 }
@@ -498,8 +504,11 @@ class PlanResource {
     @POST
     @Produces("application/json")
     @Consumes("application/json")
-    fun create(plan: Plan): Response {
-        return storage.createPlan(plan).fold(
+    fun create(createPlanRequest: CreatePlanRequest): Response {
+        return storage.createPlan(
+                plan = createPlanRequest.plan,
+                stripeProductName = createPlanRequest.stripeProductName,
+                planProduct = createPlanRequest.planProduct).fold(
                 {
                     val err = ApiErrorMapper.mapStorageErrorToApiError("Failed to store plan",
                             ApiErrorCode.FAILED_TO_STORE_PLAN,

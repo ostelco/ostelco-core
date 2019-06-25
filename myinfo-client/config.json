@@ -1,5 +1,0 @@
-{
-  "invokerPackage": "org.ostelco.prime.ekyc.myinfo",
-  "modelPackage": "org.ostelco.prime.ekyc.myinfo.model",
-  "apiPackage": "org.ostelco.prime.ekyc.myinfo.api"
-}

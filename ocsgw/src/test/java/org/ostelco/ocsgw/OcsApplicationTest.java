@@ -5,13 +5,11 @@ import org.jdiameter.api.AvpDataException;
 import org.jdiameter.api.AvpSet;
 import org.jdiameter.api.Request;
 import org.jdiameter.api.Session;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.ostelco.diameter.model.ReAuthRequestType;
 import org.ostelco.diameter.model.RequestType;
 import org.ostelco.diameter.model.SessionContext;
+import org.ostelco.diameter.test.Result;
 import org.ostelco.diameter.test.TestClient;
 import org.ostelco.diameter.test.TestHelper;
 import org.slf4j.Logger;
@@ -48,21 +46,21 @@ public class OcsApplicationTest {
     private static final String MSISDN = "4790300123";
     private static final long DIAMETER_SUCCESS = 2001L;
 
-    private TestClient client;
+    private static TestClient client;
 
     // The same OcsApplication will be used in all test cases
-    private final OcsApplication application = new OcsApplication();
+    private final static OcsApplication application = new OcsApplication();
 
-    @BeforeEach
-    protected void setUp() {
+    @BeforeAll
+    public static void setUp() {
         application.start("src/test/resources/", "server-jdiameter-config.xml");
 
         client = new TestClient();
         client.initStack("src/test/resources/", "client-jdiameter-config.xml");
     }
 
-    @AfterEach
-    protected void tearDown() {
+    @AfterAll
+    public static void tearDown() {
         client.shutdown();
         client = null;
 
@@ -81,11 +79,12 @@ public class OcsApplicationTest {
 
         client.sendNextRequest(request, session);
 
-        waitForAnswer();
+        waitForAnswer(session.getSessionId());
 
         try {
-            assertEquals(DIAMETER_SUCCESS, client.getResultCodeAvp().getInteger32());
-            AvpSet resultAvps = client.getResultAvps();
+            Result result = client.getAnswer(session.getSessionId());
+            assertEquals(DIAMETER_SUCCESS, result.getResultCode().longValue());
+            AvpSet resultAvps = result.getResultAvps();
             assertEquals(OCS_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String());
             assertEquals(OCS_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String());
             assertEquals(RequestType.INITIAL_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
@@ -124,11 +123,12 @@ public class OcsApplicationTest {
 
         client.sendNextRequest(request, session);
 
-        waitForAnswer();
+        waitForAnswer(session.getSessionId());
 
         try {
-            assertEquals(DIAMETER_SUCCESS, client.getResultCodeAvp().getInteger32());
-            AvpSet resultAvps = client.getResultAvps();
+            Result result = client.getAnswer(session.getSessionId());
+            assertEquals(DIAMETER_SUCCESS, result.getResultCode().longValue());
+            AvpSet resultAvps = result.getResultAvps();
             assertEquals(RequestType.UPDATE_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
             Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
             assertEquals(DIAMETER_SUCCESS, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
@@ -156,7 +156,7 @@ public class OcsApplicationTest {
         final int ratingGroup = 10;
         final int serviceIdentifier = 1;
 
-        Session session = client.createSession();
+        Session session = client.createSession(new Object() {}.getClass().getEnclosingMethod().getName());
         simpleCreditControlRequestInit(session, 500_000L, 500_000L,ratingGroup, serviceIdentifier);
         simpleCreditControlRequestUpdate(session, 400_000L, 500_000L, 400_000L, ratingGroup, serviceIdentifier);
 
@@ -170,11 +170,12 @@ public class OcsApplicationTest {
 
         client.sendNextRequest(request, session);
 
-        waitForAnswer();
+        waitForAnswer(session.getSessionId());
 
         try {
-            assertEquals(DIAMETER_SUCCESS, client.getResultCodeAvp().getInteger32());
-            AvpSet resultAvps = client.getResultAvps();
+            Result result = client.getAnswer(session.getSessionId());
+            assertEquals(DIAMETER_SUCCESS, result.getResultCode().longValue());
+            AvpSet resultAvps = result.getResultAvps();
             assertEquals(RequestType.TERMINATION_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
         } catch (AvpDataException e) {
             LOG.error("Failed to get Result-Code", e);
@@ -190,7 +191,7 @@ public class OcsApplicationTest {
         final int ratingGroup = 10;
         final int serviceIdentifier = 1;
 
-        Session session = client.createSession();
+        Session session = client.createSession(new Object() {}.getClass().getEnclosingMethod().getName());
         simpleCreditControlRequestInit(session, 500_000L, 500_000L, ratingGroup, serviceIdentifier);
 
         Request request = client.createRequest(
@@ -204,11 +205,12 @@ public class OcsApplicationTest {
 
         client.sendNextRequest(request, session);
 
-        waitForAnswer();
+        waitForAnswer(session.getSessionId());
 
         try {
-            assertEquals(DIAMETER_SUCCESS, client.getResultCodeAvp().getInteger32());
-            AvpSet resultAvps = client.getResultAvps();
+            Result result = client.getAnswer(session.getSessionId());
+            assertEquals(DIAMETER_SUCCESS, result.getResultCode().longValue());
+            AvpSet resultAvps = result.getResultAvps();
             assertEquals(RequestType.UPDATE_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
             assertEquals(86400L, resultAvps.getAvp(Avp.VALIDITY_TIME).getInteger32());
 
@@ -227,7 +229,7 @@ public class OcsApplicationTest {
         final int ratingGroup = 10;
         final int serviceIdentifier = -1;
 
-        Session session = client.createSession();
+        Session session = client.createSession(new Object() {}.getClass().getEnclosingMethod().getName());
         simpleCreditControlRequestInit(session, 0L, 40_000_000L, ratingGroup, serviceIdentifier);
         simpleCreditControlRequestUpdate(session, 0L, 40_000_000L, 40_000_000L, ratingGroup, serviceIdentifier);
 
@@ -241,11 +243,12 @@ public class OcsApplicationTest {
 
         client.sendNextRequest(request, session);
 
-        waitForAnswer();
+        waitForAnswer(session.getSessionId());
 
         try {
-            assertEquals(DIAMETER_SUCCESS, client.getResultCodeAvp().getInteger32());
-            AvpSet resultAvps = client.getResultAvps();
+            Result result = client.getAnswer(session.getSessionId());
+            assertEquals(DIAMETER_SUCCESS, result.getResultCode().longValue());
+            AvpSet resultAvps = result.getResultAvps();
             assertEquals(RequestType.TERMINATION_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
         } catch (AvpDataException e) {
             LOG.error("Failed to get Result-Code", e);
@@ -256,7 +259,7 @@ public class OcsApplicationTest {
     @Test
     @DisplayName("Credit-Control-Request Multi Ratinggroups Init")
     public void creditControlRequestMultiRatingGroupsInit() {
-        Session session = client.createSession();
+        Session session = client.createSession(new Object() {}.getClass().getEnclosingMethod().getName());
         Request request = client.createRequest(
                 OCS_REALM,
                 OCS_HOST,
@@ -267,11 +270,12 @@ public class OcsApplicationTest {
 
         client.sendNextRequest(request, session);
 
-        waitForAnswer();
+        waitForAnswer(session.getSessionId());
 
         try {
-            assertEquals(DIAMETER_SUCCESS, client.getResultCodeAvp().getInteger32());
-            AvpSet resultAvps = client.getResultAvps();
+            Result result = client.getAnswer(session.getSessionId());
+            assertEquals(DIAMETER_SUCCESS, result.getResultCode().longValue());
+            AvpSet resultAvps = result.getResultAvps();
             assertEquals(OCS_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String());
             assertEquals(OCS_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String());
             assertEquals(RequestType.INITIAL_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
@@ -311,7 +315,7 @@ public class OcsApplicationTest {
         final int ratingGroup = 10;
         final int serviceIdentifier = 1;
 
-        Session session = client.createSession();
+        Session session = client.createSession(new Object() {}.getClass().getEnclosingMethod().getName());
         Request request = client.createRequest(
                 OCS_REALM,
                 OCS_HOST,
@@ -323,11 +327,12 @@ public class OcsApplicationTest {
 
         client.sendNextRequest(request, session);
 
-        waitForAnswer();
+        waitForAnswer(session.getSessionId());
 
         try {
-            assertEquals(DIAMETER_SUCCESS, client.getResultCodeAvp().getInteger32());
-            AvpSet resultAvps = client.getResultAvps();
+            Result result = client.getAnswer(session.getSessionId());
+            assertEquals(DIAMETER_SUCCESS, result.getResultCode().longValue());
+            AvpSet resultAvps = result.getResultAvps();
             assertEquals(OCS_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String());
             assertEquals(OCS_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String());
             assertEquals(RequestType.INITIAL_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
@@ -344,15 +349,14 @@ public class OcsApplicationTest {
 
     @Test
     public void testReAuthRequest() {
-        Session session = client.createSession();
+        Session session = client.createSession(new Object() {}.getClass().getEnclosingMethod().getName());
         simpleCreditControlRequestInit(session, 500_000L, 500_000L, 10, 1);
 
-
-        client.initRequestTest();
         OcsServer.INSTANCE.sendReAuthRequest(new SessionContext(session.getSessionId(), PGW_HOST, PGW_REALM, APN, MCC_MNC));
-        waitForRequest();
+        waitForRequest(session.getSessionId());
         try {
-            AvpSet resultAvps = client.getResultAvps();
+            Result result = client.getRequest(session.getSessionId());
+            AvpSet resultAvps = result.getResultAvps();
             assertEquals(ReAuthRequestType.AUTHORIZE_ONLY.ordinal(), resultAvps.getAvp(Avp.RE_AUTH_REQUEST_TYPE).getInteger32());
             assertEquals(PGW_HOST, resultAvps.getAvp(Avp.DESTINATION_HOST).getUTF8String());
             assertEquals(PGW_REALM, resultAvps.getAvp(Avp.DESTINATION_REALM).getUTF8String());
@@ -369,7 +373,7 @@ public class OcsApplicationTest {
     @DisplayName("Service-Information Credit-Control-Request Init")
     public void serviceInformationCreditControlRequestInit() throws UnsupportedEncodingException {
 
-        Session session = client.createSession();
+        Session session = client.createSession(new Object() {}.getClass().getEnclosingMethod().getName());
         Request request = client.createRequest(
                 OCS_REALM,
                 OCS_HOST,
@@ -411,11 +415,12 @@ public class OcsApplicationTest {
 
         client.sendNextRequest(request, session);
 
-        waitForAnswer();
+        waitForAnswer(session.getSessionId());
 
         try {
-            assertEquals(DIAMETER_SUCCESS, client.getResultCodeAvp().getInteger32());
-            AvpSet resultAvps = client.getResultAvps();
+            Result result = client.getAnswer(session.getSessionId());
+            assertEquals(DIAMETER_SUCCESS, result.getResultCode().longValue());
+            AvpSet resultAvps = result.getResultAvps();
             assertEquals(RequestType.INITIAL_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
             Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
             assertEquals(4012L, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
@@ -427,29 +432,29 @@ public class OcsApplicationTest {
         }
     }
 
-    private void waitForAnswer() {
+    private void waitForAnswer(String sessionId) {
         int i = 0;
-        while (!client.isAnswerReceived() && i<10) {
+        while (!client.isAnswerReceived(sessionId) && i<100) {
             i++;
             try {
-                Thread.sleep(500);
+                Thread.sleep(50);
             } catch (InterruptedException e) {
                 // continue
             }
         }
-        assertEquals(true, client.isAnswerReceived());
+        assertEquals(true, client.isAnswerReceived(sessionId));
     }
 
-    private void waitForRequest() {
+    private void waitForRequest(String sessionId) {
         int i = 0;
-        while (!client.isRequestReceived() && i<10) {
+        while (!client.isRequestReceived(sessionId) && i<100) {
             i++;
             try {
-                Thread.sleep(500);
+                Thread.sleep(50);
             } catch (InterruptedException e) {
                 // continue
             }
         }
-        assertEquals(true, client.isRequestReceived());
+        assertEquals(true, client.isRequestReceived(sessionId));
     }
 }

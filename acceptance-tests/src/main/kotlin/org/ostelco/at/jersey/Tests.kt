@@ -6,8 +6,11 @@ import org.ostelco.at.common.StripePayment
 import org.ostelco.at.common.createCustomer
 import org.ostelco.at.common.createSubscription
 import org.ostelco.at.common.enableRegion
+import org.ostelco.at.common.expectedPlanProduct
 import org.ostelco.at.common.expectedProducts
 import org.ostelco.at.common.getLogger
+import org.ostelco.at.common.graphqlGetQuery
+import org.ostelco.at.common.graphqlPostQuery
 import org.ostelco.at.common.randomInt
 import org.ostelco.prime.customer.model.ApplicationToken
 import org.ostelco.prime.customer.model.Bundle
@@ -19,7 +22,6 @@ import org.ostelco.prime.customer.model.MyInfoConfig
 import org.ostelco.prime.customer.model.PaymentSource
 import org.ostelco.prime.customer.model.PaymentSourceList
 import org.ostelco.prime.customer.model.Person
-import org.ostelco.prime.customer.model.Plan
 import org.ostelco.prime.customer.model.Price
 import org.ostelco.prime.customer.model.Product
 import org.ostelco.prime.customer.model.ProductInfo
@@ -42,7 +44,6 @@ import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.MultivaluedHashMap
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
-import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -60,7 +61,7 @@ class CustomerTest {
             val createdCustomer: Customer = post {
                 path = "/customer"
                 queryParams = mapOf(
-                        "contactEmail" to URLEncoder.encode(email, "UTF-8"),
+                        "contactEmail" to URLEncoder.encode(email, StandardCharsets.UTF_8),
                         "nickname" to nickname)
                 this.email = email
             }
@@ -86,7 +87,7 @@ class CustomerTest {
             val updatedCustomer: Customer = put {
                 path = "/customer"
                 queryParams = mapOf(
-                        "contactEmail" to URLEncoder.encode(email2, "UTF-8"),
+                        "contactEmail" to URLEncoder.encode(email2, StandardCharsets.UTF_8),
                         "nickname" to newName)
                 this.email = email
             }
@@ -728,7 +729,7 @@ class PurchaseTest {
             assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
             assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
 
-            val encodedEmail = URLEncoder.encode(email, "UTF-8")
+            val encodedEmail = URLEncoder.encode(email, StandardCharsets.UTF_8)
             val refundedProduct = put<ProductInfo> {
                 path = "/refund/$encodedEmail"
                 this.email = email
@@ -1223,7 +1224,7 @@ class JumioKycTest {
             }
             assertEquals("APPROVED", scanInformation.status, message = "Wrong status")
 
-            val encodedEmail = URLEncoder.encode(email, "UTF-8")
+            val encodedEmail = URLEncoder.encode(email, StandardCharsets.UTF_8)
             val scanInformationList = get<Collection<ScanInformation>> {
                 path = "/profiles/$encodedEmail/scans"
                 this.email = email
@@ -1323,7 +1324,7 @@ class JumioKycTest {
                     expected = mapOf(KycType.JUMIO.name to KycStatus.APPROVED),
                     actual = regionDetails.kycStatusMap)
 
-            val encodedEmail = URLEncoder.encode(email, "UTF-8")
+            val encodedEmail = URLEncoder.encode(email, StandardCharsets.UTF_8)
             val scanInformationList = get<Collection<ScanInformation>> {
                 path = "/profiles/$encodedEmail/scans"
                 this.email = email
@@ -1715,123 +1716,33 @@ class ReferralTest {
 class PlanTest {
 
     @Test
-    fun `jersey test - POST plan`() {
-
-        val price = Price()
-                .amount(100)
-                .currency("nok")
-        val plan = Plan()
-                .name("PLAN_1_NOK_PER_DAY-${randomInt()}")
-                .price(price)
-                .interval(Plan.IntervalEnum.DAY)
-                .intervalCount(1)
-                .properties(emptyMap<String, Any>())
-                .presentation(emptyMap<String, Any>())
-
-        post<Plan> {
-            path = "/plans"
-            body = plan
-        }
-
-        val stored: Plan = get {
-            path = "/plans/${plan.name}"
-        }
-
-        assertEquals(plan.name, stored.name)
-        assertEquals(plan.price, stored.price)
-        assertEquals(plan.interval, stored.interval)
-        assertEquals(plan.intervalCount, stored.intervalCount)
-
-        val deletedPLan: Plan = delete {
-            path = "/plans/${plan.name}"
-        }
-
-        assertEquals(plan.name, deletedPLan.name)
-        assertEquals(plan.price, deletedPLan.price)
-        assertEquals(plan.interval, deletedPLan.interval)
-        assertEquals(plan.intervalCount, deletedPLan.intervalCount)
-
-        assertFailsWith(AssertionError::class, "Plan ${plan.name} not removed") {
-            get<Plan> {
-                path = "/plans/${plan.name}"
-            }
-        }
-    }
-
-    @Ignore
-    @Test
-    fun `jersey test - POST profiles plans`() {
+    fun `jersey test - POST purchase plan`() {
 
         val email = "purchase-${randomInt()}@test.com"
-
-        val price = Price()
-                .amount(100)
-                .currency("nok")
-        val plan = Plan()
-                .name("plan-${randomInt()}")
-                .price(price)
-                .interval(Plan.IntervalEnum.DAY)
-                .intervalCount(1)
-                .properties(emptyMap<String, Any>())
-                .presentation(emptyMap<String, Any>())
-
         var customerId = ""
-
         try {
-            // Create subscriber with payment source.
-
-            customerId = createCustomer(name = "Test create Profile Plans", email = email).id
+            customerId = createCustomer(name = "Test Purchase Plan User", email = email).id
+            enableRegion(email = email, region = "sg")
 
             val sourceId = StripePayment.createPaymentTokenId()
 
-            val paymentSource: PaymentSource = post {
-                path = "/paymentSources"
+            post<String> {
+                path = "/products/PLAN_1000SGD_YEAR/purchase"
                 this.email = email
                 queryParams = mapOf("sourceId" to sourceId)
             }
 
-            assertNotNull(paymentSource.id, message = "Failed to create payment source")
+            Thread.sleep(200) // wait for 200 ms for balance to be updated in db
 
-            // Create a plan.
-
-            post<Plan> {
-                path = "/plans"
-                body = plan
+            val purchaseRecords: PurchaseRecordList = get {
+                path = "/purchases"
+                this.email = email
             }
 
-            val stored: Plan = get {
-                path = "/plans/${plan.name}"
-            }
+            purchaseRecords.sortBy { it.timestamp }
 
-            assertEquals(plan.name, stored.name)
-
-            // Now create and verify the subscription.
-
-            post<Unit> {
-                path = "/profiles/$email/plans/${plan.name}"
-            }
-
-            val plans: List<Plan> = get {
-                path = "/profiles/$email/plans"
-            }
-
-            assert(plans.isNotEmpty())
-            assert(plans.lastIndex == 0)
-            assertEquals(plan.name, plans[0].name)
-            assertEquals(plan.price, plans[0].price)
-            assertEquals(plan.interval, plans[0].interval)
-            assertEquals(plan.intervalCount, plans[0].intervalCount)
-
-            delete<Unit> {
-                path = "/profiles/$email/plans/${plan.name}"
-            }
-
-            // Cleanup - remove plan.
-            val deletedPLan: Plan = delete {
-                path = "/plans/${plan.name}"
-            }
-            assertEquals(plan.name, deletedPLan.name)
-
+            assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
+            assertEquals(expectedPlanProduct, purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
         }
@@ -1843,6 +1754,7 @@ class GraphQlTests {
     data class Context(
             val customer: Customer? = null,
             val bundles: Collection<Bundle>? = null,
+            val regions: Collection<RegionDetails>? = null,
             val subscriptions: Collection<Subscription>? = null,
             val products: Collection<Product>? = null,
             val purchases: Collection<PurchaseRecord>? = null)
@@ -1857,17 +1769,32 @@ class GraphQlTests {
         val email = "graphql-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createCustomer("Test GraphQL Endpoint", email).id
+            customerId = createCustomer("Test GraphQL POST Endpoint", email).id
+
+            enableRegion(email)
 
             val msisdn = createSubscription(email)
 
             val context = post<GraphQlResponse>(expectedResultCode = 200) {
                 path = "/graphql"
                 this.email = email
-                body = mapOf("query" to """{ context { customer { nickname contactEmail } subscriptions { msisdn } } }""")
+                body = mapOf("query" to graphqlPostQuery)
             }.data?.context
 
+            assertEquals(expected = "Test GraphQL POST Endpoint", actual = context?.customer?.nickname)
             assertEquals(expected = email, actual = context?.customer?.contactEmail)
+            assertEquals(expected = 2_147_483_648L, actual = context?.bundles?.first()?.balance)
+            assertEquals(expected = "no", actual = context?.regions?.first()?.region?.id)
+            assertEquals(expected = "Norway", actual = context?.regions?.first()?.region?.name)
+            assertEquals(expected = APPROVED, actual = context?.regions?.first()?.status)
+            assertEquals(
+                    expected = mapOf(KycType.JUMIO.name to KycStatus.APPROVED),
+                    actual = context?.regions?.first()?.kycStatusMap?.filterValues { it != null }
+            )
+            assertEquals(expected = "TEST-unknown", actual = context?.regions?.first()?.simProfiles?.first()?.iccId)
+            assertEquals(expected = "Dummy eSIM", actual = context?.regions?.first()?.simProfiles?.first()?.eSimActivationCode)
+            assertEquals(expected = "default", actual = context?.regions?.first()?.simProfiles?.first()?.alias)
+            assertEquals(expected = SimProfile.StatusEnum.INSTALLED, actual = context?.regions?.first()?.simProfiles?.first()?.status)
             assertEquals(expected = msisdn, actual = context?.subscriptions?.first()?.msisdn)
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -1880,17 +1807,32 @@ class GraphQlTests {
         val email = "graphql-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createCustomer("Test GraphQL Endpoint", email).id
+            customerId = createCustomer("Test GraphQL GET Endpoint", email).id
+
+            enableRegion(email)
 
             val msisdn = createSubscription(email)
 
             val context = get<GraphQlResponse> {
                 path = "/graphql"
                 this.email = email
-                queryParams = mapOf("query" to URLEncoder.encode("""{context{customer{nickname,contactEmail}subscriptions{msisdn}}}""", StandardCharsets.UTF_8.name()))
+                queryParams = mapOf("query" to URLEncoder.encode(graphqlGetQuery, StandardCharsets.UTF_8))
             }.data?.context
 
+            assertEquals(expected = "Test GraphQL GET Endpoint", actual = context?.customer?.nickname)
             assertEquals(expected = email, actual = context?.customer?.contactEmail)
+            assertEquals(expected = 2_147_483_648L, actual = context?.bundles?.first()?.balance)
+            assertEquals(expected = "no", actual = context?.regions?.first()?.region?.id)
+            assertEquals(expected = "Norway", actual = context?.regions?.first()?.region?.name)
+            assertEquals(expected = APPROVED, actual = context?.regions?.first()?.status)
+            assertEquals(
+                    expected = mapOf(KycType.JUMIO.name to KycStatus.APPROVED),
+                    actual = context?.regions?.first()?.kycStatusMap?.filterValues { it != null }
+            )
+            assertEquals(expected = "TEST-unknown", actual = context?.regions?.first()?.simProfiles?.first()?.iccId)
+            assertEquals(expected = "Dummy eSIM", actual = context?.regions?.first()?.simProfiles?.first()?.eSimActivationCode)
+            assertEquals(expected = "default", actual = context?.regions?.first()?.simProfiles?.first()?.alias)
+            assertEquals(expected = SimProfile.StatusEnum.INSTALLED, actual = context?.regions?.first()?.simProfiles?.first()?.status)
             assertEquals(expected = msisdn, actual = context?.subscriptions?.first()?.msisdn)
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)

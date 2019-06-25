@@ -4,6 +4,7 @@ import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
+import org.ostelco.prime.model.RegionDetails
 import org.ostelco.prime.model.Subscription
 
 data class GraphQLRequest(
@@ -14,6 +15,7 @@ data class GraphQLRequest(
 data class Context(
         val customer: Customer? = null,
         val bundles: Collection<Bundle>? = null,
+        val regions: Collection<RegionDetails>? = null,
         val subscriptions: Collection<Subscription>? = null,
         val products: Collection<Product>? = null,
         val purchases: Collection<PurchaseRecord>? = null)

@@ -137,7 +137,7 @@ public class ProtobufToDiameterConverter {
             return builder.build();
 
         } catch (Exception e) {
-            LOG.error("Failed to create CreditControlRequestInfo", e);
+            LOG.error("Failed to create CreditControlRequestInfo [{}] [{}]", context.getCreditControlRequest().getMsisdn(), context.getSessionId(), e);
         }
         return null;
     }

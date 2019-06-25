@@ -91,6 +91,11 @@ data class WriteTransaction(val transaction: PrimeTransaction) {
         val entityStore: EntityStore<E> = EntityRegistry.getEntityStore(entityClass)
         return entityStore.get(id = id, transaction = transaction)
     }
+
+    fun <E : HasId> delete(entityClass: KClass<E>, id: String): Either<StoreError, Unit> {
+        val entityStore: EntityStore<E> = EntityRegistry.getEntityStore(entityClass)
+        return entityStore.delete(id = id, transaction = transaction)
+    }
 }
 
 class JobContext(private val transaction: PrimeTransaction) {
