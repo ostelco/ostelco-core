@@ -10,7 +10,7 @@ import org.ostelco.prime.model.Subscription
 data class GraphQLRequest(
         val query: String,
         val operationName: String? = null,
-        val variables: Map<String, Any> = emptyMap())
+        val variables: Map<String, Any>? = emptyMap())
 
 data class Context(
         val customer: Customer? = null,
