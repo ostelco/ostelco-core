@@ -29,6 +29,6 @@ echo "Metrics ESP launched"
 # Start app for testing
 exec java \
     -Dfile.encoding=UTF-8 \
-    -Dlogback.configurationFile=/config/logback.xml \
+    -Dlogback.configurationFile=/config/logback.console.xml \
     -jar /ocsgw.jar
 
