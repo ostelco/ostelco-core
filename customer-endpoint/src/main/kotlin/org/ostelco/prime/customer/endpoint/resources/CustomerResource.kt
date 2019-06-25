@@ -8,9 +8,18 @@ import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.Identity
 import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 import java.util.*
 import javax.validation.constraints.NotNull
-import javax.ws.rs.*
+import javax.ws.rs.Consumes
+import javax.ws.rs.DELETE
+import javax.ws.rs.Encoded
+import javax.ws.rs.GET
+import javax.ws.rs.POST
+import javax.ws.rs.PUT
+import javax.ws.rs.Path
+import javax.ws.rs.Produces
+import javax.ws.rs.QueryParam
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
@@ -41,7 +50,7 @@ class CustomerResource(private val dao: SubscriberDAO) {
             if (email.contains("+")) {
                 toConvert = email.replace("+", "%2B")
             }
-            return URLDecoder.decode(toConvert, "UTF-8")
+            return URLDecoder.decode(toConvert, StandardCharsets.UTF_8)
         }
         return email
     }

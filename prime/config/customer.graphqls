@@ -3,47 +3,93 @@ schema {
 }
 
 type QueryType {
-  context(id: String): Context
+  context: Context!
 }
 
 type Context {
-  customer: Customer
+  customer: Customer!
   bundles: [Bundle]
+  regions: [RegionDetails]
   subscriptions: [Subscription]
   products: [Product]
   purchases: [Purchase]
 }
 
 type Customer {
-  id: String
-  contactEmail: String
-  nickname: String
-  referralId: String
-  analyticsId: String
+  id: String!
+  contactEmail: String!
+  nickname: String!
+  referralId: String!
+  analyticsId: String!
 }
 
 type Bundle {
-  id: String
-  balance: Long
+  id: String!
+  balance: Long!
+}
+
+type RegionDetails {
+  region: Region!
+  status: CustomerRegionStatus
+  kycStatusMap: KycStatusMap
+  simProfiles: [SimProfile]
+}
+
+type Region {
+  id: String!
+  name: String!
+}
+
+enum CustomerRegionStatus {
+  PENDING
+  APPROVED
+}
+
+type KycStatusMap {
+  JUMIO: KycStatus
+  MY_INFO: KycStatus
+  NRIC_FIN: KycStatus
+  ADDRESS_AND_PHONE_NUMBER: KycStatus
+}
+
+enum KycStatus {
+  PENDING
+  REJECTED
+  APPROVED
+}
+
+type SimProfile {
+  iccId: String!
+  eSimActivationCode: String!
+  status: SimProfileStatus!
+  alias: String!
+}
+
+enum SimProfileStatus {
+  NOT_READY
+  AVAILABLE_FOR_DOWNLOAD
+  DOWNLOADED
+  INSTALLED
+  ENABLED
 }
 
 type Subscription {
-  msisdn: String
-  analyticsId: String
+  msisdn: String!
+  analyticsId: String!
 }
 
 type Product {
-  sku: String
-  price: Price
+  sku: String!
+  price: Price!
 }
 
 type Price {
-  amount: Int
-  currency: String
+  amount: Int!
+  currency: String!
 }
 
 type Purchase {
-  id: String
-  product: Product
-  timestamp: Long
+  id: String!
+  product: Product!
+  timestamp: Long!
 }

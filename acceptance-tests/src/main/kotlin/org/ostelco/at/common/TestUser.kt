@@ -27,7 +27,7 @@ fun createSubscription(email: String): String {
         queryParams = mapOf(
                 "email" to email,
                 "regionCode" to "no",
-                "iccId" to "unknown",
+                "iccId" to "TEST-unknown",
                 "alias" to "default",
                 "msisdn" to msisdn
         )
@@ -35,10 +35,23 @@ fun createSubscription(email: String): String {
     return msisdn
 }
 
-fun enableRegion(email: String) {
+fun enableRegion(email: String, region: String = "no") {
+
+    when (region) {
+        "sg" -> {
+            get<String> {
+                path = "/regions/sg/kyc/myInfo/activation-code"
+                this.email = email
+            }
+        }
+        else -> performJumioKyc(email = email, region = region)
+    }
+}
+
+private fun performJumioKyc(email: String, region: String) {
 
     val scanInformation = post<ScanInformation> {
-        path = "/regions/no/kyc/jumio/scans"
+        path = "/regions/$region/kyc/jumio/scans"
         this.email = email
     }
 
@@ -52,18 +65,6 @@ fun enableRegion(email: String) {
                 "idCountry" to "NOR",
                 "merchantIdScanReference" to scanInformation.scanId,
                 "identityVerification" to """{ "similarity":"MATCH", "validity":"TRUE"}"""))
-    }
-}
-
-fun enableRegion(email: String, region: String) {
-    when (region) {
-        "sg" -> {
-            get<String> {
-                path = "/regions/sg/kyc/myInfo/activation-code"
-                this.email = email
-            }
-        }
-        else -> enableRegion(email)
     }
 }
 

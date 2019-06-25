@@ -703,13 +703,17 @@ paths:
         - auth0_jwt: []
         - firebase: []
   "/graphql":
-    post:
-      description: "GraphQL endpoint"
-      consumes:
-        - application/json
+    get:
+      description: "GraphQL GET endpoint"
       produces:
         - application/json
-      operationId: "graphql"
+      operationId: "graphqlGet"
+      parameters:
+        - name: "query"
+          in: query
+          description: "GraphQL Query."
+          type: string
+          required: true
       responses:
         200:
           description: "Success"
@@ -720,12 +724,29 @@ paths:
       security:
         - auth0_jwt: []
         - firebase: []
+    post:
+      description: "GraphQL POST endpoint"
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      operationId: "graphqlPost"
       parameters:
         - name: "request"
           in: body
           description: "GraphQL Request."
           schema:
             $ref: '#/definitions/GraphQLRequest'
+      responses:
+        200:
+          description: "Success"
+          schema:
+            type: object
+        404:
+          description: "Not found"
+      security:
+        - auth0_jwt: []
+        - firebase: []
 
 definitions:
   Context:

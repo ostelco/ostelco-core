@@ -6,14 +6,22 @@ import org.everit.json.schema.ValidationException
 import org.json.JSONException
 import org.json.JSONObject
 import org.json.JSONTokener
-import java.io.*
-import java.nio.charset.Charset
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
+import java.nio.charset.StandardCharsets
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.container.DynamicFeature
 import javax.ws.rs.container.ResourceInfo
 import javax.ws.rs.core.FeatureContext
 import javax.ws.rs.core.Response
-import javax.ws.rs.ext.*
+import javax.ws.rs.ext.Provider
+import javax.ws.rs.ext.ReaderInterceptor
+import javax.ws.rs.ext.ReaderInterceptorContext
+import javax.ws.rs.ext.WriterInterceptor
+import javax.ws.rs.ext.WriterInterceptorContext
 
 
 @Target(AnnotationTarget.CLASS)
@@ -122,7 +130,7 @@ private class RequestServerReaderWriterInterceptor : ReaderInterceptor, WriterIn
 
         val originalStream = ctx.inputStream
         val originalByteArray = toByteArray(originalStream)
-        val body = String(originalByteArray, Charset.forName("UTF-8"))
+        val body = String(originalByteArray, StandardCharsets.UTF_8)
 
         validator.validateString(ctx.type, body, Response.Status.BAD_REQUEST)
 
@@ -147,7 +155,7 @@ private class RequestServerReaderWriterInterceptor : ReaderInterceptor, WriterIn
         // Then get the byte array & convert it to a nice
         // UTF-8 string
         val contentBytes = interceptingStream.toByteArray()
-        val contentString  = String(contentBytes, Charset.forName("UTF-8"))
+        val contentString  = String(contentBytes, StandardCharsets.UTF_8)
 
         // Validate our now serialized input.
         val type = ctx.entity::class.java

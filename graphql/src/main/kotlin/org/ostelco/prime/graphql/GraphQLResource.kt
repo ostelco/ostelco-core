@@ -3,7 +3,6 @@ package org.ostelco.prime.graphql
 import io.dropwizard.auth.Auth
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.jsonmapper.asJson
-import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.model.Identity
 import javax.ws.rs.Consumes
 import javax.ws.rs.GET
@@ -38,7 +37,8 @@ class GraphQLResource(private val queryHandler: QueryHandler) {
     @Produces(MediaType.APPLICATION_JSON)
     fun handleGet(
             @Auth token: AccessTokenPrincipal?,
-            @QueryParam("query") query: String): Response {
+            @QueryParam("query") query: String,
+            @QueryParam("operationName") operationName: String?): Response {
 
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED).build()
@@ -46,13 +46,18 @@ class GraphQLResource(private val queryHandler: QueryHandler) {
 
         return executeOperation(
                 identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
-                request = GraphQLRequest(query = query))
+                request = GraphQLRequest(
+                        query = query,
+                        operationName = operationName
+                )
+        )
     }
 
     private fun executeOperation(identity: Identity, request: GraphQLRequest): Response {
         val executionResult = queryHandler.execute(
                 identity = identity,
                 query = request.query,
+                operationName = request.operationName,
                 variables = request.variables)
         val result = mutableMapOf<String, Any>()
         if (executionResult.errors.isNotEmpty()) {
@@ -62,6 +67,6 @@ class GraphQLResource(private val queryHandler: QueryHandler) {
         if (data != null) {
             result["data"] = data
         }
-        return Response.ok(asJson(objectMapper.convertValue(result, GraphQlResponse::class.java))).build()
+        return Response.ok(asJson(result)).build()
     }
 }
