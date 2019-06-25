@@ -12,6 +12,7 @@ COPY script/wait.sh /wait.sh
 COPY config/dictionary.xml /config/dictionary.xml
 COPY config/logback.xml /config/logback.xml
 COPY config/logback.dev.xml /config/logback.dev.xml
+COPY config/logback.console.xml /config/logback.console.xml
 
 COPY build/libs/ocsgw-uber.jar /ocsgw.jar
 
