@@ -65,7 +65,6 @@ class CreditControlContext(
                 ccaAvps.addAvp(Avp.VALIDITY_TIME, creditControlAnswer.validityTime, true, false)
             }
 
-            logger.info("Created Credit-Control-Answer")
             DiameterUtilities().printAvps(ccaAvps)
 
         } catch (e: InternalException) {

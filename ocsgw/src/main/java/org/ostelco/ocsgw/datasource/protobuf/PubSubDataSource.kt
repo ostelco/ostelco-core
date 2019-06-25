@@ -21,7 +21,6 @@ import org.ostelco.diameter.CreditControlContext
 import org.ostelco.diameter.getLogger
 import org.ostelco.ocs.api.*
 import org.ostelco.ocsgw.datasource.DataSource
-import org.threeten.bp.Duration
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -53,7 +52,7 @@ class PubSubDataSource(
         }
 
         // init publisher
-        logger.info("Setting up Publisher for topic: {}", ccrTopicId)
+        logger.info("Setting up Publisher for pubsub Topic: {}", ccrTopicId)
         publisher = setupPublisherToTopic(projectId, ccrTopicId)
 
         // Instantiate an asynchronous message receiver
@@ -61,7 +60,7 @@ class PubSubDataSource(
             // handle incoming message, then ack/nack the received message
             val ccaInfo = CreditControlAnswerInfo.parseFrom(message)
             if (ccaInfo.resultCode != ResultCode.UNKNOWN) {
-                logger.info("[<<] CreditControlAnswer for msisdn {} sessionId [{}]", ccaInfo.msisdn, ccaInfo.requestId)
+                logger.info("Pubsub received CreditControlAnswer for msisdn {} sessionId [{}]", ccaInfo.msisdn, ccaInfo.requestId)
                 protobufDataSource.handleCcrAnswer(ccaInfo)
             }
             consumer.ack()
@@ -83,7 +82,7 @@ class PubSubDataSource(
 
     override fun handleRequest(context: CreditControlContext) {
 
-        logger.info("[>>] creditControlRequest for msisdn {} session id [{}] request number [{}]", context.creditControlRequest.msisdn, context.sessionId, context.creditControlRequest.ccRequestNumber?.integer32)
+        logger.info("Sending request on pubsub for msisdn {} session id [{}] request number [{}]", context.creditControlRequest.msisdn, context.sessionId, context.creditControlRequest.ccRequestNumber?.integer32)
 
         val creditControlRequestInfo = protobufDataSource.handleRequest(context, ccaTopicId)
 
@@ -134,7 +133,7 @@ class PubSubDataSource(
 
         val batchingSettings = BatchingSettings.newBuilder().setIsEnabled(false).build()
 
-        logger.info("Setting up Publisher for topic: {}", topicId)
+        logger.info("Setting up Publisher for PubSub Topic: {}", topicId)
         val topicName = ProjectTopicName.of(projectId, topicId)
         return pubSubChannelProvider
                 ?.let { channelProvider ->
@@ -150,7 +149,7 @@ class PubSubDataSource(
     private fun setupPubSubSubscriber(projectId: String, subscriptionId: String, handler: (ByteString, AckReplyConsumer) -> Unit) {
 
         // init subscriber
-        logger.info("Setting up Subscriber for subscription: {}", subscriptionId)
+        logger.info("Setting up Subscriber for Subscription: {}", subscriptionId)
         val subscriptionName = ProjectSubscriptionName.of(projectId, subscriptionId)
 
         val receiver = MessageReceiver { message, consumer ->

@@ -48,7 +48,7 @@ class ProtobufDataSource {
             val ccrContext = ccrMap.remove(answer.requestId)
             if (ccrContext != null) {
                 ccrContext.logLatency()
-                logger.debug("Found Context for answer msisdn {} requestId [{}] request nr {}", ccrContext.creditControlRequest.msisdn, ccrContext.sessionId, ccrContext.creditControlRequest.ccRequestNumber?.integer32)
+                logger.debug("Found Context for answer msisdn {} requestId [{}] request number {}", ccrContext.creditControlRequest.msisdn, ccrContext.sessionId, ccrContext.creditControlRequest.ccRequestNumber?.integer32)
                 val session = OcsServer.stack?.getSession(ccrContext.sessionId, ServerCCASession::class.java)
                 if (session != null && session.isValid) {
                     removeFromSessionMap(ccrContext)
