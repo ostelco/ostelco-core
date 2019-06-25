@@ -31,12 +31,12 @@ import org.ostelco.ocs.api.MultipleServiceCreditControl
 import org.ostelco.ocs.api.OcsServiceGrpc
 import org.ostelco.ocs.api.ServiceUnit
 import org.ostelco.prime.customer.model.BundleList
-import java.time.Instant
 import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import kotlin.streams.toList
+import kotlin.system.measureTimeMillis
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
@@ -283,19 +283,16 @@ class OcsLoadTest {
             .toList()
 
     private fun benchmark(task: () -> Unit) {
-        // Start timestamp in millisecond
-        val start = Instant.now()
 
-        // perform task
-        task()
+        val durationInMillis = measureTimeMillis {
 
-        // Stop timestamp in millisecond
-        val stop = Instant.now()
+            // perform task
+            task()
+        }
 
         // Print load test results
-        val diff = stop.toEpochMilli() - start.toEpochMilli()
-        println("Time diff: %,d milli sec".format(diff))
-        val rate = COUNT * 1000.0 / diff
+        println("Time duration: %,d milli sec".format(durationInMillis))
+        val rate = COUNT * 1000.0 / durationInMillis
         println("Rate: %,.2f req/sec".format(rate))
     }
 

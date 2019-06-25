@@ -19,9 +19,9 @@ import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.ProductProperties.NO_OF_BYTES
 import org.ostelco.prime.model.Segment
-import java.time.Instant
 import java.util.*
 import java.util.concurrent.CountDownLatch
+import kotlin.system.measureTimeMillis
 import kotlin.test.BeforeTest
 import kotlin.test.Ignore
 import kotlin.test.Test
@@ -85,39 +85,35 @@ class Neo4jLoadTest {
         // requested = 100
         // used = 10
 
-        // Start timestamp in millisecond
-        val start = Instant.now()
+        val durationInMillis = measureTimeMillis {
 
-        val cdl = CountDownLatch(COUNT)
+            val cdl = CountDownLatch(COUNT)
 
-        runBlocking(Dispatchers.Default) {
-            repeat(COUNT) { i ->
-                launch {
-                    Neo4jStoreSingleton.consume(msisdn = "${i % USERS}", usedBytes = USED, requestedBytes = REQUESTED) { storeResult ->
-                        storeResult.fold(
-                                { fail(it.message) },
-                                {
-                                    // println("Balance = %,d, Granted = %,d".format(it.second, it.first))
-                                    cdl.countDown()
-                                    assert(true)
-                                })
+            runBlocking(Dispatchers.Default) {
+                repeat(COUNT) { i ->
+                    launch {
+                        Neo4jStoreSingleton.consume(msisdn = "${i % USERS}", usedBytes = USED, requestedBytes = REQUESTED) { storeResult ->
+                            storeResult.fold(
+                                    { fail(it.message) },
+                                    {
+                                        // println("Balance = %,d, Granted = %,d".format(it.second, it.first))
+                                        cdl.countDown()
+                                        assert(true)
+                                    })
+                        }
                     }
                 }
+
+                // Wait for all the responses to be returned
+                println("Waiting for all responses to be returned")
             }
 
-            // Wait for all the responses to be returned
-            println("Waiting for all responses to be returned")
+            cdl.await()
         }
 
-        cdl.await()
-
-        // Stop timestamp in millisecond
-        val stop = Instant.now()
-
         // Print load test results
-        val diff = stop.toEpochMilli() - start.toEpochMilli()
-        println("Time diff: %,d milli sec".format(diff))
-        val rate = COUNT * 1000.0 / diff
+        println("Time duration: %,d milli sec".format(durationInMillis))
+        val rate = COUNT * 1000.0 / durationInMillis
         println("Rate: %,.2f req/sec".format(rate))
 
         Neo4jStoreSingleton.getBundles(identity = Identity(id = "test-0", type = "EMAIL", provider = "email"))
@@ -140,7 +136,6 @@ class Neo4jLoadTest {
         const val REQUESTED = 100L
 
         const val NAME = "Test User"
-        const val CURRENCY = "NOK"
         const val COUNTRY = "NO"
 
         @ClassRule

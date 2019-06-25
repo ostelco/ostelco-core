@@ -40,7 +40,7 @@ fun cypherFileToNeo4jImporter() {
 
         println("Import from file to Neo4j")
 
-        importFromCypherFile("src/main/resources/init.cypher") { query ->
+        importFromCypherFile("src/main/resources/backup.cypher") { query ->
             txn.run(query)
         }
 

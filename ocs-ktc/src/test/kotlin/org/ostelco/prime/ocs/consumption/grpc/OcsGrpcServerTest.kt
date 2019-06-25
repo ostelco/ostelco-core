@@ -13,9 +13,9 @@ import org.ostelco.ocs.api.MultipleServiceCreditControl
 import org.ostelco.ocs.api.OcsServiceGrpc
 import org.ostelco.ocs.api.ServiceUnit
 import org.ostelco.prime.ocs.core.OnlineCharging
-import java.time.Instant
 import java.util.*
 import java.util.concurrent.CountDownLatch
+import kotlin.system.measureTimeMillis
 import kotlin.test.AfterTest
 
 class OcsGrpcServerTest {
@@ -71,27 +71,23 @@ class OcsGrpcServerTest {
                         .setUsed(ServiceUnit.newBuilder().setTotalOctets(80)))
                 .build()
 
-        // Start timestamp in millisecond
-        val start = Instant.now()
+        val durationInMillis = measureTimeMillis {
 
-        // Send the same request COUNT times
-        repeat(COUNT) {
-            requestStream.onNext(request)
+            // Send the same request COUNT times
+            repeat(COUNT) {
+                requestStream.onNext(request)
+            }
+
+            // Wait for all the responses to be returned
+            println("Waiting for all responses to be returned")
+            cdl.await()
         }
-
-        // Wait for all the responses to be returned
-        println("Waiting for all responses to be returned")
-        cdl.await()
-
-        // Stop timestamp in millisecond
-        val stop = Instant.now()
 
         requestStream.onCompleted()
 
         // Print load test results
-        val diff = stop.toEpochMilli() - start.toEpochMilli()
-        println("Time diff: %,d milli sec".format(diff))
-        val rate = COUNT * 1000.0 / diff
+        println("Time duration: %,d milli sec".format(durationInMillis))
+        val rate = COUNT * 1000.0 / durationInMillis
         println("Rate: %,.2f req/sec".format(rate))
 
         server.forceStop()
