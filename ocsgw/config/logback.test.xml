@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{dd MMM yyyy HH:mm:ss,SSS} %-5p %c{1} - %m%n</pattern>
+    </encoder>
+  </appender>
+
+  <logger name="org.ostelco" level="DEBUG"/>
+  <logger name="org.ostelco.diameter.ha" level="INFO"/>
+  <logger name="org.mobicents.tests.diameter" level="INFO"/>
+  <logger name="org.jdiameter.common.impl.validation" level="INFO"/>
+  <logger name="jdiameter.statistic" level="INFO"/>
+  <logger name="org.jdiameter" level="INFO"/>
+  <logger name="io.grpc.netty" level="INFO"/>
+  <logger name="io.lettuce.core" level="INFO" />
+  <logger name="io.netty" level="INFO" />
+
+  <root level="DEBUG">
+    <appender-ref ref="STDOUT"/>
+  </root>
+
+</configuration>

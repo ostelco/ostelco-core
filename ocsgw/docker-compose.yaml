@@ -4,7 +4,7 @@ services:
   ocsgw:
     container_name: ocsgw
     build: .
-    command: ["./start_dev.sh"]
+    command: ["./start_acceptance_test.sh"]
     environment:
       - OCS_GRPC_SERVER=ocs.dev.oya.world
       - METRICS_GRPC_SERVER=metrics.dev.oya.world
