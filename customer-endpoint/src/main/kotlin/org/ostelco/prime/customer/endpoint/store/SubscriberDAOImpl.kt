@@ -341,10 +341,10 @@ class SubscriberDAOImpl : SubscriberDAO {
     }
 
     override fun removeSource(identity: Identity, sourceId: String): Either<ApiError, SourceInfo> {
-        return storage.getCustomerId(identity)
+        return storage.getCustomer(identity)
                 .mapLeft { error -> mapStorageErrorToApiError(error.message, ApiErrorCode.FAILED_TO_FETCH_CUSTOMER_ID, error) }
-                .flatMap { customerId ->
-                    paymentProcessor.getPaymentProfile(customerId = customerId)
+                .flatMap { customer ->
+                    paymentProcessor.getPaymentProfile(customerId = customer.id)
                             .mapLeft { error -> mapPaymentErrorToApiError(error.description, ApiErrorCode.FAILED_TO_REMOVE_PAYMENT_SOURCE, error) }
                 }
                 .flatMap { profileInfo ->

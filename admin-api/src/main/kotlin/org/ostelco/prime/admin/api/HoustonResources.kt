@@ -461,8 +461,10 @@ class NotifyResource {
 
     private fun getCustomerId(email: String): Either<ApiError, String> {
         return try {
-            storage.getCustomerId(identity = Identity(id = email, type = "EMAIL", provider = "email")).mapLeft {
+            storage.getCustomer(identity = Identity(id = email, type = "EMAIL", provider = "email")).mapLeft {
                 NotFoundError("Did not find msisdn for this subscription.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS, it)
+            }.map {
+                it.id
             }
         } catch (e: Exception) {
             logger.error("Did not find msisdn for email $email", e)

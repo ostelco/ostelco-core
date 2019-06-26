@@ -53,11 +53,6 @@ interface AdminDocumentStore
 interface ClientGraphStore {
 
     /**
-     * Get Customer Id
-     */
-    fun getCustomerId(identity: Identity): Either<StoreError, String>
-
-    /**
      * Get Customer Profile
      */
     fun getCustomer(identity: Identity): Either<StoreError, Customer>
