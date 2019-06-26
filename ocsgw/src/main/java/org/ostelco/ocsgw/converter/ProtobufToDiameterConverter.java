@@ -67,7 +67,7 @@ public class ProtobufToDiameterConverter {
         );
     }
 
-    // We match the error codes on names in gRPC and internal model
+    // We match the error codes on names in protobuf and internal model
     public static ResultCode convertResultCode(org.ostelco.ocs.api.ResultCode resultCode) {
         return ResultCode.valueOf(resultCode.name());
     }
@@ -82,6 +82,8 @@ public class ProtobufToDiameterConverter {
             if (topicId != null) {
                 builder.setTopicId(topicId);
             }
+
+            builder.setRequestNumber(context.getCreditControlRequest().getCcRequestNumber().getInteger32());
 
             for (MultipleServiceCreditControl mscc : context.getCreditControlRequest().getMultipleServiceCreditControls()) {
 

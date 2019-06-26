@@ -35,8 +35,7 @@ class ProtobufDataSource {
         // FixMe: We should handle conversion errors
         val creditControlRequestInfo = ProtobufToDiameterConverter.convertRequestToProtobuf(context, topicId)
         if (creditControlRequestInfo != null) {
-            // This assumes one outstanding request per session id..
-            ccrMap[context.sessionId] = context
+            ccrMap[context.sessionId + "-" + context.creditControlRequest.ccRequestNumber?.unsigned32] = context
             addToSessionMap(context)
         }
         return creditControlRequestInfo
@@ -45,7 +44,7 @@ class ProtobufDataSource {
     fun handleCcrAnswer(answer: CreditControlAnswerInfo) {
         try {
             logger.info("[<<] CreditControlAnswer for msisdn {} requestId {}", answer.msisdn, answer.requestId)
-            val ccrContext = ccrMap.remove(answer.requestId)
+            val ccrContext = ccrMap.remove(answer.requestId + "-" + answer.requestNumber)
             if (ccrContext != null) {
                 ccrContext.logLatency()
                 logger.debug("Found Context for answer msisdn {} requestId [{}] request number {}", ccrContext.creditControlRequest.msisdn, ccrContext.sessionId, ccrContext.creditControlRequest.ccRequestNumber?.integer32)
@@ -68,13 +67,13 @@ class ProtobufDataSource {
                         }
                     }
                 } else {
-                    logger.warn("No stored CCR or Session for [{}] [{}]", answer.msisdn, answer.requestId)
+                    logger.warn("No stored CCR or Session for [{}] [{}] [{}]", answer.msisdn, answer.requestId, answer.requestNumber)
                 }
             } else {
-                logger.warn("Missing CreditControlContext for [{}] [{}]", answer.msisdn, answer.requestId)
+                logger.warn("Missing CreditControlContext for [{}] [{}] [{}]", answer.msisdn, answer.requestId, answer.requestNumber)
             }
         } catch (e: Exception) {
-            logger.error("Credit-Control-Request failed [{}] [{}]", answer.msisdn, answer.requestId, e)
+            logger.error("Credit-Control-Request failed [{}] [{}] [{}]", answer.msisdn, answer.requestId, answer.requestNumber, e)
         }
     }
 

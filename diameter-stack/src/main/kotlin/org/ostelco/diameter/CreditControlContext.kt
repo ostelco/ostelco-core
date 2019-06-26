@@ -32,7 +32,7 @@ class CreditControlContext(
 
     private val VENDOR_ID_3GPP = 10415L
 
-    // Set to true, when answer to not to be sent to P-GW.
+    // Set to true, when answer to not to be sent to P-GW. This logic is used by ProxyDatasource.
     var skipAnswer: Boolean = false
 
     var requestTime = System.currentTimeMillis()

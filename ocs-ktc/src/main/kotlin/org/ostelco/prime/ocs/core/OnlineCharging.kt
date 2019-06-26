@@ -33,6 +33,8 @@ object OnlineCharging : OcsAsyncRequestConsumer {
 
             val responseBuilder = CreditControlAnswerInfo.newBuilder()
 
+            responseBuilder.setRequestNumber(request.requestNumber)
+
             // these are keepalives to keep latency low
             if (msisdn.equals("keepalive")) {
                 responseBuilder.setRequestId(request.requestId).setMsisdn("keepalive").setResultCode(ResultCode.UNKNOWN)
