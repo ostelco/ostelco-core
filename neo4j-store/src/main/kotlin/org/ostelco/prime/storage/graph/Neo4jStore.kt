@@ -117,6 +117,8 @@ import org.ostelco.prime.storage.graph.model.Segment
 import org.ostelco.prime.storage.graph.model.SimProfile
 import org.ostelco.prime.storage.graph.model.SubscriptionToBundle
 import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.*
 import java.util.stream.Collectors
 import javax.ws.rs.core.MultivaluedMap
@@ -1907,6 +1909,33 @@ object Neo4jStoreSingleton : GraphStore {
             result.single().get("count").asLong()
         }
     }
+
+    //
+    // For payment transaction checks
+    //
+
+    private fun getTransactionsBefore(timestamp: Long): List<PurchaseRecord> =
+            getTransactions(0L, timestamp)
+
+    private fun getTransactionsAfter(timestamp: Long): List<PurchaseRecord> =
+            getTransactions(timestamp, epoch())
+
+    private fun getTransactions(after: Long, before: Long): List<PurchaseRecord> = readTransaction {
+        read("""
+                MATCH(c)-[r:PURCHASED]->(p) where r.timestamp >= ${after} and r.timestamp < ${before}
+                RETURN r
+                """.trimIndent(), transaction) { result ->
+            result.list {
+                it as PurchaseRecord
+            }
+        }
+    }
+
+    /* Epoch timestamp, now or offset by +/- seconds. */
+    private fun epoch(offset: Long = 0L): Long =
+            LocalDateTime.now(ZoneOffset.UTC)
+                    .plusSeconds(offset)
+                    .atZone(ZoneOffset.UTC).toEpochSecond()
 
     //
     // For plans and subscriptions
