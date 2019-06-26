@@ -114,6 +114,7 @@ message CreditControlRequestInfo {
   repeated MultipleServiceCreditControl mscc = 5;
   ServiceInfo serviceInformation = 6;
   string topicId = 7;
+  uint32 requestNumber = 8;
 }
 
 message CreditControlAnswerInfo {
@@ -123,6 +124,7 @@ message CreditControlAnswerInfo {
   ResultCode resultCode = 4;
   uint32 validityTime = 5;
   ExtraInfo extraInfo = 6;
+  uint32 requestNumber = 7;
 }
 
 message ExtraInfo {
