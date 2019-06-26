@@ -2158,6 +2158,8 @@ object Neo4jStoreSingleton : GraphStore {
                         }.bind()
                 checkPurchaseRecordForRefund(purchaseRecord)
                         .bind()
+
+                // TODO: (kmm) Move this last.
                 val refundId = paymentProcessor.refundCharge(
                         purchaseRecord.id,
                         purchaseRecord.product.price.amount)
