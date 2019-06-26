@@ -117,6 +117,80 @@
     </receive>
 
     <wait-ms value="2000"> </wait-ms>
+    <!--  CCR Update Request -->
+    <send channel="channel-1">
+    <action>
+      <!-- For each new call, increment the session-ID counter -->
+      <inc-counter name="HbH-counter"> </inc-counter>
+      <inc-counter name="EtE-counter"> </inc-counter>
+      <restore name="sid" entity="Session-Id"> </restore>
+      <restore name="msisdn" entity="Subscription-Id-Data"> </restore>
+      <set-value name="HbH-id" format="$(HbH-counter)"> </set-value>
+      <set-value name="EtE-id" format="$(EtE-counter)"> </set-value>
+    </action>
+
+    <command name="CCR">
+      <avp name="Session-Id" value="value_is_replaced"> </avp>
+
+      <avp name="Origin-Host" value="seagull"> </avp>
+      <avp name="Origin-Realm" value="seagull"> </avp>
+
+      <avp name="Destination-Realm" value="loltel"> </avp>
+      <avp name="Destination-Host" value="ocs"> </avp>
+
+      <avp name="Auth-Application-Id" value="4"> </avp>
+
+      <avp name="Service-Context-Id" value="mob.data@mvno.pt" > </avp>
+
+      <avp name="CC-Request-Type" value="2"> </avp>
+      <avp name="CC-Request-Number" value="1"> </avp>
+
+      <avp name="Event-Timestamp" value="0xD472F31C"> </avp>
+      <avp name="Subscription-Id">
+        <avp name="Subscription-Id-Type" value="0"> </avp>
+        <avp name="Subscription-Id-Data" value="+351910123456"> </avp>
+      </avp>
+      <avp name="Subscription-Id">
+        <avp name="Subscription-Id-Type" value="1"> </avp>
+        <avp name="Subscription-Id-Data" value="242017100000228"> </avp>
+      </avp>
+
+
+      <avp name="Multiple-Services-Credit-Control">
+        <avp name="Service-Identifier" value="17"> </avp>
+        <avp name="Requested-Service-Unit">
+          <avp name="CC-Total-Octets" value="1000000"> </avp>
+          <avp name="CC-Input-Octets" value="0"> </avp>
+          <avp name="CC-Output-Octets" value="0"> </avp>
+        </avp>
+        <avp name="Used-Service-Unit">
+          <avp name="CC-Total-Octets" value="1000002"> </avp>
+          <avp name="CC-Time" value="232"> </avp>
+          <avp name="CC-Input-Octets" value="500002"> </avp>
+          <avp name="CC-Output-Octets" value="500000"> </avp>
+        </avp>
+      </avp>
+
+    </command>
+      <action>
+        <start-timer> </start-timer>
+        <store name="msisdn" entity="Subscription-Id-Data"> </store>
+      </action>
+    </send>
+
+    <receive channel="channel-1">
+      <action>
+        <stop-timer> </stop-timer>
+      </action>
+      <command name="CCA">
+        <avp name="Result-Code" value="2001"> </avp>
+      </command>
+      <action>
+        <check-value name="Result-Code" behaviour="error"> </check-value>
+      </action>
+    </receive>
+
+    <wait-ms value="2000"> </wait-ms>
     <!--  CCR Termination Request -->
     <send channel="channel-1">
       <action>
