@@ -84,7 +84,7 @@ class StripeMonitorResource(val monitor: StripeMonitor) {
                 monitor.checkEventSubscriptionList(events))
                     .fold(
                             { failed(it, ApiErrorCode.FAILED_TO_CHECK_SUBSCRIBED_TO_EVENTS) },
-                            { ok(mapOf("events" to it)) }
+                            { ok(mapOf("match" to it)) }
                     ).build()
 
     @GET
@@ -115,6 +115,29 @@ class StripeMonitorResource(val monitor: StripeMonitor) {
                             { ok(mapOf("fetchedEvents" to it)) }
                     ).build()
 
+    @GET
+    @Path("stripe/transactions")
+    fun fetchStripeTransactions(@QueryParam("after")
+                                after: Long = epoch(-86400),
+                                @QueryParam("before")
+                                before: Long = 0L): Response =
+            monitor.getTransactions(after, before)
+                    .flatMap {
+                        it.map {
+                            mapOf(
+                                    "id" to it.id,
+                                    "status" to it.status,
+                                    "currency" to it.currency,
+                                    "amount" to it.amount,
+                                    "invoiceId" to it.invoice
+                            )
+                        }.right()
+                    }
+                    .fold(
+                            { failed(it, ApiErrorCode.FAILED_TO_FETCH_PAYMENT_TRANSACTIONS) },
+                            { ok(it) }
+                    ).build()
+
     /* Will actually never return an error as errors are swallowed, but
        logged, by the 'publisher'. */
     private fun publishFailedEvents(events: List<Event>): Either<PaymentError, Int> =
@@ -132,6 +155,9 @@ class StripeMonitorResource(val monitor: StripeMonitor) {
             LocalDateTime.now(ZoneOffset.UTC)
                     .plusSeconds(offset)
                     .atZone(ZoneOffset.UTC).toEpochSecond()
+
+    private fun ok(value: List<Any>) =
+            Response.status(Response.Status.OK).entity(asJson(value))
 
     private fun ok(value: Map<String, Any>) =
             Response.status(Response.Status.OK).entity(asJson(value))
