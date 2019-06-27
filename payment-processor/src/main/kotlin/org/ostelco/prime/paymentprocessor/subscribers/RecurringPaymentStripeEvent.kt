@@ -6,7 +6,6 @@ import com.google.cloud.pubsub.v1.AckReplyConsumer
 import com.google.gson.Gson
 import com.google.protobuf.ByteString
 import com.stripe.model.*
-import com.stripe.net.ApiResource.GSON
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.paymentprocessor.ConfigRegistry

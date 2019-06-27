@@ -314,7 +314,7 @@ jobs:
         environment:
           PROJECT: pi-ostelco-prod
           CLUSTER: pi-prod
-          ZONE: europe-west1-c
+          ZONE: europe-west1
           SERVICE_ACCOUNT: terraform-manage-cluster-from@pi-ostelco-prod.iam.gserviceaccount.com
 
     steps:
@@ -349,7 +349,7 @@ jobs:
         environment:
           PROJECT: pi-ostelco-prod
           CLUSTER: pi-prod
-          ZONE: europe-west1-c
+          ZONE: europe-west1
           SERVICE_ACCOUNT: terraform-manage-cluster-from@pi-ostelco-prod.iam.gserviceaccount.com
 
     steps:

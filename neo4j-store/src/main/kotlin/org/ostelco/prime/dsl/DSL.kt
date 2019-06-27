@@ -8,6 +8,7 @@ import org.neo4j.driver.v1.AccessMode.READ
 import org.neo4j.driver.v1.AccessMode.WRITE
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.HasId
+import org.ostelco.prime.storage.DatabaseError
 import org.ostelco.prime.storage.StoreError
 import org.ostelco.prime.storage.SystemError
 import org.ostelco.prime.storage.graph.ChangeableRelationStore
@@ -66,14 +67,33 @@ suspend fun <R> suspendedWriteTransaction(action: suspend WriteTransaction.() ->
                     result
                 }
 
-data class ReadTransaction(val transaction: PrimeTransaction) {
+open class ReadTransaction(open val transaction: PrimeTransaction) {
+
     fun <E : HasId> get(entityClass: KClass<E>, id: String): Either<StoreError, E> {
         val entityStore: EntityStore<E> = EntityRegistry.getEntityStore(entityClass)
         return entityStore.get(id = id, transaction = transaction)
     }
+
+    fun <FROM : HasId, TO : HasId> get(relatedFromClause: RelatedFromClause<FROM, TO>): Either<StoreError, List<FROM>> {
+        val entityStore: EntityStore<TO> = relatedFromClause.relationType.to.entityStore
+                ?: return DatabaseError(type = "", id = "", message = "").left()
+        return entityStore.getRelatedFrom(
+                id = relatedFromClause.toId,
+                relationType = relatedFromClause.relationType,
+                transaction = transaction)
+    }
+
+    fun <FROM : HasId, TO : HasId> get(relatedClause: RelatedClause<FROM, TO>): Either<StoreError, List<TO>> {
+        val entityStore: EntityStore<FROM> = relatedClause.relationType.from.entityStore
+                ?: return DatabaseError(type = "", id = "", message = "").left()
+        return entityStore.getRelated(
+                id = relatedClause.fromId,
+                relationType = relatedClause.relationType,
+                transaction = transaction)
+    }
 }
 
-data class WriteTransaction(val transaction: PrimeTransaction) {
+class WriteTransaction(override val transaction: PrimeTransaction) : ReadTransaction(transaction = transaction) {
 
     fun <E : HasId> create(obj: () -> E): Either<StoreError, Unit> {
         val entity: E = obj()
@@ -85,11 +105,6 @@ data class WriteTransaction(val transaction: PrimeTransaction) {
         val entity: E = obj()
         val entityStore: EntityStore<E> = EntityRegistry.getEntityStore(entity::class) as EntityStore<E>
         return entityStore.update(entity = entity, transaction = transaction)
-    }
-
-    fun <E : HasId> get(entityClass: KClass<E>, id: String): Either<StoreError, E> {
-        val entityStore: EntityStore<E> = EntityRegistry.getEntityStore(entityClass)
-        return entityStore.get(id = id, transaction = transaction)
     }
 
     fun <E : HasId> delete(entityClass: KClass<E>, id: String): Either<StoreError, Unit> {

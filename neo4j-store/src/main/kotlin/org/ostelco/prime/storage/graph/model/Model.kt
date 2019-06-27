@@ -1,4 +1,4 @@
-package org.ostelco.prime.storage.graph
+package org.ostelco.prime.storage.graph.model
 
 import org.ostelco.prime.model.CustomerRegionStatus
 import org.ostelco.prime.model.HasId
@@ -7,7 +7,10 @@ import org.ostelco.prime.model.KycType
 
 data class Identity(
         override val id: String,
-        val type: String) : HasId
+        val type: String) : HasId {
+
+    companion object
+}
 
 data class Identifies(val provider: String)
 

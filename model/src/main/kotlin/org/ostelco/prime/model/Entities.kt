@@ -40,7 +40,10 @@ data class Customer(
         val nickname: String,
         val contactEmail: String,
         val analyticsId: String = UUID.randomUUID().toString(),
-        val referralId: String = UUID.randomUUID().toString()) : HasId
+        val referralId: String = UUID.randomUUID().toString()) : HasId {
+
+    companion object
+}
 
 data class Identity(
         override val id: String,

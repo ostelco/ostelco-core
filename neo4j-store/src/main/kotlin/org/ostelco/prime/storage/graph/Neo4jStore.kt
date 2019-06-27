@@ -12,9 +12,12 @@ import arrow.instances.either.monad.monad
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.appnotifier.AppNotifier
+import org.ostelco.prime.dsl.ReadTransaction
 import org.ostelco.prime.dsl.WriteTransaction
+import org.ostelco.prime.dsl.identifiedBy
 import org.ostelco.prime.dsl.readTransaction
 import org.ostelco.prime.dsl.suspendedWriteTransaction
+import org.ostelco.prime.dsl.withId
 import org.ostelco.prime.dsl.writeTransaction
 import org.ostelco.prime.ekyc.DaveKycService
 import org.ostelco.prime.ekyc.MyInfoKycService
@@ -92,6 +95,14 @@ import org.ostelco.prime.storage.graph.Relation.OFFERED_TO_SEGMENT
 import org.ostelco.prime.storage.graph.Relation.OFFER_HAS_PRODUCT
 import org.ostelco.prime.storage.graph.Relation.PURCHASED
 import org.ostelco.prime.storage.graph.Relation.REFERRED
+import org.ostelco.prime.storage.graph.model.CustomerRegion
+import org.ostelco.prime.storage.graph.model.Identifies
+import org.ostelco.prime.storage.graph.model.Identity
+import org.ostelco.prime.storage.graph.model.Offer
+import org.ostelco.prime.storage.graph.model.PlanSubscription
+import org.ostelco.prime.storage.graph.model.Segment
+import org.ostelco.prime.storage.graph.model.SimProfile
+import org.ostelco.prime.storage.graph.model.SubscriptionToBundle
 import java.time.Instant
 import java.util.*
 import java.util.stream.Collectors
@@ -151,8 +162,7 @@ object Neo4jStoreSingleton : GraphStore {
     //
 
     private val identityEntity = Identity::class.entityType
-    private val identityStore = Identity::class.entityStore
-
+    
     private val customerEntity = Customer::class.entityType
     private val customerStore = Customer::class.entityStore
 
@@ -179,7 +189,7 @@ object Neo4jStoreSingleton : GraphStore {
     // Relation
     //
 
-    private val identifiesRelation = RelationType(
+    val identifiesRelation = RelationType(
             relation = IDENTIFIES,
             from = identityEntity,
             to = customerEntity,
@@ -276,16 +286,12 @@ object Neo4jStoreSingleton : GraphStore {
     // Identity
     //
 
-    override fun getCustomerId(identity: org.ostelco.prime.model.Identity): Either<StoreError, String> = readTransaction {
-        getCustomerId(identity = identity, transaction = transaction)
-    }
-
-    private fun getCustomerId(identity: org.ostelco.prime.model.Identity, transaction: Transaction): Either<StoreError, String> =
-            getCustomer(identity = identity, transaction = transaction)
+    private fun ReadTransaction.getCustomerId(identity: org.ostelco.prime.model.Identity): Either<StoreError, String> =
+            getCustomer(identity = identity)
                     .map { it.id }
 
-    private fun getCustomerAndAnalyticsId(identity: org.ostelco.prime.model.Identity, transaction: Transaction): Either<StoreError, Pair<String, String>> =
-            getCustomer(identity = identity, transaction = transaction)
+    private fun ReadTransaction.getCustomerAndAnalyticsId(identity: org.ostelco.prime.model.Identity): Either<StoreError, Pair<String, String>> =
+            getCustomer(identity = identity)
                     .map { Pair(it.id, it.analyticsId) }
 
     //
@@ -293,7 +299,7 @@ object Neo4jStoreSingleton : GraphStore {
     //
 
     override fun getBundles(identity: org.ostelco.prime.model.Identity): Either<StoreError, Collection<Bundle>> = readTransaction {
-        getCustomer(identity = identity, transaction = transaction)
+        getCustomer(identity = identity)
                 .flatMap {
                     customerStore.getRelated(it.id, customerToBundleRelation, transaction)
                 }
@@ -308,19 +314,20 @@ object Neo4jStoreSingleton : GraphStore {
     //
 
     override fun getCustomer(identity: org.ostelco.prime.model.Identity): Either<StoreError, Customer> = readTransaction {
-        getCustomer(identity = identity, transaction = transaction)
+        getCustomer(identity = identity)
     }
 
-    private fun getCustomer(identity: org.ostelco.prime.model.Identity, transaction: Transaction): Either<StoreError, Customer> =
-            identityStore.getRelated(id = identity.id, relationType = identifiesRelation, transaction = transaction)
-                    .flatMap {
-                        if (it.isEmpty()) {
-                            NotFoundError(type = identity.type, id = identity.id)
-                                    .left()
-                        } else {
-                            it.single().right()
-                        }
+    private fun ReadTransaction.getCustomer(identity: org.ostelco.prime.model.Identity): Either<StoreError, Customer> {
+        return get(Customer identifiedBy (Identity withId identity.id))
+                .flatMap {
+                    if (it.isEmpty()) {
+                        NotFoundError(type = identity.type, id = identity.id)
+                                .left()
+                    } else {
+                        it.single().right()
                     }
+                }
+    }
 
     private fun validateCreateCustomerParams(customer: Customer, referredBy: String?): Either<StoreError, Unit> =
             if (customer.referralId == referredBy) {
@@ -362,7 +369,7 @@ object Neo4jStoreSingleton : GraphStore {
             nickname: String?,
             contactEmail: String?): Either<StoreError, Unit> = writeTransaction {
 
-        getCustomer(identity = identity, transaction = transaction)
+        this.getCustomer(identity = identity)
                 .flatMap { existingCustomer ->
                     update {
                         existingCustomer.copy(
@@ -393,7 +400,7 @@ object Neo4jStoreSingleton : GraphStore {
     //
 
     override fun getAllRegionDetails(identity: org.ostelco.prime.model.Identity): Either<StoreError, Collection<RegionDetails>> = readTransaction {
-        getCustomerId(identity = identity, transaction = transaction)
+        getCustomerId(identity = identity)
                 .flatMap { customerId ->
                     getRegionDetails(
                             customerId = customerId,
@@ -405,7 +412,7 @@ object Neo4jStoreSingleton : GraphStore {
             identity: org.ostelco.prime.model.Identity,
             regionCode: String): Either<StoreError, RegionDetails> = readTransaction {
 
-        getCustomerId(identity = identity, transaction = transaction)
+        getCustomerId(identity = identity)
                 .flatMap { customerId ->
                     getRegionDetails(
                             customerId = customerId,
@@ -531,7 +538,7 @@ object Neo4jStoreSingleton : GraphStore {
             profileType: String?): Either<StoreError, org.ostelco.prime.model.SimProfile> = writeTransaction {
         IO {
             Either.monad<StoreError>().binding {
-                val customerId = getCustomerId(identity = identity, transaction = transaction).bind()
+                val customerId = getCustomerId(identity = identity).bind()
                 val bundles = customerStore.getRelated(customerId, customerToBundleRelation, transaction).bind()
                 validateBundleList(bundles, customerId).bind()
                 val customer = get(Customer::class, customerId).bind()
@@ -618,7 +625,7 @@ object Neo4jStoreSingleton : GraphStore {
             IO {
                 Either.monad<StoreError>().binding {
 
-                    val customerId = getCustomerId(identity = identity, transaction = transaction).bind()
+                    val customerId = getCustomerId(identity = identity).bind()
                     val simProfiles = customerStore.getRelated(
                             id = customerId,
                             relationType = customerToSimProfileRelation,
@@ -674,7 +681,7 @@ object Neo4jStoreSingleton : GraphStore {
             IO {
                 Either.monad<StoreError>().binding {
 
-                    val customerId = getCustomerId(identity = identity, transaction = transaction).bind()
+                    val customerId = getCustomerId(identity = identity).bind()
                     val simProfile = customerStore.getRelated(
                             id = customerId,
                             relationType = customerToSimProfileRelation,
@@ -721,7 +728,7 @@ object Neo4jStoreSingleton : GraphStore {
             IO {
                 Either.monad<StoreError>().binding {
 
-                    val customer = getCustomer(identity = identity, transaction = transaction).bind()
+                    val customer = getCustomer(identity = identity).bind()
                     val simProfile = customerStore.getRelated(
                             id = customer.id,
                             relationType = customerToSimProfileRelation,
@@ -793,7 +800,7 @@ object Neo4jStoreSingleton : GraphStore {
             msisdn: String): Either<StoreError, Unit> = writeTransaction {
         IO {
             Either.monad<StoreError>().binding {
-                val customerId = getCustomerId(identity = identity, transaction = transaction).bind()
+                val customerId = getCustomerId(identity = identity).bind()
 
                 val simProfile = SimProfile(
                         id = UUID.randomUUID().toString(),
@@ -821,7 +828,7 @@ object Neo4jStoreSingleton : GraphStore {
     override fun getSubscriptions(identity: org.ostelco.prime.model.Identity, regionCode: String?): Either<StoreError, Collection<Subscription>> = readTransaction {
         IO {
             Either.monad<StoreError>().binding {
-                val customerId = getCustomerId(identity = identity, transaction = transaction).bind()
+                val customerId = getCustomerId(identity = identity).bind()
                 if (regionCode == null) {
                     customerStore.getRelated(customerId, subscriptionRelation, transaction).bind()
                 } else {
@@ -848,7 +855,7 @@ object Neo4jStoreSingleton : GraphStore {
     override fun getProducts(identity: org.ostelco.prime.model.Identity): Either<StoreError, Map<String, Product>> {
         return readTransaction {
 
-            getCustomerId(identity = identity, transaction = transaction)
+            getCustomerId(identity = identity)
                     .flatMap { customerId ->
                         read<Either<StoreError, Map<String, Product>>>("""
                             MATCH (:${customerEntity.name} {id: '$customerId'})
@@ -869,12 +876,12 @@ object Neo4jStoreSingleton : GraphStore {
 
     override fun getProduct(identity: org.ostelco.prime.model.Identity, sku: String): Either<StoreError, Product> {
         return readTransaction {
-            getProduct(identity, sku, transaction)
+            getProduct(identity, sku)
         }
     }
 
-    private fun getProduct(identity: org.ostelco.prime.model.Identity, sku: String, transaction: Transaction): Either<StoreError, Product> {
-        return getCustomerId(identity = identity, transaction = transaction)
+    private fun ReadTransaction.getProduct(identity: org.ostelco.prime.model.Identity, sku: String): Either<StoreError, Product> {
+        return getCustomerId(identity = identity)
                 .flatMap { customerId ->
                     read("""
                             MATCH (:${customerEntity.name} {id: '$customerId'})
@@ -966,7 +973,7 @@ object Neo4jStoreSingleton : GraphStore {
         IO {
             Either.monad<PaymentError>().binding {
 
-                val customer = getCustomer(identity = identity, transaction = transaction)
+                val customer = getCustomer(identity = identity)
                         .mapLeft {
                             org.ostelco.prime.paymentprocessor.core.NotFoundError(
                                     "Failed to get customer data for customer with identity - $identity",
@@ -1370,7 +1377,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     override fun getPurchaseRecords(identity: org.ostelco.prime.model.Identity): Either<StoreError, Collection<PurchaseRecord>> =
             readTransaction {
-                getCustomerId(identity = identity, transaction = transaction)
+                getCustomerId(identity = identity)
                         .flatMap { customerId ->
                             customerStore.getRelations(customerId, purchaseRecordRelation, transaction)
                         }
@@ -1405,7 +1412,7 @@ object Neo4jStoreSingleton : GraphStore {
                                 .left()
                     })
         } else {
-            customerStore.get(id = customerId, transaction = transaction).flatMap { customer ->
+            get(Customer::class, id = customerId).flatMap { customer ->
                 productStore.get(purchase.product.sku, transaction).flatMap { product ->
                     purchaseRecordRelationStore.create(customer, purchase, product, transaction)
                             .map { purchase.id }
@@ -1431,7 +1438,7 @@ object Neo4jStoreSingleton : GraphStore {
     //
 
     override fun getReferrals(identity: org.ostelco.prime.model.Identity): Either<StoreError, Collection<String>> = readTransaction {
-        getCustomerId(identity = identity, transaction = transaction)
+        getCustomerId(identity = identity)
                 .flatMap { customerId ->
                     customerStore.getRelated(customerId, referredRelation, transaction)
                             .map { list -> list.map { it.nickname } }
@@ -1439,7 +1446,7 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     override fun getReferredBy(identity: org.ostelco.prime.model.Identity): Either<StoreError, String?> = readTransaction {
-        getCustomerId(identity = identity, transaction = transaction)
+        getCustomerId(identity = identity)
                 .flatMap { customerId ->
                     customerStore.getRelatedFrom(customerId, referredRelation, transaction)
                             .map { it.singleOrNull()?.nickname }
@@ -1507,7 +1514,7 @@ object Neo4jStoreSingleton : GraphStore {
             identity: org.ostelco.prime.model.Identity,
             regionCode: String): Either<StoreError, ScanInformation> = writeTransaction {
 
-        getCustomerId(identity = identity, transaction = transaction)
+        getCustomerId(identity = identity)
                 .flatMap { customerId ->
                     // Generate new id for the scan
                     val scanId = UUID.randomUUID().toString()
@@ -1556,7 +1563,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     // TODO merge into a single query which will use customerId and scanId
     override fun getScanInformation(identity: org.ostelco.prime.model.Identity, scanId: String): Either<StoreError, ScanInformation> = readTransaction {
-        getCustomerId(identity = identity, transaction = transaction)
+        getCustomerId(identity = identity)
                 .flatMap { customerId ->
                     get(ScanInformation::class, scanId).flatMap { scanInformation ->
                         getCustomerUsingScanId(scanInformation.scanId, transaction).flatMap { customer ->
@@ -1572,7 +1579,7 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     override fun getAllScanInformation(identity: org.ostelco.prime.model.Identity): Either<StoreError, Collection<ScanInformation>> = readTransaction {
-        getCustomerId(identity = identity, transaction = transaction)
+        getCustomerId(identity = identity)
                 .flatMap { customerId ->
                     customerStore.getRelated(customerId, scanInformationRelation, transaction)
                 }
@@ -1638,7 +1645,7 @@ object Neo4jStoreSingleton : GraphStore {
         return IO {
             Either.monad<StoreError>().binding {
 
-                val customerId = getCustomerId(identity = identity).bind()
+                val customerId = getCustomer(identity = identity).bind().id
 
                 // set MY_INFO KYC Status to Pending
                 setKycStatus(
@@ -1696,7 +1703,7 @@ object Neo4jStoreSingleton : GraphStore {
 
                 logger.info("checkNricFinIdUsingDave for $nricFinId")
 
-                val customerId = getCustomerId(identity = identity).bind()
+                val customerId = getCustomer(identity = identity).bind().id
 
                 // set NRIC_FIN KYC Status to Pending
                 setKycStatus(
@@ -1739,7 +1746,7 @@ object Neo4jStoreSingleton : GraphStore {
         return IO {
             Either.monad<StoreError>().binding {
 
-                val customerId = getCustomerId(identity = identity).bind()
+                val customerId = getCustomer(identity = identity).bind().id
 
                 // set ADDRESS_AND_PHONE_NUMBER KYC Status to Pending
                 setKycStatus(
@@ -1941,7 +1948,7 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     override fun getPlans(identity: org.ostelco.prime.model.Identity): Either<StoreError, List<Plan>> = readTransaction {
-        getCustomerId(identity = identity, transaction = transaction)
+        getCustomerId(identity = identity)
                 .flatMap { customerId ->
                     customerStore.getRelated(id = customerId, relationType = subscribesToPlanRelation, transaction = transaction)
                 }
@@ -2056,7 +2063,7 @@ object Neo4jStoreSingleton : GraphStore {
         IO {
             Either.monad<StoreError>().binding {
 
-                val customer = getCustomer(identity = identity, transaction = transaction)
+                val customer = getCustomer(identity = identity)
                         .bind()
 
                 val product = getProduct(identity, planId)
@@ -2076,7 +2083,7 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     override fun unsubscribeFromPlan(identity: org.ostelco.prime.model.Identity, planId: String, invoiceNow: Boolean): Either<StoreError, Plan> = readTransaction {
-        getCustomerId(identity = identity, transaction = transaction)
+        getCustomerId(identity = identity)
                 .flatMap {
                     removeSubscription(it, planId, invoiceNow)
                 }
@@ -2169,7 +2176,7 @@ object Neo4jStoreSingleton : GraphStore {
             reason: String): Either<PaymentError, ProductInfo> = writeTransaction {
         IO {
             Either.monad<PaymentError>().binding {
-                val (_, customerAnalyticsId) = getCustomerAndAnalyticsId(identity = identity, transaction = transaction)
+                val (_, customerAnalyticsId) = getCustomerAndAnalyticsId(identity = identity)
                         .mapLeft {
                             logger.error("Failed to find customer with identity - $identity")
                             NotFoundPaymentError("Failed to find customer with identity - $identity",

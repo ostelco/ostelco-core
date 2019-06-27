@@ -1053,4 +1053,3 @@ securityDefinitions:
     x-google-issuer: "https://securetoken.google.com/pi-ostelco-dev"
     x-google-jwks_uri: "https://www.googleapis.com/service_accounts/v1/metadata/x509/securetoken@system.gserviceaccount.com"
     x-google-audiences: "pi-ostelco-dev"
-    
