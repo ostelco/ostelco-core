@@ -72,6 +72,7 @@ class StripeMonitor {
     /**
      * Check if list of Stripe event subscriptions matches expected
      * subscriptions.
+     * @param events - events names to check for
      * @return true if match
      */
     fun checkEventSubscriptionList(events: List<String>): Either<PaymentError, Boolean> =
@@ -80,6 +81,21 @@ class StripeMonitor {
                         (it.size > 0 &&
                                 it.first().enabledEvents.containsAll(events) &&
                                 it.first().enabledEvents.size == events.size)
+                                .right()
+                    }
+
+    /**
+     * Check if list of Stripe event subscriptions matches expected
+     * subscriptions.
+     * @param url - URL of a webhook
+     * @param events - events names to check for
+     * @return true if match
+     */
+    fun checkEventSubscriptionList(url: String, events: List<String>): Either<PaymentError, Boolean> =
+            fetchWebhookEndpoint(url)
+                    .flatMap {
+                        (it.enabledEvents.containsAll(events) &&
+                                it.enabledEvents.size == events.size)
                                 .right()
                     }
 

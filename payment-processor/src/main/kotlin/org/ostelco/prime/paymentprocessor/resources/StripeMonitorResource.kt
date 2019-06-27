@@ -17,7 +17,9 @@ import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.publishers.StripeEventPublisher
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import javax.ws.rs.Consumes
 import javax.ws.rs.GET
+import javax.ws.rs.POST
 import javax.ws.rs.Path
 import javax.ws.rs.Produces
 import javax.ws.rs.QueryParam
@@ -44,7 +46,7 @@ class StripeMonitorResource(val monitor: StripeMonitor) {
     @GET
     @Path("webhook/enabled")
     fun checkWebhookEnabled(@QueryParam("url")
-                     url: String? = null): Response =
+                            url: String? = null): Response =
             (if (url != null)
                 monitor.checkWebhookEnabled(url)
             else
@@ -57,16 +59,31 @@ class StripeMonitorResource(val monitor: StripeMonitor) {
     @GET
     @Path("webhook/events")
     fun getSubscribedToEvents(@QueryParam("url")
-                     url: String? = null): Response =
+                              url: String? = null): Response =
             (if (url != null)
-                monitor.checkWebhookEnabled(url)
+                monitor.fetchEventSubscriptionList(url)
             else
-                monitor.checkWebhookEnabled())
+                monitor.fetchEventSubscriptionList())
                     .flatMap {
                         monitor.fetchEventSubscriptionList()
                     }
                     .fold(
                             { failed(it, ApiErrorCode.FAILED_TO_FETCH_SUBSCRIBED_TO_EVENTS) },
+                            { ok(mapOf("events" to it)) }
+                    ).build()
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("webhook/events")
+    fun checkSubscribedToEvents(@QueryParam("url")
+                                url: String? = null,
+                                events: List<String>): Response =
+            (if (url != null)
+                monitor.checkEventSubscriptionList(url, events)
+            else
+                monitor.checkEventSubscriptionList(events))
+                    .fold(
+                            { failed(it, ApiErrorCode.FAILED_TO_CHECK_SUBSCRIBED_TO_EVENTS) },
                             { ok(mapOf("events" to it)) }
                     ).build()
 
