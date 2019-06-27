@@ -2,25 +2,43 @@
 
 modules:
   - type: env
-  - type: firebase
-    config:
-      configFile: config/prime-service-account.json
-      rootPath: test
+    httpClient:
+      timeout: 10000ms
+      tls:
+        # Default is 500 milliseconds, we need more when debugging.
+        protocol: TLSv1.2
+#
+#        keyStoreType: JKS
+        keyStoreType: PKCS12
+#        keyStoreType: JCEKS
+#        keyStorePath: src/main/resources/es2plus-prime-csr_prime-prod-may-2019_v1.jks
+#        keyStorePath: src/main/resources/prod-idemia-client-crt.jks
+        keyStorePath: src/main/resources/es2plus-prime-csr_prime-prod-may-2019.jks
+#        keyStorePath: src/main/resources/dev-idemia-client-crt.jks
+        keyStorePassword: foobar
+        verifyHostname: false
+        trustSelfSignedCertificates: true
+#        supportedProtocols: [TLSv1.2]
+#        certAlias: impcert
+#  - type: firebase
+#    config:
+#      configFile: config/prime-service-account.json
+#      rootPath: test
 #  - type: stripe-payment-processor
-  - type: neo4j
-    config:
-      host: neo4j
-      protocol: bolt
-      hssNameLookupService:
-        serviceInterface: org.ostelco.prime.storage.graph.HssNameLookupService
-        textReader:
-          type: classpathResource
-          filename: /HssNameLookupService.kts
-      onNewCustomerAction:
-        serviceInterface: org.ostelco.prime.storage.graph.OnNewCustomerAction
-        textReader:
-          type: classpathResource
-          filename: /OnNewCustomerAction.kts
+#  - type: neo4j
+#    config:
+#      host: neo4j
+#      protocol: bolt
+#      hssNameLookupService:
+#        serviceInterface: org.ostelco.prime.storage.graph.HssNameLookupService
+#        textReader:
+#          type: classpathResource
+#          filename: /HssNameLookupService.kts
+#      onNewCustomerAction:
+#        serviceInterface: org.ostelco.prime.storage.graph.OnNewCustomerAction
+#        textReader:
+#          type: classpathResource
+#          filename: /OnNewCustomerAction.kts
 #  - type: sim-manager
 #    config:
 #      hlrs: []
@@ -42,8 +60,4 @@ modules:
 
 
 logging:
-  level: INFO
-  loggers:
-    org.ostelco: DEBUG
-    # suppress exception logged while connecting to real bigQuery 3 times before connecting to emulator
-    com.google.auth.oauth2.ComputeEngineCredentials: ERROR
+  level: ALL

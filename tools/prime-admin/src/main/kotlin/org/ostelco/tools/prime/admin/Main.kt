@@ -1,7 +1,6 @@
 package org.ostelco.tools.prime.admin
 
 import org.ostelco.prime.PrimeApplication
-import org.ostelco.tools.prime.admin.modules.DwEnvModule
 
 /**
  * Update `config/config.yaml` to point to valid Neo4j store and Postgres.
@@ -9,11 +8,18 @@ import org.ostelco.tools.prime.admin.modules.DwEnvModule
  * Also, `gcloud auth application-default login` for postgres.
  */
 fun main() {
+
+//    val bytes = Base64
+//            .getDecoder()
+//            .decode("")
+//
+//    Files.write(Path.of("src/main/resources/dev-idemia-client-crt.jks"), bytes)
+
     PrimeApplication().run("server", "config/config.yaml")
     try {
         doActions()
     } finally {
-        DwEnvModule.env.applicationContext.server.stop()
+        // DwEnvModule.env.applicationContext.server.stop()
     }
 }
 
