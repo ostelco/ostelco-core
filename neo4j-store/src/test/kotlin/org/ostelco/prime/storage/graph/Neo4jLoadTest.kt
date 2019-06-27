@@ -18,7 +18,7 @@ import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.ProductProperties.NO_OF_BYTES
-import org.ostelco.prime.model.Segment
+import org.ostelco.prime.storage.graph.model.Segment
 import java.util.*
 import java.util.concurrent.CountDownLatch
 import kotlin.system.measureTimeMillis

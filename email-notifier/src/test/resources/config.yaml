@@ -3,5 +3,5 @@ modules:
   config:
     mandrillApiKey: ${MANDRILL_API_KEY}
     httpClient:
-      timeout: 3s
-      connectionRequestTimeout: 1s
+      timeout: 5s
+      connectionRequestTimeout: 2s

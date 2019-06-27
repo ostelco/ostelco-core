@@ -122,7 +122,7 @@ jobs:
     steps:
       - checkout
       - run:
-          name: upgrading Java to open-jdk-11
+          name: upgrading Java to open-jdk-12
           command: |
             # sudo apt update; sudo apt install -y wget
 

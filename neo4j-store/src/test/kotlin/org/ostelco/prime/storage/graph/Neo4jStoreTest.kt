@@ -38,7 +38,6 @@ import org.ostelco.prime.model.RegionDetails
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.ScanResult
 import org.ostelco.prime.model.ScanStatus
-import org.ostelco.prime.model.Segment
 import org.ostelco.prime.model.SimEntry
 import org.ostelco.prime.model.SimProfile
 import org.ostelco.prime.model.SimProfileStatus.AVAILABLE_FOR_DOWNLOAD
@@ -50,6 +49,7 @@ import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.sim.SimManager
 import org.ostelco.prime.storage.NotFoundError
 import org.ostelco.prime.storage.ScanInformationStore
+import org.ostelco.prime.storage.graph.model.Segment
 import java.time.Instant
 import java.util.*
 import javax.ws.rs.core.MultivaluedHashMap
@@ -345,7 +345,7 @@ class Neo4jStoreTest {
             create { createProduct("5GB_399NOK") }
         }.mapLeft { fail(it.message) }
 
-        val segment = Segment(
+        val segment = org.ostelco.prime.model.Segment(
                 id = "NEW_SEGMENT",
                 subscribers = listOf(CUSTOMER.id))
         Neo4jStoreSingleton.createSegment(segment)
@@ -383,7 +383,10 @@ class Neo4jStoreTest {
                 createProduct("3GB_349NOK"),
                 createProduct("5GB_399NOK"))
 
-        val segments = listOf(Segment(id = "segment_1"), Segment(id = "segment_2"))
+        val segments = listOf(
+                org.ostelco.prime.model.Segment(id = "segment_1"),
+                org.ostelco.prime.model.Segment(id = "segment_2")
+        )
 
         val offer = Offer(id = "some_offer", products = listOf("1GB_249NOK", "2GB_299NOK"))
 
@@ -406,7 +409,10 @@ class Neo4jStoreTest {
                 createProduct("5GB_399NOK"))
 
         // new segment in the offer
-        val segments = listOf(Segment(id = "segment_1"), Segment(id = "segment_2"))
+        val segments = listOf(
+                org.ostelco.prime.model.Segment(id = "segment_1"),
+                org.ostelco.prime.model.Segment(id = "segment_2")
+        )
 
         val offer = Offer(id = "some_offer", products = listOf("1GB_249NOK", "2GB_299NOK"))
 
@@ -895,7 +901,7 @@ class Neo4jStoreTest {
         }.mapLeft { fail(it.message) }
 
         /* Note: (kmm) For 'sg' the first segment offered is always a plan. */
-        Neo4jStoreSingleton.createSegment(Segment(id = getPlanSegmentNameFromCountryCode("sg")))
+        Neo4jStoreSingleton.createSegment(org.ostelco.prime.model.Segment(id = getPlanSegmentNameFromCountryCode("sg")))
                 .mapLeft { fail(it.message) }
 
         assert(Neo4jStoreSingleton.addCustomer(
@@ -929,7 +935,7 @@ class Neo4jStoreTest {
     fun `test NRIC_FIN JUMIO and ADDRESS_PHONE status`() {
 
         /* Note: (kmm) For 'sg' the first segment offered is always a plan. */
-        Neo4jStoreSingleton.createSegment(Segment(id = getPlanSegmentNameFromCountryCode("sg")))
+        Neo4jStoreSingleton.createSegment(org.ostelco.prime.model.Segment(id = getPlanSegmentNameFromCountryCode("sg")))
 
         job {
             create { Region("sg", "Singapore") }

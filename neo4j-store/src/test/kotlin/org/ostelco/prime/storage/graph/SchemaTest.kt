@@ -9,6 +9,7 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 import org.neo4j.driver.v1.AccessMode.WRITE
+import org.ostelco.prime.dsl.EntityContext
 import org.ostelco.prime.dsl.writeTransaction
 import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.kts.engine.KtsServiceFactory
@@ -48,7 +49,7 @@ class SchemaTest {
             aEntityStore.create(a, transaction)
 
             // get node
-            assertEquals(a, get(A::class, "a_id").toOption().orNull())
+            assertEquals(a, get(EntityContext(A::class, "a_id")).toOption().orNull())
 
             // update node
             val ua = A()
@@ -59,13 +60,13 @@ class SchemaTest {
             aEntityStore.update(ua, transaction)
 
             // get updated node
-            assertEquals(ua, get(A::class, aId).toOption().orNull())
+            assertEquals(ua, get(EntityContext(A::class, aId)).toOption().orNull())
 
             // delete node
             aEntityStore.delete(aId, transaction)
 
             // get deleted node
-            assert(get(A::class, aId).isLeft())
+            assert(get(EntityContext(A::class, aId)).isLeft())
         }
     }
 

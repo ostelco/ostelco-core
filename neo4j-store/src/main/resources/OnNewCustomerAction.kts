@@ -4,6 +4,7 @@ import arrow.core.fix
 import arrow.effects.IO
 import arrow.instances.either.monad.monad
 import org.ostelco.prime.dsl.WriteTransaction
+import org.ostelco.prime.dsl.withSku
 import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
@@ -25,7 +26,7 @@ object : OnNewCustomerAction {
         return IO {
             Either.monad<StoreError>().binding {
                 WriteTransaction(transaction).apply {
-                    val product = get(Product::class, welcomePackProductSku).bind()
+                    val product = get(Product withSku welcomePackProductSku).bind()
                     createPurchaseRecordRelation(
                             customerId,
                             PurchaseRecord(

@@ -19,16 +19,19 @@ interface HasId {
 
 data class Region(
         override val id: String,
-        val name: String) : HasId
+        val name: String) : HasId {
+
+    companion object
+}
 
 data class Offer(
-        override val id: String,
+        val id: String,
         val segments: Collection<String> = emptyList(),
-        val products: Collection<String> = emptyList()) : HasId
+        val products: Collection<String> = emptyList())
 
 data class Segment(
-        override val id: String,
-        val subscribers: Collection<String> = emptyList()) : HasId
+        val id: String,
+        val subscribers: Collection<String> = emptyList())
 
 data class ChangeSegment(
         val sourceSegmentId: String,
@@ -46,9 +49,9 @@ data class Customer(
 }
 
 data class Identity(
-        override val id: String,
+        val id: String,
         val type: String,
-        val provider: String) : HasId
+        val provider: String)
 
 data class RegionDetails(
         val region: Region,
@@ -111,7 +114,7 @@ data class IdentityVerification(
         val validity: Boolean,
         val reason: ValidityReason?,
         @JsonDeserialize(using = StringBooleanDeserializer::class)
-        val handwrittenNoteMatches:Boolean?
+        val handwrittenNoteMatches: Boolean?
 )
 
 data class ScanResult(
@@ -136,6 +139,8 @@ data class ScanInformation(
         @Exclude
         @JsonIgnore
         get() = scanId
+
+    companion object
 }
 
 data class VendorScanInformation(
@@ -217,11 +222,16 @@ data class Subscription(
     override val id: String
         @JsonIgnore
         get() = msisdn
+
+    companion object
 }
 
 data class Bundle(
         override val id: String,
-        val balance: Long) : HasId
+        val balance: Long) : HasId {
+
+    companion object
+}
 
 data class Price(
         val amount: Int,
@@ -271,6 +281,8 @@ data class Product(
         @Exclude
         @JsonIgnore
         get() = properties[SEGMENT_IDS.s]?.split(",") ?: emptyList()
+
+    companion object
 }
 
 enum class ProductProperties(val s: String) {
@@ -300,7 +312,10 @@ data class Plan(
         val stripePlanId: String? = null,
         val stripeProductId: String? = null,
         val interval: String,
-        val intervalCount: Long = 1L) : HasId
+        val intervalCount: Long = 1L) : HasId {
+
+    companion object
+}
 
 data class RefundRecord(
         override val id: String,
@@ -313,7 +328,10 @@ data class PurchaseRecord(
         val timestamp: Long,
         val refund: RefundRecord? = null,
         /* For storing 'invoice-id' when purchasing a plan. */
-        val properties: Map<String, String> = emptyMap()) : HasId
+        val properties: Map<String, String> = emptyMap()) : HasId {
+
+    companion object
+}
 
 data class PurchaseRecordInfo(override val id: String,
                               val subscriberId: String,
