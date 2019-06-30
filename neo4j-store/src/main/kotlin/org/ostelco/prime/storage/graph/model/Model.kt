@@ -28,7 +28,10 @@ data class CustomerRegion(
 data class SimProfile(
         override val id: String,
         val iccId: String,
-        val alias: String = "") : HasId
+        val alias: String = "") : HasId {
+
+    companion object
+}
 
 data class Segment(override val id: String) : HasId
 

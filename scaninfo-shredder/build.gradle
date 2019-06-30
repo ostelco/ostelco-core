@@ -1,9 +1,7 @@
 plugins {
   id "org.jetbrains.kotlin.jvm"
   id "application"
-  // Keeping version to 4.0.1 - https://github.com/johnrengelman/shadow/issues/425
-  // This issue is NOT fixed in version > 4.0.1 including 5.0.0.
-  id "com.github.johnrengelman.shadow" version "4.0.1"
+  id "com.github.johnrengelman.shadow" version "5.1.0"
 }
 
 version = "1.0.0"

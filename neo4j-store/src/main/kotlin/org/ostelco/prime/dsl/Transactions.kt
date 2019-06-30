@@ -24,8 +24,6 @@ import kotlin.reflect.KClass
 
 object DSL {
 
-    private val logger by getLogger()
-
     fun job(work: JobContext.() -> Unit): Either<StoreError, Unit> = writeTransaction {
         val jobContext = JobContext(transaction = transaction)
         work(jobContext)
@@ -69,31 +67,42 @@ suspend fun <R> suspendedWriteTransaction(action: suspend WriteTransaction.() ->
 
 open class ReadTransaction(open val transaction: PrimeTransaction) {
 
-    fun <E : HasId> get(entityClass: KClass<E>, id: String): Either<StoreError, E> {
-        val entityStore: EntityStore<E> = EntityRegistry.getEntityStore(entityClass)
-        return entityStore.get(id = id, transaction = transaction)
+    fun <E : HasId> get(entityContext: EntityContext<E>): Either<StoreError, E> {
+        val entityStore: EntityStore<E> = EntityRegistry.getEntityStore(entityContext.entityClass)
+        return entityStore.get(id = entityContext.id, transaction = transaction)
     }
 
-    fun <FROM : HasId, TO : HasId> get(relatedFromClause: RelatedFromClause<FROM, TO>): Either<StoreError, List<FROM>> {
-        val entityStore: EntityStore<TO> = relatedFromClause.relationType.to.entityStore
-                ?: return DatabaseError(type = "", id = "", message = "").left()
+    fun <FROM : HasId, TO : HasId> get(relatedToClause: RelatedToClause<FROM, TO>): Either<StoreError, List<FROM>> {
+        val entityStore: EntityStore<TO> = relatedToClause.relationType.to.entityStore
+                ?: return DatabaseError(type = "entityStore", id = relatedToClause.relationType.to.name, message = "Missing entity store").left()
         return entityStore.getRelatedFrom(
-                id = relatedFromClause.toId,
+                id = relatedToClause.toId,
+                relationType = relatedToClause.relationType,
+                transaction = transaction)
+    }
+
+    fun <FROM : HasId, TO : HasId> get(relatedFromClause: RelatedFromClause<FROM, TO>): Either<StoreError, List<TO>> {
+        val entityStore: EntityStore<FROM> = relatedFromClause.relationType.from.entityStore
+                ?: return DatabaseError(type = "entityStore", id = relatedFromClause.relationType.from.name, message = "Missing entity store").left()
+        return entityStore.getRelated(
+                id = relatedFromClause.fromId,
                 relationType = relatedFromClause.relationType,
                 transaction = transaction)
     }
 
-    fun <FROM : HasId, TO : HasId> get(relatedClause: RelatedClause<FROM, TO>): Either<StoreError, List<TO>> {
-        val entityStore: EntityStore<FROM> = relatedClause.relationType.from.entityStore
-                ?: return DatabaseError(type = "", id = "", message = "").left()
-        return entityStore.getRelated(
-                id = relatedClause.fromId,
-                relationType = relatedClause.relationType,
+    fun <FROM : HasId, RELATION : Any> get(relationFromClause: RelationFromClause<FROM, RELATION, *>): Either<StoreError, List<RELATION>> {
+        val entityStore: EntityStore<FROM> = relationFromClause.relationType.from.entityStore
+                ?: return DatabaseError(type = "entityStore", id = relationFromClause.relationType.from.name, message = "Missing entity store").left()
+        return entityStore.getRelations(
+                id = relationFromClause.fromId,
+                relationType = relationFromClause.relationType,
                 transaction = transaction)
     }
 }
 
 class WriteTransaction(override val transaction: PrimeTransaction) : ReadTransaction(transaction = transaction) {
+
+    private val logger by getLogger()
 
     fun <E : HasId> create(obj: () -> E): Either<StoreError, Unit> {
         val entity: E = obj()
@@ -107,9 +116,56 @@ class WriteTransaction(override val transaction: PrimeTransaction) : ReadTransac
         return entityStore.update(entity = entity, transaction = transaction)
     }
 
-    fun <E : HasId> delete(entityClass: KClass<E>, id: String): Either<StoreError, Unit> {
-        val entityStore: EntityStore<E> = EntityRegistry.getEntityStore(entityClass)
-        return entityStore.delete(id = id, transaction = transaction)
+    fun <E : HasId> delete(entityContext: EntityContext<E>): Either<StoreError, Unit> {
+        val entityStore: EntityStore<E> = EntityRegistry.getEntityStore(entityContext.entityClass)
+        return entityStore.delete(id = entityContext.id, transaction = transaction)
+    }
+
+    fun <FROM : HasId, RELATION, TO : HasId> fact(expression: () -> RelationExpression<FROM, RELATION, TO>): Either<StoreError, Unit> {
+        val relationExpression = expression()
+        val relationStore = relationExpression.relationType.relationStore
+        val relation = relationExpression.relation
+        return when (relationStore) {
+            is RelationStore<*, *, *> -> {
+                if (relation != null) {
+                    (relationStore as RelationStore<*, RELATION, *>).create(
+                            fromId = relationExpression.fromId,
+                            toId = relationExpression.toId,
+                            relation = relation,
+                            transaction = transaction
+                    )
+                } else {
+                    relationStore.create(
+                            fromId = relationExpression.fromId,
+                            toId = relationExpression.toId,
+                            transaction = transaction
+                    )
+                }
+            }
+            is UniqueRelationStore<*, *, *> -> {
+                if (relation != null) {
+                    (relationStore as UniqueRelationStore<*, RELATION, *>).create(
+                            fromId = relationExpression.fromId,
+                            toId = relationExpression.toId,
+                            relation = relation,
+                            transaction = transaction
+                    )
+                } else {
+                    relationStore.create(
+                            fromId = relationExpression.fromId,
+                            toId = relationExpression.toId,
+                            transaction = transaction
+                    )
+                }
+            }
+            is ChangeableRelationStore<*, *, *> -> {
+                logger.error("Using create on ChangeableRelationStore for relation - {}", relationExpression.relationType.name)
+                SystemError(type = "relationStore", id = relationExpression.relationType.name, message = "Invalid relation store").left()
+            }
+            null -> {
+                SystemError(type = "relationStore", id = relationExpression.relationType.name, message = "Missing relation store").left()
+            }
+        }
     }
 }
 
