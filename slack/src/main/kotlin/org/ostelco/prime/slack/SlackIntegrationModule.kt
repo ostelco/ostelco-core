@@ -27,6 +27,8 @@ class SlackIntegrationModule : PrimeModule {
 
             Registry.channel = this.channel
             Registry.userName = this.userName
+            Registry.environment = this.environment
+            Registry.deployment = this.deployment
             Registry.isInitialized = true
         }
     }
@@ -37,6 +39,8 @@ object Registry {
     lateinit var slackWebHookClient: SlackWebHookClient
     lateinit var channel: String
     lateinit var userName: String
+    lateinit var environment: String
+    lateinit var deployment: String
 }
 
 data class Config(
@@ -56,4 +60,10 @@ class NotificationsConfig {
 
     @JsonProperty
     var userName: String = "prime"
+
+    @JsonProperty
+    var environment: String = "Production"
+
+    @JsonProperty
+    var deployment: String = "prod"
 }

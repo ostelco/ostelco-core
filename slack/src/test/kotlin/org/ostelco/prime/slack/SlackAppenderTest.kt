@@ -45,6 +45,7 @@ class SlackAppenderTest {
 
         Thread.sleep(3000)
 
+        logger.trace(NOTIFY_OPS_MARKER, "Some trace message text")
         logger.debug(NOTIFY_OPS_MARKER, "Some debug message text")
         logger.info(NOTIFY_OPS_MARKER, "Some Info message text")
         logger.warn(NOTIFY_OPS_MARKER, "Some Warning message text")

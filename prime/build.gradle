@@ -18,7 +18,7 @@ sourceSets {
   }
 }
 
-version = "1.49.1"
+version = "1.50.0"
 
 repositories {
   maven {
@@ -37,8 +37,9 @@ dependencies {
   runtimeOnly project(':customer-endpoint')
   runtimeOnly project(':ekyc')
   runtimeOnly project(':graphql')
-  runtimeOnly project(':admin-api')
+  runtimeOnly project(':admin-endpoint')
   runtimeOnly project(':app-notifier')
+  runtimeOnly project(':customer-support-endpoint')
   runtimeOnly project(':email-notifier')
   runtimeOnly project(':payment-processor')
   runtimeOnly project(':analytics-module')

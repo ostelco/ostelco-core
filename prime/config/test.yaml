@@ -61,6 +61,7 @@ modules:
   - type: firebase-app-notifier
     config:
       configFile: /secret/prime-service-account.json
+  - type: support
   - type: admin
   - type: graphql
   - type: secure-archive

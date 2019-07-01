@@ -39,6 +39,8 @@ prime:
     FIREBASE_ROOT_PATH: v2
     NEO4J_HOST: neo4j-neo4j.neo4j.svc.cluster.local
     SLACK_CHANNEL: prime-alerts
+    SLACK_ENV: Production
+    SLACK_DEPLOYMENT: Prod
     DATA_TRAFFIC_TOPIC: data-traffic
     PURCHASE_INFO_TOPIC: purchase-info
     ACTIVE_USERS_TOPIC: active-users
@@ -136,7 +138,7 @@ prime:
     - 8083 
   resources: 
     requests:
-      cpu: 100m
+      cpu: 300m
       memory: 512Mi
   livenessProbe: {}
   readinessProbe: {}

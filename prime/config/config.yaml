@@ -9,6 +9,8 @@ modules:
       notifications:
         channel: ${SLACK_CHANNEL}
         webHookUri: ${SLACK_WEBHOOK_URI}
+        environment: ${SLACK_ENV}
+        deployment: ${SLACK_DEPLOYMENT}
         httpClient:
           timeout: 3s
           connectionRequestTimeout: 1s
@@ -72,6 +74,7 @@ modules:
   - type: firebase-app-notifier
     config:
       configFile: /secret/prime-service-account.json
+  - type: support
   - type: admin
   - type: graphql
   - type: secure-archive

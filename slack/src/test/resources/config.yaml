@@ -4,12 +4,16 @@ modules:
     notifications:
       channel: ${SLACK_CHANNEL}
       webHookUri: ${SLACK_WEBHOOK_URI}
+      environment: Local
+      deployment: Unit test
       httpClient:
         timeout: 3s
         connectionRequestTimeout: 1s
 
 logging:
   level: INFO
+  loggers:
+    org.ostelco.prime.slack.SlackAppenderTest: DEBUG
   appenders:
   - type: console
   - type: slack

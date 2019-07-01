@@ -2,11 +2,12 @@ rootProject.name = 'ostelco-core'
 
 include ':acceptance-tests'
 include ':app-notifier'
-include ':admin-api'
+include ':admin-endpoint'
 include ':analytics-grpc-api'
 include ':analytics-module'
 include ':auth-server'
 include ':customer-endpoint'
+include ':customer-support-endpoint'
 include ':dataflow-pipelines'
 include ':data-store'
 include ':diameter-ha'
@@ -19,6 +20,7 @@ include ':ext-myinfo-emulator'
 include ':firebase-store'
 include ':firebase-extensions'
 include ':graphql'
+include ':imei-lookup'
 include ':jersey'
 include ':kts-engine'
 include ':model'
@@ -45,16 +47,14 @@ include ':sim-administration:simcard-utils'
 include ':sim-administration:simmanager'
 include ':sim-administration:sm-dp-plus'
 
-include ':imei-lookup'
-
-
 project(':acceptance-tests').projectDir = "$rootDir/acceptance-tests" as File
 project(':app-notifier').projectDir = "$rootDir/app-notifier" as File
-project(':admin-api').projectDir = "$rootDir/admin-api" as File
+project(':admin-endpoint').projectDir = "$rootDir/admin-endpoint" as File
 project(':analytics-grpc-api').projectDir = "$rootDir/analytics-grpc-api" as File
 project(':analytics-module').projectDir = "$rootDir/analytics-module" as File
 project(':auth-server').projectDir = "$rootDir/auth-server" as File
 project(':customer-endpoint').projectDir = "$rootDir/customer-endpoint" as File
+project(':customer-support-endpoint').projectDir = "$rootDir/customer-support-endpoint" as File
 project(':dataflow-pipelines').projectDir = "$rootDir/dataflow-pipelines" as File
 project(':data-store').projectDir = "$rootDir/data-store" as File
 project(':diameter-ha').projectDir = "$rootDir/diameter-ha" as File
@@ -67,6 +67,7 @@ project(':ext-myinfo-emulator').projectDir = "$rootDir/ext-myinfo-emulator" as F
 project(':firebase-store').projectDir = "$rootDir/firebase-store" as File
 project(':firebase-extensions').projectDir = "$rootDir/firebase-extensions" as File
 project(':graphql').projectDir = "$rootDir/graphql" as File
+project(':imei-lookup').projectDir = "$rootDir/imei-lookup" as File
 project(':jersey').projectDir = "$rootDir/jersey" as File
 project(':kts-engine').projectDir = "$rootDir/kts-engine" as File
 project(':model').projectDir = "$rootDir/model" as File
@@ -92,5 +93,3 @@ project(':sim-administration:ostelco-dropwizard-utils').projectDir = "$rootDir/s
 project(':sim-administration:simcard-utils').projectDir = "$rootDir/sim-administration/simcard-utils" as File
 project(':sim-administration:simmanager').projectDir = "$rootDir/sim-administration/simmanager" as File
 project(':sim-administration:sm-dp-plus').projectDir = "$rootDir/sim-administration/sm-dp-plus" as File
-
-project(':imei-lookup').projectDir = "$rootDir/imei-lookup" as File
