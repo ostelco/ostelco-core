@@ -12,9 +12,12 @@ import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter.Builder
 import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.client.JerseyClientConfiguration
 import io.dropwizard.setup.Environment
+import org.eclipse.jetty.servlets.CrossOriginFilter
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.auth.OAuthAuthenticator
 import org.ostelco.prime.module.PrimeModule
+import java.util.*
+import javax.servlet.DispatcherType
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
 import javax.ws.rs.client.Client
@@ -26,6 +29,16 @@ class JerseyModule : PrimeModule {
     var config: Config = Config()
 
     override fun init(env: Environment) {
+
+        // Allow CORS
+        val corsFilterRegistration = env.servlets().addFilter("CORS", CrossOriginFilter::class.java)
+        // Configure CORS parameters
+        corsFilterRegistration.setInitParameter("allowedOrigins", "*")
+        corsFilterRegistration.setInitParameter("allowedHeaders",
+                "Cache-Control,If-Modified-Since,Pragma,Content-Type,Authorization,X-Requested-With,Content-Length,Accept,Origin")
+        corsFilterRegistration.setInitParameter("allowedMethods", "OPTIONS,GET,PUT,POST,DELETE,HEAD")
+        corsFilterRegistration.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType::class.java), true, "/*")
+
 
         val jerseyEnv = env.jersey()
 

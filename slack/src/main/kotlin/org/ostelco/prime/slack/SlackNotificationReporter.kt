@@ -29,7 +29,21 @@ object SlackNotificationReporter {
                                             authorName = Registry.userName,
                                             title = levelToTitle(level),
                                             text = message,
-                                            timestampEpochSeconds = Instant.now().epochSecond))
+                                            fields = listOf(
+                                                Field(
+                                                        title = "Environment",
+                                                        value = Registry.environment,
+                                                        short = true
+                                                ),
+                                                Field(
+                                                        title = "Deployment",
+                                                        value = Registry.deployment,
+                                                        short = true
+                                                )
+                                            ),
+                                            timestampEpochSeconds = Instant.now().epochSecond
+                                    )
+                            )
                     ).format()
             )
             // logger.info(body) // for debugging only
