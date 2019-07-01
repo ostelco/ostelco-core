@@ -21,14 +21,6 @@ podAutoscaling:
         name: memory
         targetAverageUtilization: 70
 
-cronjobs:
-  shredder:
-    enabled: true
-    image: eu.gcr.io/pi-ostelco-dev/scaninfo-shredder
-    tag: "1.0.0-6052932a-dev"
-    dataset_project: pi-ostelco-prod
-    dev: false
-
 prime:
   image: eu.gcr.io/pi-ostelco-dev/prime
   tag: "" # it will be set from CI
@@ -135,19 +127,12 @@ prime:
     - 8082 
     - 8083 
   resources: 
-#    limits:
-#      cpu: 200m
-#      memory: 400Mi
     requests:
       cpu: 300m
       memory: 512Mi
   livenessProbe: {}
-    # path: /
-    # port: 8081
   readinessProbe: {}
-    # path: /
-    # port: 8081  
-  annotations: 
+  annotations:
     prometheus.io/scrape: 'true'
     prometheus.io/path: '/prometheus-metrics'
     prometheus.io/port: '8081'  

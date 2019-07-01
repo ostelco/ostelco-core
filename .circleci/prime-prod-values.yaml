@@ -135,19 +135,12 @@ prime:
     - 8082 
     - 8083 
   resources: 
-#    limits:
-#      cpu: 200m
-#      memory: 400Mi
     requests:
       cpu: 100m
       memory: 512Mi
   livenessProbe: {}
-    # path: /
-    # port: 8081
   readinessProbe: {}
-    # path: /
-    # port: 8081  
-  annotations: 
+  annotations:
     prometheus.io/scrape: 'true'
     prometheus.io/path: '/prometheus-metrics'
     prometheus.io/port: '8081'  

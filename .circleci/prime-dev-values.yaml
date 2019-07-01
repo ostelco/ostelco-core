@@ -21,7 +21,7 @@ podAutoscaling:
         name: memory
         targetAverageUtilization: 70
 
-cronjobs: 
+cronjobs:
   shredder:
     enabled: true
     image: eu.gcr.io/pi-ostelco-dev/scaninfo-shredder
@@ -271,7 +271,7 @@ services:
 certs:
   enabled: true
   dnsProvider: dev-clouddns
-  issuer: letsencrypt-production
+  issuer: letsencrypt-production # or letsencrypt-staging
   tlsSecretName: dev-oya-tls
   hosts:
     - '*.dev.oya.world'
