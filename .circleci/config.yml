@@ -330,7 +330,7 @@ jobs:
             /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
             helm repo update
-            helm upgrade prime ostelco/prime --version 1.0.1 --install \
+            helm upgrade --install prime-canary ostelco/prime --version 1.0.1 \
              --namespace prod \
              -f .circleci/prime-canary-values.yaml \
              --set prime.tag=$TAG
