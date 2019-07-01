@@ -9,19 +9,8 @@ dnsSuffix: ".dev.oya.world"
 
 podAutoscaling:
   enabled: false
-  # minReplicas: 1
-  # maxReplicas: 5
-  # metrics:
-  #   - type: Resource
-  #     resource:
-  #       name: cpu
-  #       targetAverageUtilization: 80
-  #   - type: Resource
-  #     resource:
-  #       name: memory
-  #       targetAverageUtilization: 70
 
-cronjobs: 
+cronjobs:
   shredder:
     enabled: true
     image: eu.gcr.io/pi-ostelco-dev/scaninfo-shredder
@@ -208,8 +197,6 @@ services:
     port: 443
     targetPort: 8443
     portName: grpc
-    # host: ocs # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
-    # grpcOrHttp2: true
 
   api:
     name: api
@@ -278,7 +265,7 @@ services:
 certs:
   enabled: true
   dnsProvider: dev-clouddns
-  issuer: letsencrypt-production
+  issuer: letsencrypt-production # or letsencrypt-staging
   tlsSecretName: dev-oya-tls
   hosts:
     - '*.dev.oya.world'
