@@ -269,7 +269,7 @@ jobs:
             /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
             helm repo update
-            helm upgrade prime ostelco/prime --version 1.0.0 --install \
+            helm upgrade prime ostelco/prime --version 1.0.1 --install \
              --namespace dev \
              -f .circleci/prime-dev-values.yaml \
              --set prime.tag=$TAG 
@@ -330,7 +330,7 @@ jobs:
             /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
             helm repo update
-            helm upgrade prime ostelco/prime --version 1.0.0 --install \
+            helm upgrade prime ostelco/prime --version 1.0.1 --install \
              --namespace prod \
              -f .circleci/prime-canary-values.yaml \
              --set prime.tag=$TAG
@@ -365,7 +365,7 @@ jobs:
             /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
             helm repo update
-            helm upgrade prime ostelco/prime --version 1.0.0 --install \
+            helm upgrade prime ostelco/prime --version 1.0.1 --install \
              --namespace prod \
              -f .circleci/prime-prod-values.yaml \
              --set prime.tag=$TAG
