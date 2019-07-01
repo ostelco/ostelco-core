@@ -217,33 +217,4 @@ class StripeMonitor {
                         .autoPagingIterable()
                         .toList()
             }
-
-    /**
-     * Fetch Stripe payment-intents that have status "completed" and which lies
-     * within the time range after..before, where the timestamps are Epoch
-     * timestamps and the value 0 means ignore. Examples:
-     *     1560124800..1560729599 - fetch all events from 2019-06-10 to 2019-06-16
-     *     1560124800..0          - fetch all events from 2019-06-10 and up to today
-     *     0..1560124800          - fetch all events from before 2019-06-10
-     * A payment-intent with status "completed" documents a "payment transaction".
-     * @param after - events sent on or later
-     * @param before - events sent on or before
-     * @param state - all, failed to deliver of successfully delivered events
-     * @return list with event
-     */
-    fun getTransactions(after: Long, before: Long): Either<PaymentError, List<PaymentIntent>> =
-            either("") {
-                val param = mapOf(
-                        *(if (after > 0)
-                            arrayOf("created[gte]" to after)
-                        else arrayOf()),
-                        *(if (before > 0)
-                            arrayOf("created[lte]" to before)
-                        else arrayOf()))
-                PaymentIntent.list(param)
-                        .autoPagingIterable()
-                        .filter {
-                            it.status == "completed"
-                        }.toList()
-            }
 }

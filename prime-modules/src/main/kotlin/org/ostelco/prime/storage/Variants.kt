@@ -16,6 +16,7 @@ import org.ostelco.prime.model.Segment
 import org.ostelco.prime.model.SimProfile
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.paymentprocessor.core.PaymentError
+import org.ostelco.prime.paymentprocessor.core.PaymentTransactionInfo
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import javax.ws.rs.core.MultivaluedMap
 
@@ -319,6 +320,8 @@ interface AdminGraphStore {
     // fun getOffer(id: String): Offer?
     // fun getSegment(id: String): Segment?
     // fun getProductClass(id: String): ProductClass?
+
+    fun getPaymentTransactions(after: Long, before: Long): Either<PaymentError, List<PaymentTransactionInfo>>
 }
 
 interface ScanInformationStore {

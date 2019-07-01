@@ -11,6 +11,7 @@ import com.stripe.model.Customer
 import com.stripe.model.EphemeralKey
 import com.stripe.model.Invoice
 import com.stripe.model.InvoiceItem
+import com.stripe.model.PaymentIntent
 import com.stripe.model.PaymentSource
 import com.stripe.model.Plan
 import com.stripe.model.Product
@@ -30,6 +31,7 @@ import org.ostelco.prime.paymentprocessor.core.InvoiceItemInfo
 import org.ostelco.prime.paymentprocessor.core.NotFoundError
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.PaymentStatus
+import org.ostelco.prime.paymentprocessor.core.PaymentTransactionInfo
 import org.ostelco.prime.paymentprocessor.core.PlanInfo
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
@@ -548,41 +550,48 @@ class StripePaymentProcessor : PaymentProcessor {
                         .data
             }
 
+    override fun getPaymentTransactions(after: Long, before: Long): Either<PaymentError, List<PaymentTransactionInfo>> =
+            either("") {
+                val param = mapOf(
+                        *(if (after > 0)
+                            arrayOf("created[gte]" to after)
+                        else arrayOf()),
+                        *(if (before > 0)
+                            arrayOf("created[lte]" to before)
+                        else arrayOf()))
+                /* A payment-intent with status "completed" documents a "payment transaction". */
+                PaymentIntent.list(param)
+                        .autoPagingIterable()
+                        .filter {
+                            it.status == "completed"
+                        }.map {
+                            /* Expects Stripe payment intents to have at least one and then only one
+                               charge object when status for the intents status is "completed". */
+                            val charge = when {
+                                it.charges.data.isEmpty() -> {
+                                    logger.error("No charge object found in payment intent {} for invoice {}",
+                                            it.id, it.invoice)
+                                    Pair("", false)  /* Dummy data. */
+                                }
+                                else -> {
+                                    if (it.charges.data.size > 1) {
+                                        logger.error("More than one charge object found in payment intent {} for invoice {}",
+                                                it.id, it.invoice)
+                                    }
+                                    Pair(it.charges.data.first().id, it.charges.data.first().refunded)
+                                }
+                            }
+                            PaymentTransactionInfo(id = it.id,
+                                    amount = it.amount as Int,
+                                    currency = it.currency,
+                                    invoiceId = it.invoice,
+                                    chargeId = charge.first,
+                                    refunded = charge.second,
+                                    customerId = it.customer,
+                                    created = it.created)
+                        }.toList()
+            }
+
     /* Timestamps in Stripe must be in seconds.*/
     private fun ofEpochMilliToSecond(ts: Long): Long = ts.div(1000L)
-
-    private fun <RETURN> either(errorDescription: String, action: () -> RETURN): Either<PaymentError, RETURN> {
-        return try {
-            Either.right(action())
-        } catch (e: CardException) {
-            // If something is decline with a card purchase, CardException will be caught
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}")
-            Either.left(ForbiddenError(errorDescription, e.message))
-        } catch (e: RateLimitException) {
-            // Too many requests made to the API too quickly
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}")
-            Either.left(BadGatewayError(errorDescription, e.message))
-        } catch (e: InvalidRequestException) {
-            // Invalid parameters were supplied to Stripe's API
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}")
-            Either.left(ForbiddenError(errorDescription, e.message))
-        } catch (e: AuthenticationException) {
-            // Authentication with Stripe's API failed
-            // (maybe you changed API keys recently)
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}", e)
-            Either.left(BadGatewayError(errorDescription))
-        } catch (e: ApiConnectionException) {
-            // Network communication with Stripe failed
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}", e)
-            Either.left(BadGatewayError(errorDescription))
-        } catch (e: StripeException) {
-            // Unknown Stripe error
-            logger.error("Payment error : $errorDescription , Stripe Error Code: ${e.code}", e)
-            Either.left(BadGatewayError(errorDescription))
-        } catch (e: Exception) {
-            // Something else happened, could be completely unrelated to Stripe
-            logger.error(errorDescription, e)
-            Either.left(BadGatewayError(errorDescription))
-        }
-    }
 }

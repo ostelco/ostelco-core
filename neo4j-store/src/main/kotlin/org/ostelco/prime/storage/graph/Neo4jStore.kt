@@ -77,6 +77,7 @@ import org.ostelco.prime.paymentprocessor.core.ForbiddenError
 import org.ostelco.prime.paymentprocessor.core.InvoicePaymentInfo
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.PaymentStatus
+import org.ostelco.prime.paymentprocessor.core.PaymentTransactionInfo
 import org.ostelco.prime.paymentprocessor.core.PlanAlredyPurchasedError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
@@ -2147,6 +2148,13 @@ object Neo4jStoreSingleton : GraphStore {
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
     }
+
+    //
+    // For verifying payment transactions
+    //
+
+    override fun getPaymentTransactions(after: Long, before: Long): Either<PaymentError, List<PaymentTransactionInfo>> =
+            paymentProcessor.getPaymentTransactions(after, before)
 
     //
     // For refunds
