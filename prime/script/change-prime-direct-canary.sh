@@ -69,7 +69,7 @@ kubectl config use-context ${K8S_CONTEXT}
 
 HELM_RELEASE_NAME="prime-direct"
 HELM_CHART="ostelco/prime"
-HELM_CHART_VERSION="1.0.0"
+HELM_CHART_VERSION="1.0.1"
 
 #
 # Then deploy using helm.
