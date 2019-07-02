@@ -122,7 +122,11 @@ data class ProfileVendorAdapter(
                                     config.name,
                                     simEntry.iccid,
                                     header.functionCallIdentifier)
-                            dao.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ALLOCATED)
+                            if (simEntry.id == null) {
+                                NotUpdatedError("simEntry without id.  simEntry=$simEntry").left()
+                            } else {
+                                dao.setSmDpPlusState(simEntry.id, SmDpPlusState.ALLOCATED)
+                            }
                         }
                     }
                     else -> {
