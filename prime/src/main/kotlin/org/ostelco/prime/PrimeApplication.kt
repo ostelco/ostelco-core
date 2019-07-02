@@ -6,6 +6,9 @@ import io.dropwizard.configuration.EnvironmentVariableSubstitutor
 import io.dropwizard.configuration.SubstitutingSourceProvider
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
+import org.dhatim.dropwizard.prometheus.PrometheusBundle
+
+
 
 fun main(args: Array<String>) = PrimeApplication().run(*args)
 
@@ -16,6 +19,7 @@ class PrimeApplication : Application<PrimeConfiguration>() {
                 bootstrap.configurationSourceProvider,
                 EnvironmentVariableSubstitutor(false))
         bootstrap.objectMapper.registerModule(KotlinModule())
+        bootstrap.addBundle(PrometheusBundle())
     }
 
     override fun run(
