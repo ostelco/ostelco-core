@@ -230,7 +230,17 @@ data class ProfileVendorAdapter(
                                     config.name,
                                     simEntry.iccid,
                                     header.functionCallIdentifier)
-                            dao.setSmDpPlusStateAndMatchingId(simEntry.id!!, SmDpPlusState.RELEASED, status.matchingId!!)
+
+                            val simEntryId = simEntry.id
+                            val statusMatchingId = status.matchingId
+
+                            if (simEntryId == null) {
+                                AdapterError("simEntryId == null").left()
+                            } else if (statusMatchingId == null) {
+                                AdapterError("statusMatchingId == null").left()
+                            } else {
+                                dao.setSmDpPlusStateAndMatchingId(simEntryId, SmDpPlusState.RELEASED, statusMatchingId)
+                            }
                         }
                     }
                     else -> {
