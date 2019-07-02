@@ -210,14 +210,19 @@ class SimManagerToHssDispatcherAdapter(
     }
 
 
+    // XXX This is ugly! Too much repeated code!  Introduce "withSimEntry(hssname, iccid, msisdn, simEntryId .... " or something.
+
     fun activate(simEntry: SimEntry): Either<SimManagerError, Unit> {
         synchronized(lock) {
             val hssName = idToNameMap[simEntry.hssId]
-            if (hssName == null) {
+            val simEntryId = simEntry.id
+            if (simEntryId == null) {
+                return DatabaseError("Unkown simEntry.is == null. simEntry = $simEntry").left()
+            } else if (hssName == null) {
                 return DatabaseError("Unkown hssid = '$simEntry.hssId'").left()
             } else {
                 return dispatcher.activate(hssName = hssName, iccid = simEntry.iccid, msisdn = simEntry.msisdn)
-                        .flatMap { simInventoryDAO.setHssState(simEntry.id!!, HssState.ACTIVATED) }
+                        .flatMap { simInventoryDAO.setHssState(simEntryId, HssState.ACTIVATED) }
                         .flatMap { Unit.right() }
             }
         }
@@ -233,7 +238,7 @@ class SimManagerToHssDispatcherAdapter(
                 return DatabaseError("Unkown hssid = '$simEntry.hssId'").left()
             } else {
                 return dispatcher.suspend(hssName = hssName, iccid = simEntry.iccid)
-                        .flatMap { simInventoryDAO.setHssState(simEntry.id!!, HssState.NOT_ACTIVATED) }
+                        .flatMap { simInventoryDAO.setHssState(simEntryId, HssState.NOT_ACTIVATED) }
                         .flatMap { Unit.right() }
             }
         }

@@ -227,7 +227,7 @@ data class ProfileVendorAdapter(
                         logger.error("SM-DP+ 'order-confirm' message to service {} for ICCID {} failed with status code %d (call-id: {})",
                                 config.name,
                                 simEntry.iccid,
-                                it.statusLine.statusCode,
+                                it?.statusLine?.statusCode,
                                 header.functionCallIdentifier)
                         NotUpdatedError("SM-DP+ 'order-confirm' to ${config.name} failed with code: ${it.statusLine.statusCode}")
                                 .left()
