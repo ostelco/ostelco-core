@@ -9,6 +9,7 @@ import com.codahale.metrics.health.HealthCheck
 import io.grpc.ManagedChannelBuilder
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.simmanager.AdapterError
+import org.ostelco.prime.simmanager.DatabaseError
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.admin.DummyHssConfig
 import org.ostelco.simcards.admin.HssConfig
@@ -210,9 +211,14 @@ class SimManagerToHssDispatcherAdapter(
 
     fun activate(simEntry: SimEntry): Either<SimManagerError, Unit> {
         synchronized(lock) {
-            return dispatcher.activate(hssName = idToNameMap[simEntry.hssId]!!, iccid = simEntry.iccid, msisdn = simEntry.msisdn)
-                    .flatMap { simInventoryDAO.setHssState(simEntry.id!!, HssState.ACTIVATED) }
-                    .flatMap { Unit.right() }
+            val hssName = idToNameMap[simEntry.hssId]
+            if (hssName == null) {
+                DatabaseError("Unkown hssid = '$simEntry.hssId'")
+            } else {
+                return dispatcher.activate(hssName = hssName, iccid = simEntry.iccid, msisdn = simEntry.msisdn)
+                        .flatMap { simInventoryDAO.setHssState(simEntry.id!!, HssState.ACTIVATED) }
+                        .flatMap { Unit.right() }
+            }
         }
     }
 
