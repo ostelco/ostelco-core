@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.Left
 import arrow.core.Right
 import arrow.core.flatMap
+import arrow.core.left
 import arrow.core.right
 import com.codahale.metrics.health.HealthCheck
 import io.grpc.ManagedChannelBuilder
@@ -145,7 +146,7 @@ class DirectHssDispatcher(
     }
 
     private fun getHssAdapterByName(name: String): HssDispatcher {
-        if (!hssAdaptersByName.containsKey(name))  {
+        if (!hssAdaptersByName.containsKey(name)) {
             throw RuntimeException("Unknown hss vendor name ? '$name'")
         }
         val hssAdapter = hssAdaptersByName[name]
@@ -213,7 +214,7 @@ class SimManagerToHssDispatcherAdapter(
         synchronized(lock) {
             val hssName = idToNameMap[simEntry.hssId]
             if (hssName == null) {
-                DatabaseError("Unkown hssid = '$simEntry.hssId'")
+                return DatabaseError("Unkown hssid = '$simEntry.hssId'").left()
             } else {
                 return dispatcher.activate(hssName = hssName, iccid = simEntry.iccid, msisdn = simEntry.msisdn)
                         .flatMap { simInventoryDAO.setHssState(simEntry.id!!, HssState.ACTIVATED) }
@@ -224,9 +225,17 @@ class SimManagerToHssDispatcherAdapter(
 
     fun suspend(simEntry: SimEntry): Either<SimManagerError, Unit> {
         synchronized(lock) {
-            return dispatcher.suspend(hssName = idToNameMap[simEntry.hssId]!!, iccid = simEntry.iccid)
-                    .flatMap { simInventoryDAO.setHssState(simEntry.id!!, HssState.NOT_ACTIVATED) }
-                    .flatMap { Unit.right() }
+            val hssName = idToNameMap[simEntry.hssId]
+            val simEntryId = simEntry.id
+            if (simEntryId == null) {
+                return DatabaseError("Unkown simEntry.is == null. simEntry = $simEntry").left()
+            } else if (hssName == null) {
+                return DatabaseError("Unkown hssid = '$simEntry.hssId'").left()
+            } else {
+                return dispatcher.suspend(hssName = hssName, iccid = simEntry.iccid)
+                        .flatMap { simInventoryDAO.setHssState(simEntry.id!!, HssState.NOT_ACTIVATED) }
+                        .flatMap { Unit.right() }
+            }
         }
     }
 }
