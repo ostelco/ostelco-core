@@ -144,10 +144,15 @@ class DirectHssDispatcher(
     }
 
     private fun getHssAdapterByName(name: String): HssDispatcher {
-        if (!hssAdaptersByName.containsKey(name)) {
+        if (!hssAdaptersByName.containsKey(name))  {
             throw RuntimeException("Unknown hss vendor name ? '$name'")
         }
-        return hssAdaptersByName[name]!!
+        val hssAdapter = hssAdaptersByName[name]
+        if (hssAdapter == null) {
+            throw RuntimeException("(Doubly) Unknown hss vendor name ? '$name'")
+        }
+
+        return hssAdapter
     }
 
     override fun activate(hssName: String, iccid: String, msisdn: String): Either<SimManagerError, Unit> {
