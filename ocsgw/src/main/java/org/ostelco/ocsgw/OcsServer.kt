@@ -42,12 +42,25 @@ object OcsServer {
     private var defaultRequestedServiceUnit: Long = 0L
 
     internal fun handleRequest(session: ServerCCASession, request: JCreditControlRequest) {
+
+        val peerFqdn = localPeerFQDN
+        if (peerFqdn == null) {
+            logger.error("Failed to create CreditControlContext, local peer fqdn is null")
+            return
+        }
+
+        val peerRealm = localPeerRealm
+        if (peerRealm == null) {
+            logger.error("Failed to create CreditControlContext, local peer realm is null")
+            return
+        }
+
         try {
             val ccrContext = CreditControlContext(
                     session.sessionId,
                     request,
-                    localPeerFQDN!!,
-                    localPeerRealm!!
+                    peerFqdn,
+                    peerRealm
             )
             setDefaultRequestedServiceUnit(ccrContext)
             source?.handleRequest(ccrContext) ?: logger.error("Received request before initialising stack")
