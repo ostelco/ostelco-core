@@ -32,4 +32,6 @@ data class InvoiceInfo(val id: String)
 
 data class InvoicePaymentInfo(val id: String, val chargeId: String)
 
-data class PaymentTransactionInfo(val id: String, val amount: Int, val currency: String, val invoiceId: String, val chargeId: String, val customerId: String, val refunded: Boolean, val created: Long)
+data class ChargeInfo(val id: String, val amount: Long, val currency: String, val refunded: Boolean)
+
+data class PaymentTransactionInfo(val id: String, val amount: Long, val currency: String, val invoiceId: String, val customerId: String, val charges: List<ChargeInfo>, val created: Long)

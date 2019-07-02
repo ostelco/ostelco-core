@@ -1912,33 +1912,6 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     //
-    // For payment transaction checks
-    //
-
-    private fun getTransactionsBefore(timestamp: Long): List<PurchaseRecord> =
-            getTransactions(0L, timestamp)
-
-    private fun getTransactionsAfter(timestamp: Long): List<PurchaseRecord> =
-            getTransactions(timestamp, epoch())
-
-    private fun getTransactions(after: Long, before: Long): List<PurchaseRecord> = readTransaction {
-        read("""
-                MATCH(c)-[r:PURCHASED]->(p) where r.timestamp >= ${after} and r.timestamp < ${before}
-                RETURN r
-                """.trimIndent(), transaction) { result ->
-            result.list {
-                it as PurchaseRecord
-            }
-        }
-    }
-
-    /* Epoch timestamp, now or offset by +/- seconds. */
-    private fun epoch(offset: Long = 0L): Long =
-            LocalDateTime.now(ZoneOffset.UTC)
-                    .plusSeconds(offset)
-                    .atZone(ZoneOffset.UTC).toEpochSecond()
-
-    //
     // For plans and subscriptions
     //
 
@@ -2155,6 +2128,22 @@ object Neo4jStoreSingleton : GraphStore {
 
     override fun getPaymentTransactions(after: Long, before: Long): Either<PaymentError, List<PaymentTransactionInfo>> =
             paymentProcessor.getPaymentTransactions(after, before)
+
+    override fun getPurchaseTransactions(after: Long, before: Long): Either<StoreError, List<PurchaseRecord>> = readTransaction {
+        read("""
+                MATCH(c)-[r:PURCHASED]->(p) WHERE r.timestamp >= '${after}' AND r.timestamp < '${before}'
+                RETURN c,r,p
+                """.trimIndent(), transaction) { statementResult ->
+            statementResult.list { record ->
+                val c = customerEntity.createEntity(record["c"].asMap())
+                val r = purchaseRecordRelation.createRelation(record["r"].asMap())
+                val p = productEntity.createEntity(record["p"].asMap())
+                r as PurchaseRecord
+            }.filter {
+                it.properties.containsKey("invoiceId")
+            }.right()
+        }
+    }
 
     //
     // For refunds

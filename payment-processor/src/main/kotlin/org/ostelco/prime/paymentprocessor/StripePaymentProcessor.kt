@@ -24,6 +24,7 @@ import org.ostelco.prime.getLogger
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.StripeUtils.either
 import org.ostelco.prime.paymentprocessor.core.BadGatewayError
+import org.ostelco.prime.paymentprocessor.core.ChargeInfo
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
 import org.ostelco.prime.paymentprocessor.core.InvoicePaymentInfo
 import org.ostelco.prime.paymentprocessor.core.InvoiceInfo
@@ -563,31 +564,19 @@ class StripePaymentProcessor : PaymentProcessor {
                 PaymentIntent.list(param)
                         .autoPagingIterable()
                         .filter {
-                            it.status == "completed"
+                            it.status == "succeeded"
                         }.map {
-                            /* Expects Stripe payment intents to have at least one and then only one
-                               charge object when status for the intents status is "completed". */
-                            val charge = when {
-                                it.charges.data.isEmpty() -> {
-                                    logger.error("No charge object found in payment intent {} for invoice {}",
-                                            it.id, it.invoice)
-                                    Pair("", false)  /* Dummy data. */
-                                }
-                                else -> {
-                                    if (it.charges.data.size > 1) {
-                                        logger.error("More than one charge object found in payment intent {} for invoice {}",
-                                                it.id, it.invoice)
-                                    }
-                                    Pair(it.charges.data.first().id, it.charges.data.first().refunded)
-                                }
-                            }
                             PaymentTransactionInfo(id = it.id,
-                                    amount = it.amount as Int,
+                                    amount = it.amount,
                                     currency = it.currency,
                                     invoiceId = it.invoice,
-                                    chargeId = charge.first,
-                                    refunded = charge.second,
                                     customerId = it.customer,
+                                    charges = it.charges.data.map {
+                                        ChargeInfo(id = it.id,
+                                                amount = it.amount,
+                                                currency = it.currency,
+                                                refunded = it.refunded)
+                                    },
                                     created = it.created)
                         }.toList()
             }

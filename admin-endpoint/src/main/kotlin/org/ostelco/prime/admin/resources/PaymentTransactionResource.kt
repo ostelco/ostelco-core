@@ -6,6 +6,7 @@ import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.storage.AdminDataSource
+import org.ostelco.prime.storage.StoreError
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import javax.ws.rs.GET
@@ -13,20 +14,32 @@ import javax.ws.rs.Path
 import javax.ws.rs.QueryParam
 import javax.ws.rs.core.Response
 
-@Path("/payments")
+@Path("/payment")
 class PaymentTransactionResource {
 
     private val storage by lazy { getResource<AdminDataSource>() }
 
     @GET
-    @Path("stripe/transactions")
-    fun fetchStripeTransactions(@QueryParam("after")
-                                after: Long = epoch(-86400),
-                                @QueryParam("before")
-                                before: Long = 0L): Response =
+    @Path("/transactions")
+    fun fetchPaymentTransactions(@QueryParam("after")
+                                 after: Long = epoch(A_DAY_AGO),
+                                 @QueryParam("before")
+                                 before: Long = epoch()): Response =
             storage.getPaymentTransactions(after, before)
                     .fold(
                             { failed(it, ApiErrorCode.FAILED_TO_FETCH_PAYMENT_TRANSACTIONS) },
+                            { ok(it) }
+                    ).build()
+
+    @GET
+    @Path("/purchases")
+    fun fetchPurchaseTransactions(@QueryParam("after")
+                                  after: Long = epoch(A_DAY_AGO),
+                                  @QueryParam("before")
+                                  before: Long = epoch()): Response =
+            storage.getPurchaseTransactions(after, before)
+                    .fold(
+                            { failed(it, ApiErrorCode.FAILED_TO_FETCH_PURCHASE_TRANSACTIONS) },
                             { ok(it) }
                     ).build()
 
@@ -45,4 +58,16 @@ class PaymentTransactionResource {
                     paymentError = error).let {
                 Response.status(it.status).entity(asJson(it))
             }
+
+    private fun failed(error: StoreError, code: ApiErrorCode): Response.ResponseBuilder =
+            ApiErrorMapper.mapStorageErrorToApiError(description = error.message,
+                    errorCode = code,
+                    storeError = error).let {
+                Response.status(it.status).entity(asJson(it))
+            }
+
+    companion object {
+        /* 24 hours ago in seconds. */
+        val A_DAY_AGO: Long = -86400
+    }
 }

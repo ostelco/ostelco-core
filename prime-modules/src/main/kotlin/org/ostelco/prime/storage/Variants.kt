@@ -322,6 +322,8 @@ interface AdminGraphStore {
     // fun getProductClass(id: String): ProductClass?
 
     fun getPaymentTransactions(after: Long, before: Long): Either<PaymentError, List<PaymentTransactionInfo>>
+
+    fun getPurchaseTransactions(after: Long, before: Long): Either<StoreError, List<PurchaseRecord>>
 }
 
 interface ScanInformationStore {
