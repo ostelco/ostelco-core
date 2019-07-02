@@ -1,10 +1,10 @@
 rootProject.name = 'ostelco-core'
 
 include ':acceptance-tests'
-include ':app-notifier'
 include ':admin-endpoint'
 include ':analytics-grpc-api'
 include ':analytics-module'
+include ':app-notifier'
 include ':auth-server'
 include ':customer-endpoint'
 include ':customer-support-endpoint'
@@ -17,8 +17,8 @@ include ':ekyc'
 include ':email-notifier'
 include ':ext-auth-provider'
 include ':ext-myinfo-emulator'
-include ':firebase-store'
 include ':firebase-extensions'
+include ':firebase-store'
 include ':graphql'
 include ':imei-lookup'
 include ':jersey'
@@ -48,10 +48,10 @@ include ':sim-administration:simmanager'
 include ':sim-administration:sm-dp-plus'
 
 project(':acceptance-tests').projectDir = "$rootDir/acceptance-tests" as File
-project(':app-notifier').projectDir = "$rootDir/app-notifier" as File
 project(':admin-endpoint').projectDir = "$rootDir/admin-endpoint" as File
 project(':analytics-grpc-api').projectDir = "$rootDir/analytics-grpc-api" as File
 project(':analytics-module').projectDir = "$rootDir/analytics-module" as File
+project(':app-notifier').projectDir = "$rootDir/app-notifier" as File
 project(':auth-server').projectDir = "$rootDir/auth-server" as File
 project(':customer-endpoint').projectDir = "$rootDir/customer-endpoint" as File
 project(':customer-support-endpoint').projectDir = "$rootDir/customer-support-endpoint" as File
