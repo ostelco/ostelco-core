@@ -32,22 +32,35 @@ class ReplicatedTimerTask(val data: ReplicatedTimerTaskData, private val session
 
     var scheduledFuture: ScheduledFuture<*>? = null
         set(scheduledFuture) {
-            field = scheduledFuture
-            if (cancel) {
-                scheduledFuture!!.cancel(false)
+            synchronized(lock) {
+                field = scheduledFuture
+                if (cancel) {
+                    scheduledFuture?.cancel(false)
+                }
             }
         }
 
-    var scheduler: ReplicatedTimerTaskScheduler? = null
+
+    private var scheduler: ReplicatedTimerTaskScheduler? = null
     private var autoRemoval = true
     @Transient
     private var cancel: Boolean = false
 
+    private val lock = Object()
+
+
+    fun setScheduler(scheduler: ReplicatedTimerTaskScheduler) {
+        synchronized(lock) {
+            this.scheduler = scheduler
+        }
+    }
+
 
     fun cancel() {
         cancel = true
-        if (scheduledFuture != null) {
-            scheduledFuture!!.cancel(false)
+        val sFuture = scheduledFuture
+        if (sFuture != null) {
+            sFuture.cancel(false)
         }
     }
 
@@ -65,7 +78,9 @@ class ReplicatedTimerTask(val data: ReplicatedTimerTaskData, private val session
     }
 
     private fun removeFromScheduler() {
-        scheduler!!.remove(data.taskID)
+        synchronized(lock) {
+            scheduler!!.remove(data.taskID)
+        }
     }
 
     private fun runTask() {
