@@ -207,7 +207,17 @@ data class ProfileVendorAdapter(
                                         simEntry.iccid,
                                         header.functionCallIdentifier)
                             } else {
-                                dao.setEidOfSimProfile(simEntry.id!!, status.eid!!)
+
+                                val simEntryId = simEntry.id
+                                val statusEid = status.eid
+
+                                if (simEntryId == null) {
+                                    AdapterError("simEntryId == null").left()
+                                } else if (statusEid == null) {
+                                    AdapterError("statusEid == null").left()
+                                } else {
+                                    dao.setEidOfSimProfile(simEntryId, statusEid)
+                                }
                             }
                             if (!eid.isNullOrEmpty() && eid != status.eid) {
                                 logger.warn("EID returned from service {} does not match provided EID ({} <> {}) in SM-DP+ 'order-confirm' message (call-id: {})",
