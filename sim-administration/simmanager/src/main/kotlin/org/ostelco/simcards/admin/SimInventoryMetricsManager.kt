@@ -32,6 +32,8 @@ class SimInventoryMetricsManager(dao: SimInventoryDAO, metrics: MetricRegistry) 
     }
 
     override fun stop() {
-        isRunning.getAndSet(false))
+        if (isRunning.getAndSet(false)) {
+            executorService.shutdownNow()
+        }
     }
 }
