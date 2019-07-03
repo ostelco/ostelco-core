@@ -9,12 +9,9 @@ plugins {
 dependencies {
 
     implementation project(":prime-modules")
-
-    implementation project(":sim-administration:jersey-json-schema-validator")
-    implementation project(":sim-administration:simcard-utils")
+    // TODO move dependencies to separate library so we do not add entire sim-amanger to hss-adapter
     implementation project(":sim-administration:simmanager")
-    implementation project(":sim-administration:ostelco-dropwizard-utils")
-
+    
     api "io.grpc:grpc-netty-shaded:$grpcVersion"
     api "io.grpc:grpc-protobuf:$grpcVersion"
     api "io.grpc:grpc-stub:$grpcVersion"

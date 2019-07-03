@@ -34,7 +34,7 @@ enum class HssState {
 
 /* ES2+ interface description - GSMA states forward transition. */
 enum class SmDpPlusState {
-    /* ES2+ protocol - between SM-DP+ servcie and backend. */
+    /* ES2+ protocol - between SM-DP+ service and backend. */
     AVAILABLE,
     ALLOCATED,
     CONFIRMED,         /* Not used as 'releaseFlag' is set to true in 'confirm-order' message. */

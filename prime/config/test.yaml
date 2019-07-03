@@ -71,6 +71,49 @@ modules:
   - type: scaninfo-store
     config:
       storeType: emulator
+  - type: sim-manager
+    config:
+      openApi:
+        name: SIM admin
+        description: SIM administration service
+        termsOfService: http://example.org
+        contactEmail: rmz@telenordigital.com
+        resourcePackage: org.ostelco
+      hlrs:
+        - name: Loltel
+          # this is a "SWT" style endpoint, so we should configure parameters
+          # accordingly.
+          hlrType: SWT
+          # This name, starting with a lowercase "l" is used in the
+          # api itself, and must match whatever the API expects
+          # the bss to be identified as.
+          hssNameUsedInAPI: loltel
+          endpoint: ${WG2_ENDPOINT}
+          userId: ${WG2_USER}
+          apiKey: ${WG2_API_KEY}
+        - name: M1
+          hlrType: DUMMY
+      profileVendors:
+        - name: Idemia
+          es2plusEndpoint: http://smdp-plus-emulator
+          es9plusEndpoint: http://smdp-plus-emulator
+          requesterIdentifier: ${FUNCTION_REQUESTER_IDENTIFIER}
+      # Note, list must end with a wildcard match
+      phoneTypes:
+        - regex: "M1.android"
+          profile: OYA_M1_BF76
+        - regex: "M1.*"
+          profile: OYA_M1_STANDARD
+        - regex: "Loltel.android"
+          profile: Loltel_ANDROID_1
+        - regex: "Loltel.*"
+          profile: LOLTEL_IPHONE_1
+      database:
+        driverClass: org.postgresql.Driver
+        user: postgres_user
+        password: postgres_password
+        url: jdbc:postgresql://postgres/sim-inventory
+
 server:
   applicationConnectors:
     - type: h2c

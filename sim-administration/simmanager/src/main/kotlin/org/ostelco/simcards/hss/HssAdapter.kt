@@ -106,7 +106,7 @@ class DirectHssDispatcher(
 
 
     private val hssAdaptersByName = mutableMapOf<String, HssDispatcher>()
-    private val healthchecks = mutableSetOf<HssDispatcherHealthcheck>()
+    private val healthchecks = mutableSetOf<HssDispatcherHealthCheck>()
 
     init {
 
@@ -124,7 +124,7 @@ class DirectHssDispatcher(
                             DummyHSSDispatcher(name = config.name)
                     }
 
-            val healthCheck = HssDispatcherHealthcheck(config.name, dispatcher)
+            val healthCheck = HssDispatcherHealthCheck(config.name, dispatcher)
             healthchecks.add(healthCheck)
 
             healthCheckRegistrar?.registerHealthCheck(
@@ -225,7 +225,7 @@ interface HealthCheckRegistrar {
     fun registerHealthCheck(name: String, healthCheck: HealthCheck)
 }
 
-class HssDispatcherHealthcheck(
+class HssDispatcherHealthCheck(
         private val name: String,
         private val entry: HssDispatcher) : HealthCheck() {
 

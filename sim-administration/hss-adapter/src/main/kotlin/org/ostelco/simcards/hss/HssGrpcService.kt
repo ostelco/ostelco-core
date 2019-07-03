@@ -9,18 +9,19 @@ import io.grpc.stub.StreamObserver
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.simcards.admin.HssConfig
 import org.ostelco.simcards.admin.mapRight
-import org.ostelco.simcards.hss.profilevendors.api.*
+import org.ostelco.simcards.hss.profilevendors.api.ActivationRequest
+import org.ostelco.simcards.hss.profilevendors.api.HssServiceGrpc
+import org.ostelco.simcards.hss.profilevendors.api.HssServiceResponse
+import org.ostelco.simcards.hss.profilevendors.api.ServiceHealthQuery
+import org.ostelco.simcards.hss.profilevendors.api.ServiceHealthStatus
+import org.ostelco.simcards.hss.profilevendors.api.SuspensionRequest
 
-class ManagedGrpcService(private val port: Int,
-                         private val service: io.grpc.BindableService) : Managed {
+class ManagedGrpcService(port: Int,
+                         service: io.grpc.BindableService) : Managed {
 
-    private var server: Server
-
-    init {
-        this.server = ServerBuilder.forPort(port)
-                .addService(service)
-                .build()
-    }
+    private var server: Server = ServerBuilder.forPort(port)
+            .addService(service)
+            .build()
 
     @Throws(Exception::class)
     override fun start() {
@@ -44,8 +45,6 @@ class ManagedHssGrpcService(
     val dispatcher: DirectHssDispatcher
 
     init {
-        val dispatchers = mutableSetOf<HssDispatcher>()
-
         this.dispatcher = DirectHssDispatcher(
                 hssConfigs = configuration,
                 httpClient = httpClient,

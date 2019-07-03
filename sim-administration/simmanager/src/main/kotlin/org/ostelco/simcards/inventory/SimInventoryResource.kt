@@ -38,7 +38,7 @@ class SimInventoryResource(private val api: SimInventoryApi) {
             api.getSimProfileStatus(hlrName, iccid)
                     .fold(
                             {
-                                error("Failed to fetch SIM profile from vendor for BSS: ${hlrName} and ICCID: ${iccid}",
+                                error("Failed to fetch SIM profile from vendor for BSS: $hlrName and ICCID: $iccid",
                                         ApiErrorCode.FAILED_TO_FETCH_SIM_PROFILE, it)
                             },
                             { Response.status(Response.Status.OK).entity(asJson(it)) }
@@ -53,7 +53,7 @@ class SimInventoryResource(private val api: SimInventoryApi) {
             api.findSimProfileByIccid(hlrName, iccid)
                     .fold(
                             {
-                                error("Failed to find SIM profile for BSS: ${hlrName} and ICCID: ${iccid}",
+                                error("Failed to find SIM profile for BSS: $hlrName and ICCID: $iccid",
                                         ApiErrorCode.FAILED_TO_FETCH_SIM_PROFILE, it)
                             },
                             { Response.status(Response.Status.OK).entity(asJson(it)) }
@@ -69,7 +69,7 @@ class SimInventoryResource(private val api: SimInventoryApi) {
             api.findSimProfileByImsi(hlrName, imsi)
                     .fold(
                             {
-                                error("Failed to find SIM profile for BSS: ${hlrName} and IMSI: ${imsi}",
+                                error("Failed to find SIM profile for BSS: $hlrName and IMSI: $imsi",
                                         ApiErrorCode.FAILED_TO_FETCH_SIM_PROFILE, it)
                             },
                             { Response.status(Response.Status.OK).entity(asJson(it)) }
@@ -84,7 +84,7 @@ class SimInventoryResource(private val api: SimInventoryApi) {
             api.findSimProfileByMsisdn(hlrName, msisdn)
                     .fold(
                             {
-                                error("Failed to find SIM profile for BSS: ${hlrName} and MSISDN: ${msisdn}",
+                                error("Failed to find SIM profile for BSS: $hlrName and MSISDN: $msisdn",
                                         ApiErrorCode.FAILED_TO_FETCH_SIM_PROFILE, it)
                             },
                             { Response.status(Response.Status.OK).entity(asJson(it)) }
@@ -100,7 +100,7 @@ class SimInventoryResource(private val api: SimInventoryApi) {
             api.allocateNextEsimProfile(hlrName, phoneType)
                     .fold(
                             {
-                                error("Failed to reserve SIM profile with BSS ${hlrName}",
+                                error("Failed to reserve SIM profile with BSS $hlrName",
                                         ApiErrorCode.FAILED_TO_RESERVE_ACTIVATED_SIM_PROFILE, it)
                             },
                             { Response.status(Response.Status.OK).entity(asJson(it)) }
@@ -132,7 +132,7 @@ class SimInventoryResource(private val api: SimInventoryApi) {
         return api.importBatch(hss, simVendor, csvInputStream, initialHssState)
                 .fold(
                         {
-                            error("Failed to upload batch with SIM profiles for HSS ${hss} and SIM profile vendor ${simVendor}",
+                            error("Failed to upload batch with SIM profiles for HSS $hss and SIM profile vendor $simVendor",
                                     ApiErrorCode.FAILED_TO_IMPORT_BATCH, it)
                         },
                         { Response.status(Response.Status.OK).entity(asJson(it)) }
