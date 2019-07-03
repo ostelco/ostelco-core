@@ -37,9 +37,7 @@ class LocalTimerFacilityImpl(container: IContainer) : ITimerFacility {
         val id = "$sessionId/$timerName"
         logger.debug("Scheduling timer with id: $id timerName: $timerName, milliseconds: $milliseconds")
         val timerTaskHandle = borrowTimerTaskHandle()
-        if (timerTaskHandle == null) {
-            throw RuntimeException("timerTaskHandle is null.   This should never happen")
-        }
+                ?: throw RuntimeException("timerTaskHandle is null.   This should never happen")
         timerTaskHandle.id = id
         timerTaskHandle.sessionId = sessionId
         timerTaskHandle.timerName = timerName
