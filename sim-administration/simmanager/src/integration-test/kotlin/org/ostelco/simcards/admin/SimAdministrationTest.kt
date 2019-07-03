@@ -75,6 +75,8 @@ class SimAdministrationTest {
         val SM_DP_PLUS_RULE = DropwizardAppRule(SmDpPlusApplication::class.java,
                 ResourceHelpers.resourceFilePath("sm-dp-plus.yaml"))
 
+
+        // XXX Don't do this! Use an HLR emulator
         @JvmField
         @ClassRule
         val HLR_RULE: KFixedHostPortGenericContainer = KFixedHostPortGenericContainer("python:3-alpine")
@@ -89,6 +91,7 @@ class SimAdministrationTest {
         val SIM_MANAGER_RULE = DropwizardAppRule(SimAdministrationApplication::class.java,
                     ResourceHelpers.resourceFilePath("sim-manager.yaml"),
                     ConfigOverride.config("database.url", psql.jdbcUrl),
+                    ConfigOverride.config("server.adminConnectors[0].port", "9191"),
                     ConfigOverride.config("hlrs[0].endpoint", "http://localhost:$HLR_PORT/default/provision"))
 
         @BeforeClass
@@ -401,6 +404,33 @@ class SimAdministrationTest {
         assertEquals(ProvisionState.RESERVED, getSimEntryByICCIDFromLoadedBatch("8901000000000000993")?.provisionState)
     }
 
+    // XXX Missing test for /healthcheck/{db,postgresql} healtchecks.
+    // {
+    //  "HSS profilevendors for Hss named 'Foo'" : {
+    //    "healthy" : true
+    //  },
+    //  "db" : {
+    //    "healthy" : true
+    //  },
+    //  "deadlocks" : {
+    //    "healthy" : true
+    //  },
+    //  "postgresql" : {
+    //    "healthy" : true
+    //  }
+    //}
+
+    // XXX Also check that the metrics are exported properly sims.
+    // "gauges" : {
+    //    "dummyMetric.do.ignore" : {
+    //      "value" : 42
+    //    },
+
+
     // XXX MISSING TEST:  SHould test periodic updater also in cases where
     //      either HSS or SM-DP+ entries are pre-allocated.
+
+
+    // XXX Also: Much of this test should be rewritten to run in an acceptance test
+    //     setting, externalizing the components being used as mocks.
 }

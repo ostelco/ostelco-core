@@ -20,11 +20,16 @@ class SimInventoryMetricsManager(private val dao: SimInventoryDAO, private val m
     private val logger by getLogger()
     val executorService = Executors.newScheduledThreadPool(5)
     val isRunning = AtomicBoolean(false)
+    val hasRun = AtomicBoolean(false)
 
 
-    // Run every five minutes
+    // Start execution service.  Do not permit restarts even of stopped instances.
     override fun start() {
+        logger.warn("Starting metrics for sim inventory")
         if (!isRunning.getAndSet(true)) {
+            if (hasRun.getAndSet(true)) {
+                throw RuntimeException("Attempt to start an already started instance.")
+            }
             startExecutorService()
         }
     }
@@ -65,7 +70,8 @@ class SimInventoryMetricsManager(private val dao: SimInventoryDAO, private val m
         if (runningForFirstTime.getAndSet(false)) {
             // Create a dummy metric, will later be done by the periodic task
             // when needed.
-            metrics.register(MetricRegistry.name(SimInventoryMetricsManager::class.java, "dummyMetric", "noOfThings"),
+            // SimInventoryMetricsManager::class.java, "dummyMetric", "noOfThings")
+            metrics.register("dummyMetric.do.ignore",
                     object : Gauge<Int> {
                         override fun getValue(): Int {
                             return 42

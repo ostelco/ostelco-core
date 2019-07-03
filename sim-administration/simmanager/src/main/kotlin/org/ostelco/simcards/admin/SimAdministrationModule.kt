@@ -8,6 +8,7 @@ import io.dropwizard.jdbi3.JdbiFactory
 import io.dropwizard.setup.Environment
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.dropwizardutils.OpenapiResourceAdder
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.SimProfileStatus
 import org.ostelco.prime.module.PrimeModule
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter
@@ -45,6 +46,8 @@ import org.ostelco.simcards.inventory.SimInventoryResource
 @JsonTypeName("sim-manager")
 class SimAdministrationModule : PrimeModule {
 
+    private val logger by getLogger()
+
     private lateinit var DAO: SimInventoryDAO
 
     @JsonProperty("config")
@@ -55,6 +58,8 @@ class SimAdministrationModule : PrimeModule {
     fun getDAO() = DAO
 
     override fun init(env: Environment) {
+
+        logger.info("Initializing Sim administration module.")
 
         val factory = JdbiFactory()
         val jdbi = factory.build(env,
@@ -72,7 +77,7 @@ class SimAdministrationModule : PrimeModule {
         OpenapiResourceAdder.addOpenapiResourceToJerseyEnv(jerseyEnv, config.openApi)
         ES2PlusIncomingHeadersFilter.addEs2PlusDefaultFiltersAndInterceptors(jerseyEnv)
 
-        // Create the SIM manager API.
+        //Create the SIM manager API.
         simInventoryApi = SimInventoryApi(httpClient, config, DAO)
 
         // Add REST frontend.
@@ -80,8 +85,9 @@ class SimAdministrationModule : PrimeModule {
         jerseyEnv.register(simInventoryResource)
         jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
 
-        // Register metrics
-        jerseyEnv.register(SimInventoryMetricsManager(this.DAO, env.metrics()))
+        // Register metrics as a lifecycle object
+
+        env.lifecycle().manage(SimInventoryMetricsManager(this.DAO, env.metrics()))
 
         val dispatcher = makeHssDispatcher(
                 hssAdapterConfig = config.hssAdapter,
