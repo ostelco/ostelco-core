@@ -85,9 +85,18 @@ func main() {
 
 	cleanPtr := flag.Bool("clean", false, "If set, run a './gradlew clean' before building and testing.")
 	stayUpPtr := flag.Bool("stay-up", false, "If set, keep test environment up after running tests.")
+	flag.Parse()
 
 	log.Printf("About to get started\n")
+	if *cleanPtr {
+		log.Printf("    ... will clean.")
+	}
 
+	if *stayUpPtr {
+		log.Printf("    ... will keep environment up after acceptance tests have run.")
+	}
+
+	
 	//
 	// Ensure that  all preconditions for building and testing are met, if not
 	// fail and terminate execution.
