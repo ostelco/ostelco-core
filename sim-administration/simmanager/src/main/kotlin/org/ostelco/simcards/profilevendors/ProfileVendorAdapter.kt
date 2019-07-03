@@ -122,7 +122,11 @@ data class ProfileVendorAdapter(
                                     config.name,
                                     simEntry.iccid,
                                     header.functionCallIdentifier)
-                            dao.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ALLOCATED)
+                            if (simEntry.id == null) {
+                                NotUpdatedError("simEntry without id.  simEntry=$simEntry").left()
+                            } else {
+                                dao.setSmDpPlusState(simEntry.id, SmDpPlusState.ALLOCATED)
+                            }
                         }
                     }
                     else -> {
@@ -203,7 +207,17 @@ data class ProfileVendorAdapter(
                                         simEntry.iccid,
                                         header.functionCallIdentifier)
                             } else {
-                                dao.setEidOfSimProfile(simEntry.id!!, status.eid!!)
+
+                                val simEntryId = simEntry.id
+                                val statusEid = status.eid
+
+                                if (simEntryId == null) {
+                                    AdapterError("simEntryId == null").left()
+                                } else if (statusEid == null) {
+                                    AdapterError("statusEid == null").left()
+                                } else {
+                                    dao.setEidOfSimProfile(simEntryId, statusEid)
+                                }
                             }
                             if (!eid.isNullOrEmpty() && eid != status.eid) {
                                 logger.warn("EID returned from service {} does not match provided EID ({} <> {}) in SM-DP+ 'order-confirm' message (call-id: {})",
@@ -216,14 +230,24 @@ data class ProfileVendorAdapter(
                                     config.name,
                                     simEntry.iccid,
                                     header.functionCallIdentifier)
-                            dao.setSmDpPlusStateAndMatchingId(simEntry.id!!, SmDpPlusState.RELEASED, status.matchingId!!)
+
+                            val simEntryId = simEntry.id
+                            val statusMatchingId = status.matchingId
+
+                            if (simEntryId == null) {
+                                AdapterError("simEntryId == null").left()
+                            } else if (statusMatchingId == null) {
+                                AdapterError("statusMatchingId == null").left()
+                            } else {
+                                dao.setSmDpPlusStateAndMatchingId(simEntryId, SmDpPlusState.RELEASED, statusMatchingId)
+                            }
                         }
                     }
                     else -> {
                         logger.error("SM-DP+ 'order-confirm' message to service {} for ICCID {} failed with status code %d (call-id: {})",
                                 config.name,
                                 simEntry.iccid,
-                                it.statusLine.statusCode,
+                                it?.statusLine?.statusCode,
                                 header.functionCallIdentifier)
                         NotUpdatedError("SM-DP+ 'order-confirm' to ${config.name} failed with code: ${it.statusLine.statusCode}")
                                 .left()

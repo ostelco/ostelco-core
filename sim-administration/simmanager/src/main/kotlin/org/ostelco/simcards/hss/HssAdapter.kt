@@ -1,19 +1,19 @@
 package org.ostelco.simcards.hss
 
 import arrow.core.Either
-import arrow.core.Left
-import arrow.core.Right
 import arrow.core.flatMap
+import arrow.core.getOrElse
+import arrow.core.left
 import arrow.core.right
 import com.codahale.metrics.health.HealthCheck
 import io.grpc.ManagedChannelBuilder
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.simmanager.AdapterError
+import org.ostelco.prime.simmanager.DatabaseError
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.admin.DummyHssConfig
 import org.ostelco.simcards.admin.HssConfig
 import org.ostelco.simcards.admin.SwtHssConfig
-import org.ostelco.simcards.admin.mapRight
 import org.ostelco.simcards.hss.profilevendors.api.HssServiceGrpc
 import org.ostelco.simcards.hss.profilevendors.api.ServiceHealthQuery
 import org.ostelco.simcards.inventory.HssState
@@ -49,7 +49,7 @@ class HssGrpcAdapter(private val host: String, private val port: Int) : HssDispa
                 HssServiceGrpc.newBlockingStub(channel)
     }
 
-    fun activateViaGrpc(hssName: String, iccid: String, msisdn: String): Boolean {
+    private fun activateViaGrpc(hssName: String, iccid: String, msisdn: String): Boolean {
         val activationRequest =
                 org.ostelco.simcards.hss.profilevendors.api.ActivationRequest.newBuilder()
                         .setIccid(iccid)
@@ -60,7 +60,7 @@ class HssGrpcAdapter(private val host: String, private val port: Int) : HssDispa
         return response.success
     }
 
-    fun suspendViaGrpc(hssName: String, iccid: String): Boolean {
+    private fun suspendViaGrpc(hssName: String, iccid: String): Boolean {
         val suspensionRequest = org.ostelco.simcards.hss.profilevendors.api.SuspensionRequest.newBuilder()
                 .setIccid(iccid)
                 .setHss(hssName)
@@ -77,19 +77,19 @@ class HssGrpcAdapter(private val host: String, private val port: Int) : HssDispa
 
 
     override fun activate(hssName: String, iccid: String, msisdn: String): Either<SimManagerError, Unit> {
-        if (activateViaGrpc(hssName = hssName, msisdn = msisdn, iccid = iccid)) {
-            return Right(Unit)
+        return if (activateViaGrpc(hssName = hssName, msisdn = msisdn, iccid = iccid)) {
+            Unit.right()
         } else {
-            return Left(AdapterError("Could not activate via grpc (host=$host, port =$port) for hss = $hssName, msisdn=$msisdn, iccid=$iccid"))
+            AdapterError("Could not activate via grpc (host=$host, port =$port) for hss = $hssName, msisdn=$msisdn, iccid=$iccid").left()
         }
 
     }
 
     override fun suspend(hssName: String, iccid: String): Either<SimManagerError, Unit> {
-        if (suspendViaGrpc(hssName = hssName, iccid = iccid)) {
-            return Right(Unit)
+        return if (suspendViaGrpc(hssName = hssName, iccid = iccid)) {
+            Unit.right()
         } else {
-            return Left(AdapterError("Could not activate via grpc (host=$host, port =$port) for hss = $hssName, iccid=$iccid"))
+            AdapterError("Could not activate via grpc (host=$host, port =$port) for hss = $hssName, iccid=$iccid").left()
         }
     }
 }
@@ -143,12 +143,8 @@ class DirectHssDispatcher(
                 .reduce { a, b -> a && b }
     }
 
-    private fun getHssAdapterByName(name: String): HssDispatcher {
-        if (!hssAdaptersByName.containsKey(name)) {
-            throw RuntimeException("Unknown hss vendor name ? '$name'")
-        }
-        return hssAdaptersByName[name]!!
-    }
+    private fun getHssAdapterByName(name: String): HssDispatcher = hssAdaptersByName[name]
+            ?: throw RuntimeException("Unknown hss vendor name ? '$name'")
 
     override fun activate(hssName: String, iccid: String, msisdn: String): Either<SimManagerError, Unit> {
         return getHssAdapterByName(hssName).activate(hssName = hssName, iccid = iccid, msisdn = msisdn)
@@ -177,17 +173,13 @@ class SimManagerToHssDispatcherAdapter(
         updateHssIdToNameMap()
     }
 
-    private fun fetchHssEntriesFromDatabase(): List<HssEntry> {
-        val returnValue = mutableListOf<HssEntry>()
-        // XXX This doesn't look kosher.  Anyone with deep insight into Arrow please suggest a fix.
-        val entries = simInventoryDAO.getHssEntries()
-                .mapLeft { err ->
-                    log.error("No HSS entries to be found by the DAO.")
-                    log.error(err.description)
-                }
-                .mapRight { returnValue.addAll(it) }
-        return returnValue
-    }
+    private fun fetchHssEntriesFromDatabase(): List<HssEntry> = simInventoryDAO
+            .getHssEntries()
+            .mapLeft { err ->
+                log.error("No HSS entries to be found by the DAO.")
+                log.error(err.description)
+            }
+            .getOrElse { mutableListOf() }
 
     private fun updateHssIdToNameMap() {
         synchronized(lock) {
@@ -202,20 +194,28 @@ class SimManagerToHssDispatcherAdapter(
         }
     }
 
-
     fun activate(simEntry: SimEntry): Either<SimManagerError, Unit> {
         synchronized(lock) {
-            return dispatcher.activate(hssName = idToNameMap[simEntry.hssId]!!, iccid = simEntry.iccid, msisdn = simEntry.msisdn)
-                    .flatMap { simInventoryDAO.setHssState(simEntry.id!!, HssState.ACTIVATED) }
+            val hssName = idToNameMap[simEntry.hssId]
+                    ?: return DatabaseError("Unkown hssid = '$simEntry.hssId'").left()
+            val simEntryId = simEntry.id
+                    ?: return DatabaseError("Unkown simEntry.is == null. simEntry = $simEntry").left()
+            return dispatcher.activate(
+                    hssName = hssName,
+                    iccid = simEntry.iccid,
+                    msisdn = simEntry.msisdn)
+                    .flatMap { simInventoryDAO.setHssState(simEntryId, HssState.ACTIVATED) }
                     .flatMap { Unit.right() }
         }
     }
 
     fun suspend(simEntry: SimEntry): Either<SimManagerError, Unit> {
         synchronized(lock) {
-            return dispatcher.suspend(hssName = idToNameMap[simEntry.hssId]!!, iccid = simEntry.iccid)
-                    .flatMap { simInventoryDAO.setHssState(simEntry.id!!, HssState.NOT_ACTIVATED) }
-                    .flatMap { Unit.right() }
+            val hssName = idToNameMap[simEntry.hssId] ?: return DatabaseError("Unkown hssid = '$simEntry.hssId'").left()
+            val simEntryId = simEntry.id ?: return DatabaseError("Unkown simEntry.is == null. simEntry = $simEntry").left()
+            return dispatcher.suspend(hssName = hssName, iccid = simEntry.iccid)
+                        .flatMap { simInventoryDAO.setHssState(simEntryId, HssState.NOT_ACTIVATED) }
+                        .map { Unit }
         }
     }
 }

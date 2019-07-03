@@ -26,7 +26,7 @@ class ReplicatedTimerTaskScheduler {
     }
 
     fun schedule(task: ReplicatedTimerTask) {
-        task.scheduler = this
+        task.setScheduler(this)
         SetTimerTaskRunnable(task, this).run()
     }
 

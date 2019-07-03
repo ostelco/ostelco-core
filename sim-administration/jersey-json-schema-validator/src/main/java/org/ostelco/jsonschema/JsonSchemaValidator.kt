@@ -47,16 +47,7 @@ class JsonSchemaValidator {
         }
     }
 
-    private fun getSchema(name: String): Schema {
-        val  result: Schema
-        if (!schemaMap.containsKey(name)) {
-            result = loadJsonSchemaResource(name)
-            schemaMap[name] = result
-        } else {
-            result = schemaMap[name]!!
-        }
-        return result
-    }
+    private fun getSchema(name: String): Schema = schemaMap.getOrPut(name) { loadJsonSchemaResource(name) }
 
     @Throws(WebApplicationException::class)
     fun validateString(payloadClass: Class<*>, body: String, error: Response.Status) {
