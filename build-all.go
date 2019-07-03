@@ -7,6 +7,7 @@ package main
 
 import (
 	"./github.com/ostelco-core/goscript"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -81,6 +82,10 @@ func generateDummyStripeEndpointSecretIfNotSet() {
 }
 
 func main() {
+
+	cleanPtr := flag.Bool("clean", false, "If set, run a './gradlew clean' before building and testing.")
+	stayUpPtr := flag.Bool("stay-up", false, "If set, keep test environment up after running tests.")
+
 	log.Printf("About to get started\n")
 
 	//
@@ -109,9 +114,17 @@ func main() {
 	// and terminate the build process if any of them fails.
 	//
 
+	if *cleanPtr {
+		goscript.AssertSuccesfulRun("./gradlew build")
+	}
 	goscript.AssertSuccesfulRun("./gradlew build")
 	goscript.AssertSuccesfulRun("docker-compose down")
-	goscript.AssertSuccesfulRun("docker-compose up --build --abort-on-container-exit")
+
+	if *stayUpPtr {
+		goscript.AssertSuccesfulRun("docker-compose up --build")
+	} else {
+		goscript.AssertSuccesfulRun("docker-compose up --build --abort-on-container-exit")
+	}
 
 	log.Printf("Build and integration tests succeeded\n")
 }
