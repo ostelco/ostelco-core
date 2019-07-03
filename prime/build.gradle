@@ -54,7 +54,6 @@ dependencies {
   runtimeOnly "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"
   implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
   implementation "com.google.guava:guava:$guavaVersion"
-  implementation "io.dropwizard.metrics:metrics-healtchecks:3.1.2"
 
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation "org.mockito:mockito-core:$mockitoVersion"

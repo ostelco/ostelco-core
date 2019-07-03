@@ -2,6 +2,8 @@ package org.ostelco.simcards.admin
 
 import arrow.core.Either
 import com.codahale.metrics.health.HealthCheck
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import io.dropwizard.client.HttpClientBuilder
 import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.jdbi3.JdbiFactory
@@ -127,6 +129,13 @@ class SimAdministrationTest {
 
     /* Test endpoint. */
     private val simManagerEndpoint = "http://localhost:${SIM_MANAGER_RULE.localPort}/ostelco/sim-inventory"
+
+    /* Test endpoint. */
+    private val metricsEndpoint= "http://localhost:${SIM_MANAGER_RULE.adminPort}/metrics"
+
+    /* Test endpoint. */
+    private val healthcheckEndpoint = "http://localhost:${SIM_MANAGER_RULE.adminPort}/healthcheck"
+
 
     /* Generate a fixed corresponding EID based on ICCID.
        Same code is used in SM-DP+ emulator. */
@@ -404,27 +413,39 @@ class SimAdministrationTest {
         assertEquals(ProvisionState.RESERVED, getSimEntryByICCIDFromLoadedBatch("8901000000000000993")?.provisionState)
     }
 
-    // XXX Missing test for /healthcheck/{db,postgresql} healtchecks.
-    // {
-    //  "HSS profilevendors for Hss named 'Foo'" : {
-    //    "healthy" : true
-    //  },
-    //  "db" : {
-    //    "healthy" : true
-    //  },
-    //  "deadlocks" : {
-    //    "healthy" : true
-    //  },
-    //  "postgresql" : {
-    //    "healthy" : true
-    //  }
-    //}
 
-    // XXX Also check that the metrics are exported properly sims.
-    // "gauges" : {
-    //    "dummyMetric.do.ignore" : {
-    //      "value" : 42
-    //    },
+    private fun getJsonFromEndpoint(endpoint:String): JsonObject {
+        var response = client.target(endpoint)
+                .request()
+                .get()
+        assertEquals(200, response.status)
+        var entity = response.readEntity(String::class.java)
+
+
+        val jelement = JsonParser().parse(entity)
+        var jobject = jelement.getAsJsonObject()
+        return jobject
+    }
+
+
+    @Test
+    fun testHealthcheckDb() {
+
+    }
+
+
+    @Test
+    fun testHealthchecs() {
+        val healtchecks = getJsonFromEndpoint(healthcheckEndpoint)
+        assertEquals("true", healtchecks.get("db").asJsonObject.get("healthy"))
+        assertEquals("true", healtchecks.get("postgresql").asJsonObject.get("healthy"))
+    }
+
+    @Test
+    fun testSimMetrics() {
+        val currentMetrics = getJsonFromEndpoint(metricsEndpoint)
+        assertEquals(42, currentMetrics.get("gauges").asJsonObject.get("dummyMetric.doIgnore").asInt)
+    }
 
 
     // XXX MISSING TEST:  SHould test periodic updater also in cases where
