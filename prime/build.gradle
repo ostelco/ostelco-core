@@ -18,7 +18,7 @@ sourceSets {
   }
 }
 
-version = "1.50.0"
+version = "1.51.0"
 
 repositories {
   maven {
@@ -54,12 +54,13 @@ dependencies {
   runtimeOnly "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"
   implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
   implementation "com.google.guava:guava:$guavaVersion"
+  implementation "org.dhatim:dropwizard-prometheus:$prometheusDropwizardVersion"
 
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation "org.mockito:mockito-core:$mockitoVersion"
   testImplementation 'com.lmax:disruptor:3.4.2'
   testImplementation "com.palantir.docker.compose:docker-compose-rule-junit4:$dockerComposeJunitRuleVersion"
-  testImplementation 'org.dhatim:dropwizard-prometheus:2.2.0'
+  testImplementation "org.dhatim:dropwizard-prometheus:$prometheusDropwizardVersion"
 }
 
 configurations {
