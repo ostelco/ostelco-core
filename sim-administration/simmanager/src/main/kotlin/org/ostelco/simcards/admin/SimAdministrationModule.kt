@@ -66,20 +66,22 @@ class SimAdministrationModule : PrimeModule {
 
         val httpClient = HttpClientBuilder(env)
                 .using(config.httpClient)
-                .build("SIM inventory")
+                .build("mainHttpClient")
         val jerseyEnv = env.jersey()
 
         OpenapiResourceAdder.addOpenapiResourceToJerseyEnv(jerseyEnv, config.openApi)
         ES2PlusIncomingHeadersFilter.addEs2PlusDefaultFiltersAndInterceptors(jerseyEnv)
 
-        /* Create the SIM manager API. */
+        // Create the SIM manager API.
         simInventoryApi = SimInventoryApi(httpClient, config, DAO)
 
-        /* Add REST frontend. */
+        // Add REST frontend.
         simInventoryResource = SimInventoryResource(simInventoryApi)
         jerseyEnv.register(simInventoryResource)
         jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
 
+        // Register metrics
+        jerseyEnv.register(SimInventoryMetricsManager(this.DAO, env.metrics()))
 
         val dispatcher = makeHssDispatcher(
                 hssAdapterConfig = config.hssAdapter,
