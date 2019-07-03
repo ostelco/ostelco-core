@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 )
 
 func generateEspEndpointCertificates(originalCertPath string, activeCertPath string, domainName string) {
@@ -96,7 +97,6 @@ func main() {
 		log.Printf("    ... will keep environment up after acceptance tests have run.")
 	}
 
-	
 	//
 	// Ensure that  all preconditions for building and testing are met, if not
 	// fail and terminate execution.
@@ -118,22 +118,41 @@ func main() {
 		"ocsgw/cert/metrics.crt",
 		"ocs.dev.ostelco.org")
 
-	//
-	// All preconditions are now satisfied, now run the actual build/test commands
-	// and terminate the build process if any of them fails.
-	//
+	buildUsingGradlew(cleanPtr)
 
-	if *cleanPtr {
-		goscript.AssertSuccesfulRun("./gradlew build")
-	}
-	goscript.AssertSuccesfulRun("./gradlew build")
+	runIntegrationTestsViaDocker(stayUpPtr)
+
+	log.Printf("Build and integration tests succeeded\n")
+}
+
+func runIntegrationTestsViaDocker(stayUpPtr *bool) {
+
+	// First take down any lingering docker jobs that may interfer with
+	// the current run.
 	goscript.AssertSuccesfulRun("docker-compose down")
 
 	if *stayUpPtr {
+		// If  ctrl-c is pushed during stay-up, then take the whole thing down using docker-compose down
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt)
+		go func() {
+			<-c
+			goscript.AssertSuccesfulRun("docker-compose down")
+			os.Exit(1)
+		}()
 		goscript.AssertSuccesfulRun("docker-compose up --build")
 	} else {
 		goscript.AssertSuccesfulRun("docker-compose up --build --abort-on-container-exit")
 	}
+}
 
-	log.Printf("Build and integration tests succeeded\n")
+func buildUsingGradlew(cleanPtr *bool) {
+	//
+	// All preconditions are now satisfied, now run the actual build/test commands
+	// and terminate the build process if any of them fails.
+	//
+	if *cleanPtr {
+		goscript.AssertSuccesfulRun("./gradlew build")
+	}
+	goscript.AssertSuccesfulRun("./gradlew build")
 }
