@@ -118,8 +118,6 @@ import org.ostelco.prime.storage.graph.model.Segment
 import org.ostelco.prime.storage.graph.model.SimProfile
 import org.ostelco.prime.storage.graph.model.SubscriptionToBundle
 import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneOffset
 import java.util.*
 import java.util.stream.Collectors
 import javax.ws.rs.core.MultivaluedMap
@@ -2143,6 +2141,67 @@ object Neo4jStoreSingleton : GraphStore {
                 it.properties.containsKey("invoiceId")
             }.right()
         }
+    }
+
+    override fun checkPaymentTransactions(after: Long, before: Long): Either<PaymentError, List<Map<String, Any?>>> = readTransaction {
+        IO {
+            Either.monad<PaymentError>().binding {
+
+                val purchaseRecords = getPurchaseTransactions(after, before)
+                        .mapLeft {
+                            BadGatewayError("Error when fetching purchase records",
+                                    error = it)
+                        }.bind()
+                val paymentRecords = getPaymentTransactions(after, before)
+                        .bind()
+
+                purchaseRecords.map {
+                    mapOf("type" to "purchaseRecord",
+                            "invoiceId" to it.properties["invoiceId"],
+                            "chargeId" to it.id,
+                            "amount" to it.product.price.amount,
+                            "currency" to it.product.price.currency,
+                            "refunded" to (it.refund != null),
+                            "created" to it.timestamp)
+                }.plus(
+                        paymentRecords.map {
+                            mapOf("type" to "paymentRecord",
+                                    "invoiceId" to it.invoiceId,
+                                    "chargeId" to if (it.charges.size == 1)
+                                        it.charges.first().id
+                                    else
+                                        null,
+                                    "amount" to it.amount,
+                                    "currency" to it.currency,
+                                    "refunded" to if (it.charges.size == 1)
+                                        it.charges.first().refunded
+                                    else
+                                        false,
+                                    "created" to it.created)
+                        }
+                ).groupBy {
+                    it["invoiceId"].hashCode() + it["chargeId"].hashCode() +
+                            it["amount"].hashCode() + it["currency"].hashCode() +
+                            it["refunded"].hashCode()
+                }.filter {
+                    it.value.size == 1
+                }.map {
+                    it.value.first()
+                }.filter {
+                    val ts = it["created"] as? Long ?: 0L
+
+                    if (ts == 0L) {
+                        logger.error("Unexpected 'created' value encountered during payment transaction check: ${it}")
+                        true
+                    } else {
+                        ts >= after && ts <= before
+                    }
+                }.map {
+                    logger.error("Payment transaction difference ${it}")
+                    it
+                }
+            }.fix()
+        }.unsafeRunSync()
     }
 
     //
