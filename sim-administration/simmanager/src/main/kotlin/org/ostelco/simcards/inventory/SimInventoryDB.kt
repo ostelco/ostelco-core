@@ -144,15 +144,15 @@ interface SimInventoryDB {
                                        hssId: Long): Int
 
     @SqlUpdate("""INSERT INTO hlr_adapters
-                                   (name)
-                       SELECT :name
+                                   (metricName)
+                       SELECT :metricName
                        WHERE  NOT EXISTS (SELECT 1
                                           FROM   hlr_adapters
-                                          WHERE  name = :name)""")
+                                          WHERE  metricName = :metricName)""")
     fun addHssAdapter(name: String): Int
 
     @SqlQuery("""SELECT * FROM hlr_adapters
-                      WHERE name = :name""")
+                      WHERE metricName = :metricName""")
     fun getHssEntryByName(name: String): HssEntry
 
     @SqlQuery("""SELECT * FROM hlr_adapters
@@ -160,15 +160,15 @@ interface SimInventoryDB {
     fun getHssEntryById(id: Long): HssEntry
 
     @SqlUpdate("""INSERT INTO profile_vendor_adapters
-                                   (name)
-                       SELECT :name
+                                   (metricName)
+                       SELECT :metricName
                        WHERE  NOT EXISTS (SELECT 1
                                           FROM   profile_vendor_adapters
-                                          WHERE  name = :name) """)
+                                          WHERE  metricName = :metricName) """)
     fun addProfileVendorAdapter(name: String): Int
 
     @SqlQuery("""SELECT * FROM profile_vendor_adapters
-                       WHERE name = :name""")
+                       WHERE metricName = :metricName""")
     fun getProfileVendorAdapterByName(name: String): ProfileVendorAdapter?
 
     @SqlQuery("""SELECT * FROM profile_vendor_adapters

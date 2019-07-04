@@ -41,7 +41,7 @@ import javax.ws.rs.core.MediaType
  */
 data class ProfileVendorAdapter(
         @JsonProperty("id") val id: Long,
-        @JsonProperty("name") val name: String) {
+        @JsonProperty("metricName") val name: String) {
 
     private val logger by getLogger()
 

@@ -145,7 +145,7 @@ class DirectHssDispatcher(
 
     private fun getHssAdapterByName(name: String): HssDispatcher {
         if (!hssAdaptersByName.containsKey(name)) {
-            throw RuntimeException("Unknown hss vendor name ? '$name'")
+            throw RuntimeException("Unknown hss vendor metricName ? '$name'")
         }
         return hssAdaptersByName[name]!!
     }

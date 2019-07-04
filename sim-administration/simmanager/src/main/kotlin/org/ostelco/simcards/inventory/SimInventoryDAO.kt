@@ -193,8 +193,8 @@ class SimInventoryDAO(private val db: SimInventoryDBWrapperImpl) : SimInventoryD
     /**
      * Set permission for a SIM profile vendor to activate SIM profiles
      * with a specific HLR.
-     * @param profileVendor  name of SIM profile vendor
-     * @param hssName  name of HLR
+     * @param profileVendor  metricName of SIM profile vendor
+     * @param hssName  metricName of HLR
      * @return true on successful update
      */
     @Transaction
@@ -317,7 +317,7 @@ class HlrEntryMapper : RowMapper<HssEntry> {
         }
 
         val id = row.getLong("id")
-        val name = row.getString("name")
+        val name = row.getString("metricName")
         return HssEntry(id = id, name = name)
     }
 }

@@ -140,7 +140,7 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
             }
 
     override fun getHssEntryByName(name: String): Either<SimManagerError, HssEntry> =
-            either(NotFoundError("Found no HSS entry  with name ${name}")) {
+            either(NotFoundError("Found no HSS entry  with metricName ${name}")) {
                 db.getHssEntryByName(name)
             }
 
@@ -155,7 +155,7 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
             }
 
     override fun getProfileVendorAdapterByName(name: String): Either<SimManagerError, ProfileVendorAdapter> =
-            either(NotFoundError("Found no SIM profile vendor with name ${name}")) {
+            either(NotFoundError("Found no SIM profile vendor with metricName ${name}")) {
                 db.getProfileVendorAdapterByName(name)
             }
 
@@ -209,7 +209,7 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
      * a particular HSS.
      */
     override fun getProfileNamesForHssById(hssId: Long): Either<SimManagerError, List<String>> =
-            either(NotFoundError("Found no SIM profile name for HSS with id ${hssId}")) {
+            either(NotFoundError("Found no SIM profile metricName for HSS with id ${hssId}")) {
                 db.getProfileNamesForHss(hssId)
             }
 

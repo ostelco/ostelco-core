@@ -98,7 +98,7 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                     /* Exits if not true. */
                     dao.simVendorIsPermittedForHlr(profileVendorAdapter.id, hlrAdapter.id)
                             .bind()
-                    dao.importSims(importer = "importer", // TODO: This is a very strange name for an importer .-)
+                    dao.importSims(importer = "importer", // TODO: This is a very strange metricName for an importer .-)
                             hlrId = hlrAdapter.id,
                             profileVendorId = profileVendorAdapter.id,
                             csvInputStream = csvInputStream,
@@ -112,7 +112,7 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
             dao.getHssEntryById(simEntry.hssId)
                     .flatMap { hlrAdapter ->
                         if (hlrName != hlrAdapter.name)
-                            NotFoundError("HLR name $hlrName does not match SIM profile HLR ${hlrAdapter.name}")
+                            NotFoundError("HLR metricName $hlrName does not match SIM profile HLR ${hlrAdapter.name}")
                                     .left()
                         else
                             simEntry.right()
