@@ -8,7 +8,7 @@ import org.ostelco.simcards.inventory.SimInventoryDAO
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 
 
 class SimInventoryMetricsManager(private val dao: SimInventoryDAO, private val metrics: MetricRegistry) : Managed {
@@ -85,14 +85,32 @@ class SimInventoryMetricsManager(private val dao: SimInventoryDAO, private val m
         }
 
 
-        val metricValues: Collection<MetricValue>  = getMetricsValues()
+        val metricValues: Collection<MetricValue> = getMetricsValues()
         metricsRegistry.syncWithValues(metricValues)
     }
 
     private fun getMetricsValues(): Collection<MetricValue> {
-        return listOf()
+
+        val result = mutableListOf<MetricValue>()
+
+        dao.getHssProfileNamePairs()
+                .mapRight { pairsToQuery ->
+                    pairsToQuery.forEach { currentMetric ->
+                        dao.getProfileStats(currentMetric.hssId, currentMetric.simProfileName)
+                                .mapRight {
+                                    result.add(MetricValue("sims.noOfEntries", currentMetric.simProfileName, it.noOfEntries))
+                                    result.add(MetricValue("sims.noOfEntriesAvailableForImmediateUse", currentMetric.simProfileName, it.noOfEntriesAvailableForImmediateUse))
+                                    result.add(MetricValue("sims.noOfReleasedEntries", currentMetric.simProfileName, it.noOfReleasedEntries))
+                                    result.add(MetricValue("sims.noOfUnallocatedEntries", currentMetric.simProfileName, it.noOfUnallocatedEntries))
+                                    // XXX Missing: Profiles in error, or somehow not part of the things listed above
+                                }
+                    }
+                }
+
+        return result
     }
 }
+
 
 class LocalMetricsRegistry(private val metrics: MetricRegistry) {
 
@@ -100,15 +118,20 @@ class LocalMetricsRegistry(private val metrics: MetricRegistry) {
 
     val localMetrics = mutableMapOf<String, LocalGaugeAdapter>()
 
-    // Game plan.   For each invocation:
+    // For each invocation:
     //    * Get current metric values as dictated  by structure and
     //      content of database.
-    //    * Based on this collection, prune and extend the set of
-    //      metrics that are being mainained.
-    //    * Inject the current metric values into the actual
-    //      metrics that are transmitted via the metrics mechanism.
 
+
+    // Input is current metric values as dictated  by structure and
+    // content of database.
     fun syncWithValues(metricValues: Collection<MetricValue>) {
+
+        //    * Based on this collection, prune and extend the set of
+        //      metrics that are being mainained.
+        //    * Inject the current metric values into the actual
+        //      metrics that are transmitted via the metrics mechanism.
+
         synchronized(lock) {
             val currentMetrics = metrics.metrics
             val currentMetricNames = mutableSetOf<String>()
@@ -126,28 +149,27 @@ class LocalMetricsRegistry(private val metrics: MetricRegistry) {
             }
 
             val irrelevantMetrics = currentMetrics.keys.subtract(currentMetricNames)
-            irrelevantMetrics.forEach{
+            irrelevantMetrics.forEach {
                 metrics.remove(it)
                 localMetrics.remove(it)
             }
         }
     }
 
-
     private fun getMetricName(it: MetricValue): String {
             return "${it.metricName}.${it.profileName}"
     }
 }
 
-class LocalGaugeAdapter(private val key: String, private var initialValue: Int) : Gauge<Int> {
+class LocalGaugeAdapter(private val key: String, private var initialValue: Long) : Gauge<Long> {
 
-    val currentValue = AtomicInteger(initialValue)
+    val currentValue = AtomicLong(initialValue)
 
-    override fun getValue(): Int {
+    override fun getValue(): Long {
         return currentValue.get()
     }
 
-    fun updateValue(value: Int) {
+    fun updateValue(value: Long) {
         currentValue.set(value)
     }
 }
@@ -157,4 +179,4 @@ class LocalGaugeAdapter(private val key: String, private var initialValue: Int) 
 data class MetricValue (
         val metricName: String,
         val profileName: String, // Name of the SIM profile, will somehow need to be transmitted to prometheus.
-        val value: Int)
+        val value: Long)

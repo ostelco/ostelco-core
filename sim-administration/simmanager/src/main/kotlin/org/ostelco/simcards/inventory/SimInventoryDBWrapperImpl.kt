@@ -17,6 +17,12 @@ import org.postgresql.util.PSQLException
 
 class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDBWrapper {
 
+
+    override fun getHssProfileNamePairs(): Either<SimManagerError, List<HssProfileIdName>> =
+            either(NotFoundError("Could not determine list of HSS profile name pairs")) {
+                db.getHssProfileNamePairs()
+            }
+
     override fun reserveGoldenNumbersForBatch(batchId: Long): Either<SimManagerError, Int> =
             either(NotFoundError("Found no batch for batchId ${batchId}")) {
                 db.reserveGoldenNumbersForBatch(batchId)
