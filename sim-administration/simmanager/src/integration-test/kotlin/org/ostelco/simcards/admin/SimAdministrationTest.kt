@@ -2,6 +2,7 @@ package org.ostelco.simcards.admin
 
 import arrow.core.Either
 import com.codahale.metrics.health.HealthCheck
+import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import io.dropwizard.client.HttpClientBuilder
@@ -15,6 +16,7 @@ import org.glassfish.jersey.client.ClientProperties
 import org.jdbi.v3.core.Jdbi
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -86,15 +88,15 @@ class SimAdministrationTest {
                 .withExposedPorts(8080)
                 .withClasspathResourceMapping("hlr.py", "/service.py",
                         BindMode.READ_ONLY)
-                .withCommand( "python", "/service.py")
+                .withCommand("python", "/service.py")
 
         @JvmField
         @ClassRule
         val SIM_MANAGER_RULE = DropwizardAppRule(SimAdministrationApplication::class.java,
-                    ResourceHelpers.resourceFilePath("sim-manager.yaml"),
-                    ConfigOverride.config("database.url", psql.jdbcUrl),
-                    ConfigOverride.config("server.adminConnectors[0].port", "9191"),
-                    ConfigOverride.config("hlrs[0].endpoint", "http://localhost:$HLR_PORT/default/provision"))
+                ResourceHelpers.resourceFilePath("sim-manager.yaml"),
+                ConfigOverride.config("database.url", psql.jdbcUrl),
+                ConfigOverride.config("server.adminConnectors[0].port", "9191"),
+                ConfigOverride.config("hlrs[0].endpoint", "http://localhost:$HLR_PORT/default/provision"))
 
         @BeforeClass
         @JvmStatic
@@ -131,7 +133,7 @@ class SimAdministrationTest {
     private val simManagerEndpoint = "http://localhost:${SIM_MANAGER_RULE.localPort}/ostelco/sim-inventory"
 
     /* Test endpoint. */
-    private val metricsEndpoint= "http://localhost:${SIM_MANAGER_RULE.adminPort}/metrics"
+    private val metricsEndpoint = "http://localhost:${SIM_MANAGER_RULE.adminPort}/metrics"
 
     /* Test endpoint. */
     private val healthcheckEndpoint = "http://localhost:${SIM_MANAGER_RULE.adminPort}/healthcheck"
@@ -171,7 +173,7 @@ class SimAdministrationTest {
     }
 
     /* The SIM dataset is the same that is used by the SM-DP+ emulator. */
-    private fun loadSimData(hssState: HssState? = null, queryParameterName: String = "initialHssState", expectedReturnCode:Int = 200) {
+    private fun loadSimData(hssState: HssState? = null, queryParameterName: String = "initialHssState", expectedReturnCode: Int = 200) {
         val entries = FileInputStream(SM_DP_PLUS_RULE.configuration.simBatchData)
         var target = client.target("$simManagerEndpoint/$hssName/import-batch/profilevendor/$profileVendor")
         if (hssState != null) {
@@ -180,8 +182,8 @@ class SimAdministrationTest {
 
         val response =
                 target
-                .request()
-                .put(Entity.entity(entries, MediaType.TEXT_PLAIN))
+                        .request()
+                        .put(Entity.entity(entries, MediaType.TEXT_PLAIN))
         assertThat(response.status).isEqualTo(expectedReturnCode)
     }
 
@@ -234,8 +236,8 @@ class SimAdministrationTest {
                 .getDAO()
         val hssEntries = simDao.getHssEntries()
 
-        hssEntries.mapRight {  assertEquals(1, it.size) }
-        hssEntries.mapRight {  assertEquals(hssName, it[0].name) }
+        hssEntries.mapRight { assertEquals(1, it.size) }
+        hssEntries.mapRight { assertEquals(hssName, it[0].name) }
     }
 
     @Test
@@ -265,7 +267,7 @@ class SimAdministrationTest {
     }
 
     @Test
-    fun  testGetProfileStats() {
+    fun testGetProfileStats() {
         loadSimData()
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
                 .getDAO()
@@ -322,9 +324,9 @@ class SimAdministrationTest {
                     }
                 })
         val hssAdapterCache = SimManagerToHssDispatcherAdapter(
-                dispatcher = dispatcher ,
+                dispatcher = dispatcher,
                 simInventoryDAO = simDao)
-        val preStats  = SimProfileKeyStatistics(
+        val preStats = SimProfileKeyStatistics(
                 0L,
                 0L,
                 0L,
@@ -341,7 +343,7 @@ class SimAdministrationTest {
                 simDao.getProfileStats(hssId, expectedProfile)
         assertThat(postAllocationStats.isRight()).isTrue()
 
-        var postStats  = SimProfileKeyStatistics(0L, 0L, 0L, 0L)
+        var postStats = SimProfileKeyStatistics(0L, 0L, 0L, 0L)
         postAllocationStats.map {
             postStats = it
         }
@@ -359,7 +361,7 @@ class SimAdministrationTest {
         val simProfile = simDao.getSimProfileByIccid(iccid)
         return when {
             simProfile is Either.Right -> simProfile.b
-            simProfile is Either.Left ->  null
+            simProfile is Either.Left -> null
             else -> null
         }
     }
@@ -406,7 +408,7 @@ class SimAdministrationTest {
         loadSimData(HssState.ACTIVATED)
         // This is an ordinary MSISDN, nothing special about it, should be available
         assertEquals(ProvisionState.AVAILABLE, getSimEntryByICCIDFromLoadedBatch(FIRST_ICCID)?.provisionState)
-        
+
         // The next two numbers are "golden", ending in respecticely "9999" and "0000", so they
         // should be reserved, and thus not available.
         assertEquals(ProvisionState.RESERVED, getSimEntryByICCIDFromLoadedBatch("8901000000000000985")?.provisionState)
@@ -414,7 +416,7 @@ class SimAdministrationTest {
     }
 
 
-    private fun getJsonFromEndpoint(endpoint:String): JsonObject {
+    private fun getJsonFromEndpoint(endpoint: String): JsonObject {
         var response = client.target(endpoint)
                 .request()
                 .get()
@@ -429,22 +431,23 @@ class SimAdministrationTest {
 
 
     @Test
-    fun testHealthcheckDb() {
-
+    fun testHealthchecs() {
+        // val healtchecks = getJsonFromEndpoint(healthcheckEndpoint)
+        assertTrue(getJsonElement(endpoint = healthcheckEndpoint, name = "db",  valueName = "healthy").asBoolean)
+        //  assertEquals("true", healtchecks.get("postgresql").asJsonObject.get("healthy"))
     }
 
 
-    @Test
-    fun testHealthchecs() {
-        val healtchecks = getJsonFromEndpoint(healthcheckEndpoint)
-        assertEquals("true", healtchecks.get("db").asJsonObject.get("healthy"))
-        assertEquals("true", healtchecks.get("postgresql").asJsonObject.get("healthy"))
+    fun getJsonElement(endpoint: String, theClass: String? = null, name: String, valueName: String): JsonElement {
+        val endpointValue = getJsonFromEndpoint(endpoint)
+        val classElements = if (theClass == null) endpointValue else endpointValue.get(theClass)
+        val targetElement = classElements.asJsonObject.get(name).asJsonObject
+        return targetElement.get(valueName)
     }
 
     @Test
     fun testSimMetrics() {
-        val currentMetrics = getJsonFromEndpoint(metricsEndpoint)
-        assertEquals(42, currentMetrics.get("gauges").asJsonObject.get("dummyMetric.doIgnore").asInt)
+        assertEquals(42, getJsonElement(metricsEndpoint, "gauges", "dummyMetric.do.ignore", "value").asInt)
     }
 
 
