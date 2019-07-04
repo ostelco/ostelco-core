@@ -432,22 +432,32 @@ class SimAdministrationTest {
 
     @Test
     fun testHealthchecs() {
-        // val healtchecks = getJsonFromEndpoint(healthcheckEndpoint)
-        assertTrue(getJsonElement(endpoint = healthcheckEndpoint, name = "db",  valueName = "healthy").asBoolean)
-        //  assertEquals("true", healtchecks.get("postgresql").asJsonObject.get("healthy"))
+        val healtchecks = getJsonFromEndpoint(healthcheckEndpoint)
+        assertTrue(getJsonElement(endpointValue =  healtchecks, name = "db",  valueName = "healthy").asBoolean)
+        assertTrue(getJsonElement(endpointValue =  healtchecks, name = "postgresql",  valueName = "healthy").asBoolean)
     }
 
 
-    fun getJsonElement(endpoint: String, theClass: String? = null, name: String, valueName: String): JsonElement {
-        val endpointValue = getJsonFromEndpoint(endpoint)
-        val classElements = if (theClass == null) endpointValue else endpointValue.get(theClass)
+    fun getJsonElement(
+            endpointValue: JsonObject? = null,
+            endpoint: String? = null,
+            theClass: String? = null,
+            name: String,
+            valueName: String): JsonElement {
+        val epv =
+                if (endpointValue == null && endpoint != null)
+                    getJsonFromEndpoint(endpoint)
+                else if (endpointValue != null && endpoint == null) endpointValue
+                else throw IllegalArgumentException("Exactly one of endpointValue and endpoint must be non-null")
+
+        val classElements = if (theClass == null) epv else epv.get(theClass)
         val targetElement = classElements.asJsonObject.get(name).asJsonObject
         return targetElement.get(valueName)
     }
 
     @Test
     fun testSimMetrics() {
-        assertEquals(42, getJsonElement(metricsEndpoint, "gauges", "dummyMetric.do.ignore", "value").asInt)
+        assertEquals(42, getJsonElement(endpoint = metricsEndpoint, theClass = "gauges", name = "dummyMetric.do.ignore", valueName = "value").asInt)
     }
 
 
