@@ -5,6 +5,7 @@ include ':admin-endpoint'
 include ':analytics-grpc-api'
 include ':analytics-module'
 include ':app-notifier'
+include ':appleid-auth-service'
 include ':auth-server'
 include ':customer-endpoint'
 include ':customer-support-endpoint'
@@ -52,6 +53,7 @@ project(':admin-endpoint').projectDir = "$rootDir/admin-endpoint" as File
 project(':analytics-grpc-api').projectDir = "$rootDir/analytics-grpc-api" as File
 project(':analytics-module').projectDir = "$rootDir/analytics-module" as File
 project(':app-notifier').projectDir = "$rootDir/app-notifier" as File
+project(':appleid-auth-service').projectDir = "$rootDir/appleid-auth-service" as File
 project(':auth-server').projectDir = "$rootDir/auth-server" as File
 project(':customer-endpoint').projectDir = "$rootDir/customer-endpoint" as File
 project(':customer-support-endpoint').projectDir = "$rootDir/customer-support-endpoint" as File

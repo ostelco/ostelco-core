@@ -63,7 +63,7 @@ class RegionsResourceTest {
     @Before
     fun setUp() {
         Mockito.`when`(AUTHENTICATOR.authenticate(ArgumentMatchers.anyString()))
-                .thenReturn(Optional.of(AccessTokenPrincipal(email, "email")))
+                .thenReturn(Optional.of(AccessTokenPrincipal(Identity(email, "EMAIL","email"))))
     }
 
     companion object {

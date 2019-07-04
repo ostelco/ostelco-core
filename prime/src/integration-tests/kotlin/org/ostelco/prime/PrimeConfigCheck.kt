@@ -3,7 +3,6 @@ package org.ostelco.prime
 import io.dropwizard.Application
 import io.dropwizard.cli.CheckCommand
 import io.dropwizard.cli.Command
-import io.dropwizard.testing.ConfigOverride
 import io.dropwizard.testing.DropwizardTestSupport
 import org.junit.Assert
 import org.junit.BeforeClass
@@ -30,9 +29,7 @@ class PrimeConfigCheck {
                     PrimeApplication::class.java,
                     "config/config.yaml",
                     Optional.empty<String>(),
-                    Function<Application<PrimeConfiguration>, Command> { app -> CheckCommand<PrimeConfiguration>(app) },
-                    ConfigOverride.config("modules[3].config.configFile","config/prime-service-account.json"),
-                    ConfigOverride.config("modules[11].config.configFile","config/prime-service-account.json")
+                    Function<Application<PrimeConfiguration>, Command> { app -> CheckCommand<PrimeConfiguration>(app) }
             )
 
         @JvmStatic

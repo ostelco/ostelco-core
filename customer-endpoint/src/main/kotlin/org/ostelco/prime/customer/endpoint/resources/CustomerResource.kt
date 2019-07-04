@@ -35,7 +35,7 @@ class CustomerResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        return dao.getCustomer(identity = Identity(id = token.name, type = "EMAIL", provider = token.provider))
+        return dao.getCustomer(identity = token.identity)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { Response.status(Response.Status.OK).entity(asJson(it)) })
@@ -69,7 +69,7 @@ class CustomerResource(private val dao: SubscriberDAO) {
         }
         logger.info("Create customer with contactEmail = ${decodeEmail(contactEmail)} encoded = $contactEmail")
         return dao.createCustomer(
-                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                identity = token.identity,
                 customer = Customer(
                         id = UUID.randomUUID().toString(),
                         nickname = nickname,
@@ -99,7 +99,7 @@ class CustomerResource(private val dao: SubscriberDAO) {
         }
         logger.info("Update customer with contactEmail = $decodedEmail")
         return dao.updateCustomer(
-                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                identity = token.identity,
                 nickname = nickname,
                 contactEmail = decodedEmail)
                 .fold(
@@ -116,7 +116,7 @@ class CustomerResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        return dao.removeCustomer(identity = Identity(id = token.name, type = "EMAIL", provider = token.provider))
+        return dao.removeCustomer(identity = token.identity)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { Response.status(Response.Status.NO_CONTENT).entity(asJson("")) })
@@ -135,7 +135,7 @@ class CustomerResource(private val dao: SubscriberDAO) {
         }
 
         return dao.getStripeEphemeralKey(
-                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                identity = token.identity,
                 apiVersion = apiVersion)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },

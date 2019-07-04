@@ -1,5 +1,6 @@
 package org.ostelco.prime.ocs.consumption.pubsub
 
+import arrow.core.getOrElse
 import com.google.cloud.pubsub.v1.Publisher
 import com.palantir.docker.compose.DockerComposeRule
 import com.palantir.docker.compose.connection.waiting.HealthChecks
@@ -91,24 +92,24 @@ class OcsPubSubTest {
     }
 
     private fun createTopicWithSubscription(topicId: String, vararg subscriptionIds: String) {
-        logger.info("Created topic: {}", createTopic(topicId).name)
+        logger.info("Created topic: {}", createTopic(topicId)?.name)
         subscriptionIds.forEach { subscriptionId ->
-            createSubscription(topicId, subscriptionId).apply {
+            createSubscription(topicId, subscriptionId)?.apply {
                 logger.info("Created subscription: {} for topic: {}", this.name, this.topic)
             }
         }
     }
 
-    private fun createTopic(topicId: String): CreateTopicResponse = put {
+    private fun createTopic(topicId: String) = put<String, CreateTopicResponse> {
         target = TARGET
         path = "v1/projects/$PROJECT_ID/topics/$topicId"
-    }
+    }.getOrElse { null }
 
-    private fun createSubscription(topicId: String, subscriptionId: String): CreateSubscriptionResponse = put {
+    private fun createSubscription(topicId: String, subscriptionId: String) = put<String, CreateSubscriptionResponse> {
         target = TARGET
         path = "v1/projects/$PROJECT_ID/subscriptions/$subscriptionId"
         body = """{"topic":"projects/$PROJECT_ID/topics/$topicId"}"""
-    }
+    }.getOrElse { null }
 
     companion object {
 
@@ -126,11 +127,11 @@ class OcsPubSubTest {
     }
 }
 
-class CreateTopicResponse(var name: String? = null)
+data class CreateTopicResponse(var name: String)
 
-class CreateSubscriptionResponse(
-        var name: String? = null,
-        var topic: String? = null,
-        var pushConfig: Any? = null,
-        var ackDeadlineSeconds: Long? = null,
-        var messageRetentionDuration: String? = null)
+data class CreateSubscriptionResponse(
+        val name: String,
+        val topic: String,
+        val pushConfig: Any,
+        val ackDeadlineSeconds: Long,
+        val messageRetentionDuration: String)

@@ -4,7 +4,6 @@ import io.dropwizard.auth.Auth
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.customer.endpoint.store.SubscriberDAO
 import org.ostelco.prime.jsonmapper.asJson
-import org.ostelco.prime.model.Identity
 import javax.validation.constraints.NotNull
 import javax.ws.rs.GET
 import javax.ws.rs.POST
@@ -27,7 +26,7 @@ class SimProfilesResource(private val regionCode: String, private val dao: Subsc
         }
 
         return dao.getSimProfiles(
-                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                identity = token.identity,
                 regionCode = regionCode)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
@@ -47,7 +46,7 @@ class SimProfilesResource(private val regionCode: String, private val dao: Subsc
         }
 
         return dao.provisionSimProfile(
-                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                identity = token.identity,
                 regionCode = regionCode,
                 profileType = profileType)
                 .fold(
@@ -75,7 +74,7 @@ class SimProfilesResource(private val regionCode: String, private val dao: Subsc
         }
 
         return dao.updateSimProfile(
-                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                identity = token.identity,
                 regionCode = regionCode,
                 iccId = iccId,
                 alias = alias)
@@ -101,7 +100,7 @@ class SimProfilesResource(private val regionCode: String, private val dao: Subsc
         }
 
         return dao.sendEmailWithEsimActivationQrCode(
-                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                identity = token.identity,
                 regionCode = regionCode,
                 iccId = iccId)
                 .fold(

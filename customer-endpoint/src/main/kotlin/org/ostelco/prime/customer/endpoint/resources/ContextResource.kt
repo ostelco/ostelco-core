@@ -4,7 +4,6 @@ import io.dropwizard.auth.Auth
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.customer.endpoint.store.SubscriberDAO
 import org.ostelco.prime.jsonmapper.asJson
-import org.ostelco.prime.model.Identity
 import java.util.*
 import javax.ws.rs.GET
 import javax.ws.rs.Path
@@ -25,7 +24,7 @@ class ContextResource(private val dao: SubscriberDAO) {
         }
 
         return dao.getContext(
-                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider))
+                identity = token.identity)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { Response.status(Response.Status.OK).entity(asJson(it)) })

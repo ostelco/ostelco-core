@@ -1,11 +1,11 @@
 package org.ostelco.prime.auth
 
+import org.ostelco.prime.model.Identity
 import java.security.Principal
 
 /**
- * Holds the 'user-id' obtained by verifying and decoding an OAuth2
- * 'access-token'.
+ * Holds the 'identity' obtained by verifying and decoding an OAuth2 'access-token'.
  */
-class AccessTokenPrincipal(private val email: String, val provider: String) : Principal {
-    override fun getName(): String = email
+class AccessTokenPrincipal(val identity: Identity) : Principal {
+    override fun getName(): String = identity.id
 }

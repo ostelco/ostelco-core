@@ -22,7 +22,7 @@ class ReferralResource(private val dao: SubscriberDAO) {
         }
 
         return dao.getReferrals(
-                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider))
+                identity = token.identity)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { Response.status(Response.Status.OK).entity(it) })
@@ -38,7 +38,7 @@ class ReferralResource(private val dao: SubscriberDAO) {
         }
 
         return dao.getReferredBy(
-                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider))
+                identity = token.identity)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { Response.status(Response.Status.OK).entity(it) })

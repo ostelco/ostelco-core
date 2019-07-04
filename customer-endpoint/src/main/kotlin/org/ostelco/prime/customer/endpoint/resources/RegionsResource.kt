@@ -24,7 +24,7 @@ class RegionsResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        return dao.getRegions(identity = Identity(id = token.name, type = "EMAIL", provider = token.provider))
+        return dao.getRegions(identity = token.identity)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { Response.status(Response.Status.OK).entity(asJson(it)) })
@@ -45,7 +45,7 @@ class RegionsResource(private val dao: SubscriberDAO) {
         }
 
         return dao.getRegion(
-                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                identity = token.identity,
                 regionCode = regionCode)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },

@@ -676,14 +676,17 @@ class OcsTest {
         //configuration file
         private const val configFile = "client-jdiameter-config.xml"
 
-        @BeforeClass @JvmStatic fun setup() {
+        @BeforeClass
+        @JvmStatic
+        fun setup() {
             testClient = TestClient()
             testClient.initStack("/", configFile)
         }
 
-        @AfterClass @JvmStatic fun teardown() {
+        @AfterClass
+        @JvmStatic
+        fun teardown() {
             testClient.shutdown()
         }
-
     }
 }

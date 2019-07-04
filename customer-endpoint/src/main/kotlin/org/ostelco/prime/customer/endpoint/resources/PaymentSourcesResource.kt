@@ -35,7 +35,7 @@ class PaymentSourcesResource(private val dao: SubscriberDAO) {
         }
 
         return dao.createSource(
-                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                identity = token.identity,
                 sourceId = sourceId)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
@@ -52,7 +52,7 @@ class PaymentSourcesResource(private val dao: SubscriberDAO) {
                     .build()
         }
         return dao.listSources(
-                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider))
+                identity = token.identity)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { sourceList -> Response.status(Response.Status.OK).entity(sourceList) })
@@ -71,7 +71,7 @@ class PaymentSourcesResource(private val dao: SubscriberDAO) {
         }
 
         return dao.setDefaultSource(
-                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                identity = token.identity,
                 sourceId = sourceId)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
@@ -91,7 +91,7 @@ class PaymentSourcesResource(private val dao: SubscriberDAO) {
         }
 
         return dao.removeSource(
-                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                identity = token.identity,
                 sourceId = sourceId)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },

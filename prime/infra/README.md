@@ -206,6 +206,14 @@ kubectl create secret generic scaninfo-secrets --from-literal=bucketName='bucket
 kubectl create secret generic mandrill-secrets --from-literal=mandrillApiKey='keep-mandrill-api-key-here'
 ```
 
+```bash
+kubectl create secret generic apple-id-auth-secrets \
+  --from-literal=teamId='teamId' \
+  --from-literal=keyId='keyId' \
+  --from-literal=clientId='clientId' \
+  --from-literal=privateKey='privateKey'
+```
+
 ### Keysets for scan information store
 
 The keys are generated using `Tinkey` tool provied as part of the google tink project

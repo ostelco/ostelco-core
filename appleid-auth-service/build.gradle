@@ -1,0 +1,28 @@
+plugins {
+  id "org.jetbrains.kotlin.jvm"
+  id "application"
+  id "com.github.johnrengelman.shadow" version "5.1.0"
+  id "idea"
+}
+
+dependencies {
+  implementation project(":prime-modules")
+  implementation project(":firebase-extensions")
+
+  implementation("io.jsonwebtoken:jjwt:$jjwtVersion") {
+    exclude group: "com.fasterxml.jackson.core", module:"jackson-databind"
+  }
+  
+  testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
+  testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
+  testImplementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
+}
+
+shadowJar {
+  mainClassName = 'org.ostelco.auth.AuthServerApplicationKt'
+  mergeServiceFiles()
+  classifier = "uber"
+  version = null
+}
+
+apply from: '../gradle/jacoco.gradle'
