@@ -43,6 +43,18 @@ class PaymentTransactionResource {
                             { ok(it) }
                     ).build()
 
+    @GET
+    @Path("/check/transaction")
+    fun checkTransactions(@QueryParam("after")
+                          after: Long = epoch(A_DAY_AGO),
+                          @QueryParam("before")
+                          before: Long = epoch()): Response =
+            storage.checkPaymentTransactions(after, before)
+                    .fold(
+                            { failed(it, ApiErrorCode.FAILED_TO_CHECK_PAYMENT_TRANSACTIONS) },
+                            { ok(it) }
+                    ).build()
+
     /* Epoch timestamp, now or offset by +/- seconds. */
     private fun epoch(offset: Long = 0L): Long =
             LocalDateTime.now(ZoneOffset.UTC)
