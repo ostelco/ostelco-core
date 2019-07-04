@@ -24,7 +24,6 @@ import org.ostelco.prime.getLogger
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.StripeUtils.either
 import org.ostelco.prime.paymentprocessor.core.BadGatewayError
-import org.ostelco.prime.paymentprocessor.core.ChargeInfo
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
 import org.ostelco.prime.paymentprocessor.core.InvoicePaymentInfo
 import org.ostelco.prime.paymentprocessor.core.InvoiceInfo
@@ -552,7 +551,7 @@ class StripePaymentProcessor : PaymentProcessor {
             }
 
     override fun getPaymentTransactions(after: Long, before: Long): Either<PaymentError, List<PaymentTransactionInfo>> =
-            either("") {
+            either("Failed to fetch payment transactions from Stripe") {
                 val param = mapOf(
                         *(if (after > 0)
                             arrayOf("created[gte]" to after)
@@ -565,19 +564,19 @@ class StripePaymentProcessor : PaymentProcessor {
                         .autoPagingIterable()
                         .filter {
                             it.status == "succeeded"
-                        }.map {
-                            PaymentTransactionInfo(id = it.id,
-                                    amount = it.amount,
-                                    currency = it.currency,
-                                    invoiceId = it.invoice,
-                                    customerId = it.customer,
-                                    charges = it.charges.data.map {
-                                        ChargeInfo(id = it.id,
-                                                amount = it.amount,
-                                                currency = it.currency,
-                                                refunded = it.refunded)
-                                    },
-                                    created = it.created)
+                        }.map { intent ->
+                            intent.charges.data.map {
+                                PaymentTransactionInfo(id = it.id,   /* chargeId */
+                                        amount = it.amount,
+                                        currency = it.currency,
+                                        created = it.created,
+                                        refunded = it.refunded,
+                                        details = mapOf("invoiceId" to intent.invoice,
+                                                "customerId" to intent.customer)
+                                )
+                            }
+                        }.flatMap {
+                            it
                         }.toList()
             }
 

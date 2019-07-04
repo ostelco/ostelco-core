@@ -2157,32 +2157,31 @@ object Neo4jStoreSingleton : GraphStore {
 
                 purchaseRecords.map {
                     mapOf("type" to "purchaseRecord",
-                            "invoiceId" to it.properties["invoiceId"],
                             "chargeId" to it.id,
                             "amount" to it.product.price.amount,
                             "currency" to it.product.price.currency,
                             "refunded" to (it.refund != null),
-                            "created" to it.timestamp)
+                            "created" to it.timestamp,
+                            "properties" to it.properties)
                 }.plus(
                         paymentRecords.map {
                             mapOf("type" to "paymentRecord",
-                                    "invoiceId" to it.invoiceId,
-                                    "chargeId" to if (it.charges.size == 1)
-                                        it.charges.first().id
-                                    else
-                                        null,
+                                    "chargeId" to it.id,
                                     "amount" to it.amount,
                                     "currency" to it.currency,
-                                    "refunded" to if (it.charges.size == 1)
-                                        it.charges.first().refunded
-                                    else
-                                        false,
-                                    "created" to it.created)
+                                    "refunded" to it.refunded,
+                                    "created" to it.created,
+                                    "properties" to it.details)
                         }
                 ).groupBy {
-                    it["invoiceId"].hashCode() + it["chargeId"].hashCode() +
-                            it["amount"].hashCode() + it["currency"].hashCode() +
-                            it["refunded"].hashCode()
+                    it["chargeId"].hashCode() + it["amount"].hashCode() +
+                            it["currency"].hashCode() + it["refunded"].hashCode()
+                }.map {
+                    /* Report it if payment backend and/or purchase record store should
+                       have duplicates or more of the same transaction. */
+                    if (it.value.size > 2)
+                        logger.error("Duplicate of payment transaction: ${it}")
+                    it
                 }.filter {
                     it.value.size == 1
                 }.map {
