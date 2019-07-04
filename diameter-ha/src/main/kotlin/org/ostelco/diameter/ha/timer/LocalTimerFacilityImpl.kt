@@ -9,7 +9,11 @@ import org.jdiameter.common.api.data.ISessionDatasource
 import org.jdiameter.common.api.timer.ITimerFacility
 import org.jdiameter.common.impl.app.AppSessionImpl
 import org.ostelco.diameter.ha.logger
-import java.io.*
+import java.io.Externalizable
+import java.io.IOException
+import java.io.ObjectInput
+import java.io.ObjectOutput
+import java.io.Serializable
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.TimeUnit
@@ -33,7 +37,8 @@ class LocalTimerFacilityImpl(container: IContainer) : ITimerFacility {
         val id = "$sessionId/$timerName"
         logger.debug("Scheduling timer with id: $id timerName: $timerName, milliseconds: $milliseconds")
         val timerTaskHandle = borrowTimerTaskHandle()
-        timerTaskHandle!!.id = id
+                ?: throw RuntimeException("timerTaskHandle is null.   This should never happen")
+        timerTaskHandle.id = id
         timerTaskHandle.sessionId = sessionId
         timerTaskHandle.timerName = timerName
         timerTaskHandle.future = executor.schedule(timerTaskHandle, milliseconds, TimeUnit.MILLISECONDS)
@@ -43,7 +48,7 @@ class LocalTimerFacilityImpl(container: IContainer) : ITimerFacility {
     override fun cancel(timerTaskHandle: Serializable?) {
         if (timerTaskHandle != null && timerTaskHandle is TimerTaskHandle) {
             if (timerTaskHandle.future != null) {
-                logger.debug("Cancelling timer with id [${timerTaskHandle.id}] and delay [${timerTaskHandle.future!!.getDelay(TimeUnit.MILLISECONDS)}]")
+                logger.debug("Cancelling timer with id [${timerTaskHandle.id}] and delay [${timerTaskHandle.future?.getDelay(TimeUnit.MILLISECONDS)}]")
                 if (executor.remove(timerTaskHandle.future as Runnable)) {
                     timerTaskHandle.future!!.cancel(false)
                     returnTimerTaskHandle(timerTaskHandle)

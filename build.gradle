@@ -63,6 +63,7 @@ subprojects {
     neo4jDriverVersion="1.7.5"
     neo4jVersion="3.5.6"
     postgresqlVersion = "42.2.6"  // See comment in ./sim-administration/simmanager/build.gradle
+    prometheusDropwizardVersion = "2.2.0"
     protocVersion="3.7.1" // updating to "3.8.0" causes compile errors in grpc generated code
     slf4jVersion="1.7.26"
     stripeVersion = "10.3.0"

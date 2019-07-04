@@ -3,6 +3,8 @@ package org.ostelco.simcards.inventory
 import arrow.core.Either
 import arrow.core.fix
 import arrow.core.flatMap
+import arrow.core.left
+import arrow.core.right
 import arrow.effects.IO
 import arrow.instances.either.monad.monad
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -13,6 +15,7 @@ import org.jdbi.v3.core.mapper.reflect.ColumnName
 import org.jdbi.v3.core.statement.StatementContext
 import org.jdbi.v3.sqlobject.customizer.Bind
 import org.jdbi.v3.sqlobject.transaction.Transaction
+import org.ostelco.prime.simmanager.NotFoundError
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.hss.HssEntry
 import java.io.BufferedReader
@@ -274,10 +277,18 @@ class SimInventoryDAO(private val db: SimInventoryDBWrapperImpl) : SimInventoryD
                     getProfileStatsAsKeyValuePairs(hssId = hssId, simProfile = simProfile).bind()
                             .forEach { keyValuePairs.put(it.key, it.value) }
 
-                    val noOfEntries = keyValuePairs["NO_OF_ENTRIES"]!!
-                    val noOfUnallocatedEntries = keyValuePairs["NO_OF_UNALLOCATED_ENTRIES"]!!
-                    val noOfReleasedEntries = keyValuePairs["NO_OF_RELEASED_ENTRIES"]!!
-                    val noOfEntriesAvailableForImmediateUse = keyValuePairs["NO_OF_ENTRIES_READY_FOR_IMMEDIATE_USE"]!!
+                    fun lookup(key: String) = keyValuePairs[key]
+                            ?.right()
+                            ?: NotFoundError("Could not find key $key").left()
+
+                    val noOfEntries =
+                            lookup("NO_OF_ENTRIES").bind()
+                    val noOfUnallocatedEntries =
+                            lookup( "NO_OF_UNALLOCATED_ENTRIES").bind()
+                    val noOfReleasedEntries =
+                            lookup("NO_OF_RELEASED_ENTRIES").bind()
+                    val noOfEntriesAvailableForImmediateUse =
+                            lookup("NO_OF_ENTRIES_READY_FOR_IMMEDIATE_USE").bind()
 
                     SimProfileKeyStatistics(
                             noOfEntries = noOfEntries,
@@ -287,6 +298,7 @@ class SimInventoryDAO(private val db: SimInventoryDBWrapperImpl) : SimInventoryD
                 }.fix()
             }.unsafeRunSync()
 }
+
 
 data class SimProfileKeyStatistics(
         val noOfEntries: Long,

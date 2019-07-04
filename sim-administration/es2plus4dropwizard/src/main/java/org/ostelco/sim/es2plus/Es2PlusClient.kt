@@ -77,7 +77,7 @@ class ES2PlusClient(
                 throw ES2PlusClientException("Expected header X-Admin-Protocol to be '$X_ADMIN_PROTOCOL_HEADER_VALUE' but it was '$xAdminProtocolHeader'")
             }
 
-            val returnedContentType = result.getFirstHeader("Content-Type")!!
+            val returnedContentType = result.getFirstHeader("Content-Type")
             val expectedContentType = "application/json"
 
             if (returnedContentType.value != expectedContentType) {

@@ -8,6 +8,7 @@ import arrow.effects.IO
 import arrow.instances.either.monad.flatMap
 import arrow.instances.either.monad.monad
 import org.apache.http.impl.client.CloseableHttpClient
+import org.ostelco.prime.simmanager.DatabaseError
 import org.ostelco.prime.simmanager.NotFoundError
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.sim.es2plus.ProfileStatus
@@ -74,7 +75,11 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
 
                     val config = profileVendorAndConfig.second
 
-                    val updatedSimEntry = dao.setProvisionState(simEntry.id!!, ProvisionState.PROVISIONED)
+                    if (simEntry.id == null) {
+                        DatabaseError("simEntry has no id (simEntry=$simEntry)").left().bind()
+                    }
+
+                    val updatedSimEntry = dao.setProvisionState(simEntry.id, ProvisionState.PROVISIONED)
                             .bind()
 
                     /* Add 'code' field content.

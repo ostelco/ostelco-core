@@ -131,7 +131,7 @@ prime:
   resources: 
     requests:
       cpu: 300m
-      memory: 512Mi
+      memory: 768Mi
   livenessProbe: {}
   readinessProbe: {}
   annotations:
