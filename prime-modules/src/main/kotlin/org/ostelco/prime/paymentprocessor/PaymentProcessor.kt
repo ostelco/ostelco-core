@@ -207,15 +207,16 @@ interface PaymentProcessor {
     fun getTaxRatesForTaxRegionId(taxRegionId: String?): Either<PaymentError, List<TaxRateInfo>>
 
     /**
-     * Fetch ayment transaction that which lies within the time range after..before,
-     * where the timestamps are Epoch timestamps and the value 0 means ignore.
+     * Fetch payment transaction that lies within the time range atart..end, where
+     * the timestamps are Epoch timestamps in milliseconds and where the value
+     * 0 means ignore.
      * Examples:
-     *     1560124800..1560729599 - fetch all events from 2019-06-10 to 2019-06-16
-     *     1560124800..0          - fetch all events from 2019-06-10 and up to today
-     *     0..1560124800          - fetch all events from before 2019-06-10
-     * @param after - events sent on or later
-     * @param before - events sent on or before
+     *     1560124800000..1560729599000 - fetch all events from 2019-06-10 to 2019-06-16
+     *     1560124800000..0             - fetch all events from 2019-06-10 and up to today
+     *     0..1560124800                - fetch all events from before 2019-06-10
+     * @param start - events sent on or later
+     * @param end - events sent on or before
      * @return payment transactions
      */
-    fun getPaymentTransactions(after: Long, before: Long): Either<PaymentError, List<PaymentTransactionInfo>>
+    fun getPaymentTransactions(start: Long, end: Long): Either<PaymentError, List<PaymentTransactionInfo>>
 }

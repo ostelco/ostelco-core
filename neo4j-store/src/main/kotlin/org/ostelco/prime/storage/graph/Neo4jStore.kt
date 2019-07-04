@@ -2124,12 +2124,12 @@ object Neo4jStoreSingleton : GraphStore {
     // For verifying payment transactions
     //
 
-    override fun getPaymentTransactions(after: Long, before: Long): Either<PaymentError, List<PaymentTransactionInfo>> =
-            paymentProcessor.getPaymentTransactions(after, before)
+    override fun getPaymentTransactions(start: Long, end: Long): Either<PaymentError, List<PaymentTransactionInfo>> =
+            paymentProcessor.getPaymentTransactions(start, end)
 
-    override fun getPurchaseTransactions(after: Long, before: Long): Either<StoreError, List<PurchaseRecord>> = readTransaction {
+    override fun getPurchaseTransactions(start: Long, end: Long): Either<StoreError, List<PurchaseRecord>> = readTransaction {
         read("""
-                MATCH(c)-[r:PURCHASED]->(p) WHERE r.timestamp >= '${after}' AND r.timestamp < '${before}'
+                MATCH(c)-[r:PURCHASED]->(p) WHERE r.timestamp >= '${start}' AND r.timestamp <= '${end}'
                 RETURN c,r,p
                 """.trimIndent(), transaction) { statementResult ->
             statementResult.list { record ->
@@ -2143,16 +2143,30 @@ object Neo4jStoreSingleton : GraphStore {
         }
     }
 
-    override fun checkPaymentTransactions(after: Long, before: Long): Either<PaymentError, List<Map<String, Any?>>> = readTransaction {
+    override fun checkPaymentTransactions(start: Long, end: Long): Either<PaymentError, List<Map<String, Any?>>> = readTransaction {
         IO {
             Either.monad<PaymentError>().binding {
 
-                val purchaseRecords = getPurchaseTransactions(after, before)
+                /* To account for time differences for when a payment transaction is recorded
+                   in the payment backend and in the purchase record DB, the search for
+                   corresponding payment and purchase records are done with a wider time range
+                   that what is specificed with the start and end timestamps.
+
+                   When all common records has been removed, the remaining records, if any,
+                   are then againg checked for records that lies excactly within the start and
+                   end timestamps. */
+
+                val offset = 600000L   /* 10 min in milliseconds. */
+
+                val startWithOffset = if (start > 0L) start - offset else start
+                val endWithOffset = if (end > 0L) end + offset else end
+
+                val purchaseRecords = getPurchaseTransactions(startWithOffset, endWithOffset)
                         .mapLeft {
                             BadGatewayError("Error when fetching purchase records",
                                     error = it)
                         }.bind()
-                val paymentRecords = getPaymentTransactions(after, before)
+                val paymentRecords = getPaymentTransactions(startWithOffset, endWithOffset)
                         .bind()
 
                 purchaseRecords.map {
@@ -2173,30 +2187,41 @@ object Neo4jStoreSingleton : GraphStore {
                                     "created" to it.created,
                                     "properties" to it.details)
                         }
-                ).groupBy {
+                ).map {
+                    logger.info(">>> record: ${it}")
+                    it
+                }.groupBy {
                     it["chargeId"].hashCode() + it["amount"].hashCode() +
                             it["currency"].hashCode() + it["refunded"].hashCode()
                 }.map {
-                    /* Report it if payment backend and/or purchase record store should
-                       have duplicates or more of the same transaction. */
-                    if (it.value.size > 2)
-                        logger.error("Duplicate of payment transaction: ${it}")
+                    /* Report if payment backend and/or purchase record store have
+                       duplicates or more of the same transaction. */
+                    if (it.value.size > 2) {
+                        logger.error(NOTIFY_OPS_MARKER,
+                            "${it.value.size} duplicates found for payment transaction ${it.value.first()["chargeId"]}")
+                    }
                     it
                 }.filter {
                     it.value.size == 1
                 }.map {
                     it.value.first()
                 }.filter {
+                    /* Filter down to records that lies excactly within the start
+                       and end timestamps. */
                     val ts = it["created"] as? Long ?: 0L
 
                     if (ts == 0L) {
-                        logger.error("Unexpected 'created' value encountered during payment transaction check: ${it}")
+                        logger.error(NOTIFY_OPS_MARKER,
+                                "Unexpected 'created' timestamp found for payment transaction ${it["chargeId"]}")
                         true
                     } else {
-                        ts >= after && ts <= before
+                        ts >= start && ts <= end
                     }
                 }.map {
-                    logger.error("Payment transaction difference ${it}")
+                    logger.error(NOTIFY_OPS_MARKER, if (it["type"] == "purchaseRecord")
+                        "Found no matching payment record for purchase record ${it["chargeId"]}"
+                    else
+                        "Found no matching purchase record for payment record ${it["chargeId"]}")
                     it
                 }
             }.fix()

@@ -21,11 +21,11 @@ class PaymentTransactionResource {
 
     @GET
     @Path("/transactions")
-    fun fetchPaymentTransactions(@QueryParam("after")
-                                 after: Long = epoch(A_DAY_AGO),
-                                 @QueryParam("before")
-                                 before: Long = epoch()): Response =
-            storage.getPaymentTransactions(after, before)
+    fun fetchPaymentTransactions(@QueryParam("start")
+                                 start: Long = epoch(A_DAY_AGO),
+                                 @QueryParam("end")
+                                 end: Long = epoch()): Response =
+            storage.getPaymentTransactions(toEpochMillis(start), toEpochMillis(end))
                     .fold(
                             { failed(it, ApiErrorCode.FAILED_TO_FETCH_PAYMENT_TRANSACTIONS) },
                             { ok(it) }
@@ -33,11 +33,11 @@ class PaymentTransactionResource {
 
     @GET
     @Path("/purchases")
-    fun fetchPurchaseTransactions(@QueryParam("after")
-                                  after: Long = epoch(A_DAY_AGO),
-                                  @QueryParam("before")
-                                  before: Long = epoch()): Response =
-            storage.getPurchaseTransactions(after, before)
+    fun fetchPurchaseTransactions(@QueryParam("start")
+                                  start: Long = epoch(A_DAY_AGO),
+                                  @QueryParam("end")
+                                  end: Long = epoch()): Response =
+            storage.getPurchaseTransactions(toEpochMillis(start), toEpochMillis(end))
                     .fold(
                             { failed(it, ApiErrorCode.FAILED_TO_FETCH_PURCHASE_TRANSACTIONS) },
                             { ok(it) }
@@ -45,11 +45,11 @@ class PaymentTransactionResource {
 
     @GET
     @Path("/check/transaction")
-    fun checkTransactions(@QueryParam("after")
-                          after: Long = epoch(A_DAY_AGO),
-                          @QueryParam("before")
-                          before: Long = epoch()): Response =
-            storage.checkPaymentTransactions(after, before)
+    fun checkTransactions(@QueryParam("start")
+                          start: Long = epoch(A_DAY_AGO),
+                          @QueryParam("end")
+                          end: Long = epoch()): Response =
+            storage.checkPaymentTransactions(toEpochMillis(start), toEpochMillis(end))
                     .fold(
                             { failed(it, ApiErrorCode.FAILED_TO_CHECK_PAYMENT_TRANSACTIONS) },
                             { ok(it) }
@@ -60,6 +60,14 @@ class PaymentTransactionResource {
             LocalDateTime.now(ZoneOffset.UTC)
                     .plusSeconds(offset)
                     .atZone(ZoneOffset.UTC).toEpochSecond()
+
+    /* Internally all timestamps are in milliseconds. */
+    private fun toEpochMillis(ts: Long): Long = ts * 1000L
+
+    companion object {
+        /* 24 hours ago in seconds. */
+        val A_DAY_AGO: Long = -86400
+    }
 
     private fun ok(value: List<Any>) =
             Response.status(Response.Status.OK).entity(asJson(value))
@@ -77,9 +85,4 @@ class PaymentTransactionResource {
                     storeError = error).let {
                 Response.status(it.status).entity(asJson(it))
             }
-
-    companion object {
-        /* 24 hours ago in seconds. */
-        val A_DAY_AGO: Long = -86400
-    }
 }

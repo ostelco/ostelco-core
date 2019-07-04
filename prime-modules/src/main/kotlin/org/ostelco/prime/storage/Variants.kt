@@ -321,11 +321,11 @@ interface AdminGraphStore {
     // fun getSegment(id: String): Segment?
     // fun getProductClass(id: String): ProductClass?
 
-    fun getPaymentTransactions(after: Long, before: Long): Either<PaymentError, List<PaymentTransactionInfo>>
+    fun getPaymentTransactions(start: Long, end: Long): Either<PaymentError, List<PaymentTransactionInfo>>
 
-    fun getPurchaseTransactions(after: Long, before: Long): Either<StoreError, List<PurchaseRecord>>
+    fun getPurchaseTransactions(start: Long, end: Long): Either<StoreError, List<PurchaseRecord>>
 
-    fun checkPaymentTransactions(after: Long, before: Long): Either<PaymentError, List<Map<String, Any?>>>
+    fun checkPaymentTransactions(start: Long, end: Long): Either<PaymentError, List<Map<String, Any?>>>
 }
 
 interface ScanInformationStore {

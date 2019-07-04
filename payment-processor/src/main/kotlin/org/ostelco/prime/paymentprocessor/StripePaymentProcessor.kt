@@ -550,14 +550,14 @@ class StripePaymentProcessor : PaymentProcessor {
                         .data
             }
 
-    override fun getPaymentTransactions(after: Long, before: Long): Either<PaymentError, List<PaymentTransactionInfo>> =
+    override fun getPaymentTransactions(start: Long, end: Long): Either<PaymentError, List<PaymentTransactionInfo>> =
             either("Failed to fetch payment transactions from Stripe") {
                 val param = mapOf(
-                        *(if (after > 0)
-                            arrayOf("created[gte]" to after)
+                        *(if (start > 0)
+                            arrayOf("created[gte]" to toEpochSeconds(start))
                         else arrayOf()),
-                        *(if (before > 0)
-                            arrayOf("created[lte]" to before)
+                        *(if (end > 0)
+                            arrayOf("created[lte]" to toEpochSeconds(end))
                         else arrayOf()))
                 /* A payment-intent with status "completed" documents a "payment transaction". */
                 PaymentIntent.list(param)
@@ -569,7 +569,7 @@ class StripePaymentProcessor : PaymentProcessor {
                                 PaymentTransactionInfo(id = it.id,   /* chargeId */
                                         amount = it.amount,
                                         currency = it.currency,
-                                        created = it.created,
+                                        created = toEpochMillis(it.created),
                                         refunded = it.refunded,
                                         details = mapOf("invoiceId" to intent.invoice,
                                                 "customerId" to intent.customer)
@@ -582,4 +582,9 @@ class StripePaymentProcessor : PaymentProcessor {
 
     /* Timestamps in Stripe must be in seconds.*/
     private fun ofEpochMilliToSecond(ts: Long): Long = ts.div(1000L)
+
+    /* Internally all timestamps are in milliseconds. */
+    private fun toEpochMillis(ts: Long): Long = ts * 1000L
+
+    private fun toEpochSeconds(ts: Long): Long = ts.div(1000L)
 }
