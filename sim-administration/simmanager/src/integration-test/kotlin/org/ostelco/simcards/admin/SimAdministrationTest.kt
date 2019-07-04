@@ -455,11 +455,19 @@ class SimAdministrationTest {
         return targetElement.get(valueName)
     }
 
+
+    fun assertGaugeValue(expected: Int, name: String) {
+        assertEquals(expected, getJsonElement(endpoint = metricsEndpoint, theClass = "gauges", name = name, valueName = "value").asInt)
+    }
+
     @Test
     fun testSimMetrics() {
         loadSimData()
         SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().triggerMetricsGeneration()
-        assertEquals(42, getJsonElement(endpoint = metricsEndpoint, theClass = "gauges", name = "dummyMetric.do.ignore", valueName = "value").asInt)
+        assertGaugeValue(100, "sims.noOfEntries.IPHONE_PROFILE_2")
+        assertGaugeValue(0, "sims.noOfEntriesAvailableForImmediateUse.IPHONE_PROFILE_2")
+        assertGaugeValue(0,  "sims.noOfReleasedEntries.IPHONE_PROFILE_2")
+        assertGaugeValue(98, "sims.noOfUnallocatedEntries.IPHONE_PROFILE_2")
     }
 
 

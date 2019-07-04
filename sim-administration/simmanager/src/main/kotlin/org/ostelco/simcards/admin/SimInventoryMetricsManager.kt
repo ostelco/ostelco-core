@@ -12,11 +12,11 @@ import java.util.concurrent.atomic.AtomicLong
 
 
 class SimInventoryMetricsManager(private val dao: SimInventoryDAO, private val metrics: MetricRegistry) : Managed {
-    
+
     ///
     ///  Set up the metrics manager and prepare to run periodic task every five minutes.
     ///
-    
+
     private val metricsRegistry = LocalMetricsRegistry(metrics)
     private val logger by getLogger()
     private val executorService = Executors.newScheduledThreadPool(5)
@@ -68,24 +68,7 @@ class SimInventoryMetricsManager(private val dao: SimInventoryDAO, private val m
 
         logger.info("Periodic sim inventory metrics poller executing")
 
-
-        // XXX Just a little dummy thing we need until we are creating proper metrics,
-        //     so that we can see that metrics are in fact being produced in other parts
-        //     of the system.
-        if (runningForFirstTime.getAndSet(false)) {
-            // Create a dummy metric, will later be done by the periodic task
-            // when needed.
-            // SimInventoryMetricsManager::class.java, "dummyMetric", "noOfThings")
-            metrics.register("dummyMetric.do.ignore",
-                    object : Gauge<Int> {
-                        override fun getValue(): Int {
-                            return 42
-                        }
-                    })
-        }
-
-
-       val metricValues: Collection<MetricValue> = getMetricsValues()
+        val metricValues: Collection<MetricValue> = getMetricsValues()
         metricsRegistry.syncWithValues(metricValues)
     }
 
@@ -162,7 +145,7 @@ class LocalMetricsRegistry(private val metrics: MetricRegistry) {
     }
 
     private fun getMetricName(it: MetricValue): String {
-            return "${it.metricName}.${it.profileName}"
+        return "${it.metricName}.${it.profileName}"
     }
 }
 
@@ -181,7 +164,7 @@ class LocalGaugeAdapter(private val key: String, private var initialValue: Long)
 
 // XXX This is representing a concrete gauge, but needs to
 //     be abstracted in a couple of steps.
-data class MetricValue (
+data class MetricValue(
         val metricName: String,
         val profileName: String, // Name of the SIM profile, will somehow need to be transmitted to prometheus.
         val value: Long)
