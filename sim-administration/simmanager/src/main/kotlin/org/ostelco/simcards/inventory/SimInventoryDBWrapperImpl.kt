@@ -20,7 +20,8 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
 
     override fun getHssProfileNamePairs(): Either<SimManagerError, List<HssProfileIdName>> =
             either(NotFoundError("Could not determine list of HSS profile name pairs")) {
-                db.getHssProfileNamePairs()
+                val hssProfileNamePairs = db.getHssProfileNamePairs()
+                hssProfileNamePairs
             }
 
     override fun reserveGoldenNumbersForBatch(batchId: Long): Either<SimManagerError, Int> =

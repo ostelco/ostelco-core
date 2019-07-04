@@ -109,6 +109,12 @@ class SimInventoryMetricsManager(private val dao: SimInventoryDAO, private val m
 
         return result
     }
+
+    // This method is presenent only to facilitate testing. It won't hurt to invoke it
+    // in other situations, but it's not really inteded to be used that way.
+    fun triggerMetricsGeneration() {
+        periodicTask()
+    }
 }
 
 

@@ -47,6 +47,11 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
     }
 
     fun getDAO() =  simAdminModule.getDAO()
+
+
+    fun triggerMetricsGeneration() {
+        simAdminModule.triggerMetricsGeneration()
+    }
 }
 
 

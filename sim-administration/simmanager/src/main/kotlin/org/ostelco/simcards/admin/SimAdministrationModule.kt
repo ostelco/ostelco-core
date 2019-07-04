@@ -46,6 +46,7 @@ import org.ostelco.simcards.inventory.SimInventoryResource
 @JsonTypeName("sim-manager")
 class SimAdministrationModule : PrimeModule {
 
+    lateinit private var metricsManager: SimInventoryMetricsManager
     private val logger by getLogger()
 
     private lateinit var DAO: SimInventoryDAO
@@ -87,7 +88,8 @@ class SimAdministrationModule : PrimeModule {
 
         // Register metrics as a lifecycle object
 
-        env.lifecycle().manage(SimInventoryMetricsManager(this.DAO, env.metrics()))
+        this.metricsManager = SimInventoryMetricsManager(this.DAO, env.metrics())
+        env.lifecycle().manage(this.metricsManager)
 
         val dispatcher = makeHssDispatcher(
                 hssAdapterConfig = config.hssAdapter,
@@ -166,6 +168,10 @@ class SimAdministrationModule : PrimeModule {
                 throw RuntimeException("Unable to find HSS adapter config, please check config")
             }
         }
+    }
+
+    fun triggerMetricsGeneration() {
+       metricsManager.triggerMetricsGeneration()
     }
 }
 

@@ -457,6 +457,8 @@ class SimAdministrationTest {
 
     @Test
     fun testSimMetrics() {
+        loadSimData()
+        SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().triggerMetricsGeneration()
         assertEquals(42, getJsonElement(endpoint = metricsEndpoint, theClass = "gauges", name = "dummyMetric.do.ignore", valueName = "value").asInt)
     }
 

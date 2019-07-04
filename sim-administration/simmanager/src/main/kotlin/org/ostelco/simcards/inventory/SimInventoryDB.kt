@@ -147,15 +147,15 @@ interface SimInventoryDB {
                                        hssId: Long): Int
 
     @SqlUpdate("""INSERT INTO hlr_adapters
-                                   (metricName)
-                       SELECT :metricName
+                                   (name)
+                       SELECT :name
                        WHERE  NOT EXISTS (SELECT 1
                                           FROM   hlr_adapters
-                                          WHERE  metricName = :metricName)""")
+                                          WHERE  name = :name)""")
     fun addHssAdapter(name: String): Int
 
     @SqlQuery("""SELECT * FROM hlr_adapters
-                      WHERE metricName = :metricName""")
+                      WHERE name = :name""")
     fun getHssEntryByName(name: String): HssEntry
 
     @SqlQuery("""SELECT * FROM hlr_adapters
@@ -163,15 +163,15 @@ interface SimInventoryDB {
     fun getHssEntryById(id: Long): HssEntry
 
     @SqlUpdate("""INSERT INTO profile_vendor_adapters
-                                   (metricName)
-                       SELECT :metricName
+                                   (name)
+                       SELECT :name
                        WHERE  NOT EXISTS (SELECT 1
                                           FROM   profile_vendor_adapters
-                                          WHERE  metricName = :metricName) """)
+                                          WHERE  name = :name) """)
     fun addProfileVendorAdapter(name: String): Int
 
     @SqlQuery("""SELECT * FROM profile_vendor_adapters
-                       WHERE metricName = :metricName""")
+                       WHERE name = :name""")
     fun getProfileVendorAdapterByName(name: String): ProfileVendorAdapter?
 
     @SqlQuery("""SELECT * FROM profile_vendor_adapters
@@ -276,7 +276,7 @@ interface SimInventoryDB {
 
 
     @SqlQuery("""
-        SELECT DISTINCT profile AS simprofilename, hlrid  AS hssid, hlr_adapters.name FROM sim_entries, hlr_adapters WHERE hlrid=hlr_adapters.id
+        SELECT DISTINCT profile AS simprofilename, hlrid  AS hssid, hlr_adapters.name AS hssname FROM sim_entries, hlr_adapters WHERE hlrid=hlr_adapters.id
     """)
     @RegisterRowMapper(HssProfileNameMapper::class)
     fun getHssProfileNamePairs(): List<HssProfileIdName>
@@ -299,8 +299,8 @@ class HssProfileNameMapper : RowMapper<HssProfileIdName> {
             return null
         }
 
-        val hssId = row.getLong("hssId")
-        val hssName = row.getString("hssName")
+        val hssId = row.getLong("hssid")
+        val hssName = row.getString("hssname")
         val simProfileName = row.getString("simprofilename")
         return HssProfileIdName(hssId = hssId, hssName = hssName, simProfileName = simProfileName);
     }
