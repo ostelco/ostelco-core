@@ -85,7 +85,7 @@ class SimInventoryMetricsManager(private val dao: SimInventoryDAO, private val m
         }
 
 
-        val metricValues: Collection<MetricValue> = getMetricsValues()
+       val metricValues: Collection<MetricValue> = getMetricsValues()
         metricsRegistry.syncWithValues(metricValues)
     }
 
@@ -133,7 +133,6 @@ class LocalMetricsRegistry(private val metrics: MetricRegistry) {
         //      metrics that are transmitted via the metrics mechanism.
 
         synchronized(lock) {
-            val currentMetrics = metrics.metrics
             val currentMetricNames = mutableSetOf<String>()
             metricValues.forEach { currentValue ->
                 val key: String = getMetricName(currentValue)
@@ -148,7 +147,7 @@ class LocalMetricsRegistry(private val metrics: MetricRegistry) {
                 }
             }
 
-            val irrelevantMetrics = currentMetrics.keys.subtract(currentMetricNames)
+            val irrelevantMetrics = localMetrics.keys.subtract(currentMetricNames)
             irrelevantMetrics.forEach {
                 metrics.remove(it)
                 localMetrics.remove(it)
