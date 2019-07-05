@@ -186,7 +186,7 @@ class StripePaymentProcessor : PaymentProcessor {
             either("Failed to add source $stripeSourceId to customer $stripeCustomerId") {
                 val customer = Customer.retrieve(stripeCustomerId)
                 val sourceParams = mapOf("source" to stripeSourceId,
-                        "metadata" to mapOf("created" to Instant.now().toEpochMilli()))
+                        "metadata" to mapOf("created" to ofEpochMilliToSecond(Instant.now().toEpochMilli())))
                 SourceInfo(customer.sources.create(sourceParams).id)
             }
 
@@ -553,6 +553,9 @@ class StripePaymentProcessor : PaymentProcessor {
                 TaxRate.list(taxRateParameters)
                         .data
             }
+
+    /* Timestamps in Stripe must be in seconds.*/
+    private fun ofEpochMilliToSecond(ts: Long): Long = ts.div(1000L)
 
     private fun <RETURN> either(errorDescription: String, action: () -> RETURN): Either<PaymentError, RETURN> {
         return try {
