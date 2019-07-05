@@ -7,8 +7,7 @@ import org.ostelco.prime.module.getResource
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.storage.AdminDataSource
 import org.ostelco.prime.storage.StoreError
-import java.time.LocalDateTime
-import java.time.ZoneOffset
+import java.time.Instant
 import javax.validation.constraints.Pattern
 import javax.ws.rs.GET
 import javax.ws.rs.Path
@@ -24,11 +23,11 @@ class PaymentTransactionResource {
     @Path("/transactions")
     fun fetchPaymentTransactions(@QueryParam("start")
                                  @Pattern(regexp = DIGITS_ONLY)
-                                 start: Long = epoch(A_DAY_AGO),
+                                 start: Long = getEpochMilli(A_DAY_AGO),
                                  @QueryParam("end")
                                  @Pattern(regexp = DIGITS_ONLY)
-                                 end: Long = epoch()): Response =
-            storage.getPaymentTransactions(toEpochMillis(start), toEpochMillis(end))
+                                 end: Long = getEpochMilli()): Response =
+            storage.getPaymentTransactions(ofEpochSecondToMilli(start), ofEpochSecondToMilli(end))
                     .fold(
                             { failed(it, ApiErrorCode.FAILED_TO_FETCH_PAYMENT_TRANSACTIONS) },
                             { ok(it) }
@@ -38,11 +37,11 @@ class PaymentTransactionResource {
     @Path("/purchases")
     fun fetchPurchaseTransactions(@QueryParam("start")
                                   @Pattern(regexp = DIGITS_ONLY)
-                                  start: Long = epoch(A_DAY_AGO),
+                                  start: Long = getEpochMilli(A_DAY_AGO),
                                   @QueryParam("end")
                                   @Pattern(regexp = DIGITS_ONLY)
-                                  end: Long = epoch()): Response =
-            storage.getPurchaseTransactions(toEpochMillis(start), toEpochMillis(end))
+                                  end: Long = getEpochMilli()): Response =
+            storage.getPurchaseTransactions(ofEpochSecondToMilli(start), ofEpochSecondToMilli(end))
                     .fold(
                             { failed(it, ApiErrorCode.FAILED_TO_FETCH_PURCHASE_TRANSACTIONS) },
                             { ok(it) }
@@ -52,28 +51,25 @@ class PaymentTransactionResource {
     @Path("/check")
     fun checkTransactions(@QueryParam("start")
                           @Pattern(regexp = DIGITS_ONLY)
-                          start: Long = epoch(A_DAY_AGO),
+                          start: Long = getEpochMilli(A_DAY_AGO),
                           @QueryParam("end")
                           @Pattern(regexp = DIGITS_ONLY)
-                          end: Long = epoch()): Response =
-            storage.checkPaymentTransactions(toEpochMillis(start), toEpochMillis(end))
+                          end: Long = getEpochMilli()): Response =
+            storage.checkPaymentTransactions(ofEpochSecondToMilli(start), ofEpochSecondToMilli(end))
                     .fold(
                             { failed(it, ApiErrorCode.FAILED_TO_CHECK_PAYMENT_TRANSACTIONS) },
                             { ok(it) }
                     ).build()
 
-    /* Epoch timestamp, now or offset by +/- seconds. */
-    private fun epoch(offset: Long = 0L): Long =
-            LocalDateTime.now(ZoneOffset.UTC)
-                    .plusSeconds(offset)
-                    .atZone(ZoneOffset.UTC).toEpochSecond()
+    /* Epoch timestamp in milli, now or offset by +/- seconds. */
+    private fun getEpochMilli(offset: Long = 0L): Long = Instant.now().plusSeconds(offset).toEpochMilli()
 
     /* Internally all timestamps are in milliseconds. */
-    private fun toEpochMillis(ts: Long): Long = ts * 1000L
+    private fun ofEpochSecondToMilli(ts: Long): Long = Instant.ofEpochSecond(ts).toEpochMilli()
 
     companion object {
         /* 24 hours ago in seconds. */
-        val A_DAY_AGO: Long = -86400
+        val A_DAY_AGO: Long = -86400L
 
         /* Regexp maching digits only. */
         const val DIGITS_ONLY = "^(0|[1-9][0-9]*)$"

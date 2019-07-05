@@ -117,7 +117,7 @@ class StripePaymentProcessor : PaymentProcessor {
                         id)
                 Instant.now().toEpochMilli()
             }
-         }
+        }
     }
 
     override fun createPaymentProfile(customerId: String, email: String): Either<PaymentError, ProfileInfo> =
@@ -553,8 +553,8 @@ class StripePaymentProcessor : PaymentProcessor {
     override fun getPaymentTransactions(start: Long, end: Long): Either<PaymentError, List<PaymentTransactionInfo>> =
             either("Failed to fetch payment transactions from Stripe") {
                 val param = mapOf(
-                        "created[gte]" to toEpochSeconds(start),
-                        "created[lte]" to toEpochSeconds(end))
+                        "created[gte]" to ofEpochMilliToSecond(start),
+                        "created[lte]" to ofEpochMilliToSecond(end))
                 /* A payment-intent with status "succeeded" equals to a "payment transaction". */
                 PaymentIntent.list(param)
                         .autoPagingIterable()
@@ -565,7 +565,7 @@ class StripePaymentProcessor : PaymentProcessor {
                                 PaymentTransactionInfo(id = it.id,      /* 'chargeId' */
                                         amount = it.amount.toInt(),     /* Note: 'int' is used internally for amounts. */
                                         currency = it.currency,
-                                        created = toEpochMillis(it.created),
+                                        created = Instant.ofEpochSecond(it.created).toEpochMilli(),
                                         refunded = it.refunded,
                                         properties = mapOf("invoiceId" to intent.invoice,
                                                 "customerId" to intent.customer)
@@ -576,12 +576,6 @@ class StripePaymentProcessor : PaymentProcessor {
                         }.toList()
             }
 
-    /* Timestamps in Stripe must be in seconds.*/
+    /* Timestamps in Stripe must be in seconds. */
     private fun ofEpochMilliToSecond(ts: Long): Long = ts.div(1000L)
-
-    /* Internally all timestamps are in milliseconds. */
-    private fun toEpochMillis(ts: Long): Long = ts * 1000L
-
-    /* Timestamps in Stripe are in seconds. */
-    private fun toEpochSeconds(ts: Long): Long = ts.div(1000L)
 }
