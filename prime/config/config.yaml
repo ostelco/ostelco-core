@@ -21,6 +21,13 @@ modules:
     config:
       configFile: /secret/prime-service-account.json
       rootPath: ${FIREBASE_ROOT_PATH}
+  - type: apple-id-auth
+    config:
+      teamId: ${APPLE_TEAM_ID}
+      keyId: ${APPLE_KEY_ID}
+      clientId: ${APPLE_CLIENT_ID}
+      privateKey: ${APPLE_PRIVATE_KEY}
+      firebaseServiceAccount: /secret/prime-service-account.json
   - type: email
     config:
       mandrillApiKey: ${MANDRILL_API_KEY}

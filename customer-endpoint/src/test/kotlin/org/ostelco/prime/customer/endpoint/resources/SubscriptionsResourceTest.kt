@@ -39,7 +39,7 @@ class SubscriptionsResourceTest {
     @Before
     fun setUp() {
         `when`(AUTHENTICATOR.authenticate(ArgumentMatchers.anyString()))
-                .thenReturn(Optional.of(AccessTokenPrincipal(email, "email")))
+                .thenReturn(Optional.of(AccessTokenPrincipal(Identity(email, "EMAIL","email"))))
     }
 
     @Test

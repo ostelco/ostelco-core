@@ -10,6 +10,27 @@ x-google-endpoints:
 schemes:
   - "https"
 paths:
+  "/appleId/authorize":
+    post:
+      operationId: authorizeUsingAppleId
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: authCode
+          in: body
+          schema:
+            $ref: '#/definitions/AuthCode'
+      responses:
+        200:
+          description: "Successfully authorized Apple ID."
+          schema:
+            $ref: '#/definitions/LoginToken'
+        400:
+          description: "Invalid Apple ID"
+        500:
+          description: "Not able to authorize Apple ID."
   "/customer/stripe-ephemeral-key":
     get:
       description: "Get Stripe Ephemeral key."
@@ -749,6 +770,16 @@ paths:
         - firebase: []
 
 definitions:
+  AuthCode:
+    type: object
+    properties:
+      authCode:
+        type: string
+  LoginToken:
+    type: object
+    properties:
+      token:
+        type: string
   Context:
     type: object
     properties:

@@ -27,7 +27,7 @@ class PurchaseResource(private val dao: SubscriberDAO) {
         }
 
         return dao.getPurchaseHistory(
-                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider))
+                identity = token.identity)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { Response.status(Response.Status.OK).entity(asJson(it)) })

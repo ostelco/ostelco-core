@@ -28,7 +28,7 @@ class GraphQLResource(private val queryHandler: QueryHandler) {
         }
 
         return executeOperation(
-                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                identity = token.identity,
                 request = request)
     }
 
@@ -45,7 +45,7 @@ class GraphQLResource(private val queryHandler: QueryHandler) {
         }
 
         return executeOperation(
-                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                identity = token.identity,
                 request = GraphQLRequest(
                         query = query,
                         operationName = operationName

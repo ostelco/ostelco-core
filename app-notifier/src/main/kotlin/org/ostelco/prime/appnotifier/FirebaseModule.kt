@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonTypeName
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
+import io.dropwizard.setup.Environment
 import org.ostelco.common.firebasex.usingCredentialsFile
 import org.ostelco.prime.module.PrimeModule
 import java.io.IOException
@@ -12,25 +13,18 @@ import java.io.IOException
 class FirebaseModule : PrimeModule {
 
     @JsonProperty("config")
-    fun setConfig(config: FirebaseConfig) {
-        setupFirebaseApp(config.configFile)
-    }
+    private lateinit var config: FirebaseConfig
 
-    private fun setupFirebaseApp(configFile: String) {
-
+    override fun init(env: Environment) {
         try {
             val options = FirebaseOptions.Builder()
-                    .usingCredentialsFile(configFile)
+                    .usingCredentialsFile(config.configFile)
                     .build()
             try {
                 FirebaseApp.getInstance("fcm")
             } catch (e: Exception) {
                 FirebaseApp.initializeApp(options, "fcm")
             }
-
-            // (un)comment next line to turn on/of extended debugging
-            // from firebase.
-            // this.firebaseDatabase.setLogLevel(com.google.firebase.database.Logger.Level.DEBUG);
         } catch (ex: IOException) {
             throw AppNotifierException(ex)
         }

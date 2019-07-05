@@ -31,7 +31,7 @@ class ProductsResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        return dao.getProducts(identity = Identity(id = token.name, type = "EMAIL", provider = token.provider))
+        return dao.getProducts(identity = token.identity)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { Response.status(Response.Status.OK).entity(asJson(it)) })
@@ -56,7 +56,7 @@ class ProductsResource(private val dao: SubscriberDAO) {
         }
 
         return dao.purchaseProduct(
-                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                identity = token.identity,
                 sku = sku,
                 sourceId = sourceId,
                 saveCard = saveCard ?: false)

@@ -16,6 +16,7 @@ import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.auth.OAuthAuthenticator
 import org.ostelco.prime.graphql.util.AccessToken
 import org.ostelco.prime.jsonmapper.objectMapper
+import org.ostelco.prime.model.Identity
 import java.io.File
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -30,7 +31,7 @@ class GraphQLResourceTest {
     @Before
     fun setUp() {
         `when`(AUTHENTICATOR.authenticate(ArgumentMatchers.anyString()))
-                .thenReturn(Optional.of(AccessTokenPrincipal(email, provider = "email")))
+                .thenReturn(Optional.of(AccessTokenPrincipal(Identity(email, type = "EMAIL", provider = "email"))))
     }
 
     @Test

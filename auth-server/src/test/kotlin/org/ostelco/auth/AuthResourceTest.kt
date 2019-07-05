@@ -9,6 +9,18 @@ import kotlin.test.assertEquals
 
 class AuthResourceTest {
 
+    @Test
+    fun testAuthResourceForMissingHeader() {
+
+        val statusCode = resources
+                .target("/auth/token")
+                ?.request()
+                ?.get()
+                ?.status ?: -1
+
+        assertEquals(Status.INTERNAL_SERVER_ERROR.statusCode, statusCode)
+    }
+
     companion object {
 
         @JvmField
@@ -16,17 +28,5 @@ class AuthResourceTest {
         val resources: ResourceTestRule = ResourceTestRule.builder()
                 .addResource(AuthResource())
                 .build()
-    }
-
-    @Test
-    fun testAuthResourceForMissingHeader() {
-
-        val statusCode = resources
-                ?.target("/auth/token")
-                ?.request()
-                ?.get()
-                ?.status ?: -1
-
-        assertEquals(Status.INTERNAL_SERVER_ERROR.statusCode, statusCode)
     }
 }

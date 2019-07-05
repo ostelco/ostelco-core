@@ -7,8 +7,6 @@ dependencies {
   
   implementation project(":prime-modules")
   
-  // implementation project(":myinfo-client")
-  
   implementation("io.jsonwebtoken:jjwt:$jjwtVersion") {
     exclude group: "com.fasterxml.jackson.core", module:"jackson-databind"
   }

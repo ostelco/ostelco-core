@@ -58,7 +58,7 @@ class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(regionCo
         }
 
         return dao.getCustomerMyInfoData(
-                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                identity = token.identity,
                 authorisationCode = authorisationCode)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
@@ -100,7 +100,7 @@ class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(regionCo
         }
 
         return dao.checkNricFinIdUsingDave(
-                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                identity = token.identity,
                 nricFinId = nricFinId)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
@@ -126,7 +126,7 @@ class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(regionCo
         }
 
         return dao.saveAddressAndPhoneNumber(
-                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                identity = token.identity,
                 address = address,
                 phoneNumber = phoneNumber)
                 .fold(
@@ -149,7 +149,7 @@ class JumioKycResource(private val regionCode: String, private val dao: Subscrib
         }
 
         return dao.createNewJumioKycScanId(
-                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                identity = token.identity,
                 regionCode = regionCode)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
@@ -172,7 +172,7 @@ class JumioKycResource(private val regionCode: String, private val dao: Subscrib
         }
 
         return dao.getScanInformation(
-                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                identity = token.identity,
                 scanId = scanId)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },

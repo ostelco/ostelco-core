@@ -1,5 +1,1 @@
-prod.cypher
-test.cypher
-backup.cypher
-backup.dev.cypher
-backup.prod.cypher
+*.cypher

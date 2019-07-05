@@ -119,6 +119,18 @@ prime:
     - name: MANDRILL_API_KEY
       secretName: mandrill-secrets
       secretKey: mandrillApiKey
+    - name: APPLE_TEAM_ID
+      secretName: apple-id-auth-secrets
+      secretKey: teamId
+    - name: APPLE_KEY_ID
+      secretName: apple-id-auth-secrets
+      secretKey: keyId
+    - name: APPLE_CLIENT_ID
+      secretName: apple-id-auth-secrets
+      secretKey: clientId
+    - name: APPLE_PRIVATE_KEY
+      secretName: apple-id-auth-secrets
+      secretKey: privateKey
 
   ports:
     - 8080
@@ -128,7 +140,7 @@ prime:
   resources: 
     requests:
       cpu: 100m
-      memory: 512Mi
+      memory: 768Mi
   livenessProbe: {}
   readinessProbe: {}
   annotations: 
