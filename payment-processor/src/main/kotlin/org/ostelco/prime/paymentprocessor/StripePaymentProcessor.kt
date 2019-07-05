@@ -94,7 +94,7 @@ class StripePaymentProcessor : PaymentProcessor {
                 is Source -> {
                     mapOf("id" to paymentSource.id,
                             "type" to "source",
-                            "created" to paymentSource.created,
+                            "created" to Instant.ofEpochSecond(paymentSource.created).toEpochMilli(),
                             "owner" to paymentSource.owner,
                             "threeDSecure" to paymentSource.threeDSecure)
                 }
@@ -103,7 +103,7 @@ class StripePaymentProcessor : PaymentProcessor {
                             paymentSource)
                     mapOf("id" to paymentSource.id,
                             "type" to "unsupported",
-                            "created" to getSecondsSinceEpoch())
+                            "created" to Instant.now().toEpochMilli())
                 }
             }
 
@@ -113,16 +113,15 @@ class StripePaymentProcessor : PaymentProcessor {
        using an another type. Needs to be verified.) */
     private fun getCreatedTimestampFromMetadata(id: String, metadata: Map<String, Any>): Long {
         val created: String? = metadata["created"] as? String
-        return created?.toLongOrNull() ?: run {
-            logger.warn("No 'created' timestamp found in metadata for Stripe account {}",
-                    id)
-            getSecondsSinceEpoch()
-        }
-    }
-
-    /* Seconds since Epoch in UTC zone. */
-    private fun getSecondsSinceEpoch(): Long {
-        return System.currentTimeMillis() / 1000L
+        return with (created?.toLongOrNull()) {
+            if (this != null) {
+                Instant.ofEpochSecond(this).toEpochMilli()
+            } else {
+                logger.warn("No 'created' timestamp found in metadata for Stripe account {}",
+                        id)
+                Instant.now().toEpochMilli()
+            }
+         }
     }
 
     override fun createPaymentProfile(customerId: String, email: String): Either<PaymentError, ProfileInfo> =
@@ -187,7 +186,7 @@ class StripePaymentProcessor : PaymentProcessor {
             either("Failed to add source $stripeSourceId to customer $stripeCustomerId") {
                 val customer = Customer.retrieve(stripeCustomerId)
                 val sourceParams = mapOf("source" to stripeSourceId,
-                        "metadata" to mapOf("created" to getSecondsSinceEpoch()))
+                        "metadata" to mapOf("created" to Instant.now().toEpochMilli()))
                 SourceInfo(customer.sources.create(sourceParams).id)
             }
 
@@ -237,7 +236,7 @@ class StripePaymentProcessor : PaymentProcessor {
                         status = status.first,
                         invoiceId = status.second,
                         chargeId = status.third,
-                        created = subscription.created,
+                        created = Instant.ofEpochSecond(subscription.created).toEpochMilli(),
                         trialEnd = subscription.trialEnd ?: 0L)
             }
 
