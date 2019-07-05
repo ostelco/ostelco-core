@@ -253,6 +253,11 @@ interface SimInventoryDB {
                          smdpPlusState =  :smdpReleasedState AND
                          hlrState = :hssAllocatedState
         UNION
+           SELECT 'NO_OF_RESERVED_ENTRIES' AS KEY,  count(*)  AS VALUE  FROM sim_entries
+                   WHERE hlrId = :hssId AND profile = :simProfile AND
+                         provisionState = :provisionReservedState
+        UNION
+        
         SELECT 'NO_OF_ENTRIES_READY_FOR_IMMEDIATE_USE' AS KEY,  count(*)  AS VALUE  FROM sim_entries
                    WHERE hlrId = :hssId AND profile = :simProfile AND
                          smdpPlusState =  :smdpReleasedState AND
@@ -263,6 +268,7 @@ interface SimInventoryDB {
     fun getProfileStatsAsKeyValuePairs(
             hssId: Long,
             simProfile: String,
+            provisionReservedState: ProvisionState = ProvisionState.RESERVED,
             smdpReleasedState: String = SmDpPlusState.RELEASED.name,
             hlrUnallocatedState: String = HssState.NOT_ACTIVATED.name,
             smdpUnallocatedState: String = SmDpPlusState.AVAILABLE.name,

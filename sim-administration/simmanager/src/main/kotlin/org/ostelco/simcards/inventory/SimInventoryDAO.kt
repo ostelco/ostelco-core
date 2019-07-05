@@ -289,12 +289,15 @@ class SimInventoryDAO(private val db: SimInventoryDBWrapperImpl) : SimInventoryD
                             lookup("NO_OF_RELEASED_ENTRIES").bind()
                     val noOfEntriesAvailableForImmediateUse =
                             lookup("NO_OF_ENTRIES_READY_FOR_IMMEDIATE_USE").bind()
+                    val noOfReservedEntries =
+                            lookup("NO_OF_RESERVED_ENTRIES").bind()
 
                     SimProfileKeyStatistics(
                             noOfEntries = noOfEntries,
                             noOfUnallocatedEntries = noOfUnallocatedEntries,
                             noOfEntriesAvailableForImmediateUse = noOfEntriesAvailableForImmediateUse,
-                            noOfReleasedEntries = noOfReleasedEntries)
+                            noOfReleasedEntries = noOfReleasedEntries,
+                            noOfReservedEntries = noOfReservedEntries)
                 }.fix()
             }.unsafeRunSync()
 }
@@ -304,7 +307,8 @@ data class SimProfileKeyStatistics(
         val noOfEntries: Long,
         val noOfUnallocatedEntries: Long,
         val noOfReleasedEntries: Long,
-        val noOfEntriesAvailableForImmediateUse: Long)
+        val noOfEntriesAvailableForImmediateUse: Long,
+        val noOfReservedEntries: Long)
 
 
 class KeyValueMapper : RowMapper<KeyValuePair> {
@@ -329,7 +333,7 @@ class HlrEntryMapper : RowMapper<HssEntry> {
         }
 
         val id = row.getLong("id")
-        val name = row.getString("metricName")
+        val name = row.getString("name")
         return HssEntry(id = id, name = name)
     }
 }

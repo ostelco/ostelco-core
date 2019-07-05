@@ -272,7 +272,10 @@ class SimAdministrationTest {
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
                 .getDAO()
         val hlrs = simDao.getHssEntries()
-        assertThat(hlrs.isRight()).isTrue()
+        hlrs.mapLeft { error ->
+            assert(false, { "Failed to get list of HLRs:  error.description=${error.description}, error.error=${error.error}" })
+        }
+
 
         var hlrId: Long = 0
         hlrs.map {
@@ -327,10 +330,11 @@ class SimAdministrationTest {
                 dispatcher = dispatcher,
                 simInventoryDAO = simDao)
         val preStats = SimProfileKeyStatistics(
-                0L,
-                0L,
-                0L,
-                0L)
+                noOfEntries = 0L,
+                noOfEntriesAvailableForImmediateUse = 0L,
+                noOfReleasedEntries = 0L,
+                noOfUnallocatedEntries = 0L,
+                noOfReservedEntries = 0L)
         val task = PreallocateProfilesTask(
                 profileVendors = profileVendors,
                 simInventoryDAO = simDao,
@@ -343,7 +347,7 @@ class SimAdministrationTest {
                 simDao.getProfileStats(hssId, expectedProfile)
         assertThat(postAllocationStats.isRight()).isTrue()
 
-        var postStats = SimProfileKeyStatistics(0L, 0L, 0L, 0L)
+        var postStats = SimProfileKeyStatistics(0L, 0L, 0L, 0L, 0L)
         postAllocationStats.map {
             postStats = it
         }
@@ -468,6 +472,7 @@ class SimAdministrationTest {
         assertGaugeValue(0, "sims.noOfEntriesAvailableForImmediateUse.IPHONE_PROFILE_2")
         assertGaugeValue(0,  "sims.noOfReleasedEntries.IPHONE_PROFILE_2")
         assertGaugeValue(98, "sims.noOfUnallocatedEntries.IPHONE_PROFILE_2")
+        assertGaugeValue(2, "sims.noOfReservedEntries.IPHONE_PROFILE_2")
     }
 
 

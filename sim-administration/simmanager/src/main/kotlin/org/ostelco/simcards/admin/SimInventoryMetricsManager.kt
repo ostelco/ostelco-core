@@ -24,7 +24,9 @@ class SimInventoryMetricsManager(private val dao: SimInventoryDAO, private val m
     private val hasRun = AtomicBoolean(false)
 
 
-    // Start execution service.  Do not permit restarts even of stopped instances.
+    /**
+     *  Start execution service.  Do not permit restarts even of stopped instances.
+     */
     override fun start() {
         logger.warn("Starting metrics for sim inventory")
         if (!isRunning.getAndSet(true)) {
@@ -35,15 +37,19 @@ class SimInventoryMetricsManager(private val dao: SimInventoryDAO, private val m
         }
     }
 
-    // Stop when dropwizard is killed
+    /**
+     *  Stop when dropwizard is killed
+     */
     override fun stop() {
         if (isRunning.getAndSet(false)) {
             executorService.shutdownNow()
         }
     }
 
-    // Start an execution service that will run the periodicTask method every
-    // five minutes.
+    /**
+     * Start an execution service that will run the periodicTask method every
+     * five minutes.
+     */
     private fun startExecutorService() {
         executorService.scheduleAtFixedRate({
             if (isRunning.get()) {
@@ -60,9 +66,6 @@ class SimInventoryMetricsManager(private val dao: SimInventoryDAO, private val m
     ///
     /// Handle the periodic task.
     ///
-
-
-    val runningForFirstTime = AtomicBoolean(true)
 
     private fun periodicTask() {
 
@@ -85,6 +88,7 @@ class SimInventoryMetricsManager(private val dao: SimInventoryDAO, private val m
                                     result.add(MetricValue("sims.noOfEntriesAvailableForImmediateUse", currentMetric.simProfileName, it.noOfEntriesAvailableForImmediateUse))
                                     result.add(MetricValue("sims.noOfReleasedEntries", currentMetric.simProfileName, it.noOfReleasedEntries))
                                     result.add(MetricValue("sims.noOfUnallocatedEntries", currentMetric.simProfileName, it.noOfUnallocatedEntries))
+                                    result.add(MetricValue("sims.noOfReservedEntries", currentMetric.simProfileName, it.noOfReservedEntries))
                                     // XXX Missing: Profiles in error, or somehow not part of the things listed above
                                 }
                     }
@@ -93,27 +97,35 @@ class SimInventoryMetricsManager(private val dao: SimInventoryDAO, private val m
         return result
     }
 
-    // This method is presenent only to facilitate testing. It won't hurt to invoke it
-    // in other situations, but it's not really inteded to be used that way.
+    /**
+     *  This method is presenent only to facilitate testing. It won't hurt to invoke it
+     *  in other situations, but it's not really inteded to be used that way.
+     */
     fun triggerMetricsGeneration() {
         periodicTask()
     }
 }
 
 
+/**
+ * A class used to hold local metric values, and to connect them
+ * to dropwizard metrics that can be polled via the ordinary metrics
+ * export mechanisms of dropwizard.
+ */
 class LocalMetricsRegistry(private val metrics: MetricRegistry) {
 
     private val lock = Object()
 
+    /**
+     * The set of metrics holding the current values.
+     */
     val localMetrics = mutableMapOf<String, LocalGaugeAdapter>()
 
-    // For each invocation:
-    //    * Get current metric values as dictated  by structure and
-    //      content of database.
 
-
-    // Input is current metric values as dictated  by structure and
-    // content of database.
+    /**
+     * Input is current metric values as dictated  by structure and
+     * content of database.
+     */
     fun syncWithValues(metricValues: Collection<MetricValue>) {
 
         //    * Based on this collection, prune and extend the set of
@@ -149,7 +161,11 @@ class LocalMetricsRegistry(private val metrics: MetricRegistry) {
     }
 }
 
-class LocalGaugeAdapter(private val key: String, private var initialValue: Long) : Gauge<Long> {
+/**
+ * An ad-hoc class that is used  to deliver values from local values to
+ * externally visible valus.
+ */
+class LocalGaugeAdapter(private val key: String, initialValue: Long) : Gauge<Long> {
 
     val currentValue = AtomicLong(initialValue)
 
@@ -162,8 +178,10 @@ class LocalGaugeAdapter(private val key: String, private var initialValue: Long)
     }
 }
 
-// XXX This is representing a concrete gauge, but needs to
-//     be abstracted in a couple of steps.
+/**
+ * Representing values associated with metrics, before they are sent to
+ * the metric.
+ */
 data class MetricValue(
         val metricName: String,
         val profileName: String, // Name of the SIM profile, will somehow need to be transmitted to prometheus.
