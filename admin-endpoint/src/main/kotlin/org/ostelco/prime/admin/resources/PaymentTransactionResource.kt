@@ -9,6 +9,7 @@ import org.ostelco.prime.storage.AdminDataSource
 import org.ostelco.prime.storage.StoreError
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import javax.validation.constraints.Pattern
 import javax.ws.rs.GET
 import javax.ws.rs.Path
 import javax.ws.rs.QueryParam
@@ -22,8 +23,10 @@ class PaymentTransactionResource {
     @GET
     @Path("/transactions")
     fun fetchPaymentTransactions(@QueryParam("start")
+                                 @Pattern(regexp = DIGITS_ONLY)
                                  start: Long = epoch(A_DAY_AGO),
                                  @QueryParam("end")
+                                 @Pattern(regexp = DIGITS_ONLY)
                                  end: Long = epoch()): Response =
             storage.getPaymentTransactions(toEpochMillis(start), toEpochMillis(end))
                     .fold(
@@ -34,8 +37,10 @@ class PaymentTransactionResource {
     @GET
     @Path("/purchases")
     fun fetchPurchaseTransactions(@QueryParam("start")
+                                  @Pattern(regexp = DIGITS_ONLY)
                                   start: Long = epoch(A_DAY_AGO),
                                   @QueryParam("end")
+                                  @Pattern(regexp = DIGITS_ONLY)
                                   end: Long = epoch()): Response =
             storage.getPurchaseTransactions(toEpochMillis(start), toEpochMillis(end))
                     .fold(
@@ -44,10 +49,12 @@ class PaymentTransactionResource {
                     ).build()
 
     @GET
-    @Path("/check/transaction")
+    @Path("/check")
     fun checkTransactions(@QueryParam("start")
+                          @Pattern(regexp = DIGITS_ONLY)
                           start: Long = epoch(A_DAY_AGO),
                           @QueryParam("end")
+                          @Pattern(regexp = DIGITS_ONLY)
                           end: Long = epoch()): Response =
             storage.checkPaymentTransactions(toEpochMillis(start), toEpochMillis(end))
                     .fold(
@@ -67,6 +74,9 @@ class PaymentTransactionResource {
     companion object {
         /* 24 hours ago in seconds. */
         val A_DAY_AGO: Long = -86400
+
+        /* Regexp maching digits only. */
+        const val DIGITS_ONLY = "^(0|[1-9][0-9]*)$"
     }
 
     private fun ok(value: List<Any>) =
