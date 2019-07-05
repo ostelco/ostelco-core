@@ -148,4 +148,15 @@ interface SimInventoryDBWrapper {
      * require special handling in some jurisdictions.
      */
     fun reserveGoldenNumbersForBatch(batchId: Long): Either<SimManagerError, Int>
+
+    /**
+     * Return a list of sim Profile names associated with HSSes.  Return both the
+     * HSSId (database internal ID), and the public name of the HSS.
+     */
+    fun getHssProfileNamePairs():  Either<SimManagerError, List<HssProfileIdName>>
 }
+
+/**
+ * A data class used to list sim profile names and  database IDs of the HSSes they are associated with.
+ */
+data class HssProfileIdName(val hssId:Long, val hssName: String, val simProfileName: String)

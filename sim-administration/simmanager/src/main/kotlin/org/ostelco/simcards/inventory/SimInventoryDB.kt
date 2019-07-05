@@ -1,5 +1,7 @@
 package org.ostelco.simcards.inventory
 
+import org.jdbi.v3.core.mapper.RowMapper
+import org.jdbi.v3.core.statement.StatementContext
 import org.jdbi.v3.sqlobject.config.RegisterRowMapper
 import org.jdbi.v3.sqlobject.customizer.BindBean
 import org.jdbi.v3.sqlobject.statement.BatchChunkSize
@@ -9,6 +11,7 @@ import org.jdbi.v3.sqlobject.statement.SqlUpdate
 import org.jdbi.v3.sqlobject.transaction.Transaction
 import org.ostelco.simcards.hss.HssEntry
 import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
+import java.sql.ResultSet
 
 /**
  * Low-level SIM DB interface.
@@ -250,6 +253,11 @@ interface SimInventoryDB {
                          smdpPlusState =  :smdpReleasedState AND
                          hlrState = :hssAllocatedState
         UNION
+           SELECT 'NO_OF_RESERVED_ENTRIES' AS KEY,  count(*)  AS VALUE  FROM sim_entries
+                   WHERE hlrId = :hssId AND profile = :simProfile AND
+                         provisionState = :provisionReservedState
+        UNION
+        
         SELECT 'NO_OF_ENTRIES_READY_FOR_IMMEDIATE_USE' AS KEY,  count(*)  AS VALUE  FROM sim_entries
                    WHERE hlrId = :hssId AND profile = :simProfile AND
                          smdpPlusState =  :smdpReleasedState AND
@@ -260,6 +268,7 @@ interface SimInventoryDB {
     fun getProfileStatsAsKeyValuePairs(
             hssId: Long,
             simProfile: String,
+            provisionReservedState: ProvisionState = ProvisionState.RESERVED,
             smdpReleasedState: String = SmDpPlusState.RELEASED.name,
             hlrUnallocatedState: String = HssState.NOT_ACTIVATED.name,
             smdpUnallocatedState: String = SmDpPlusState.AVAILABLE.name,
@@ -271,6 +280,14 @@ interface SimInventoryDB {
             provisionedAvailableState: String = ProvisionState.AVAILABLE.name): List<KeyValuePair>
 
 
+
+    @SqlQuery("""
+        SELECT DISTINCT profile AS simprofilename, hlrid  AS hssid, hlr_adapters.name AS hssname FROM sim_entries, hlr_adapters WHERE hlrid=hlr_adapters.id
+    """)
+    @RegisterRowMapper(HssProfileNameMapper::class)
+    fun getHssProfileNamePairs(): List<HssProfileIdName>
+
+
     /**
      * Golden numbers are numbers ending in either "0000" or "9999", and they have to be
      * treated specially.
@@ -279,4 +296,18 @@ interface SimInventoryDB {
                        WHERE batch = :batchId AND msisdn ~ '[0-9]*(0000|9999)$'
                        """)
     fun reserveGoldenNumbersForBatch(batchId: Long, provisionReservedState: ProvisionState = ProvisionState.RESERVED): Int
+}
+
+
+class HssProfileNameMapper : RowMapper<HssProfileIdName> {
+    override fun map(row: ResultSet, ctx: StatementContext): HssProfileIdName? {
+        if (row.isAfterLast) {
+            return null
+        }
+
+        val hssId = row.getLong("hssid")
+        val hssName = row.getString("hssname")
+        val simProfileName = row.getString("simprofilename")
+        return HssProfileIdName(hssId = hssId, hssName = hssName, simProfileName = simProfileName);
+    }
 }

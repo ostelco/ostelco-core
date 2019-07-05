@@ -143,6 +143,7 @@ class DirectHssDispatcher(
                 .reduce { a, b -> a && b }
     }
 
+
     private fun getHssAdapterByName(name: String): HssDispatcher = hssAdaptersByName[name]
             ?: throw RuntimeException("Unknown hss vendor name ? '$name'")
 

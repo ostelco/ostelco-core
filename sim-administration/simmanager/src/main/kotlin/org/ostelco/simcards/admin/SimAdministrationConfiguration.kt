@@ -33,7 +33,7 @@ data class SimAdministrationConfiguration(
     /**
      * Get profile based on given phone type/getProfileForPhoneType.
      * @param name  phone type/getProfileForPhoneType
-     * @return  profile name
+     * @return  profile metricName
      */
     fun getProfileForPhoneType(name: String): String? {
         val result = phoneTypes
@@ -70,7 +70,7 @@ class HssAdapterConfig {
 @JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "hlrType")
 sealed class HssConfig(
         /**
-         * The name of the HSS used when referring to it in the sim manager's database.
+         * The metricName of the HSS used when referring to it in the sim manager's database.
          */
         open val name: String
 ) : Discoverable
@@ -88,12 +88,12 @@ data class DummyHssConfig(
 data class SwtHssConfig(
 
         /**
-         * The name of the HSS used when referring to it in the sim manager's database.
+         * The metricName of the HSS used when referring to it in the sim manager's database.
          */
         override val name: String,
 
         /**
-         * The name of the hss used when contacting the HSS over the API.
+         * The metricName of the hss used when contacting the HSS over the API.
          */
         val hssNameUsedInAPI: String,
 

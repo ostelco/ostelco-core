@@ -5,6 +5,10 @@ import junit.framework.TestCase.assertTrue
 import org.junit.Test
 import org.ostelco.simcards.IccidBasis
 
+
+// XXX This code should be deleted.  The functionality in it should either  be moved to
+//     a helper script (in Go perhaps), or moved into an as of yet more generic sim batch
+//     lifecycle maintenance module.  It shouldn't be part of "test" gode.
 class GenerateBatchDescriptionTest {
 
 

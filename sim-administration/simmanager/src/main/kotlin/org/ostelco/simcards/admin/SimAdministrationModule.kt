@@ -8,6 +8,7 @@ import io.dropwizard.jdbi3.JdbiFactory
 import io.dropwizard.setup.Environment
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.dropwizardutils.OpenapiResourceAdder
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.SimProfileStatus
 import org.ostelco.prime.module.PrimeModule
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter
@@ -45,6 +46,9 @@ import org.ostelco.simcards.inventory.SimInventoryResource
 @JsonTypeName("sim-manager")
 class SimAdministrationModule : PrimeModule {
 
+    lateinit private var metricsManager: SimInventoryMetricsManager
+    private val logger by getLogger()
+
     private lateinit var DAO: SimInventoryDAO
 
     @JsonProperty("config")
@@ -56,6 +60,8 @@ class SimAdministrationModule : PrimeModule {
 
     override fun init(env: Environment) {
 
+        logger.info("Initializing Sim administration module.")
+
         val factory = JdbiFactory()
         val jdbi = factory.build(env,
                 config.database, "postgresql")
@@ -66,20 +72,24 @@ class SimAdministrationModule : PrimeModule {
 
         val httpClient = HttpClientBuilder(env)
                 .using(config.httpClient)
-                .build("SIM inventory")
+                .build("mainHttpClient")
         val jerseyEnv = env.jersey()
 
         OpenapiResourceAdder.addOpenapiResourceToJerseyEnv(jerseyEnv, config.openApi)
         ES2PlusIncomingHeadersFilter.addEs2PlusDefaultFiltersAndInterceptors(jerseyEnv)
 
-        /* Create the SIM manager API. */
+        //Create the SIM manager API.
         simInventoryApi = SimInventoryApi(httpClient, config, DAO)
 
-        /* Add REST frontend. */
+        // Add REST frontend.
         simInventoryResource = SimInventoryResource(simInventoryApi)
         jerseyEnv.register(simInventoryResource)
         jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
 
+        // Register metrics as a lifecycle object
+
+        this.metricsManager = SimInventoryMetricsManager(this.DAO, env.metrics())
+        env.lifecycle().manage(this.metricsManager)
 
         val dispatcher = makeHssDispatcher(
                 hssAdapterConfig = config.hssAdapter,
@@ -158,6 +168,10 @@ class SimAdministrationModule : PrimeModule {
                 throw RuntimeException("Unable to find HSS adapter config, please check config")
             }
         }
+    }
+
+    fun triggerMetricsGeneration() {
+       metricsManager.triggerMetricsGeneration()
     }
 }
 

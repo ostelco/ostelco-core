@@ -24,9 +24,9 @@ import javax.ws.rs.core.MediaType
  * HLR will know that it should give an answer.
  *
  * id - is a database internal identifier.
- * name - is an unique instance of  HLR reference.
+ * metricName - is an unique instance of  HLR reference.
  */
 data class HssEntry(
         @JsonProperty("id") val id: Long,
-        @JsonProperty("name") val name: String)
+        @JsonProperty("metricName") val name: String)
 

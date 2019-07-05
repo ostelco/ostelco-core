@@ -2,6 +2,9 @@ package org.ostelco.simcards.admin
 
 import arrow.core.Either
 import com.codahale.metrics.health.HealthCheck
+import com.google.gson.JsonElement
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import io.dropwizard.client.HttpClientBuilder
 import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.jdbi3.JdbiFactory
@@ -13,6 +16,7 @@ import org.glassfish.jersey.client.ClientProperties
 import org.jdbi.v3.core.Jdbi
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -75,6 +79,8 @@ class SimAdministrationTest {
         val SM_DP_PLUS_RULE = DropwizardAppRule(SmDpPlusApplication::class.java,
                 ResourceHelpers.resourceFilePath("sm-dp-plus.yaml"))
 
+
+        // XXX Don't do this! Use an HLR emulator
         @JvmField
         @ClassRule
         val HLR_RULE: KFixedHostPortGenericContainer = KFixedHostPortGenericContainer("python:3-alpine")
@@ -82,14 +88,15 @@ class SimAdministrationTest {
                 .withExposedPorts(8080)
                 .withClasspathResourceMapping("hlr.py", "/service.py",
                         BindMode.READ_ONLY)
-                .withCommand( "python", "/service.py")
+                .withCommand("python", "/service.py")
 
         @JvmField
         @ClassRule
         val SIM_MANAGER_RULE = DropwizardAppRule(SimAdministrationApplication::class.java,
-                    ResourceHelpers.resourceFilePath("sim-manager.yaml"),
-                    ConfigOverride.config("database.url", psql.jdbcUrl),
-                    ConfigOverride.config("hlrs[0].endpoint", "http://localhost:$HLR_PORT/default/provision"))
+                ResourceHelpers.resourceFilePath("sim-manager.yaml"),
+                ConfigOverride.config("database.url", psql.jdbcUrl),
+                ConfigOverride.config("server.adminConnectors[0].port", "9191"),
+                ConfigOverride.config("hlrs[0].endpoint", "http://localhost:$HLR_PORT/default/provision"))
 
         @BeforeClass
         @JvmStatic
@@ -125,6 +132,13 @@ class SimAdministrationTest {
     /* Test endpoint. */
     private val simManagerEndpoint = "http://localhost:${SIM_MANAGER_RULE.localPort}/ostelco/sim-inventory"
 
+    /* Test endpoint. */
+    private val metricsEndpoint = "http://localhost:${SIM_MANAGER_RULE.adminPort}/metrics"
+
+    /* Test endpoint. */
+    private val healthcheckEndpoint = "http://localhost:${SIM_MANAGER_RULE.adminPort}/healthcheck"
+
+
     /* Generate a fixed corresponding EID based on ICCID.
        Same code is used in SM-DP+ emulator. */
     private fun getEidFromIccid(iccid: String): String? = if (iccid.isNotEmpty())
@@ -159,7 +173,7 @@ class SimAdministrationTest {
     }
 
     /* The SIM dataset is the same that is used by the SM-DP+ emulator. */
-    private fun loadSimData(hssState: HssState? = null, queryParameterName: String = "initialHssState", expectedReturnCode:Int = 200) {
+    private fun loadSimData(hssState: HssState? = null, queryParameterName: String = "initialHssState", expectedReturnCode: Int = 200) {
         val entries = FileInputStream(SM_DP_PLUS_RULE.configuration.simBatchData)
         var target = client.target("$simManagerEndpoint/$hssName/import-batch/profilevendor/$profileVendor")
         if (hssState != null) {
@@ -168,8 +182,8 @@ class SimAdministrationTest {
 
         val response =
                 target
-                .request()
-                .put(Entity.entity(entries, MediaType.TEXT_PLAIN))
+                        .request()
+                        .put(Entity.entity(entries, MediaType.TEXT_PLAIN))
         assertThat(response.status).isEqualTo(expectedReturnCode)
     }
 
@@ -222,8 +236,8 @@ class SimAdministrationTest {
                 .getDAO()
         val hssEntries = simDao.getHssEntries()
 
-        hssEntries.mapRight {  assertEquals(1, it.size) }
-        hssEntries.mapRight {  assertEquals(hssName, it[0].name) }
+        hssEntries.mapRight { assertEquals(1, it.size) }
+        hssEntries.mapRight { assertEquals(hssName, it[0].name) }
     }
 
     @Test
@@ -253,12 +267,15 @@ class SimAdministrationTest {
     }
 
     @Test
-    fun  testGetProfileStats() {
+    fun testGetProfileStats() {
         loadSimData()
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
                 .getDAO()
         val hlrs = simDao.getHssEntries()
-        assertThat(hlrs.isRight()).isTrue()
+        hlrs.mapLeft { error ->
+            assert(false, { "Failed to get list of HLRs:  error.description=${error.description}, error.error=${error.error}" })
+        }
+
 
         var hlrId: Long = 0
         hlrs.map {
@@ -310,13 +327,14 @@ class SimAdministrationTest {
                     }
                 })
         val hssAdapterCache = SimManagerToHssDispatcherAdapter(
-                dispatcher = dispatcher ,
+                dispatcher = dispatcher,
                 simInventoryDAO = simDao)
-        val preStats  = SimProfileKeyStatistics(
-                0L,
-                0L,
-                0L,
-                0L)
+        val preStats = SimProfileKeyStatistics(
+                noOfEntries = 0L,
+                noOfEntriesAvailableForImmediateUse = 0L,
+                noOfReleasedEntries = 0L,
+                noOfUnallocatedEntries = 0L,
+                noOfReservedEntries = 0L)
         val task = PreallocateProfilesTask(
                 profileVendors = profileVendors,
                 simInventoryDAO = simDao,
@@ -329,7 +347,7 @@ class SimAdministrationTest {
                 simDao.getProfileStats(hssId, expectedProfile)
         assertThat(postAllocationStats.isRight()).isTrue()
 
-        var postStats  = SimProfileKeyStatistics(0L, 0L, 0L, 0L)
+        var postStats = SimProfileKeyStatistics(0L, 0L, 0L, 0L, 0L)
         postAllocationStats.map {
             postStats = it
         }
@@ -347,7 +365,7 @@ class SimAdministrationTest {
         val simProfile = simDao.getSimProfileByIccid(iccid)
         return when {
             simProfile is Either.Right -> simProfile.b
-            simProfile is Either.Left ->  null
+            simProfile is Either.Left -> null
             else -> null
         }
     }
@@ -394,13 +412,74 @@ class SimAdministrationTest {
         loadSimData(HssState.ACTIVATED)
         // This is an ordinary MSISDN, nothing special about it, should be available
         assertEquals(ProvisionState.AVAILABLE, getSimEntryByICCIDFromLoadedBatch(FIRST_ICCID)?.provisionState)
-        
+
         // The next two numbers are "golden", ending in respecticely "9999" and "0000", so they
         // should be reserved, and thus not available.
         assertEquals(ProvisionState.RESERVED, getSimEntryByICCIDFromLoadedBatch("8901000000000000985")?.provisionState)
         assertEquals(ProvisionState.RESERVED, getSimEntryByICCIDFromLoadedBatch("8901000000000000993")?.provisionState)
     }
 
+
+    private fun getJsonFromEndpoint(endpoint: String): JsonObject {
+        var response = client.target(endpoint)
+                .request()
+                .get()
+        assertEquals(200, response.status)
+        var entity = response.readEntity(String::class.java)
+
+
+        val jelement = JsonParser().parse(entity)
+        var jobject = jelement.getAsJsonObject()
+        return jobject
+    }
+
+
+    @Test
+    fun testHealthchecs() {
+        val healtchecks = getJsonFromEndpoint(healthcheckEndpoint)
+        assertTrue(getJsonElement(endpointValue =  healtchecks, name = "db",  valueName = "healthy").asBoolean)
+        assertTrue(getJsonElement(endpointValue =  healtchecks, name = "postgresql",  valueName = "healthy").asBoolean)
+    }
+
+
+    fun getJsonElement(
+            endpointValue: JsonObject? = null,
+            endpoint: String? = null,
+            theClass: String? = null,
+            name: String,
+            valueName: String): JsonElement {
+        val epv =
+                if (endpointValue == null && endpoint != null)
+                    getJsonFromEndpoint(endpoint)
+                else if (endpointValue != null && endpoint == null) endpointValue
+                else throw IllegalArgumentException("Exactly one of endpointValue and endpoint must be non-null")
+
+        val classElements = if (theClass == null) epv else epv.get(theClass)
+        val targetElement = classElements.asJsonObject.get(name).asJsonObject
+        return targetElement.get(valueName)
+    }
+
+
+    fun assertGaugeValue(expected: Int, name: String) {
+        assertEquals(expected, getJsonElement(endpoint = metricsEndpoint, theClass = "gauges", name = name, valueName = "value").asInt)
+    }
+
+    @Test
+    fun testSimMetrics() {
+        loadSimData()
+        SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().triggerMetricsGeneration()
+        assertGaugeValue(100, "sims.noOfEntries.IPHONE_PROFILE_2")
+        assertGaugeValue(0, "sims.noOfEntriesAvailableForImmediateUse.IPHONE_PROFILE_2")
+        assertGaugeValue(0,  "sims.noOfReleasedEntries.IPHONE_PROFILE_2")
+        assertGaugeValue(98, "sims.noOfUnallocatedEntries.IPHONE_PROFILE_2")
+        assertGaugeValue(2, "sims.noOfReservedEntries.IPHONE_PROFILE_2")
+    }
+
+
     // XXX MISSING TEST:  SHould test periodic updater also in cases where
     //      either HSS or SM-DP+ entries are pre-allocated.
+
+
+    // XXX Also: Much of this test should be rewritten to run in an acceptance test
+    //     setting, externalizing the components being used as mocks.
 }

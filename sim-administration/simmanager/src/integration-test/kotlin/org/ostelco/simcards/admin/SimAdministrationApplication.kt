@@ -32,7 +32,7 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
 
 
     override fun initialize(bootstrap: Bootstrap<SimAdministrationConfiguration>) {
-        /* Enables ENV variable substitution in config file. */
+        // Enables ENV variable substitution in config file.
         bootstrap.configurationSourceProvider = SubstitutingSourceProvider(
                 bootstrap.configurationSourceProvider,
                 EnvironmentVariableSubstitutor(false)
@@ -47,6 +47,11 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
     }
 
     fun getDAO() =  simAdminModule.getDAO()
+
+
+    fun triggerMetricsGeneration() {
+        simAdminModule.triggerMetricsGeneration()
+    }
 }
 
 
