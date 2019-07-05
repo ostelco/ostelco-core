@@ -567,7 +567,7 @@ class StripePaymentProcessor : PaymentProcessor {
                                         currency = it.currency,
                                         created = toEpochMillis(it.created),
                                         refunded = it.refunded,
-                                        details = mapOf("invoiceId" to intent.invoice,
+                                        properties = mapOf("invoiceId" to intent.invoice,
                                                 "customerId" to intent.customer)
                                 )
                             }

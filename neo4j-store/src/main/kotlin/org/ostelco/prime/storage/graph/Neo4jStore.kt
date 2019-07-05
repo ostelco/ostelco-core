@@ -2183,7 +2183,7 @@ object Neo4jStoreSingleton : GraphStore {
                                     "currency" to it.currency,
                                     "refunded" to it.refunded,
                                     "created" to it.created,
-                                    "properties" to it.details)
+                                    "properties" to it.properties)
                         }
                 ).map {
                     it
