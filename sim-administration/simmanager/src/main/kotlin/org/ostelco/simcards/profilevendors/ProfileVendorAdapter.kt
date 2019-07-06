@@ -51,7 +51,7 @@ data class ProfileVendorAdapter(
     /**
      * Requests the an external Profile Vendor to activate the
      * SIM profile.
-     * @param client  HTTP client
+     * @param httpClient  HTTP client
      * @param config SIM vendor specific configuration
      * @param dao  DB interface
      * @param eid  ESIM id
@@ -71,7 +71,7 @@ data class ProfileVendorAdapter(
     /**
      * Initiate activation of a SIM profile with an external Profile Vendor
      * by sending a SM-DP+ 'download-order' message.
-     * @param client  HTTP client
+     * @param httpClient  HTTP client
      * @param config SIM vendor specific configuration
      * @param dao  DB interface
      * @param simEntry  SIM profile to activate
@@ -145,7 +145,7 @@ data class ProfileVendorAdapter(
                     config.name,
                     simEntry.iccid,
                     e)
-            AdapterError("SM-DP+ 'order-download' message to service ${config.name} failed with error: ${e}")
+            AdapterError("SM-DP+ 'order-download' message to service ${config.name} failed with error: $e")
                     .left()
         }
     }
@@ -153,7 +153,7 @@ data class ProfileVendorAdapter(
     /**
      * Complete the activation of a SIM profile with an external Profile Vendor
      * by sending a SM-DP+ 'confirmation' message.
-     * @param client  HTTP client
+     * @param httpClient  HTTP client
      * @param config SIM vendor specific configuration
      * @param dao  DB interface
      * @param eid  ESIM id
@@ -211,12 +211,10 @@ data class ProfileVendorAdapter(
                                 val simEntryId = simEntry.id
                                 val statusEid = status.eid
 
-                                if (simEntryId == null) {
-                                    AdapterError("simEntryId == null").left()
-                                } else if (statusEid == null) {
-                                    AdapterError("statusEid == null").left()
-                                } else {
-                                    dao.setEidOfSimProfile(simEntryId, statusEid)
+                                when {
+                                    simEntryId == null -> AdapterError("simEntryId == null").left()
+                                    statusEid == null -> AdapterError("statusEid == null").left()
+                                    else -> dao.setEidOfSimProfile(simEntryId, statusEid)
                                 }
                             }
                             if (!eid.isNullOrEmpty() && eid != status.eid) {
@@ -234,12 +232,10 @@ data class ProfileVendorAdapter(
                             val simEntryId = simEntry.id
                             val statusMatchingId = status.matchingId
 
-                            if (simEntryId == null) {
-                                AdapterError("simEntryId == null").left()
-                            } else if (statusMatchingId == null) {
-                                AdapterError("statusMatchingId == null").left()
-                            } else {
-                                dao.setSmDpPlusStateAndMatchingId(simEntryId, SmDpPlusState.RELEASED, statusMatchingId)
+                            when {
+                                simEntryId == null -> AdapterError("simEntryId == null").left()
+                                statusMatchingId == null -> AdapterError("statusMatchingId == null").left()
+                                else -> dao.setSmDpPlusStateAndMatchingId(simEntryId, SmDpPlusState.RELEASED, statusMatchingId)
                             }
                         }
                     }
@@ -259,7 +255,7 @@ data class ProfileVendorAdapter(
                     config.name,
                     simEntry.iccid,
                     e)
-            AdapterError("SM-DP+ 'order-confirm' message to service ${config.name} failed with error: ${e}")
+            AdapterError("SM-DP+ 'order-confirm' message to service ${config.name} failed with error: $e")
                     .left()
         }
     }
@@ -267,7 +263,7 @@ data class ProfileVendorAdapter(
     /**
      * Downloads the SM-DP+ 'profile status' information for an ICCID from
      * a SM-DP+ service.
-     * @param client  HTTP client
+     * @param httpClient  HTTP client
      * @param config  SIM vendor specific configuration
      * @param iccid  ICCID
      * @return SM-DP+ 'profile status' for ICCID
@@ -287,7 +283,7 @@ data class ProfileVendorAdapter(
     /**
      * Downloads the SM-DP+ 'profile status' information for a list of ICCIDs
      * from a SM-DP+ service.
-     * @param client  HTTP client
+     * @param httpClient  HTTP client
      * @param config  SIM vendor specific configuration
      * @param iccidList  list with ICCID
      * @return  A list with SM-DP+ 'profile status' information
@@ -348,7 +344,7 @@ data class ProfileVendorAdapter(
                             if (!profileStatusList.isNullOrEmpty())
                                 profileStatusList.right()
                             else
-                                NotFoundError("No information found for ICCID ${iccids} in SM-DP+ 'profile-status' message to service ${config.name}")
+                                NotFoundError("No information found for ICCID $iccids in SM-DP+ 'profile-status' message to service ${config.name}")
                                         .left()
                         }
                     }
@@ -368,7 +364,7 @@ data class ProfileVendorAdapter(
                     config.name,
                     iccids,
                     e)
-            AdapterError("SM-DP+ 'profile-status' message to service ${config.name} failed with error: ${e}")
+            AdapterError("SM-DP+ 'profile-status' message to service ${config.name} failed with error: $e")
                     .left()
         }
     }

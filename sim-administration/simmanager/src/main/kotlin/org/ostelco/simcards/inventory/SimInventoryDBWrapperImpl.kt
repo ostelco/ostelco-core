@@ -25,44 +25,44 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
             }
 
     override fun reserveGoldenNumbersForBatch(batchId: Long): Either<SimManagerError, Int> =
-            either(NotFoundError("Found no batch for batchId ${batchId}")) {
+            either(NotFoundError("Found no batch for batchId $batchId")) {
                 db.reserveGoldenNumbersForBatch(batchId)
             }
 
     override fun getSimProfileById(id: Long): Either<SimManagerError, SimEntry> =
-            either(NotFoundError("Found no SIM for id ${id}")) {
+            either(NotFoundError("Found no SIM for id $id")) {
                 db.getSimProfileById(id)
             }
 
     override fun getSimProfileByIccid(iccid: String): Either<SimManagerError, SimEntry> =
-            either(NotFoundError("Found no SIM for ICCID ${iccid}")) {
+            either(NotFoundError("Found no SIM for ICCID $iccid")) {
                 db.getSimProfileByIccid(iccid)
             }
 
     override fun getSimProfileByImsi(imsi: String): Either<SimManagerError, SimEntry> =
-            either(NotFoundError("Found no SIM for IMSI ${imsi}")) {
+            either(NotFoundError("Found no SIM for IMSI $imsi")) {
                 db.getSimProfileByImsi(imsi)
             }
 
     override fun getSimProfileByMsisdn(msisdn: String): Either<SimManagerError, SimEntry> =
-            either(NotFoundError("Found no SIM MSISDN ${msisdn}")) {
+            either(NotFoundError("Found no SIM MSISDN $msisdn")) {
                 db.getSimProfileByMsisdn(msisdn)
             }
 
     override fun findNextNonProvisionedSimProfileForHss(hssId: Long, profile: String): Either<SimManagerError, SimEntry> =
-            either(NotFoundError("No uprovisioned SIM available for HSS id ${hssId} and profile ${profile}")) {
+            either(NotFoundError("No uprovisioned SIM available for HSS id $hssId and profile $profile")) {
                 db.findNextNonProvisionedSimProfileForHss(hssId, profile)
             }
 
     // err
     override fun findNextReadyToUseSimProfileForHss(hssId: Long, profile: String): Either<SimManagerError, SimEntry> =
-            either(NotFoundError("No ready to use SIM available for HSS id ${hssId} and profile ${profile}")) {
+            either(NotFoundError("No ready to use SIM available for HSS id $hssId and profile $profile")) {
                 db.findNextReadyToUseSimProfileForHlr(hssId, profile)
             }
 
     @Transaction
     override fun setEidOfSimProfileByIccid(iccid: String, eid: String): Either<SimManagerError, SimEntry> =
-            either(NotFoundError("Found no SIM profile with ICCID ${iccid} update of EID failed")) {
+            either(NotFoundError("Found no SIM profile with ICCID $iccid update of EID failed")) {
                 if (db.updateEidOfSimProfileByIccid(iccid, eid) > 0)
                     db.getSimProfileByIccid(iccid)
                 else
@@ -71,7 +71,7 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
 
     @Transaction
     override fun setEidOfSimProfile(id: Long, eid: String): Either<SimManagerError, SimEntry> =
-            either(NotFoundError("Found no SIM profile with id ${id} update of EID failed")) {
+            either(NotFoundError("Found no SIM profile with id $id update of EID failed")) {
                 if (db.updateEidOfSimProfile(id, eid) > 0)
                     db.getSimProfileById(id)
                 else
@@ -84,7 +84,7 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
 
     @Transaction
     override fun setHssState(id: Long, state: HssState): Either<SimManagerError, SimEntry> =
-            either(NotFoundError("Found no HSS profilevendors with id ${id} update of HSS state failed")) {
+            either(NotFoundError("Found no HSS profilevendors with id $id update of HSS state failed")) {
                 if (db.updateHlrState(id, state) > 0)
                     db.getSimProfileById(id)
                 else
@@ -93,7 +93,7 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
 
     @Transaction
     override fun setProvisionState(id: Long, state: ProvisionState): Either<SimManagerError, SimEntry> =
-            either(NotFoundError("Found no SIM profile with id ${id} update of provision state failed")) {
+            either(NotFoundError("Found no SIM profile with id $id update of provision state failed")) {
                 if (db.updateProvisionState(id, state) > 0)
                     db.getSimProfileById(id)
                 else
@@ -102,7 +102,7 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
 
     @Transaction
     override fun setSmDpPlusState(id: Long, state: SmDpPlusState): Either<SimManagerError, SimEntry> =
-            either(NotFoundError("Found no SIM profile with id ${id} update of SM-DP+ state failed")) {
+            either(NotFoundError("Found no SIM profile with id $id update of SM-DP+ state failed")) {
                 if (db.updateSmDpPlusState(id, state) > 0)
                     db.getSimProfileById(id)
                 else
@@ -111,7 +111,7 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
 
     @Transaction
     override fun setSmDpPlusStateUsingIccid(iccid: String, state: SmDpPlusState): Either<SimManagerError, SimEntry> =
-            either(NotFoundError("Found no SIM profile with id ${iccid} update of SM-DP+ state failed")) {
+            either(NotFoundError("Found no SIM profile with id $iccid update of SM-DP+ state failed")) {
                 if (db.updateSmDpPlusStateUsingIccid(iccid, state) > 0)
                     db.getSimProfileByIccid(iccid)
                 else
@@ -120,7 +120,7 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
 
     @Transaction
     override fun setSmDpPlusStateAndMatchingId(id: Long, state: SmDpPlusState, matchingId: String): Either<SimManagerError, SimEntry> =
-            either(NotFoundError("Found no SIM profile with id ${id} update of SM-DP+ state and 'matching-id' failed")) {
+            either(NotFoundError("Found no SIM profile with id $id update of SM-DP+ state and 'matching-id' failed")) {
                 if (db.updateSmDpPlusStateAndMatchingId(id, state, matchingId) > 0)
                     db. getSimProfileById(id)
                 else
@@ -132,7 +132,7 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
      */
 
     override fun findSimVendorForHssPermissions(profileVendorId: Long, hssId: Long): Either<SimManagerError, List<Long>> =
-            either(ForbiddenError("Using SIM profile vendor id ${profileVendorId} with HSS id ${hssId} is not allowed")) {
+            either(ForbiddenError("Using SIM profile vendor id $profileVendorId with HSS id $hssId is not allowed")) {
                 db.findSimVendorForHssPermissions(profileVendorId, hssId)
             }
 
@@ -147,12 +147,12 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
             }
 
     override fun getHssEntryByName(name: String): Either<SimManagerError, HssEntry> =
-            either(NotFoundError("Found no HSS entry  with metricName ${name}")) {
+            either(NotFoundError("Found no HSS entry  with metricName $name")) {
                 db.getHssEntryByName(name)
             }
 
     override fun getHssEntryById(id: Long): Either<SimManagerError, HssEntry> =
-            either(NotFoundError("Found no HSS entry  with id ${id}")) {
+            either(NotFoundError("Found no HSS entry  with id $id")) {
                 db.getHssEntryById(id)
             }
 
@@ -162,12 +162,12 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
             }
 
     override fun getProfileVendorAdapterByName(name: String): Either<SimManagerError, ProfileVendorAdapter> =
-            either(NotFoundError("Found no SIM profile vendor with metricName ${name}")) {
+            either(NotFoundError("Found no SIM profile vendor with metricName $name")) {
                 db.getProfileVendorAdapterByName(name)
             }
 
     override fun getProfileVendorAdapterById(id: Long): Either<SimManagerError, ProfileVendorAdapter> =
-            either(NotFoundError("Found no SIM profile vendor with id ${id}")) {
+            either(NotFoundError("Found no SIM profile vendor with id $id")) {
                 db.getProfileVendorAdapterById(id)
             }
 
@@ -191,7 +191,7 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
             }
 
     override fun getBatchInfo(id: Long): Either<SimManagerError, SimImportBatch> =
-            either(NotFoundError("Found no information about 'import batch' with id ${id}")) {
+            either(NotFoundError("Found no information about 'import batch' with id $id")) {
                 db.getBatchInfo(id)
             }
 
@@ -216,7 +216,7 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
      * a particular HSS.
      */
     override fun getProfileNamesForHssById(hssId: Long): Either<SimManagerError, List<String>> =
-            either(NotFoundError("Found no SIM profile metricName for HSS with id ${hssId}")) {
+            either(NotFoundError("Found no SIM profile metricName for HSS with id $hssId")) {
                 db.getProfileNamesForHss(hssId)
             }
 
@@ -226,7 +226,7 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
      * can change at any time, so don't use it unless you really know what you're doing.
      */
     override fun getProfileStatsAsKeyValuePairs(hssId: Long, simProfile: String): Either<SimManagerError, List<KeyValuePair>> =
-            either(NotFoundError("Found no statistics for SIM profile ${simProfile} for HSS with id ${hssId}")) {
+            either(NotFoundError("Found no statistics for SIM profile $simProfile for HSS with id $hssId")) {
                 db.getProfileStatsAsKeyValuePairs(hssId, simProfile)
             }
 

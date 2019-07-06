@@ -85,7 +85,7 @@ class SimInventoryCallbackService(val dao: SimInventoryDAO) : SmDpPlusCallbackSe
      *      being performed are valid state transitions.  None of these criteria are tested for, and
      *      errors are not si
      */
-    fun gotoState(iccid: String, targetSmdpPlusStatus: SmDpPlusState) {
+    private fun gotoState(iccid: String, targetSmdpPlusStatus: SmDpPlusState) {
         logger.info("Updating SM-DP+ state to {} with value from 'download-progress-info' message' for ICCID {}",
                 SmDpPlusState.DOWNLOADED, iccid)
         dao.setSmDpPlusStateUsingIccid(iccid, targetSmdpPlusStatus)

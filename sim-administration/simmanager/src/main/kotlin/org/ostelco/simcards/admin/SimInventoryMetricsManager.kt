@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 
-class SimInventoryMetricsManager(private val dao: SimInventoryDAO, private val metrics: MetricRegistry) : Managed {
+class SimInventoryMetricsManager(private val dao: SimInventoryDAO, metrics: MetricRegistry) : Managed {
 
     ///
     ///  Set up the metrics manager and prepare to run periodic task every five minutes.

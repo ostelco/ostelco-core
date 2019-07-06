@@ -46,7 +46,7 @@ include ':sim-administration:hss-adapter'
 include ':sim-administration:ostelco-dropwizard-utils'
 include ':sim-administration:simcard-utils'
 include ':sim-administration:simmanager'
-include ':sim-administration:sm-dp-plus'
+include ':sim-administration:sm-dp-plus-emulator'
 
 project(':acceptance-tests').projectDir = "$rootDir/acceptance-tests" as File
 project(':admin-endpoint').projectDir = "$rootDir/admin-endpoint" as File
@@ -94,4 +94,4 @@ project(':sim-administration:hss-adapter').projectDir = "$rootDir/sim-administra
 project(':sim-administration:ostelco-dropwizard-utils').projectDir = "$rootDir/sim-administration/ostelco-dropwizard-utils" as File
 project(':sim-administration:simcard-utils').projectDir = "$rootDir/sim-administration/simcard-utils" as File
 project(':sim-administration:simmanager').projectDir = "$rootDir/sim-administration/simmanager" as File
-project(':sim-administration:sm-dp-plus').projectDir = "$rootDir/sim-administration/sm-dp-plus" as File
+project(':sim-administration:sm-dp-plus-emulator').projectDir = "$rootDir/sim-administration/sm-dp-plus-emulator" as File

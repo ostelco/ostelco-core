@@ -119,6 +119,19 @@ services:
     container_name: ext-auth-provider
     build: ext-auth-provider
 
+  smdp-plus-emulator:
+    container_name: smdp-plus-emulator
+    build: sim-administration/sm-dp-plus-emulator
+
+  postgres:
+    container_name: postgres
+    image: postgres:9.6
+    environment:
+      POSTGRES_USER: postgres_user
+      POSTGRES_PASSWORD: postgres_password
+      POSTGRES_DB: sim-inventory
+    tmpfs: "//var/lib/postgresql/data"
+
 networks:
   net:
     driver: bridge

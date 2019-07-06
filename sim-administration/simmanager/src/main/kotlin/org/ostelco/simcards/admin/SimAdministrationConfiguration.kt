@@ -103,7 +103,7 @@ data class SwtHssConfig(
         val endpoint: String,
 
         /**
-         * Userid used to authenticate towards the API.
+         * UserId used to authenticate towards the API.
          */
         val userId: String,
 

@@ -9,19 +9,19 @@ import org.jdbi.v3.sqlobject.statement.SqlUpdate
 interface ClearTablesForTestingDB {
 
     @SqlUpdate("TRUNCATE sim_import_batches")
-    abstract fun truncateImportBatchesTable()
+    fun truncateImportBatchesTable()
 
     @SqlUpdate("TRUNCATE sim_entries")
-    abstract fun truncateSimEntryTable()
+    fun truncateSimEntryTable()
 
     @SqlUpdate("TRUNCATE hlr_adapters")
-    abstract fun truncateHlrAdapterTable()
+    fun truncateHlrAdapterTable()
 
     @SqlUpdate("TRUNCATE profile_vendor_adapters")
-    abstract fun truncateProfileVendorAdapterTable()
+    fun truncateProfileVendorAdapterTable()
 
     @SqlUpdate("TRUNCATE sim_vendors_permitted_hlrs")
-    abstract fun truncateSimVendorsPermittedTable()
+    fun truncateSimVendorsPermittedTable()
 }
 
 class ClearTablesForTestingDAO(private val db: ClearTablesForTestingDB) {

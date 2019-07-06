@@ -46,8 +46,9 @@ import org.ostelco.simcards.inventory.SimInventoryResource
 @JsonTypeName("sim-manager")
 class SimAdministrationModule : PrimeModule {
 
-    lateinit private var metricsManager: SimInventoryMetricsManager
     private val logger by getLogger()
+
+    private lateinit var metricsManager: SimInventoryMetricsManager
 
     private lateinit var DAO: SimInventoryDAO
 
@@ -110,7 +111,7 @@ class SimAdministrationModule : PrimeModule {
                 simInventoryDAO = this.DAO,
                 httpClient = httpClient,
                 hssAdapterProxy = hssAdapters,
-                profileVendors = config.profileVendors));
+                profileVendors = config.profileVendors))
     }
 
 

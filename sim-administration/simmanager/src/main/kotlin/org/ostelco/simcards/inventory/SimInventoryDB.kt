@@ -308,6 +308,6 @@ class HssProfileNameMapper : RowMapper<HssProfileIdName> {
         val hssId = row.getLong("hssid")
         val hssName = row.getString("hssname")
         val simProfileName = row.getString("simprofilename")
-        return HssProfileIdName(hssId = hssId, hssName = hssName, simProfileName = simProfileName);
+        return HssProfileIdName(hssId = hssId, hssName = hssName, simProfileName = simProfileName)
     }
 }

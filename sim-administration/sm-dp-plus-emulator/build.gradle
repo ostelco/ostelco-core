@@ -1,0 +1,42 @@
+plugins {
+    id "org.jetbrains.kotlin.jvm"
+    id "application"
+    id "com.github.johnrengelman.shadow" version "5.1.0"
+}
+
+dependencies {
+    implementation project(":sim-administration:jersey-json-schema-validator")
+    implementation project(":sim-administration:simcard-utils")
+    implementation project(":sim-administration:es2plus4dropwizard")
+    implementation project(":sim-administration:ostelco-dropwizard-utils")
+
+    // https://mvnrepository.com/artifact/org.conscrypt/conscrypt-openjdk
+    //  XXX Delete next line?
+    implementation "org.conscrypt:conscrypt-openjdk:2.1.0"
+
+    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+
+    implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
+
+    implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
+    implementation "io.dropwizard:dropwizard-auth:$dropwizardVersion"
+    implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
+    implementation "io.dropwizard:dropwizard-jdbi:$dropwizardVersion"
+
+    implementation "org.conscrypt:conscrypt-openjdk-uber:2.1.0"
+
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
+    implementation "org.apache.commons:commons-csv:$csvVersion"
+
+    testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
+}
+
+shadowJar {
+    mainClassName = "org.ostelco.simcards.smdpplus.SmDpPlusApplicationKt"
+    mergeServiceFiles()
+    classifier = "uber"
+    version = null
+}
+
+apply from: '../../gradle/jacoco.gradle'
