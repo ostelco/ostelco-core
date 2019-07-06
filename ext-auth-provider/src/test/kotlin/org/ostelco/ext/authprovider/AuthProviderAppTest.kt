@@ -11,7 +11,7 @@ fun generateAccessToken(subject: String): String = Jwts.builder()
         .setClaims(mapOf(
                 "aud" to "http://ext-auth-provider:8080/userinfo",
                 "sub" to subject))
-        .signWith(SignatureAlgorithm.HS512, JWT_SIGNING_KEY.toByteArray())
+        .signWith(JWT_SIGNING_KEY, SignatureAlgorithm.HS512)
         .compact()
 
 data class UserInfo(var email: String? = null)

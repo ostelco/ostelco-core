@@ -50,7 +50,8 @@ data class InternalConfig(
         val teamId: String,
         val keyId: String,
         val clientId: String,
-        val privateKey: PrivateKey
+        val privateKey: PrivateKey,
+        val appleIdServiceUrl:String = "https://appleid.apple.com"
 )
 
 object ConfigRegistry {

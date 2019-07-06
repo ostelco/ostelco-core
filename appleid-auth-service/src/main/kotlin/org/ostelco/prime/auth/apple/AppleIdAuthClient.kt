@@ -11,20 +11,18 @@ import java.util.*
 import javax.ws.rs.core.Form
 import javax.ws.rs.core.MultivaluedHashMap
 
-const val APPLE_ID_SERVICE_URL = "https://appleid.apple.com"
-
 /**
  * https://developer.apple.com/documentation/signinwithapplerestapi
  */
 object AppleIdAuthClient {
 
     fun fetchApplePublicKey() = get<String, JWKSet> {
-        target = APPLE_ID_SERVICE_URL
+        target = config.appleIdServiceUrl
         path = "auth/keys"
     }
 
     fun authorize(authCode: String) = post<ErrorResponse, TokenResponse>(expectedResultCode = 200) {
-        target = APPLE_ID_SERVICE_URL
+        target = config.appleIdServiceUrl
         path = "/auth/token"
         form = Form(MultivaluedHashMap(mapOf(
                 "client_id" to config.clientId,
@@ -35,7 +33,7 @@ object AppleIdAuthClient {
     }
 
     fun validate(token: String) = post<ErrorResponse, TokenResponse> {
-        target = APPLE_ID_SERVICE_URL
+        target = config.appleIdServiceUrl
         path = "/auth/token"
         form = Form(MultivaluedHashMap(mapOf(
                 "client_id" to config.clientId,
@@ -52,7 +50,7 @@ object AppleIdAuthClient {
                 .setIssuer(config.teamId)
                 .setIssuedAt(Date(now.toEpochMilli()))
                 .setExpiration(Date(now.plusSeconds(300).toEpochMilli()))
-                .setAudience(APPLE_ID_SERVICE_URL)
+                .setAudience(config.appleIdServiceUrl)
                 .setSubject(config.clientId)
                 .signWith(ES256, config.privateKey)
                 .compact()

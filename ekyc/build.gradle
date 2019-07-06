@@ -4,18 +4,18 @@ plugins {
 }
 
 dependencies {
-  
+
   implementation project(":prime-modules")
-  
-  implementation("io.jsonwebtoken:jjwt:$jjwtVersion") {
-    exclude group: "com.fasterxml.jackson.core", module:"jackson-databind"
-  }
-  
+
+  implementation "io.jsonwebtoken:jjwt-api:$jjwtVersion"
+  implementation "io.jsonwebtoken:jjwt-impl:$jjwtVersion"
+  runtimeOnly "io.jsonwebtoken:jjwt-jackson:$jjwtVersion"
+
   implementation "org.apache.cxf:cxf-rt-rs-security-jose:$cxfVersion"
 
   implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
 
-  
+
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation project(":ext-myinfo-emulator")
 

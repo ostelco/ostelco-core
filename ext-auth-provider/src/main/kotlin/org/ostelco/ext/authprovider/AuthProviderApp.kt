@@ -4,6 +4,8 @@ import io.dropwizard.Application
 import io.dropwizard.Configuration
 import io.dropwizard.setup.Environment
 import io.jsonwebtoken.Jwts
+import io.jsonwebtoken.SignatureAlgorithm
+import io.jsonwebtoken.security.Keys
 import javax.validation.Valid
 import javax.ws.rs.GET
 import javax.ws.rs.HeaderParam
@@ -11,7 +13,7 @@ import javax.ws.rs.Path
 import javax.ws.rs.Produces
 import javax.ws.rs.core.Response
 
-internal const val JWT_SIGNING_KEY = "jwt_secret"
+internal val JWT_SIGNING_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS512)
 
 fun main() = AuthProviderApp().run("server")
 
@@ -35,7 +37,7 @@ class UserInfoResource {
         if (token != null) {
 
             val claims = Jwts.parser()
-                    .setSigningKey(JWT_SIGNING_KEY.toByteArray())
+                    .setSigningKey(JWT_SIGNING_KEY)
                     .parseClaimsJws(token.removePrefix("Bearer "))
                     .body
 
