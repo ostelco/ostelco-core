@@ -24,9 +24,6 @@ class AppleIdAuthResource {
     @Consumes(MediaType.APPLICATION_JSON)
     fun getAuthToken(authCode: AuthCode): Response {
 
-        logger.info("authCode = {}", authCode)
-        println("authCode = $authCode")
-
         return AppleIdAuthClient.authorize(authCode.authCode)
                 .fold(
                         {

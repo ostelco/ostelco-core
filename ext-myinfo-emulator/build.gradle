@@ -9,12 +9,13 @@ dependencies {
 
   // This is not a prime-module. Just needed access to getLogger and Dropwizard KotlinModule.
   implementation project(":prime-modules")
-  
+
   implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
-  
-  implementation ("io.jsonwebtoken:jjwt:$jjwtVersion") {
-    exclude group: "com.fasterxml.jackson.core", module:"jackson-databind"
-  }
+
+  implementation "io.jsonwebtoken:jjwt-api:$jjwtVersion"
+  implementation "io.jsonwebtoken:jjwt-impl:$jjwtVersion"
+  runtimeOnly "io.jsonwebtoken:jjwt-jackson:$jjwtVersion"
+
   implementation "org.apache.cxf:cxf-rt-rs-security-jose:$cxfVersion"
 
   runtimeOnly "javax.xml.bind:jaxb-api:$jaxbVersion"

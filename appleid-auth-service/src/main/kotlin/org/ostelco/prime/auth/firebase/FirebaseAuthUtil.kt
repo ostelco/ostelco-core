@@ -22,7 +22,7 @@ object FirebaseAuthUtil {
                     mapOf("apple" to
                             mapOf(
                                     "identity" to uid,
-                                    "type" to "appleid",
+                                    "type" to "APPLE_ID",
                                     "provider" to "apple.com"
                             )
                     )

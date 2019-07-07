@@ -9,10 +9,10 @@ dependencies {
   implementation project(":prime-modules")
   implementation project(":firebase-extensions")
 
-  implementation("io.jsonwebtoken:jjwt:$jjwtVersion") {
-    exclude group: "com.fasterxml.jackson.core", module:"jackson-databind"
-  }
-  
+  implementation "io.jsonwebtoken:jjwt-api:$jjwtVersion"
+  runtimeOnly "io.jsonwebtoken:jjwt-impl:$jjwtVersion"
+  runtimeOnly "io.jsonwebtoken:jjwt-jackson:$jjwtVersion"
+
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
   testImplementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
