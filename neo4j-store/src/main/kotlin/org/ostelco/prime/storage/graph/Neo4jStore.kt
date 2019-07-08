@@ -2195,7 +2195,7 @@ object Neo4jStoreSingleton : GraphStore {
                        duplicates or more of the same transaction. */
                     if (it.value.size > 2)
                         logger.error(NOTIFY_OPS_MARKER,
-                            "${it.value.size} duplicates found for payment transaction ${it.value.first()["chargeId"]}")
+                            "${it.value.size} duplicates found for payment transaction/purchase record ${it.value.first()["chargeId"]}")
                     it
                 }.filter {
                     it.value.size == 1
@@ -2217,9 +2217,9 @@ object Neo4jStoreSingleton : GraphStore {
                     }
                 }.map {
                     logger.error(NOTIFY_OPS_MARKER, if (it["type"] == "purchaseRecord")
-                        "Found no matching payment record for purchase record ${it["chargeId"]}"
+                        "Found no matching payment transaction record for purchase record ${it["chargeId"]}"
                     else
-                        "Found no matching purchase record for payment record ${it["chargeId"]}")
+                        "Found no matching purchase record for payment transaction record ${it["chargeId"]}")
                     it
                 }
             }.fix()

@@ -15,8 +15,6 @@ import org.ostelco.prime.paymentprocessor.StripeMonitor
 import org.ostelco.prime.paymentprocessor.core.BadGatewayError
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.publishers.StripeEventPublisher
-import java.time.LocalDateTime
-import java.time.ZoneOffset
 import javax.ws.rs.Consumes
 import javax.ws.rs.GET
 import javax.ws.rs.POST

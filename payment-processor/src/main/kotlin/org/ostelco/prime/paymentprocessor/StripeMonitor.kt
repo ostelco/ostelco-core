@@ -6,8 +6,9 @@ import arrow.core.left
 import arrow.core.right
 import com.stripe.Stripe
 import com.stripe.model.Event
-import com.stripe.model.PaymentIntent
 import com.stripe.model.WebhookEndpoint
+import org.ostelco.prime.getLogger
+import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.StripeUtils.either
 import org.ostelco.prime.paymentprocessor.core.PaymentConfigurationError
 import org.ostelco.prime.paymentprocessor.core.PaymentError
@@ -24,6 +25,8 @@ enum class StripeEventState {
  */
 class StripeMonitor {
 
+    private val logger by getLogger()
+
     /**
      * Check for mismatch between Stripe API version used for events
      * and version used by the Java library.
@@ -37,8 +40,15 @@ class StripeMonitor {
             fetchLastEvent()
                     .flatMap {
                         if (it.size > 0)
-                            (it.first().apiVersion == Stripe.API_VERSION)
-                                    .right()
+                            when {
+                                it.first().apiVersion == Stripe.API_VERSION -> true
+                                else -> {
+                                    logger.error(NOTIFY_OPS_MARKER,
+                                            "Stripe API version mismatch between Stripe events and library, " +
+                                                    "found ${it.first().apiVersion}, expected ${Stripe.API_VERSION}")
+                                    false
+                                }
+                            }.right()
                         else
                             PaymentConfigurationError("No events found for Stripe account")
                                     .left()
@@ -78,10 +88,25 @@ class StripeMonitor {
     fun checkEventSubscriptionList(events: List<String>): Either<PaymentError, Boolean> =
             fetchWebhookEndpoints(1)
                     .flatMap {
-                        (it.size > 0 &&
-                                it.first().enabledEvents.containsAll(events) &&
-                                it.first().enabledEvents.size == events.size)
-                                .right()
+                        when {
+                            it.size > 0 &&
+                                    it.first().enabledEvents.containsAll(events) &&
+                                    it.first().enabledEvents.size == events.size -> true
+                            else -> {
+                                logger.error(NOTIFY_OPS_MARKER,
+                                        "Stripe events subscription does not match expected list of events, diff: " +
+                                                it.first().enabledEvents.plus(events)
+                                                        .groupBy {
+                                                            it
+                                                        }.filter {
+                                                            it.value.size == 1
+                                                        }.map {
+                                                            it.key
+                                                        }.joinToString(limit = 5)
+                                )
+                                false
+                            }
+                        }.right()
                     }
 
     /**
@@ -94,9 +119,24 @@ class StripeMonitor {
     fun checkEventSubscriptionList(url: String, events: List<String>): Either<PaymentError, Boolean> =
             fetchWebhookEndpoint(url)
                     .flatMap {
-                        (it.enabledEvents.containsAll(events) &&
-                                it.enabledEvents.size == events.size)
-                                .right()
+                        when {
+                            it.enabledEvents.containsAll(events) &&
+                                    it.enabledEvents.size == events.size -> true
+                            else -> {
+                                logger.error(NOTIFY_OPS_MARKER,
+                                        "Stripe events subscription for endpoint ${url} does not match expected list of events, diff: " +
+                                                it.enabledEvents.plus(events)
+                                                        .groupBy {
+                                                            it
+                                                        }.filter {
+                                                            it.value.size == 1
+                                                        }.map {
+                                                            it.key
+                                                        }.joinToString(limit = 5)
+                                )
+                                false
+                            }
+                        }.right()
                     }
 
     /**
@@ -164,8 +204,14 @@ class StripeMonitor {
     fun checkWebhookEnabled(): Either<PaymentError, Boolean> =
             fetchWebhookEndpoints(1)
                     .flatMap {
-                        (it.size > 0 && it.first().status == "enabled")
-                                .right()
+                        when {
+                            it.size > 0 && it.first().status == "enabled" -> true
+                            else -> {
+                                logger.error(NOTIFY_OPS_MARKER,
+                                        "Stripe events (webhook) is not enabled")
+                                false
+                            }
+                        }.right()
                     }
 
     /**
@@ -176,7 +222,14 @@ class StripeMonitor {
     fun checkWebhookEnabled(url: String): Either<PaymentError, Boolean> =
             fetchWebhookEndpoint(url)
                     .flatMap {
-                        (it.status == "enabled").right()
+                        when {
+                            it.status == "enabled" -> true
+                            else -> {
+                                logger.error(NOTIFY_OPS_MARKER,
+                                        "Stripe events (webhook) for endpoint ${url} is not enabled")
+                                false
+                            }
+                        }.right()
                     }
 
     /**
