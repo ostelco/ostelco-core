@@ -33,6 +33,7 @@
   <vendor vendor-id="Merit" code="61" name="Merit Networks" />
   <vendor vendor-id="Ericsson" code="193" name="Ericsson" />
   <vendor vendor-id="USR" code="429" name="US Robotics Corp." />
+  <vendor vendor-id="Huawei" code="2011" name="HUAWEI Technology Co.,Ltd" />
   <vendor vendor-id="3GPP2" code="5535" name="3GPP2" />
   <vendor vendor-id="TGPP" code="10415" name="3GPP" />
   <vendor vendor-id="Vodafone" code="12645" name="Vodafone" />
@@ -2042,6 +2043,10 @@
     <type type-name="UTF8String" />
   </avpdefn>
 
+  <avpdefn name="Huawei-specific" code="950" vendor-id="Huawei" mandatory="mustnot" protected="may" may-encrypt="no" vendor-bit="must" >
+    <type type-name="OctetString" />
+  </avpdefn>
+
   <application id="4" vendor-id="None" name="RFC 4006 CCA" URI="http://www.ietf.org/rfc/rfc3588.txt?number=3588">
     <command name="Credit-Control-Request" code="272" request="true">
       <avp name="Session-Id" code="263" vendor="0" multiplicity="1" index="0" />
@@ -2085,6 +2090,7 @@
       <avp name="Result-Code" code="268" vendor="0" multiplicity="0" index="-1" />
       <avp name="Experimental-Result" code="297" vendor="0" multiplicity="0" index="-1" />
       <avp name="Validity-Time" code="448" vendor="0" multiplicity="0" index="-1" />
+      <avp name="Huawei-specific" code="950" vendor="2011" multiplicity="0" index="-1" />
     </command>
 
     <command name="Credit-Control-Answer" code="272" request="false">
