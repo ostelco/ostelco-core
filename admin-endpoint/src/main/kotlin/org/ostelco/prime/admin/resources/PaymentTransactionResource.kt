@@ -8,7 +8,7 @@ import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.storage.AdminDataSource
 import org.ostelco.prime.storage.StoreError
 import java.time.Instant
-import javax.validation.constraints.Pattern
+import javax.ws.rs.DefaultValue
 import javax.ws.rs.GET
 import javax.ws.rs.Path
 import javax.ws.rs.QueryParam
@@ -22,12 +22,14 @@ class PaymentTransactionResource {
     @GET
     @Path("/transactions")
     fun fetchPaymentTransactions(@QueryParam("start")
-                                 @Pattern(regexp = DIGITS_ONLY)
-                                 start: Long = getEpochMilli(A_DAY_AGO),
+                                 @DefaultValue("-1")   /* A bit cheap, but works. */
+                                 start: Long,
                                  @QueryParam("end")
-                                 @Pattern(regexp = DIGITS_ONLY)
-                                 end: Long = getEpochMilli()): Response =
-            storage.getPaymentTransactions(ofEpochSecondToMilli(start), ofEpochSecondToMilli(end))
+                                 @DefaultValue("-1")
+                                 end: Long): Response =
+            storage.getPaymentTransactions(
+                    ofEpochSecondToMilli(start, getEpochSeconds(A_DAY_AGO)),
+                    ofEpochSecondToMilli(end, getEpochSeconds()))
                     .fold(
                             { failed(it, ApiErrorCode.FAILED_TO_FETCH_PAYMENT_TRANSACTIONS) },
                             { ok(it) }
@@ -36,12 +38,14 @@ class PaymentTransactionResource {
     @GET
     @Path("/purchases")
     fun fetchPurchaseTransactions(@QueryParam("start")
-                                  @Pattern(regexp = DIGITS_ONLY)
-                                  start: Long = getEpochMilli(A_DAY_AGO),
+                                  @DefaultValue("-1")
+                                  start: Long,
                                   @QueryParam("end")
-                                  @Pattern(regexp = DIGITS_ONLY)
-                                  end: Long = getEpochMilli()): Response =
-            storage.getPurchaseTransactions(ofEpochSecondToMilli(start), ofEpochSecondToMilli(end))
+                                  @DefaultValue("-1")
+                                  end: Long): Response =
+            storage.getPurchaseTransactions(
+                    ofEpochSecondToMilli(start, getEpochSeconds(A_DAY_AGO)),
+                    ofEpochSecondToMilli(end, getEpochSeconds()))
                     .fold(
                             { failed(it, ApiErrorCode.FAILED_TO_FETCH_PURCHASE_TRANSACTIONS) },
                             { ok(it) }
@@ -50,30 +54,26 @@ class PaymentTransactionResource {
     @GET
     @Path("/check")
     fun checkTransactions(@QueryParam("start")
-                          @Pattern(regexp = DIGITS_ONLY)
-                          start: Long = getEpochMilli(A_DAY_AGO),
+                          @DefaultValue("-1")
+                          start: Long,
                           @QueryParam("end")
-                          @Pattern(regexp = DIGITS_ONLY)
-                          end: Long = getEpochMilli()): Response =
-            storage.checkPaymentTransactions(ofEpochSecondToMilli(start), ofEpochSecondToMilli(end))
+                          @DefaultValue("-1")
+                          end: Long): Response =
+            storage.checkPaymentTransactions(
+                    ofEpochSecondToMilli(start, getEpochSeconds(A_DAY_AGO)),
+                    ofEpochSecondToMilli(end, getEpochSeconds()))
                     .fold(
                             { failed(it, ApiErrorCode.FAILED_TO_CHECK_PAYMENT_TRANSACTIONS) },
                             { ok(it) }
                     ).build()
 
     /* Epoch timestamp in milli, now or offset by +/- seconds. */
-    private fun getEpochMilli(offset: Long = 0L): Long = Instant.now().plusSeconds(offset).toEpochMilli()
+    private fun getEpochSeconds(offset: Long = 0L): Long = Instant.now().plusSeconds(offset).toEpochMilli().div(1000L)
 
-    /* Internally all timestamps are in milliseconds. */
-    private fun ofEpochSecondToMilli(ts: Long): Long = Instant.ofEpochSecond(ts).toEpochMilli()
+    /* Seconds to milli with fallback on a default value. */
+    private fun ofEpochSecondToMilli(ts: Long, default: Long): Long = ofEpochSecondToMilli(if (ts < 0L) default else ts)
 
-    companion object {
-        /* 24 hours ago in seconds. */
-        val A_DAY_AGO: Long = -86400L
-
-        /* Regexp maching digits only. */
-        const val DIGITS_ONLY = "^(0|[1-9][0-9]*)$"
-    }
+    private fun ofEpochSecondToMilli(ts: Long): Long = Instant.ofEpochSecond(if (ts < 0L) 0L else ts).toEpochMilli()
 
     private fun ok(value: List<Any>) =
             Response.status(Response.Status.OK).entity(asJson(value))
@@ -91,4 +91,9 @@ class PaymentTransactionResource {
                     storeError = error).let {
                 Response.status(it.status).entity(asJson(it))
             }
+
+    companion object {
+        /* 24 hours ago in seconds. */
+        val A_DAY_AGO: Long = -86400L
+    }
 }
