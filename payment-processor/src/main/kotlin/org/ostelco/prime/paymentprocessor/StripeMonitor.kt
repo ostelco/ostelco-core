@@ -49,9 +49,12 @@ class StripeMonitor {
                                     false
                                 }
                             }.right()
-                        else
+                        else {
+                            logger.error("Failed to check API version as no Stripe event was found for Stripe account " +
+                                    "(the API version is retrived from an event message)")
                             PaymentConfigurationError("No events found for Stripe account")
                                     .left()
+                        }
                     }
 
     /**
@@ -173,20 +176,16 @@ class StripeMonitor {
      *     1560124800..1560729599 - fetch all events from 2019-06-10 to 2019-06-16
      *     1560124800..0          - fetch all events from 2019-06-10 and up to today
      *     0..1560124800          - fetch all events from before 2019-06-10
-     * @param after - events sent on or later
-     * @param before - events sent on or before
+     * @param start - events sent on or later
+     * @param end - events sent on or before
      * @param state - all, failed to deliver of successfully delivered events
      * @return list with event
      */
-    fun fetchEvents(after: Long = 0L, before: Long = 0L, state: StripeEventState = StripeEventState.ALL): Either<PaymentError, List<Event>> =
-            either("Failed to fetch Stripe events from time period ${after} to ${before}") {
+    fun fetchEvents(start: Long = 0L, end: Long = 0L, state: StripeEventState = StripeEventState.ALL): Either<PaymentError, List<Event>> =
+            either("Failed to fetch Stripe events from time period ${start} to ${end}") {
                 val param = mapOf(
-                        *(if (after > 0)
-                            arrayOf("created[gte]" to after)
-                        else arrayOf()),
-                        *(if (before > 0)
-                            arrayOf("created[lte]" to before)
-                        else arrayOf()),
+                        "created[gte]" to ofEpochMilliToSecond(start),
+                        "created[lte]" to ofEpochMilliToSecond(end),
                         *(if (state == StripeEventState.FAILED_TO_DELIVER)
                             arrayOf("delivery_success" to false)
                         else if (state == StripeEventState.DELIVERED)
@@ -270,4 +269,7 @@ class StripeMonitor {
                         .autoPagingIterable()
                         .toList()
             }
+
+    /* Timestamps in Stripe must be in seconds. */
+    private fun ofEpochMilliToSecond(ts: Long): Long = ts.div(1000L)
 }

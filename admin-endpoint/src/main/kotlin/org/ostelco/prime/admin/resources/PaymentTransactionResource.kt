@@ -28,8 +28,8 @@ class PaymentTransactionResource {
                                  @DefaultValue("-1")
                                  end: Long): Response =
             storage.getPaymentTransactions(
-                    ofEpochSecondToMilli(start, getEpochSeconds(A_DAY_AGO)),
-                    ofEpochSecondToMilli(end, getEpochSeconds()))
+                    start = ofEpochSecondToMilli(start, getEpochSeconds(A_DAY_AGO)),
+                    end = ofEpochSecondToMilli(end, getEpochSeconds()))
                     .fold(
                             { failed(it, ApiErrorCode.FAILED_TO_FETCH_PAYMENT_TRANSACTIONS) },
                             { ok(it) }
@@ -44,8 +44,8 @@ class PaymentTransactionResource {
                                   @DefaultValue("-1")
                                   end: Long): Response =
             storage.getPurchaseTransactions(
-                    ofEpochSecondToMilli(start, getEpochSeconds(A_DAY_AGO)),
-                    ofEpochSecondToMilli(end, getEpochSeconds()))
+                    start = ofEpochSecondToMilli(start, getEpochSeconds(A_DAY_AGO)),
+                    end = ofEpochSecondToMilli(end, getEpochSeconds()))
                     .fold(
                             { failed(it, ApiErrorCode.FAILED_TO_FETCH_PURCHASE_TRANSACTIONS) },
                             { ok(it) }
@@ -60,8 +60,8 @@ class PaymentTransactionResource {
                           @DefaultValue("-1")
                           end: Long): Response =
             storage.checkPaymentTransactions(
-                    ofEpochSecondToMilli(start, getEpochSeconds(A_DAY_AGO)),
-                    ofEpochSecondToMilli(end, getEpochSeconds()))
+                    start = ofEpochSecondToMilli(start, getEpochSeconds(A_DAY_AGO)),
+                    end = ofEpochSecondToMilli(end, getEpochSeconds()))
                     .fold(
                             { failed(it, ApiErrorCode.FAILED_TO_CHECK_PAYMENT_TRANSACTIONS) },
                             { ok(it) }
@@ -73,6 +73,7 @@ class PaymentTransactionResource {
     /* Seconds to milli with fallback on a default value. */
     private fun ofEpochSecondToMilli(ts: Long, default: Long): Long = ofEpochSecondToMilli(if (ts < 0L) default else ts)
 
+    /* Seconds to milli. */
     private fun ofEpochSecondToMilli(ts: Long): Long = Instant.ofEpochSecond(if (ts < 0L) 0L else ts).toEpochMilli()
 
     private fun ok(value: List<Any>) =
