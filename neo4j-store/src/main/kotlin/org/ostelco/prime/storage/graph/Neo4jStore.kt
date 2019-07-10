@@ -77,6 +77,7 @@ import org.ostelco.prime.paymentprocessor.core.ForbiddenError
 import org.ostelco.prime.paymentprocessor.core.InvoicePaymentInfo
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.PaymentStatus
+import org.ostelco.prime.paymentprocessor.core.PaymentTransactionInfo
 import org.ostelco.prime.paymentprocessor.core.PlanAlredyPurchasedError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
@@ -2120,6 +2121,112 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     //
+    // For verifying payment transactions
+    //
+
+    override fun getPaymentTransactions(start: Long, end: Long): Either<PaymentError, List<PaymentTransactionInfo>> =
+            paymentProcessor.getPaymentTransactions(start, end)
+
+    override fun getPurchaseTransactions(start: Long, end: Long): Either<StoreError, List<PurchaseRecord>> = readTransaction {
+        read("""
+                MATCH(c)-[r:PURCHASED]->(p) WHERE r.timestamp >= '${start}' AND r.timestamp <= '${end}'
+                RETURN r
+                """.trimIndent(), transaction) { statementResult ->
+            statementResult.list { record ->
+                purchaseRecordRelation.createRelation(record["r"].asMap())
+            }.filter {
+                /* Exclude free products. */
+                it.product.price.amount > 0
+            }.right()
+        }
+    }
+
+    override fun checkPaymentTransactions(start: Long, end: Long): Either<PaymentError, List<Map<String, Any?>>> = readTransaction {
+        IO {
+            Either.monad<PaymentError>().binding {
+
+                /* To account for time differences for when a payment transaction is stored
+                   to payment backend and to the purchase record DB, the search for
+                   corresponding payment and purchase records are done with a wider time range
+                   that what is specificed with the start and end timestamps.
+
+                   When all common records has been removed using, the remaining records, if any,
+                   are then againg checked for records that lies excactly within the start and
+                   end timestamps. */
+
+                val padding = 600000L   /* 10 min in milliseconds. */
+
+                val startPadded = if (start < padding) start else start - padding
+                val endPadded = end + padding
+
+                val purchaseRecords = getPurchaseTransactions(startPadded, endPadded)
+                        .mapLeft {
+                            BadGatewayError("Error when fetching purchase records",
+                                    error = it)
+                        }.bind()
+                val paymentRecords = getPaymentTransactions(startPadded, endPadded)
+                        .bind()
+
+                purchaseRecords.map {
+                    mapOf("type" to "purchaseRecord",
+                            "chargeId" to it.id,
+                            "amount" to it.product.price.amount,
+                            "currency" to it.product.price.currency,
+                            "refunded" to (it.refund != null),
+                            "created" to it.timestamp,
+                            "properties" to it.properties)
+                }.plus(
+                        paymentRecords.map {
+                            mapOf("type" to "paymentRecord",
+                                    "chargeId" to it.id,
+                                    "amount" to it.amount,
+                                    "currency" to it.currency,
+                                    "refunded" to it.refunded,
+                                    "created" to it.created,
+                                    "properties" to it.properties)
+                        }
+                ).map {
+                    it
+                }.groupBy {
+                    it["chargeId"].hashCode() + it["amount"].hashCode() +
+                            it["currency"].hashCode() + it["refunded"].hashCode()
+                }.map {
+                    /* Report if payment backend and/or purchase record store have
+                       duplicates or more of the same transaction. */
+                    if (it.value.size > 2)
+                        logger.error(NOTIFY_OPS_MARKER,
+                            "${it.value.size} duplicates found for payment transaction/purchase record ${it.value.first()["chargeId"]}")
+                    it
+                }.filter {
+                    it.value.size == 1
+                }.map {
+                    it.value.first()
+                }.filter {
+                    /* Filter down to records that lies excactly within the start
+                       and end timestamps. */
+                    val ts = it["created"] as? Long ?: 0L
+
+                    if (ts == 0L) {
+                        logger.error(NOTIFY_OPS_MARKER, if (it["type"] == "purchaseRecord")
+                            "Purchase record ${it["chargeId"]} has 'created' timestamp set to 0"
+                        else
+                            "Payment transaction record ${it["chargeId"]} has 'created' timestamp set to 0")
+                        true
+                    } else {
+                        ts >= start && ts <= end
+                    }
+                }.map {
+                    logger.error(NOTIFY_OPS_MARKER, if (it["type"] == "purchaseRecord")
+                        "Found no matching payment transaction record for purchase record ${it["chargeId"]}"
+                    else
+                        "Found no matching purchase record for payment transaction record ${it["chargeId"]}")
+                    it
+                }
+            }.fix()
+        }.unsafeRunSync()
+    }
+
+    //
     // For refunds
     //
 
@@ -2158,6 +2265,8 @@ object Neo4jStoreSingleton : GraphStore {
                         }.bind()
                 checkPurchaseRecordForRefund(purchaseRecord)
                         .bind()
+
+                // TODO: (kmm) Move this last.
                 val refundId = paymentProcessor.refundCharge(
                         purchaseRecord.id,
                         purchaseRecord.product.price.amount)

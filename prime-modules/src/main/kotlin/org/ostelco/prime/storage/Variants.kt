@@ -16,6 +16,7 @@ import org.ostelco.prime.model.Segment
 import org.ostelco.prime.model.SimProfile
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.paymentprocessor.core.PaymentError
+import org.ostelco.prime.paymentprocessor.core.PaymentTransactionInfo
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import javax.ws.rs.core.MultivaluedMap
 
@@ -319,6 +320,35 @@ interface AdminGraphStore {
     // fun getOffer(id: String): Offer?
     // fun getSegment(id: String): Segment?
     // fun getProductClass(id: String): ProductClass?
+
+    /**
+     * Fetch payment transaction that lies within the time range 'start'..'end',
+     * where the timestamps are Epoch timestamps in milliseconds.
+     * @param start - lower timestamp range
+     * @param end - uppder timestamp range
+     * @return payment transactions
+     */
+    fun getPaymentTransactions(start: Long, end: Long): Either<PaymentError, List<PaymentTransactionInfo>>
+
+    /**
+     * Fetch purchase records that lies within the time range 'start'..'end',
+     * where the timestamps are Epoch timestamps in milliseconds.
+     * @param start - lower timestamp range
+     * @param end - uppder timestamp range
+     * @return purchase records
+     */
+    fun getPurchaseTransactions(start: Long, end: Long): Either<StoreError, List<PurchaseRecord>>
+
+    /**
+     * Checks payment transactions from payment backend against purchase records
+     * from within the time range 'start'..'end', where the timestamps are Epoch
+     * timestamps in milliseconds, and report differences if any. Reporting is
+     * done both by returning found differences and by logging.
+     * @param start - lower timestamp range
+     * @param end - upper timestamp range
+     * @return differences found
+     */
+    fun checkPaymentTransactions(start: Long, end: Long): Either<PaymentError, List<Map<String, Any?>>>
 }
 
 interface ScanInformationStore {

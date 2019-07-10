@@ -5,6 +5,7 @@ import org.ostelco.prime.paymentprocessor.core.InvoicePaymentInfo
 import org.ostelco.prime.paymentprocessor.core.InvoiceInfo
 import org.ostelco.prime.paymentprocessor.core.InvoiceItemInfo
 import org.ostelco.prime.paymentprocessor.core.PaymentError
+import org.ostelco.prime.paymentprocessor.core.PaymentTransactionInfo
 import org.ostelco.prime.paymentprocessor.core.PlanInfo
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
@@ -204,4 +205,13 @@ interface PaymentProcessor {
      * @return List with tax rates to apply for region if any found
      */
     fun getTaxRatesForTaxRegionId(taxRegionId: String?): Either<PaymentError, List<TaxRateInfo>>
+
+    /**
+     * Fetch payment transaction that lies within the time range 'start'..'end',
+     * where the timestamps are Epoch timestamps in milliseconds.
+     * @param start - lower timestamp range
+     * @param end - upper timestamp range
+     * @return payment transactions
+     */
+    fun getPaymentTransactions(start: Long, end: Long): Either<PaymentError, List<PaymentTransactionInfo>>
 }

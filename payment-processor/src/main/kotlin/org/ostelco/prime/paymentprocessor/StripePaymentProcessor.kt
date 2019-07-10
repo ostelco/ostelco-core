@@ -5,18 +5,13 @@ import arrow.core.Try
 import arrow.core.flatMap
 import arrow.core.left
 import arrow.core.right
-import com.stripe.exception.ApiConnectionException
-import com.stripe.exception.AuthenticationException
-import com.stripe.exception.CardException
-import com.stripe.exception.InvalidRequestException
-import com.stripe.exception.RateLimitException
-import com.stripe.exception.StripeException
 import com.stripe.model.Card
 import com.stripe.model.Charge
 import com.stripe.model.Customer
 import com.stripe.model.EphemeralKey
 import com.stripe.model.Invoice
 import com.stripe.model.InvoiceItem
+import com.stripe.model.PaymentIntent
 import com.stripe.model.PaymentSource
 import com.stripe.model.Plan
 import com.stripe.model.Product
@@ -27,6 +22,7 @@ import com.stripe.model.TaxRate
 import com.stripe.net.RequestOptions
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
+import org.ostelco.prime.paymentprocessor.StripeUtils.either
 import org.ostelco.prime.paymentprocessor.core.BadGatewayError
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
 import org.ostelco.prime.paymentprocessor.core.InvoicePaymentInfo
@@ -35,6 +31,7 @@ import org.ostelco.prime.paymentprocessor.core.InvoiceItemInfo
 import org.ostelco.prime.paymentprocessor.core.NotFoundError
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.PaymentStatus
+import org.ostelco.prime.paymentprocessor.core.PaymentTransactionInfo
 import org.ostelco.prime.paymentprocessor.core.PlanInfo
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
@@ -46,7 +43,6 @@ import org.ostelco.prime.paymentprocessor.core.TaxRateInfo
 import java.math.BigDecimal
 import java.time.Instant
 import java.util.*
-
 
 class StripePaymentProcessor : PaymentProcessor {
 
@@ -121,7 +117,7 @@ class StripePaymentProcessor : PaymentProcessor {
                         id)
                 Instant.now().toEpochMilli()
             }
-         }
+        }
     }
 
     override fun createPaymentProfile(customerId: String, email: String): Either<PaymentError, ProfileInfo> =
@@ -388,9 +384,9 @@ class StripePaymentProcessor : PaymentProcessor {
 
     override fun createInvoice(customerId: String, taxRates: List<TaxRateInfo>, sourceId: String?): Either<PaymentError, InvoiceInfo> =
             createAndGetInvoiceDetails(customerId, taxRates, sourceId)
-                .flatMap {
-                    InvoiceInfo(it.id).right()
-                }
+                    .flatMap {
+                        InvoiceInfo(it.id).right()
+                    }
 
     override fun createInvoice(customerId: String, amount: Int, currency: String, description: String, taxRegionId: String?, sourceId: String?): Either<PaymentError, InvoiceInfo> =
             createInvoiceItem(customerId, amount, currency, description)
@@ -554,41 +550,32 @@ class StripePaymentProcessor : PaymentProcessor {
                         .data
             }
 
-    /* Timestamps in Stripe must be in seconds.*/
-    private fun ofEpochMilliToSecond(ts: Long): Long = ts.div(1000L)
+    override fun getPaymentTransactions(start: Long, end: Long): Either<PaymentError, List<PaymentTransactionInfo>> =
+            either("Failed to fetch payment transactions from Stripe") {
+                val param = mapOf(
+                        "created[gte]" to ofEpochMilliToSecond(start),
+                        "created[lte]" to ofEpochMilliToSecond(end))
+                /* A payment-intent with status "succeeded" equals to a "payment transaction". */
+                PaymentIntent.list(param)
+                        .autoPagingIterable()
+                        .filter {
+                            it.status == "succeeded"
+                        }.map { intent ->
+                            intent.charges.data.map {
+                                PaymentTransactionInfo(id = it.id,      /* 'chargeId' */
+                                        amount = it.amount.toInt(),     /* Note: 'int' is used internally for amounts. */
+                                        currency = it.currency,
+                                        created = Instant.ofEpochSecond(it.created).toEpochMilli(),
+                                        refunded = it.refunded,
+                                        properties = mapOf("invoiceId" to intent.invoice,
+                                                "customerId" to intent.customer)
+                                )
+                            }
+                        }.flatMap {
+                            it
+                        }.toList()
+            }
 
-    private fun <RETURN> either(errorDescription: String, action: () -> RETURN): Either<PaymentError, RETURN> {
-        return try {
-            Either.right(action())
-        } catch (e: CardException) {
-            // If something is decline with a card purchase, CardException will be caught
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}")
-            Either.left(ForbiddenError(errorDescription, e.message))
-        } catch (e: RateLimitException) {
-            // Too many requests made to the API too quickly
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}")
-            Either.left(BadGatewayError(errorDescription, e.message))
-        } catch (e: InvalidRequestException) {
-            // Invalid parameters were supplied to Stripe's API
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}")
-            Either.left(ForbiddenError(errorDescription, e.message))
-        } catch (e: AuthenticationException) {
-            // Authentication with Stripe's API failed
-            // (maybe you changed API keys recently)
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}", e)
-            Either.left(BadGatewayError(errorDescription))
-        } catch (e: ApiConnectionException) {
-            // Network communication with Stripe failed
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}", e)
-            Either.left(BadGatewayError(errorDescription))
-        } catch (e: StripeException) {
-            // Unknown Stripe error
-            logger.error("Payment error : $errorDescription , Stripe Error Code: ${e.code}", e)
-            Either.left(BadGatewayError(errorDescription))
-        } catch (e: Exception) {
-            // Something else happened, could be completely unrelated to Stripe
-            logger.error(errorDescription, e)
-            Either.left(BadGatewayError(errorDescription))
-        }
-    }
+    /* Timestamps in Stripe must be in seconds. */
+    private fun ofEpochMilliToSecond(ts: Long): Long = ts.div(1000L)
 }
