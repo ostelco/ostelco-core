@@ -11,10 +11,13 @@ import java.time.Instant
 import javax.ws.rs.DefaultValue
 import javax.ws.rs.GET
 import javax.ws.rs.Path
+import javax.ws.rs.Produces
 import javax.ws.rs.QueryParam
+import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
 @Path("/payment")
+@Produces(MediaType.APPLICATION_JSON)
 class PaymentTransactionResource {
 
     private val storage by lazy { getResource<AdminDataSource>() }
@@ -32,7 +35,7 @@ class PaymentTransactionResource {
                     end = ofEpochSecondToMilli(end, getEpochSeconds()))
                     .fold(
                             { failed(it, ApiErrorCode.FAILED_TO_FETCH_PAYMENT_TRANSACTIONS) },
-                            { ok(it) }
+                            { ok(mapOf("payments" to it)) }
                     ).build()
 
     @GET
@@ -47,8 +50,8 @@ class PaymentTransactionResource {
                     start = ofEpochSecondToMilli(start, getEpochSeconds(A_DAY_AGO)),
                     end = ofEpochSecondToMilli(end, getEpochSeconds()))
                     .fold(
-                            { failed(it, ApiErrorCode.FAILED_TO_FETCH_PURCHASE_TRANSACTIONS) },
-                            { ok(it) }
+                            { failed(it, ApiErrorCode.FAILED_TO_FETCH_PURCHASE_RECORDS) },
+                            { ok(mapOf("purchases" to it)) }
                     ).build()
 
     @GET
@@ -64,7 +67,7 @@ class PaymentTransactionResource {
                     end = ofEpochSecondToMilli(end, getEpochSeconds()))
                     .fold(
                             { failed(it, ApiErrorCode.FAILED_TO_CHECK_PAYMENT_TRANSACTIONS) },
-                            { ok(it) }
+                            { ok(mapOf("mismatch" to it)) }
                     ).build()
 
     /* Epoch timestamp in milli, now or offset by +/- seconds. */
@@ -76,7 +79,7 @@ class PaymentTransactionResource {
     /* Seconds to milli. */
     private fun ofEpochSecondToMilli(ts: Long): Long = Instant.ofEpochSecond(if (ts < 0L) 0L else ts).toEpochMilli()
 
-    private fun ok(value: List<Any>) =
+    private fun ok(value: Map<String, Any>) =
             Response.status(Response.Status.OK).entity(asJson(value))
 
     private fun failed(error: PaymentError, code: ApiErrorCode): Response.ResponseBuilder =
