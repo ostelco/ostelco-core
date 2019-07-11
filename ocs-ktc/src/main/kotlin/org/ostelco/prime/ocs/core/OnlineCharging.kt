@@ -1,5 +1,7 @@
 package org.ostelco.prime.ocs.core
 
+import arrow.core.Either
+import arrow.core.right
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -10,6 +12,7 @@ import org.ostelco.prime.ocs.analytics.AnalyticsReporter
 import org.ostelco.prime.ocs.consumption.OcsAsyncRequestConsumer
 import org.ostelco.prime.storage.ClientDataSource
 import org.ostelco.prime.storage.ConsumptionResult
+import org.ostelco.prime.storage.StoreError
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -51,38 +54,30 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                     request.msccList.forEach { mscc ->
 
                         val requested = mscc.requested?.totalOctets ?: 0
-                        val used = mscc.used?.totalOctets ?: 0
-                        if (shouldConsume(mscc.ratingGroup, mscc.serviceIdentifier)) {
-                            storage.consume(msisdn, used, requested) { storeResult ->
+                        if (requested > 0) {
+                            charge(msisdn, mscc, request.serviceInformation.psInformation.sgsnMccMnc) { storeResult ->
                                 storeResult.fold(
                                         {
+                                            // FixMe
                                             responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN
                                             doneSignal.countDown()
                                         },
                                         { consumptionResult ->
-                                            if (requested > 0) {
-                                                addGrantedQuota(consumptionResult.granted, mscc, responseBuilder)
-                                                addInfo(consumptionResult.balance, mscc, responseBuilder)
-                                            }
+                                            addGrantedQuota(consumptionResult.granted, mscc, responseBuilder)
+                                            addInfo(consumptionResult.balance, mscc, responseBuilder)
                                             reportAnalytics(consumptionResult, request)
                                             doneSignal.countDown()
                                         }
                                 )
                             }
-                        } else { // zeroRate
-                            if (requested > 0) {
-                                addGrantedQuota(requested, mscc, responseBuilder)
-                                // adding by 100 just to set it high
-                                addInfo(mscc.requested.totalOctets * 100, mscc, responseBuilder)
-                            }
+                        } else {
                             doneSignal.countDown()
                         }
                     }
-
                     doneSignal.await(2, TimeUnit.SECONDS)
 
                     if (responseBuilder.msccCount == 0) {
-                        responseBuilder.setValidityTime(86400)
+                        responseBuilder.validityTime = 86400
                     }
 
                     synchronized(OnlineCharging) {
@@ -160,19 +155,15 @@ object OnlineCharging : OcsAsyncRequestConsumer {
         }
     }
 
-    private fun shouldConsume(ratingGroup: Long, serviceIdentifier: Long): Boolean {
+    private suspend fun charge(msisdn: String, multipleServiceCreditControl: MultipleServiceCreditControl, mccmnc: String, callback: (Either<StoreError, ConsumptionResult>) -> Unit) {
 
-        // FixMe : Fetch list from somewhere ™
-        // For now hardcoded to known combinations
+        val requested = multipleServiceCreditControl.requested?.totalOctets ?: 0
+        val used = multipleServiceCreditControl.used?.totalOctets ?: 0
 
-        if (arrayOf(600L).contains(ratingGroup)) {
-            return true
+        when (Rating.getRate(msisdn, multipleServiceCreditControl.serviceIdentifier, multipleServiceCreditControl.ratingGroup, mccmnc)) {
+            Rating.Rate.ZERO -> callback(ConsumptionResult(msisdn, multipleServiceCreditControl.requested.totalOctets, multipleServiceCreditControl.requested.totalOctets * 100).right())
+            Rating.Rate.NORMAL -> storage.consume(msisdn, used, requested, callback)
+            Rating.Rate.BLOCKED -> callback(ConsumptionResult(msisdn, 0L, 0L).right())
         }
-
-        if (arrayOf(1L, 400L).contains(serviceIdentifier)) {
-            return true
-        }
-
-        return false
     }
 }

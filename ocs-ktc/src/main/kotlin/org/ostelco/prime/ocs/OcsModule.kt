@@ -9,6 +9,7 @@ import org.ostelco.prime.ocs.consumption.grpc.OcsGrpcServer
 import org.ostelco.prime.ocs.consumption.grpc.OcsGrpcService
 import org.ostelco.prime.ocs.consumption.pubsub.PubSubClient
 import org.ostelco.prime.ocs.core.OnlineCharging
+import org.ostelco.prime.ocs.core.Rating
 
 @JsonTypeName("ocs")
 class OcsModule : PrimeModule {
@@ -32,8 +33,17 @@ class OcsModule : PrimeModule {
                             activateTopicId = config.activateTopicId,
                             ccrSubscriptionId = config.ccrSubscriptionId))
         }
+
+        config.rating?.forEach { rate ->
+            Rating.addRate(rate.serviceId, rate.ratingGroup, rate.rate)
+        }
     }
 }
+
+data class Rate(
+        val serviceId: Long,
+        val ratingGroup: Long,
+        val rate: String)
 
 data class PubSubChannel(
         val projectId: String,
@@ -42,7 +52,8 @@ data class PubSubChannel(
 
 data class Config(
         val lowBalanceThreshold: Long = 0,
-        val pubSubChannel: PubSubChannel? = null)
+        val pubSubChannel: PubSubChannel? = null,
+        val rating: ArrayList<Rate>? = null)
 
 object ConfigRegistry {
     lateinit var config: Config
