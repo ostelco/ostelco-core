@@ -1,0 +1,27 @@
+#
+# To start this job, do
+#    kubectl create -f ./cronjob.yaml
+# https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/
+# TODO: sync with prime.yaml
+
+# Note: On change of cron schedule, update '--interval'
+#       parameter accordingly
+
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: monitor Stripe
+spec:
+  schedule: "* */2 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: Stripe monitor
+            image: eu.gcr.io/GCP_PROJECT_ID/stripe-monitor:MONITOR_VERSION
+            args:
+            - /bin/sh
+            - -c
+            - date; echo Checking Stripe;  /monitor.py --interval -7200 2>&1
+          restartPolicy: OnFailure
