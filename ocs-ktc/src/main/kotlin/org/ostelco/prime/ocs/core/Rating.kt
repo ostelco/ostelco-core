@@ -11,9 +11,8 @@ object Rating {
     private val hashMap: HashMap<RateIdentifier, Rate> = HashMap<RateIdentifier,Rate>()
 
     /**
-     *  This is an early version of rating with hardcoded values.
-     *  The rate should be descided on the subscription, location, Service-Identifier
-     *  and the Rating-Group for the traffic.
+     *  The rate should be set based on the subscription, location, Service-Identifier
+     *  and the Rating-Group.
      */
     @Suppress("UNUSED_PARAMETER")
     fun getRate(msisdn: String, serviceIdentifier: Long, ratingGroup: Long, mccmnc: String) : Rate {
