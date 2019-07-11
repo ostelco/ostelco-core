@@ -1,4 +1,3 @@
-
 import arrow.core.Either
 import arrow.core.fix
 import arrow.effects.IO

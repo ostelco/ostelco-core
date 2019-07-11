@@ -1,4 +1,3 @@
-
 import org.ostelco.prime.dsl.DSL.job
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.Offer
