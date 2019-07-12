@@ -4,24 +4,28 @@
 # https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/
 # TODO: sync with prime.yaml
 
-# Note: On change of cron schedule, update '--interval'
-#       parameter accordingly
-
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
   name: monitor Stripe
 spec:
-  schedule: "* */2 * * *"
+  schedule: "*/1 * * * *"
   jobTemplate:
     spec:
       template:
         spec:
           containers:
           - name: Stripe monitor
-            image: eu.gcr.io/GCP_PROJECT_ID/stripe-monitor:MONITOR_VERSION
+            image: gcr.io/gcp-runtimes/ubuntu_18_0_4
+            env:
+              - name: STRIPE_EVENTS
+                value: '["customer.deleted", "customer.created", "charge.succeeded", "charge.refunded"]'
+              - name: INTERVAL
+                value: -7200        # Time interval in seconds
+            command: ["/bin/sh", "-c"]
             args:
-            - /bin/sh
-            - -c
-            - date; echo Checking Stripe;  /monitor.py --interval -7200 2>&1
+              - echo Checking Stripe;
+                date;
+                curl -vvv -sS http://prime-monitor-service:8080/stripe/monitor/apiversion 2>&1;
+                echo Check done;
           restartPolicy: OnFailure
