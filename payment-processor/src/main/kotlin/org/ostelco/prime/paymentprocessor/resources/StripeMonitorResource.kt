@@ -54,6 +54,19 @@ class StripeMonitorResource(val monitor: StripeMonitor) {
                     ).build()
 
     @GET
+    @Path("webhook/disabled")
+    fun checkWebhookDisabled(@QueryParam("url")
+                             url: String?): Response =
+            (if (url != null)
+                monitor.checkWebhookDisabled(url)
+            else
+                monitor.checkWebhookDisabled())
+                    .fold(
+                            { failed(it, ApiErrorCode.FAILED_TO_CHECK_WEBHOOK_DISABLED) },
+                            { ok(mapOf("disabled" to it)) }
+                    ).build()
+
+    @GET
     @Path("webhook/events")
     fun getSubscribedToEvents(@QueryParam("url")
                               url: String?): Response =
