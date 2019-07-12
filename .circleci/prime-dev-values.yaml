@@ -282,6 +282,13 @@ services:
     caCert: smdp-cacert.dev # secretname.namespace
     canary: {}
 
+  prime-monitor-service:
+    name: monitor-service
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+    portName: http
+
 certs:
   enabled: true
   dnsProvider: dev-clouddns

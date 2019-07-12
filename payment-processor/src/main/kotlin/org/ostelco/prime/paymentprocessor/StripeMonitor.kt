@@ -10,6 +10,7 @@ import com.stripe.model.WebhookEndpoint
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.StripeUtils.either
+import org.ostelco.prime.paymentprocessor.core.BadGatewayError
 import org.ostelco.prime.paymentprocessor.core.PaymentConfigurationError
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 
@@ -148,7 +149,7 @@ class StripeMonitor {
      * @return event
      */
     fun fetchLastEvent(state: StripeEventState = StripeEventState.ALL): Either<PaymentError, List<Event>> =
-            fetchEvents(1, state)
+            fetchLastEvents(1, state)
 
     /**
      * Fetch one or more of the last sent Stripe events.
@@ -156,7 +157,7 @@ class StripeMonitor {
      * @param state - all, failed to deliver of successfully delivered events
      * @return list with event
      */
-    fun fetchEvents(limit: Int = 1, state: StripeEventState = StripeEventState.ALL): Either<PaymentError, List<Event>> =
+    fun fetchLastEvents(limit: Int = 1, state: StripeEventState = StripeEventState.ALL): Either<PaymentError, List<Event>> =
             either("Failed to fetch Stripe events") {
                 val param = mapOf(
                         "limit" to if (limit < 10) limit else 10,
@@ -181,7 +182,7 @@ class StripeMonitor {
      * @param state - all, failed to deliver of successfully delivered events
      * @return list with event
      */
-    fun fetchEvents(start: Long = 0L, end: Long = 0L, state: StripeEventState = StripeEventState.ALL): Either<PaymentError, List<Event>> =
+    fun fetchEventsWithinRange(start: Long = 0L, end: Long = 0L, state: StripeEventState = StripeEventState.ALL): Either<PaymentError, List<Event>> =
             either("Failed to fetch Stripe events from time period ${start} to ${end}") {
                 val param = mapOf(
                         "created[gte]" to ofEpochMilliToSecond(start),
@@ -201,16 +202,35 @@ class StripeMonitor {
      * @return true if enabled
      */
     fun checkWebhookEnabled(): Either<PaymentError, Boolean> =
+            checkWebhookState(expected = true)
+
+    /**
+     * Check if at least one Stripe webhook is disabled.
+     * @return true if disabled
+     */
+    fun checkWebhookDisabled(): Either<PaymentError, Boolean> =
+            checkWebhookState(expected = false)
+
+    private fun checkWebhookState(expected: Boolean): Either<PaymentError, Boolean> =
             fetchWebhookEndpoints(1)
                     .flatMap {
-                        when {
-                            it.size > 0 && it.first().status == "enabled" -> true
-                            else -> {
-                                logger.error(NOTIFY_OPS_MARKER,
-                                        "Stripe events (webhook) is not enabled")
-                                false
-                            }
-                        }.right()
+                        if (it.size > 0)
+                            when {
+                                it.first().status == "enabled" && expected -> true
+                                it.first().status == "disabled" && !expected -> true
+                                else -> {
+                                    logger.error(NOTIFY_OPS_MARKER, if (expected)
+                                        "Stripe events (webhook) is not enabled"
+                                    else
+                                        "Stripe events (webhook) is not disabled")
+                                    false
+                                }
+                            }.right()
+                        else {
+                            logger.error("No webhooks found on check for Stripe events state")
+                            BadGatewayError("No webhooks found on check for Stripe events state")
+                                    .left()
+                        }
                     }
 
     /**
@@ -219,13 +239,27 @@ class StripeMonitor {
      * @return true if enabled
      */
     fun checkWebhookEnabled(url: String): Either<PaymentError, Boolean> =
+            checkWebhookState(expected = true, url = url)
+
+    /**
+     * Check if given Stripe webhook is enabled.
+     * @param url - URL of webhook
+     * @return true if enabled
+     */
+    fun checkWebhookDisabled(url: String): Either<PaymentError, Boolean> =
+            checkWebhookState(expected = false, url = url)
+
+    private fun checkWebhookState(expected: Boolean, url: String): Either<PaymentError, Boolean> =
             fetchWebhookEndpoint(url)
                     .flatMap {
                         when {
-                            it.status == "enabled" -> true
+                            it.status == "enabled" && expected -> true
+                            it.status == "disabled" && !expected -> true
                             else -> {
-                                logger.error(NOTIFY_OPS_MARKER,
-                                        "Stripe events (webhook) for endpoint ${url} is not enabled")
+                                logger.error(NOTIFY_OPS_MARKER, if (expected)
+                                    "Stripe events (webhook) for endpoint ${url} is not enabled"
+                                else
+                                    "Stripe events (webhook) for endpoint ${url} is not disabled")
                                 false
                             }
                         }.right()
