@@ -87,7 +87,7 @@ class StripeMonitorResource(val monitor: StripeMonitor) {
     @GET
     @Path("events/failed")
     fun checkEventsNotDelivered(): Response =
-            monitor.fetchEvents(limit = 1,
+            monitor.fetchLastEvents(limit = 1,
                     state = StripeEventState.FAILED_TO_DELIVER)
                     .flatMap {
                         it.isNotEmpty().right()
@@ -105,7 +105,7 @@ class StripeMonitorResource(val monitor: StripeMonitor) {
                                 @QueryParam("end")
                                 @DefaultValue("-1")
                                 end: Long): Response =
-            monitor.fetchEvents(
+            monitor.fetchEventsWithinRange(
                     start = ofEpochSecondToMilli(start, getEpochSeconds(TWO_HOURS_AGO)),
                     end = ofEpochSecondToMilli(end, getEpochSeconds()),
                     state = StripeEventState.FAILED_TO_DELIVER)

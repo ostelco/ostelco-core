@@ -148,7 +148,7 @@ class StripeMonitor {
      * @return event
      */
     fun fetchLastEvent(state: StripeEventState = StripeEventState.ALL): Either<PaymentError, List<Event>> =
-            fetchEvents(1, state)
+            fetchLastEvents(1, state)
 
     /**
      * Fetch one or more of the last sent Stripe events.
@@ -156,7 +156,7 @@ class StripeMonitor {
      * @param state - all, failed to deliver of successfully delivered events
      * @return list with event
      */
-    fun fetchEvents(limit: Int = 1, state: StripeEventState = StripeEventState.ALL): Either<PaymentError, List<Event>> =
+    fun fetchLastEvents(limit: Int = 1, state: StripeEventState = StripeEventState.ALL): Either<PaymentError, List<Event>> =
             either("Failed to fetch Stripe events") {
                 val param = mapOf(
                         "limit" to if (limit < 10) limit else 10,
@@ -181,7 +181,7 @@ class StripeMonitor {
      * @param state - all, failed to deliver of successfully delivered events
      * @return list with event
      */
-    fun fetchEvents(start: Long = 0L, end: Long = 0L, state: StripeEventState = StripeEventState.ALL): Either<PaymentError, List<Event>> =
+    fun fetchEventsWithinRange(start: Long = 0L, end: Long = 0L, state: StripeEventState = StripeEventState.ALL): Either<PaymentError, List<Event>> =
             either("Failed to fetch Stripe events from time period ${start} to ${end}") {
                 val param = mapOf(
                         "created[gte]" to ofEpochMilliToSecond(start),
