@@ -89,8 +89,8 @@ class SimAdministrationModule : PrimeModule {
 
         // Register metrics as a lifecycle object
 
-        this.metricsManager = SimInventoryMetricsManager(this.DAO, env.metrics())
-        env.lifecycle().manage(this.metricsManager)
+        //this.metricsManager = SimInventoryMetricsManager(this.DAO, env.metrics())
+        //env.lifecycle().manage(this.metricsManager)
 
         val dispatcher = makeHssDispatcher(
                 hssAdapterConfig = config.hssAdapter,
