@@ -1,0 +1,4 @@
+[ "customer.deleted",
+  "customer.created",
+  "charge.succeeded",
+  "charge.refunded" ]
