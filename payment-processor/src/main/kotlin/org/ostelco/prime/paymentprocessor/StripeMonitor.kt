@@ -29,6 +29,12 @@ class StripeMonitor {
     private val logger by getLogger()
 
     /**
+     * Log that the monitor is running. (Will be the only output in logs from
+     * the monitor if nothing unexpected are found.)
+     */
+    fun hello() = logger.info("Periodic monitoring of Stripe executing")
+
+    /**
      * Check for mismatch between Stripe API version used for events
      * and version used by the Java library.
      * API version mismatch might indiacate incomplete update to
