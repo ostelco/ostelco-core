@@ -26,7 +26,16 @@ spec:
             args:
               - echo Checking Stripe;
                 date;
-                curl -vvv -sS http://prime-monitor-service:8080/stripe/monitor/apiversion 2>&1;
-                curl -vvv -sS http://prime-monitor-service:8080/stripe/monitor/webhook/enabled 2>&1;
-                echo Check done;
+                echo "Hello:";
+                curl -s -o - -w "\n%{http_code}\n" http://prime-monitor-service:8080/stripe/monitor/hello;
+                echo "API version:";
+                curl -s -o - -w "\n%{http_code}\n" http://prime-monitor-service:8080/stripe/monitor/apiversion;
+                echo "Webhook enabled:";
+                curl -s -o - -w "\n%{http_code}\n" http://prime-monitor-service:8080/stripe/monitor/webhook/enabled;
+                echo "Event subscription:";
+                curl -s -o - -w "\n%{http_code}\n" -d "${STRIPE_EVENTS}" -H "content-type:application/json" http://prime-monitor-service:8080/stripe/monitor/webhook/events;
+                echo "Failed events last $INTERVAL seconds:"
+                echo timestamp=$(expr $(date --utc +"%s") + $INTERVAL);
+                curl -s -o - -w "\n%{http_code}\n" http://prime-monitor-service:8080/stripe/monitor/events/failed?start=$(expr $(date --utc +"%s") + $INTERVAL);
+                echo Checks completed;
           restartPolicy: OnFailure
