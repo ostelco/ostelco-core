@@ -39,7 +39,6 @@ class ES2PlusIncomingHeadersFilter : ContainerRequestFilter {
     @Throws(IOException::class)
     override fun filter(ctx: ContainerRequestContext) {
 
-
         if (!ctx.uriInfo.path.startsWith(ES2PLUS_PATH_PREFIX)) {
             return
         }
@@ -53,7 +52,7 @@ class ES2PlusIncomingHeadersFilter : ContainerRequestFilter {
                     .build())
         } else if (adminProtocol == null || !adminProtocol.startsWith("gsma/rsp/")) {
             ctx.abortWith(Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Illegal X-Admin-Protocol header, expected something starting with \"gsma/rsp/\"")
+                    .entity("""Illegal X-Admin-Protocol header, expected something starting with "gsma/rsp/"""")
                     .build())
         }
     }
@@ -65,7 +64,10 @@ class ES2PlusOutgoingHeadersFilter : ContainerResponseFilter {
     @Throws(IOException::class)
     override fun filter(requestContext: ContainerRequestContext,
                         responseContext: ContainerResponseContext) {
-        responseContext.headers.add("X-Admin-Protocol", X_ADMIN_PROTOCOL_HEADER_VALUE)
+
+        if (requestContext.uriInfo.path.startsWith(ES2PLUS_PATH_PREFIX)) {
+            responseContext.headers.add("X-Admin-Protocol", X_ADMIN_PROTOCOL_HEADER_VALUE)
+        }
     }
 }
 
@@ -106,7 +108,7 @@ class SmdpExceptionMapper : ExceptionMapper<SmDpPlusException> {
 class SmDpPlusServerResource(private val smDpPlus: SmDpPlusService) {
 
     companion object {
-        const val ES2PLUS_PATH_PREFIX : String = "/gsma/rsp2/es2plus/"
+        const val ES2PLUS_PATH_PREFIX : String = "gsma/rsp2/es2plus/"
     }
 
     /**
