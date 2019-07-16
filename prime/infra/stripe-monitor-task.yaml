@@ -9,7 +9,7 @@ kind: CronJob
 metadata:
   name: monitor-stripe
 spec:
-  schedule: "*/1 * * * *"
+  schedule: "*/10 * * * *"
   jobTemplate:
     spec:
       template:
