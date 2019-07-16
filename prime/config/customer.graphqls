@@ -8,11 +8,11 @@ type QueryType {
 
 type Context {
   customer: Customer!
-  bundles: [Bundle]
-  regions: [RegionDetails]
-  subscriptions: [Subscription]
-  products: [Product]
-  purchases: [Purchase]
+  bundles: [Bundle!]!
+  regions: [RegionDetails!]!
+  subscriptions: [Subscription!]!
+  products: [Product!]!
+  purchases: [Purchase!]!
 }
 
 type Customer {
@@ -32,7 +32,7 @@ type RegionDetails {
   region: Region!
   status: CustomerRegionStatus
   kycStatusMap: KycStatusMap
-  simProfiles: [SimProfile]
+  simProfiles: [SimProfile!]!
 }
 
 type Region {

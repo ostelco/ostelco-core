@@ -9,8 +9,8 @@
  * Open hidden-menu from right of Search bar and select `Convert to advanced filter`
 
 ```properties
-resource.type="container"
-resource.labels.namespace_id="dev"
+resource.type="k8s_container"
+resource.labels.namespace_name="dev"
 resource.labels.container_name="prime"
 ```
 

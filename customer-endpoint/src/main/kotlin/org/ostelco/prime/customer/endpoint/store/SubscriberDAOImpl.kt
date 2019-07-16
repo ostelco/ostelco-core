@@ -28,7 +28,6 @@ import org.ostelco.prime.model.SimProfile
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
-import org.ostelco.prime.paymentprocessor.core.ForbiddenError
 import org.ostelco.prime.paymentprocessor.core.PlanAlredyPurchasedError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
