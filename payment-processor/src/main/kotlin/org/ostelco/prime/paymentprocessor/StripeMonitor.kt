@@ -32,7 +32,7 @@ class StripeMonitor {
      * Log that the monitor is running. (Will be the only output in logs from
      * the monitor if nothing unexpected are found.)
      */
-    fun hello() = logger.info("Periodic check of Stripe setup executing")
+    fun hello() = logger.info("Periodic monitoring of Stripe executing")
 
     /**
      * Check for mismatch between Stripe API version used for events
