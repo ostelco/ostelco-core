@@ -9,7 +9,7 @@ kind: CronJob
 metadata:
   name: monitor-stripe
 spec:
-  schedule: "*/10 * * * *"
+  schedule: "*/30 * * * *"
   jobTemplate:
     spec:
       template:
@@ -44,7 +44,7 @@ spec:
                            "payout.failed",
                            "payout.paid"]'
                 - name: INTERVAL
-                  value: "7200"        # Time interval in seconds
+                  value: "2100"        # Time interval in seconds (must be > than schedule)
               command: ["/bin/sh", "-c"]
               args:
                 - echo Checking Stripe;
