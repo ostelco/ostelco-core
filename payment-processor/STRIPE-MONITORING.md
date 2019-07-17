@@ -8,8 +8,8 @@ The service/cron-job script:
 ./prime/infra/stripe-monitor-task.yaml
 ```
 
-can be used for verifying whether [Stripe](https://stripe.com) is reachable and
-that the configuration is correct.
+can be used for periodically verifying whether [Stripe](https://stripe.com) is
+reachable and that the configuration is correct.
 
 As part of the monitoring check, the list of "subscribed to" events with Stripe
 is also checked. This list can be updated using the script:
@@ -18,15 +18,16 @@ is also checked. This list can be updated using the script:
 ./payment-processor/script/update-webhook.sh
 ```
 
-On changes the corresponding list of events in `stripe-monitor-task.yaml` must
-also be updated. For a list of events that can be subscribed to, see Stripes
+On changes in the "subscribed to" list of events, the corresponding list of
+events in `stripe-monitor-task.yaml` must also be updated. For the list of
+events that can be subscribed to, see Stripes
 [types of events](https://stripe.com/docs/api/events/types) documentation.
 
 
 ## Payment transactions check
 
-Automatic check of whether payment transactions stored with Stripe matches
-stored purchase records in the backed can be done using the service/cron-job
+Periodic check of whether payment transactions stored with Stripe matches
+purchase records stored in the backed can be done using the service/cron-job
 script:
 
 ```
