@@ -48,6 +48,9 @@ class JerseyModule : PrimeModule {
         // filter to set TraceID in Logging MDC
         jerseyEnv.register(TrackRequestsLoggingFilter())
 
+        // filter to set Customer Identity in Logging MDC
+        jerseyEnv.register(IdentityLoggingFilter())
+
         // ping resource to check connectivity
         jerseyEnv.register(PingResource())
 

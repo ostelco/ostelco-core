@@ -6,7 +6,6 @@ import org.ostelco.prime.customer.endpoint.store.SubscriberDAO
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.model.Customer
-import org.ostelco.prime.model.Identity
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.util.*
