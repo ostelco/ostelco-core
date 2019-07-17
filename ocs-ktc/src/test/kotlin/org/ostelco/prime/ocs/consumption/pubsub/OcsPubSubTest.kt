@@ -25,6 +25,7 @@ private const val CCA_TOPIC = "ocs-cca"
 private const val ACTIVATE_TOPIC = "ocs-activate"
 private const val CCR_SUBSCRIPTION = "ocs-ccr-sub"
 private const val CCA_SUBSCRIPTION = "ocsgw-cca-sub"
+private const val ACTIVATE_SUBSCRIPTION = "ocsgw-activate-sub"
 
 class OcsPubSubTest {
 
@@ -38,7 +39,7 @@ class OcsPubSubTest {
 
         createTopicWithSubscription(CCR_TOPIC, CCR_SUBSCRIPTION)
         createTopicWithSubscription(CCA_TOPIC, CCA_SUBSCRIPTION)
-        createTopicWithSubscription(ACTIVATE_TOPIC, "ocsgw-activate-sub")
+        createTopicWithSubscription(ACTIVATE_TOPIC, ACTIVATE_SUBSCRIPTION)
 
         System.setProperty("PUBSUB_EMULATOR_HOST", "0.0.0.0:8085")
 
