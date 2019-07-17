@@ -8,6 +8,7 @@ import arrow.effects.IO
 import arrow.instances.either.monad.flatMap
 import arrow.instances.either.monad.monad
 import org.apache.http.impl.client.CloseableHttpClient
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.simmanager.DatabaseError
 import org.ostelco.prime.simmanager.NotFoundError
 import org.ostelco.prime.simmanager.SimManagerError
@@ -21,6 +22,8 @@ import java.io.InputStream
 class SimInventoryApi(private val httpClient: CloseableHttpClient,
                       private val config: SimAdministrationConfiguration,
                       private val dao: SimInventoryDAO) {
+
+    private val logger by getLogger()
 
     fun findSimProfileByIccid(hlrName: String, iccid: String): Either<SimManagerError, SimEntry> =
             IO {
@@ -60,10 +63,11 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                                 }
                     }
 
-
     fun allocateNextEsimProfile(hlrName: String, phoneType: String): Either<SimManagerError, SimEntry> =
             IO {
                 Either.monad<SimManagerError>().binding {
+                    logger.info("Allocating new SIM for hlr ${hlrName} and phone-type ${phoneType}")
+
                     val hlrAdapter = dao.getHssEntryByName(hlrName)
                             .bind()
                     val profile = getProfileType(hlrName, phoneType)
@@ -122,7 +126,6 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                         else
                             simEntry.right()
                     }
-
 
     private fun getProfileVendorAdapterAndConfig(simEntry: SimEntry): Either<SimManagerError, Pair<ProfileVendorAdapter, ProfileVendorConfig>> =
             dao.getProfileVendorAdapterById(simEntry.profileVendorId)
