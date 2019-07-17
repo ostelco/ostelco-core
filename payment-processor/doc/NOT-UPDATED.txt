@@ -1,0 +1,2 @@
+The current set of sequence diagrams etc is out of sync with
+the codebase, and is here only for historical reasons.
