@@ -159,7 +159,7 @@ server:
           type: access-json
         filterFactories:
           - type: URI
-            uri: prometheus-metrics
+            uriSet: [ prometheus-metrics, ping ]
 
 logging:
   level: INFO
