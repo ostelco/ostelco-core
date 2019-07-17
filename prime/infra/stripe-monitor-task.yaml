@@ -50,14 +50,14 @@ spec:
                 - echo Checking Stripe;
                   date;
                   echo "Hello:";
-                  curl -s -o - -w "%{http_code}\n" http://prime-monitor-service:8080/stripe/monitor/hello;
+                  curl -sS --stderr - -w "%{http_code}\n" http://prime-monitor-service:8080/stripe/monitor/hello;
                   echo "API version:";
-                  curl -s -o - -w "\n%{http_code}\n" http://prime-monitor-service:8080/stripe/monitor/apiversion;
+                  curl -sS --stderr - -w "\n%{http_code}\n" http://prime-monitor-service:8080/stripe/monitor/apiversion;
                   echo "Webhook enabled:";
-                  curl -s -o - -w "\n%{http_code}\n" http://prime-monitor-service:8080/stripe/monitor/webhook/enabled;
+                  curl -sS --stderr - -w "\n%{http_code}\n" http://prime-monitor-service:8080/stripe/monitor/webhook/enabled;
                   echo "Event subscription:";
-                  curl -s -o - -w "\n%{http_code}\n" -d "${STRIPE_EVENTS}" -H "content-type:application/json" http://prime-monitor-service:8080/stripe/monitor/webhook/events;
+                  curl -sS --stderr - -w "\n%{http_code}\n" -d "${STRIPE_EVENTS}" -H "content-type:application/json" http://prime-monitor-service:8080/stripe/monitor/webhook/events;
                   echo "Failed events last $INTERVAL seconds:";
-                  curl -s -o - -w "\n%{http_code}\n" http://prime-monitor-service:8080/stripe/monitor/events/fetch/failed?start=$(expr $(date --utc +"%s") - $INTERVAL);
+                  curl -sS --stderr - -w "\n%{http_code}\n" http://prime-monitor-service:8080/stripe/monitor/events/fetch/failed?start=$(expr $(date --utc +"%s") - $INTERVAL);
                   echo Checks completed;
           restartPolicy: OnFailure

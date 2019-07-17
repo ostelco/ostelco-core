@@ -25,6 +25,6 @@ spec:
                 - echo Checking payment transaction/purchase records;
                   date;
                   echo "Mismatch payment transactions/purchase records last $INTERVAL seconds:";
-                  curl -s -o - -w "\n%{http_code}\n" http://prime-monitor-service:8080/payment/check?start=$(expr $(date --utc +"%s") - $INTERVAL);
+                  curl -sS --stderr - -w "\n%{http_code}\n" http://prime-monitor-service:8080/payment/check?start=$(expr $(date --utc +"%s") - $INTERVAL);
                   echo Checks completed;
           restartPolicy: OnFailure
