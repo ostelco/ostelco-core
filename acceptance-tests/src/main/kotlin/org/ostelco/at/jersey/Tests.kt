@@ -1775,11 +1775,13 @@ class GraphQlTests {
 
             val msisdn = createSubscription(email)
 
-            val context = post<GraphQlResponse>(expectedResultCode = 200) {
+            val response = post<GraphQlResponse>(expectedResultCode = 200) {
                 path = "/graphql"
                 this.email = email
                 body = mapOf("query" to graphqlPostQuery)
-            }.data?.context
+            }
+
+            val context = response.data?.context
 
             assertEquals(expected = "Test GraphQL POST Endpoint", actual = context?.customer?.nickname)
             assertEquals(expected = email, actual = context?.customer?.contactEmail)
@@ -1795,7 +1797,6 @@ class GraphQlTests {
             assertEquals(expected = "Dummy eSIM", actual = context?.regions?.first()?.simProfiles?.first()?.eSimActivationCode)
             assertEquals(expected = "default", actual = context?.regions?.first()?.simProfiles?.first()?.alias)
             assertEquals(expected = SimProfile.StatusEnum.INSTALLED, actual = context?.regions?.first()?.simProfiles?.first()?.status)
-            assertEquals(expected = msisdn, actual = context?.subscriptions?.first()?.msisdn)
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
         }
@@ -1813,11 +1814,13 @@ class GraphQlTests {
 
             val msisdn = createSubscription(email)
 
-            val context = get<GraphQlResponse> {
+            val response = get<GraphQlResponse> {
                 path = "/graphql"
                 this.email = email
                 queryParams = mapOf("query" to URLEncoder.encode(graphqlGetQuery, StandardCharsets.UTF_8))
-            }.data?.context
+            }
+
+            val context = response.data?.context
 
             assertEquals(expected = "Test GraphQL GET Endpoint", actual = context?.customer?.nickname)
             assertEquals(expected = email, actual = context?.customer?.contactEmail)
@@ -1833,7 +1836,6 @@ class GraphQlTests {
             assertEquals(expected = "Dummy eSIM", actual = context?.regions?.first()?.simProfiles?.first()?.eSimActivationCode)
             assertEquals(expected = "default", actual = context?.regions?.first()?.simProfiles?.first()?.alias)
             assertEquals(expected = SimProfile.StatusEnum.INSTALLED, actual = context?.regions?.first()?.simProfiles?.first()?.status)
-            assertEquals(expected = msisdn, actual = context?.subscriptions?.first()?.msisdn)
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
         }
