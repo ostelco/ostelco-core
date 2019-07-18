@@ -80,4 +80,5 @@ socat TCP-LISTEN:9090,fork TCP:datastore-emulator:8081 &
 # Start app
 exec java \
     -Dfile.encoding=UTF-8 \
+    --add-opens java.base/java.lang=ALL-UNNAMED \
     -jar /prime.jar server /config/config.yaml

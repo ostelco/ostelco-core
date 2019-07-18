@@ -1,4 +1,4 @@
-package org.ostelco.prime.jersey
+package org.ostelco.prime.jersey.logging
 
 import org.slf4j.MDC
 import java.util.*
