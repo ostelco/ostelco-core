@@ -7,25 +7,57 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: monitor Stripe
+  name: monitor-stripe
 spec:
-  schedule: "*/1 * * * *"
+  schedule: "*/30 * * * *"
   jobTemplate:
     spec:
       template:
         spec:
           containers:
-          - name: Stripe monitor
-            image: gcr.io/gcp-runtimes/ubuntu_18_0_4
-            env:
-              - name: STRIPE_EVENTS
-                value: '["customer.deleted", "customer.created", "charge.succeeded", "charge.refunded"]'
-              - name: INTERVAL
-                value: -7200        # Time interval in seconds
-            command: ["/bin/sh", "-c"]
-            args:
-              - echo Checking Stripe;
-                date;
-                curl -vvv -sS http://prime-monitor-service:8080/stripe/monitor/apiversion 2>&1;
-                echo Check done;
+            - name: stripe-monitor
+              image: gcr.io/gcp-runtimes/ubuntu_18_0_4
+              env:
+                - name: STRIPE_EVENTS
+                  value: '["balance.available",
+                           "charge.failed",
+                           "charge.refunded",
+                           "charge.succeeded",
+                           "charge.dispute.created",
+                           "customer.created",
+                           "customer.deleted",
+                           "customer.subscription.created",
+                           "customer.subscription.deleted",
+                           "invoice.created",
+                           "invoice.deleted",
+                           "invoice.finalized",
+                           "invoice.payment_action_required",
+                           "invoice.payment_failed",
+                           "invoice.payment_succeeded",
+                           "invoice.sent",
+                           "invoice.upcoming",
+                           "invoice.updated",
+                           "invoice.voided",
+                           "payment_intent.created",
+                           "payment_intent.payment_failed",
+                           "payment_intent.succeeded",
+                           "payout.failed",
+                           "payout.paid"]'
+                - name: INTERVAL
+                  value: "2100"        # Time interval in seconds (must be > than schedule)
+              command: ["/bin/sh", "-c"]
+              args:
+                - echo Checking Stripe;
+                  date;
+                  echo "Hello:";
+                  curl -sS --stderr - -w "%{http_code}\n" http://prime-monitor-service:8080/stripe/monitor/hello;
+                  echo "API version:";
+                  curl -sS --stderr - -w "\n%{http_code}\n" http://prime-monitor-service:8080/stripe/monitor/apiversion;
+                  echo "Webhook enabled:";
+                  curl -sS --stderr - -w "\n%{http_code}\n" http://prime-monitor-service:8080/stripe/monitor/webhook/enabled;
+                  echo "Event subscription:";
+                  curl -sS --stderr - -w "\n%{http_code}\n" -d "${STRIPE_EVENTS}" -H "content-type:application/json" http://prime-monitor-service:8080/stripe/monitor/webhook/events;
+                  echo "Failed events last $INTERVAL seconds:";
+                  curl -sS --stderr - -w "\n%{http_code}\n" http://prime-monitor-service:8080/stripe/monitor/events/fetch/failed?start=$(expr $(date --utc +"%s") - $INTERVAL);
+                  echo Checks completed;
           restartPolicy: OnFailure

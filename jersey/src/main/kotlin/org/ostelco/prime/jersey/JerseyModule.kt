@@ -15,6 +15,10 @@ import io.dropwizard.setup.Environment
 import org.eclipse.jetty.servlets.CrossOriginFilter
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.auth.OAuthAuthenticator
+import org.ostelco.prime.jersey.logging.IdentityLoggingFilter
+import org.ostelco.prime.jersey.logging.TrackRequestsLoggingFilter
+import org.ostelco.prime.jersey.resources.PingResource
+import org.ostelco.prime.jersey.resources.RandomUUIDResource
 import org.ostelco.prime.module.PrimeModule
 import java.util.*
 import javax.servlet.DispatcherType
@@ -48,8 +52,12 @@ class JerseyModule : PrimeModule {
         // filter to set TraceID in Logging MDC
         jerseyEnv.register(TrackRequestsLoggingFilter())
 
-        // ping resource to check connectivity
+        // filter to set Customer Identity in Logging MDC
+        jerseyEnv.register(IdentityLoggingFilter())
+
+        // resources to check connectivity
         jerseyEnv.register(PingResource())
+        jerseyEnv.register(RandomUUIDResource())
 
         val client: Client = JerseyClientBuilder(env)
                 .using(config.jerseyClientConfiguration)

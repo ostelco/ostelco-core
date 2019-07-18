@@ -1,9 +1,9 @@
 plugins {
     id "application"
-    id "com.google.protobuf" version "0.8.9"
+    id "com.google.protobuf"
     id "org.jetbrains.kotlin.jvm"
     id "idea"
-    id "com.github.johnrengelman.shadow" version "5.1.0"
+    id "com.github.johnrengelman.shadow"
 }
 
 dependencies {

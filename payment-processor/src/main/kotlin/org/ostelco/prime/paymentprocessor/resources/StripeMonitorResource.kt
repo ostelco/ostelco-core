@@ -32,6 +32,14 @@ class StripeMonitorResource(val monitor: StripeMonitor) {
     private val logger by getLogger()
 
     @GET
+    @Path("hello")
+    fun hello(): Response {
+        monitor.hello()
+        return Response.status(Response.Status.OK)
+                .build()
+    }
+
+    @GET
     @Path("apiversion")
     fun checkApiVersion(): Response =
             monitor.checkApiVersion()
