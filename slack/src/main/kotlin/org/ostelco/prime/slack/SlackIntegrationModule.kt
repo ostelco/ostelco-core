@@ -44,26 +44,15 @@ object Registry {
 }
 
 data class Config(
-    @JsonProperty("notifications")
-    val notificationsConfig: NotificationsConfig)
+        @JsonProperty("notifications")
+        val notificationsConfig: NotificationsConfig)
 
-class NotificationsConfig {
-
-    @JsonProperty
-    lateinit var webHookUri: String
-
-    @JsonProperty("httpClient")
-    var httpClientConfiguration = HttpClientConfiguration()
-
-    @JsonProperty
-    var channel: String = "general"
-
-    @JsonProperty
-    var userName: String = "prime"
-
-    @JsonProperty
-    var environment: String = "Production"
-
-    @JsonProperty
-    var deployment: String = "prod"
-}
+data class NotificationsConfig(
+        val webHookUri: String,
+        @JsonProperty("httpClient")
+        val httpClientConfiguration: HttpClientConfiguration = HttpClientConfiguration(),
+        val channel: String = "general",
+        val userName: String = "prime",
+        val environment: String = "Production",
+        val deployment: String = "prod"
+)

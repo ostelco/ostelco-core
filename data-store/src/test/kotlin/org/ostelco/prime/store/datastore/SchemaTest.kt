@@ -17,7 +17,7 @@ data class TestData(
 class SchemaTest {
 
     @Test
-    fun `test save and fetch from data store`() {
+    fun `test add and fetch from data store`() {
 
         val testDataStore = EntityStore(entityClass = TestData::class.java)
 
@@ -35,7 +35,7 @@ class SchemaTest {
     }
 
     @Test
-    fun `test save and fetch of long strings from data store`() {
+    fun `test add and fetch of long strings from data store`() {
         val testDataStore = EntityStore(entityClass = TestData::class.java)
 
         val testData = TestData(
