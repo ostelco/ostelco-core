@@ -1,4 +1,4 @@
-package org.ostelco.prime.jersey
+package org.ostelco.prime.jersey.logging
 
 import org.apache.commons.codec.digest.DigestUtils
 import org.ostelco.prime.auth.AccessTokenPrincipal
