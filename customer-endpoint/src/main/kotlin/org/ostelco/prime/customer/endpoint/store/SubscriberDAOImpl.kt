@@ -44,7 +44,7 @@ class SubscriberDAOImpl : SubscriberDAO {
 
     private val storage by lazy { getResource<ClientDataSource>() }
     private val paymentProcessor by lazy { getResource<PaymentProcessor>() }
-    private val ocsgw = getResource<Ocsgw>()
+    private val ocsgw by lazy { getResource<Ocsgw>() }
 
     //
     // Customer
