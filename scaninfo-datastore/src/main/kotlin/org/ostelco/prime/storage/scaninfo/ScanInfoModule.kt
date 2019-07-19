@@ -22,10 +22,10 @@ class ScanInfoModule : PrimeModule {
 /**
  * The configuration for Scan Information Cloud Storage module.
  */
-class ScanInfoConfig : Configuration() {
-    var storeType = "default"
-    var namespace = ""
-}
+data class ScanInfoConfig(
+    val storeType: String = "default",
+    val namespace: String = ""
+) : Configuration()
 
 object ConfigRegistry {
     var config = ScanInfoConfig()

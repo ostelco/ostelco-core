@@ -14,6 +14,7 @@ include ':data-store'
 include ':diameter-ha'
 include ':diameter-stack'
 include ':diameter-test'
+include ':document-data-store'
 include ':ekyc'
 include ':email-notifier'
 include ':ext-auth-provider'
@@ -62,6 +63,7 @@ project(':data-store').projectDir = "$rootDir/data-store" as File
 project(':diameter-ha').projectDir = "$rootDir/diameter-ha" as File
 project(':diameter-stack').projectDir = "$rootDir/diameter-stack" as File
 project(':diameter-test').projectDir = "$rootDir/diameter-test" as File
+project(':document-data-store').projectDir = "$rootDir/document-data-store" as File
 project(':ekyc').projectDir = "$rootDir/ekyc" as File
 project(':email-notifier').projectDir = "$rootDir/email-notifier" as File
 project(':ext-auth-provider').projectDir = "$rootDir/ext-auth-provider" as File

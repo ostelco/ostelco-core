@@ -8,11 +8,10 @@ type QueryType {
 
 type Context {
   customer: Customer!
-  bundles: [Bundle!]!
-  regions: [RegionDetails!]!
-  subscriptions: [Subscription!]!
-  products: [Product!]!
-  purchases: [Purchase!]!
+  bundles: [Bundle!]
+  regions(regionCode: String): [RegionDetails!]
+  products: [Product!]
+  purchases: [Purchase!]
 }
 
 type Customer {
@@ -32,7 +31,7 @@ type RegionDetails {
   region: Region!
   status: CustomerRegionStatus
   kycStatusMap: KycStatusMap
-  simProfiles: [SimProfile!]!
+  simProfiles: [SimProfile!]
 }
 
 type Region {
@@ -73,14 +72,27 @@ enum SimProfileStatus {
   ENABLED
 }
 
-type Subscription {
-  msisdn: String!
-  analyticsId: String!
-}
-
 type Product {
   sku: String!
   price: Price!
+  properties: Properties
+  presentation: Presentation
+}
+
+type Properties {
+  productClass: String
+}
+
+# TODO Vihang: How do we make this generic?
+type Presentation {
+  subTotal: String
+  payeeLabel: String
+  priceLabel: String
+  taxLabel: String
+  tax: String
+  subTotalLabel: String
+  productLabel: String
+  label: String
 }
 
 type Price {

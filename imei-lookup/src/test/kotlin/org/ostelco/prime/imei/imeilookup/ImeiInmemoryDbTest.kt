@@ -1,6 +1,5 @@
 package org.ostelco.prime.imei.imeilookup
 
-import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.dropwizard.Application
 import io.dropwizard.Configuration
@@ -29,12 +28,7 @@ class TestApp : Application<TestConfig>() {
     }
 }
 
-class TestConfig: Configuration() {
-
-    @JsonProperty
-    lateinit var modules: List<PrimeModule>
-}
-
+data class TestConfig(val modules: List<PrimeModule>): Configuration()
 
 class ImeiInmemoryDbTest {
 
