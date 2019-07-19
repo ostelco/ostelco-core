@@ -27,6 +27,7 @@ import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.SimProfile
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
+import org.ostelco.prime.activation.Activation
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.PlanAlredyPurchasedError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
@@ -43,6 +44,7 @@ class SubscriberDAOImpl : SubscriberDAO {
 
     private val storage by lazy { getResource<ClientDataSource>() }
     private val paymentProcessor by lazy { getResource<PaymentProcessor>() }
+    private val activation by lazy { getResource<Activation>() }
 
     //
     // Customer
@@ -152,7 +154,7 @@ class SubscriberDAOImpl : SubscriberDAO {
     // Subscriptions
     //
 
-    override fun getSubscriptions(identity: Identity, regionCode: String): Either<ApiError, Collection<Subscription>> {
+    override fun getSubscriptions(identity: Identity, regionCode: String?): Either<ApiError, Collection<Subscription>> {
         return try {
             storage.getSubscriptions(identity, regionCode).mapLeft {
                 NotFoundError("Failed to get subscriptions.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS, it)
@@ -263,21 +265,55 @@ class SubscriberDAOImpl : SubscriberDAO {
             identity: Identity,
             sku: String,
             sourceId: String?,
-            saveCard: Boolean): Either<ApiError, ProductInfo> =
-            storage.purchaseProduct(
-                    identity,
-                    sku,
-                    sourceId,
-                    saveCard).mapLeft {
-                when (it) {
-                    is PlanAlredyPurchasedError -> mapPaymentErrorToApiError("Already subscribed to plan. ",
-                            ApiErrorCode.ALREADY_SUBSCRIBED_TO_PLAN,
-                            it)
-                    else -> mapPaymentErrorToApiError("Failed to purchase product. ",
-                            ApiErrorCode.FAILED_TO_PURCHASE_PRODUCT,
-                            it)
+            saveCard: Boolean): Either<ApiError, ProductInfo> {
+
+        val hadZeroBundle = hasZeroBundle(identity)
+
+        return storage.purchaseProduct(
+                identity,
+                sku,
+                sourceId,
+                saveCard).fold(
+                { paymentError ->
+                    when (paymentError) {
+                        is PlanAlredyPurchasedError -> Either.left(mapPaymentErrorToApiError("Already subscribed to plan. ",
+                                ApiErrorCode.ALREADY_SUBSCRIBED_TO_PLAN,
+                                paymentError))
+                        else -> Either.left(mapPaymentErrorToApiError("Failed to purchase product. ",
+                                ApiErrorCode.FAILED_TO_PURCHASE_PRODUCT,
+                                paymentError))
+                    }
+                    // if no error, check if this was a topup of empty account, in that case send activate
+                }, { productInfo ->
+                    if (hadZeroBundle) {
+                        if (!hasZeroBundle(identity)) {
+                            activate(identity)
+                        }
+                    }
+                Either.right(productInfo)
+            })
+    }
+
+    private fun activate(identity: Identity) {
+        getSubscriptions(identity, null).map { subscriptions ->
+            subscriptions.forEach { subscription ->
+                logger.debug("Activate {} after topup", subscription.msisdn)
+                activation.activate(subscription.msisdn)
+            }
+        }
+    }
+
+    private fun hasZeroBundle(identity: Identity) : Boolean {
+        var hasZeroBundle = false;
+        getBundles(identity).map { bundles ->
+            bundles.forEach { bundle ->
+                if (bundle.balance == 0L) {
+                    hasZeroBundle = true
                 }
             }
+        }
+        return hasZeroBundle
+    }
 
     //
     // Payment

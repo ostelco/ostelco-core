@@ -53,7 +53,7 @@ interface SubscriberDAO {
     // Subscriptions
     //
 
-    fun getSubscriptions(identity: Identity, regionCode: String): Either<ApiError, Collection<Subscription>>
+    fun getSubscriptions(identity: Identity, regionCode: String?): Either<ApiError, Collection<Subscription>>
 
     //
     // SIM Profile
