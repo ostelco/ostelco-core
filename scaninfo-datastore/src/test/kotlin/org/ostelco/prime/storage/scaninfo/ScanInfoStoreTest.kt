@@ -79,8 +79,7 @@ class ScanInfoStoreTest {
             val testEnvVars = Mockito.mock(EnvironmentVars::class.java)
             Mockito.`when`(testEnvVars.getVar("JUMIO_API_TOKEN")).thenReturn("")
             Mockito.`when`(testEnvVars.getVar("JUMIO_API_SECRET")).thenReturn("")
-            ConfigRegistry.config = ScanInfoConfig()
-                    .apply { this.storeType = "inmemory-emulator" }
+            ConfigRegistry.config = ScanInfoConfig(storeType = "inmemory-emulator")
             ScanInformationStoreSingleton.init(testEnvVars)
             privateKeysetHandle = KeysetHandle.generateNew(HybridKeyTemplates.ECIES_P256_HKDF_HMAC_SHA256_AES128_GCM)
             val publicKeysetHandle = privateKeysetHandle.publicKeysetHandle

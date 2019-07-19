@@ -28,12 +28,6 @@ class QueryHandlerTest {
     }
 
     @Test
-    fun `test get subscriptions`() {
-        val result = execute("""{ context { subscriptions { msisdn } } }""".trimIndent())
-        assertEquals("{context={subscriptions=[{msisdn=4790300123}]}}", "$result")
-    }
-
-    @Test
     fun `test get purchase history`() {
         val result = execute("""{ context { purchases { id, product { sku, price { amount, currency } } } } }""".trimIndent())
         assertEquals("{context={purchases=[{id=PID, product={sku=SKU, price={amount=10000, currency=NOK}}}]}}", "$result")

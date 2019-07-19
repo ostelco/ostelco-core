@@ -18,7 +18,7 @@ sourceSets {
   }
 }
 
-version = "1.53.1"
+version = "1.54.0"
 
 repositories {
   maven {
@@ -33,7 +33,7 @@ dependencies {
   // prime-modules
   runtimeOnly project(':appleid-auth-service')
   runtimeOnly project(':ocs-ktc')
-  runtimeOnly project(':firebase-store')
+  runtimeOnly project(':document-data-store')
   runtimeOnly project(':neo4j-store')
   runtimeOnly project(':customer-endpoint')
   runtimeOnly project(':ekyc')

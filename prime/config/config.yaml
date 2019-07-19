@@ -17,10 +17,7 @@ modules:
   - type: Imei-lookup
     config:
       csvFile: /config-data/imeiDb.csv
-  - type: firebase
-    config:
-      configFile: /secret/prime-service-account.json
-      rootPath: ${FIREBASE_ROOT_PATH}
+  - type: doc-data-store
   - type: apple-id-auth
     config:
       teamId: ${APPLE_TEAM_ID}
