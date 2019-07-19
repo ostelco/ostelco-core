@@ -112,7 +112,8 @@ class EntityStore<E>(
 
     fun add(
             entity: E,
-            keyString: String? = null) = save(datastore::add, entity, keyString)
+            keyString: String? = null,
+            vararg parents: Pair<String, String>) = save(datastore::add, entity, keyString, *parents)
 
     fun put(
             entity: E,
