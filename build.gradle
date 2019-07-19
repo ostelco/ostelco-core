@@ -68,7 +68,7 @@ subprojects {
     prometheusDropwizardVersion = "2.2.0"
     protocVersion="3.7.1" // updating to "3.9.0" causes compile errors in grpc generated code
     slf4jVersion="1.7.26"
-    stripeVersion = "10.3.0" // Updating to "10.9.0" breaks AT. 
+    stripeVersion = "10.10.0"
     swaggerVersion = "2.0.8"
     swaggerCodegenVersion = "2.4.7"
     testcontainersVersion = "1.11.4"

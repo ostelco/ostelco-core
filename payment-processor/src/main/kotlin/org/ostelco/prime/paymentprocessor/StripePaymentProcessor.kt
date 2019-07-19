@@ -67,7 +67,8 @@ class StripePaymentProcessor : PaymentProcessor {
     private fun getAccountDetails(paymentSource: PaymentSource): Map<String, Any> =
             when (paymentSource) {
                 is Card -> {
-                    mapOf("id" to paymentSource.id,
+                    mapOf(
+                            "id" to paymentSource.id,
                             "type" to "card",
                             "addressLine1" to paymentSource.addressLine1,
                             "addressLine2" to paymentSource.addressLine2,
@@ -83,15 +84,26 @@ class StripePaymentProcessor : PaymentProcessor {
                             "expMonth" to paymentSource.expMonth,
                             "expYear" to paymentSource.expYear,
                             "fingerprint" to paymentSource.fingerprint,
-                            "funding" to paymentSource.funding,
-                            "last4" to paymentSource.last4)              // Typ.: "credit" or "debit"
+                            "funding" to paymentSource.funding,         // "credit" or "debit"
+                            "last4" to paymentSource.last4)
                             .filterValues { it != null }
                 }
                 is Source -> {
-                    mapOf("id" to paymentSource.id,
+                    mapOf(
+                            "id" to paymentSource.id,
                             "type" to "source",
                             "created" to Instant.ofEpochSecond(paymentSource.created).toEpochMilli(),
-                            "owner" to paymentSource.owner,
+                            "owner" to mapOf(
+                                    "email" to paymentSource.owner.email,
+                                    "name" to paymentSource.owner.name,
+                                    "phone" to paymentSource.owner.phone,
+                                    "address" to mapOf(
+                                            "city" to paymentSource.owner.address.city,
+                                            "country" to paymentSource.owner.address.country,
+                                            "line1" to paymentSource.owner.address.line1,
+                                            "line2" to paymentSource.owner.address.line2,
+                                            "postalCode" to paymentSource.owner.address.postalCode,
+                                            "state" to paymentSource.owner.address.state)),
                             "threeDSecure" to paymentSource.threeDSecure)
                 }
                 else -> {
