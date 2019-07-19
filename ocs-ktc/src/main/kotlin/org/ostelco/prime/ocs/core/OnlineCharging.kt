@@ -8,6 +8,7 @@ import org.ostelco.prime.getLogger
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.ocs.analytics.AnalyticsReporter
 import org.ostelco.prime.ocs.consumption.OcsAsyncRequestConsumer
+import org.ostelco.prime.ocs.notifications.Notifications
 import org.ostelco.prime.storage.ClientDataSource
 import org.ostelco.prime.storage.ConsumptionResult
 import java.util.concurrent.CountDownLatch
@@ -63,6 +64,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                                             if (requested > 0) {
                                                 addGrantedQuota(consumptionResult.granted, mscc, responseBuilder)
                                                 addInfo(consumptionResult.balance, mscc, responseBuilder)
+                                                Notifications.lowBalanceAlert(msisdn, consumptionResult.granted, consumptionResult.balance)
                                             }
                                             reportAnalytics(consumptionResult, request)
                                             doneSignal.countDown()
