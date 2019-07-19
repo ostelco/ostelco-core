@@ -10,6 +10,7 @@ import org.ostelco.prime.getLogger
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.ocs.analytics.AnalyticsReporter
 import org.ostelco.prime.ocs.consumption.OcsAsyncRequestConsumer
+import org.ostelco.prime.ocs.notifications.Notifications
 import org.ostelco.prime.storage.ClientDataSource
 import org.ostelco.prime.storage.ConsumptionResult
 import org.ostelco.prime.storage.StoreError
@@ -66,6 +67,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                                             addGrantedQuota(consumptionResult.granted, mscc, responseBuilder)
                                             addInfo(consumptionResult.balance, mscc, responseBuilder)
                                             reportAnalytics(consumptionResult, request)
+                                            Notifications.lowBalanceAlert(msisdn, consumptionResult.granted, consumptionResult.balance)
                                             doneSignal.countDown()
                                         }
                                 )
