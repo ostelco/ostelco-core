@@ -22,7 +22,6 @@ import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.storage.GraphStore
-import org.ostelco.prime.storage.firebase.initFirebaseConfigRegistry
 import org.ostelco.prime.storage.graph.Products.DATA_TOPUP_3GB
 import java.lang.Thread.sleep
 import java.time.Instant
@@ -122,8 +121,6 @@ class Neo4jStorageTest {
         @JvmStatic
         @BeforeClass
         fun setup() {
-
-            initFirebaseConfigRegistry()
 
             ConfigRegistry.config = Config(
                     host = "0.0.0.0",

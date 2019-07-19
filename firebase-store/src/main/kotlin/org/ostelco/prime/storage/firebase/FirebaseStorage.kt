@@ -57,10 +57,4 @@ object FirebaseStorageSingleton : DocumentStore {
     override fun removeNotificationToken(msisdn: String, applicationID: String): Boolean {
         return fcmTokenStore.delete(applicationID) { databaseReference.child(urlEncode(msisdn)) }
     }
-
-    override fun getPaymentId(id: String): String? = paymentIdStore.get(id)
-
-    override fun deletePaymentId(id: String): Boolean = paymentIdStore.delete(id)
-
-    override fun createPaymentId(id: String, paymentId: String): Boolean = paymentIdStore.create(id, paymentId)
 }
