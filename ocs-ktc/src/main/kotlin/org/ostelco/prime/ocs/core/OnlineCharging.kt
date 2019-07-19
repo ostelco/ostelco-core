@@ -11,7 +11,7 @@ import org.ostelco.prime.module.getResource
 import org.ostelco.prime.ocs.analytics.AnalyticsReporter
 import org.ostelco.prime.ocs.consumption.OcsAsyncRequestConsumer
 import org.ostelco.prime.ocs.notifications.Notifications
-import org.ostelco.prime.storage.ClientDataSource
+import org.ostelco.prime.storage.AdminDataSource
 import org.ostelco.prime.storage.ConsumptionResult
 import org.ostelco.prime.storage.StoreError
 import java.util.concurrent.CountDownLatch
@@ -23,7 +23,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
     var loadUnitTest = false
     private val loadAcceptanceTest = System.getenv("LOAD_TESTING") == "true"
 
-    private val storage: ClientDataSource = getResource()
+    private val storage: AdminDataSource = getResource()
 
     private val logger by getLogger()
 
