@@ -14,6 +14,7 @@ val clientDataSource by lazy { getResource<ClientDataSource>() }
 class ContextDataFetcher : DataFetcher<Map<String, Any>> {
 
     override fun get(env: DataFetchingEnvironment): Map<String, Any>? {
+
         return env.getContext<Identity>()?.let { identity ->
             val map = mutableMapOf<String, Any>()
             if (env.selectionSet.contains("customer/*")) {
@@ -30,21 +31,23 @@ class ContextDataFetcher : DataFetcher<Map<String, Any>> {
                             })
                         }
             }
-            if (env.selectionSet.contains("subscriptions/*")) {
-                clientDataSource.getSubscriptions(identity)
-                        .map { subscriptions ->
-                            map.put("subscriptions", subscriptions.map { subscription ->
-                                objectMapper.convertValue<Map<String, Any>>(subscription, object : TypeReference<Map<String, Any>>() {})
-                            })
-                        }
-            }
             if (env.selectionSet.contains("regions/*")) {
-                clientDataSource.getAllRegionDetails(identity)
-                        .map { regions ->
-                            map.put("regions", regions.map { region ->
-                                objectMapper.convertValue<Map<String, Any>>(region, object : TypeReference<Map<String, Any>>() {})
-                            })
-                        }
+                val regionCode: String? = env.selectionSet.getField("regions").arguments["regionCode"]?.toString()
+                if (regionCode.isNullOrBlank()) {
+                    clientDataSource.getAllRegionDetails(identity)
+                            .map { regions ->
+                                map.put("regions", regions.map { region ->
+                                    objectMapper.convertValue<Map<String, Any>>(region, object : TypeReference<Map<String, Any>>() {})
+                                })
+                            }
+                } else {
+                    clientDataSource.getRegionDetails(identity, regionCode.toLowerCase())
+                            .map { region ->
+                                map.put("regions",
+                                        listOf(objectMapper.convertValue<Map<String, Any>>(region, object : TypeReference<Map<String, Any>>() {}))
+                                )
+                            }
+                }
             }
             if (env.selectionSet.contains("products/*")) {
                 clientDataSource.getProducts(identity)

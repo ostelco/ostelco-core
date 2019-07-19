@@ -7,10 +7,9 @@ modules:
       jerseyClient:
         timeout: 3s
         connectionRequestTimeout: 1s
-  - type: firebase
+  - type: doc-data-store
     config:
-      configFile: /secret/prime-service-account.json
-      rootPath: test
+      storeType: emulator
   - type: Imei-lookup
     config:
       csvFile: /config-data/imeiDb.csv

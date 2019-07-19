@@ -202,12 +202,10 @@ enum class FCMStrings(val s: String) {
     JUMIO_IDENTITY_FAILED("Failed to verify the identity")
 }
 
-// TODO vihang: make ApplicationToken data class immutable
-// this data class is treated differently since it is stored in Firebase.
 data class ApplicationToken(
-        var token: String = "",
-        var applicationID: String = "",
-        var tokenType: String = "") : HasId {
+        val token: String,
+        val applicationID: String,
+        val tokenType: String) : HasId {
 
     override val id: String
         @Exclude

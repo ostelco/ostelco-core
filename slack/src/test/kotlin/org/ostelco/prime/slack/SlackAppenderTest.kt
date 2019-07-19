@@ -1,6 +1,6 @@
 package org.ostelco.prime.slack
 
-import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.dropwizard.Application
 import io.dropwizard.Configuration
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor
@@ -20,6 +20,7 @@ class TestApp : Application<TestConfig>() {
         bootstrap.configurationSourceProvider = SubstitutingSourceProvider(
                 bootstrap.configurationSourceProvider,
                 EnvironmentVariableSubstitutor(false))
+        bootstrap.objectMapper.registerModule(KotlinModule())
     }
 
     override fun run(configuration: TestConfig, environment: Environment) {
@@ -27,11 +28,7 @@ class TestApp : Application<TestConfig>() {
     }
 }
 
-class TestConfig: Configuration() {
-
-    @JsonProperty
-    lateinit var modules: List<PrimeModule>
-}
+data class TestConfig(val modules: List<PrimeModule>): Configuration()
 
 class SlackAppenderTest {
 
