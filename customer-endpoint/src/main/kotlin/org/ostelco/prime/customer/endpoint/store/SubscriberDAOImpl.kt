@@ -27,7 +27,7 @@ import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.SimProfile
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
-import org.ostelco.prime.ocsgw.Ocsgw
+import org.ostelco.prime.activation.Activation
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.PlanAlredyPurchasedError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
@@ -44,7 +44,7 @@ class SubscriberDAOImpl : SubscriberDAO {
 
     private val storage by lazy { getResource<ClientDataSource>() }
     private val paymentProcessor by lazy { getResource<PaymentProcessor>() }
-    private val ocsgw by lazy { getResource<Ocsgw>() }
+    private val activation by lazy { getResource<Activation>() }
 
     //
     // Customer
@@ -298,7 +298,7 @@ class SubscriberDAOImpl : SubscriberDAO {
         getSubscriptions(identity, null).map { subscriptions ->
             subscriptions.forEach { subscription ->
                 logger.debug("Activate {} after topup", subscription.msisdn)
-                ocsgw.activate(subscription.msisdn)
+                activation.activate(subscription.msisdn)
             }
         }
     }
@@ -307,7 +307,7 @@ class SubscriberDAOImpl : SubscriberDAO {
         var hasZeroBundle = false;
         getBundles(identity).map { bundles ->
             bundles.forEach { bundle ->
-                if (bundle.balance > 0) {
+                if (bundle.balance == 0L) {
                     hasZeroBundle = true
                 }
             }

@@ -20,7 +20,7 @@ import io.grpc.ManagedChannelBuilder
 import org.ostelco.ocs.api.ActivateResponse
 import org.ostelco.ocs.api.CreditControlRequestInfo
 import org.ostelco.prime.getLogger
-import org.ostelco.prime.ocsgw.Ocsgw
+import org.ostelco.prime.activation.Activation
 import org.ostelco.prime.ocs.consumption.OcsAsyncRequestConsumer
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -32,7 +32,7 @@ class PubSubClient(
         private val ocsAsyncRequestConsumer: OcsAsyncRequestConsumer,
         private val projectId: String,
         private val activateTopicId: String,
-        private val ccrSubscriptionId: String) : Managed, Ocsgw {
+        private val ccrSubscriptionId: String) : Managed, Activation {
 
     private val logger by getLogger()
 
