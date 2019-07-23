@@ -3,8 +3,13 @@ package org.ostelco.prime.customer.endpoint.resources
 import io.dropwizard.auth.Auth
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.customer.endpoint.store.SubscriberDAO
+import org.ostelco.prime.ekyc.MyInfoKycService
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
+import org.ostelco.prime.model.MyInfoApiVersion
+import org.ostelco.prime.model.MyInfoApiVersion.V2
+import org.ostelco.prime.model.MyInfoApiVersion.V3
+import org.ostelco.prime.module.getResource
 import javax.validation.constraints.NotNull
 import javax.ws.rs.GET
 import javax.ws.rs.POST
@@ -40,7 +45,11 @@ open class KycResource(private val regionCode: String, private val dao: Subscrib
  *
  */
 class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(regionCode = "sg", dao = dao) {
+
     private val logger by getLogger()
+
+    // MyInfo v2
+    private val myInfoKycService by lazy { getResource<MyInfoKycService>("v2") }
 
     @GET
     @Path("/myInfo/{authorisationCode}")
@@ -58,6 +67,7 @@ class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(regionCo
 
         return dao.getCustomerMyInfoData(
                 identity = token.identity,
+                version = V2,
                 authorisationCode = authorisationCode)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
@@ -75,11 +85,14 @@ class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(regionCo
                     .build()
         }
 
-        return dao.getMyInfoConfig()
-                .fold(
-                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                        { personalData -> Response.status(Response.Status.OK).entity(personalData) })
-                .build()
+        return Response.status(Response.Status.OK).entity(myInfoKycService.getConfig()).build()
+    }
+
+    // MyInfo v3
+
+    @Path("/myInfo/v3")
+    fun myInfoV3Resource(): MyInfoResource {
+        return MyInfoResource(dao = dao, version = V3, myInfoKycService = getResource("v3"))
     }
 
     @GET
@@ -91,7 +104,7 @@ class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(regionCo
             @PathParam("nricFinId")
             nricFinId: String): Response {
 
-        logger.info("checkNricFinId for ${nricFinId}")
+        logger.info("checkNricFinId for $nricFinId")
 
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
@@ -132,6 +145,49 @@ class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(regionCo
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { Response.status(Response.Status.NO_CONTENT) })
                 .build()
+    }
+}
+
+class MyInfoResource(
+        private val dao: SubscriberDAO,
+        private val version: MyInfoApiVersion,
+        private val myInfoKycService: MyInfoKycService) {
+
+    @GET
+    @Path("/personData/{authorisationCode}")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun getCustomerMyInfoData(
+            @Auth token: AccessTokenPrincipal?,
+            @NotNull
+            @PathParam("authorisationCode")
+            authorisationCode: String): Response {
+
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .build()
+        }
+
+        return dao.getCustomerMyInfoData(
+                identity = token.identity,
+                version = version,
+                authorisationCode = authorisationCode)
+                .fold(
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                        { personalData -> Response.status(Response.Status.OK).entity(personalData) })
+                .build()
+    }
+
+    @GET
+    @Path("/config")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun getMyInfoConfig(@Auth token: AccessTokenPrincipal?): Response {
+
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .build()
+        }
+
+        return Response.status(Response.Status.OK).entity(myInfoKycService.getConfig()).build()
     }
 }
 

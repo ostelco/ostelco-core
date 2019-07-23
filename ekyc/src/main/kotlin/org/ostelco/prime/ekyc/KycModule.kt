@@ -14,7 +14,8 @@ class KycModule : PrimeModule {
 
     @JsonProperty
     fun setConfig(config: Config) {
-        ConfigRegistry.config = config
+        ConfigRegistry.myInfoV2 = config.myInfoV2
+        ConfigRegistry.myInfoV3 = config.myInfoV3
     }
 
     override fun init(env: Environment) {
@@ -35,6 +36,11 @@ class KycModule : PrimeModule {
 }
 
 data class Config(
+        val myInfoV2: MyInfoV2Config,
+        val myInfoV3: MyInfoV3Config
+)
+
+data class MyInfoV2Config(
         val myInfoApiUri: String,
         val myInfoApiClientId: String,
         val myInfoApiClientSecret: String,
@@ -43,10 +49,23 @@ data class Config(
         val myInfoRedirectUri: String,
         val myInfoServerPublicKey: String,
         val myInfoClientPrivateKey: String,
-        val myInfoPersonDataAttributes: String = "name,sex,dob,residentialstatus,nationality,mobileno,email,mailadd")
+        val myInfoPersonDataAttributes: String = "name,sex,dob,residentialstatus,nationality,mobileno,email,mailadd"
+)
+
+data class MyInfoV3Config(
+        val myInfoApiUri: String,
+        val myInfoApiClientId: String,
+        val myInfoApiClientSecret: String,
+        val myInfoApiEnableSecurity: Boolean = true,
+        val myInfoRedirectUri: String,
+        val myInfoServerPublicKey: String,
+        val myInfoClientPrivateKey: String,
+        val myInfoPersonDataAttributes: String = "name,sex,dob,residentialstatus,nationality,mobileno,email,mailadd"
+)
 
 object ConfigRegistry {
-    lateinit var config: Config
+    lateinit var myInfoV2: MyInfoV2Config
+    lateinit var myInfoV3: MyInfoV3Config
 }
 
 object Registry {
