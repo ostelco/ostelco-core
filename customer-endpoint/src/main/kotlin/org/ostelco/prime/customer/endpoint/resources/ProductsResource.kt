@@ -1,10 +1,9 @@
 package org.ostelco.prime.customer.endpoint.resources
 
 import io.dropwizard.auth.Auth
+import org.ostelco.prime.apierror.responseBuilder
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.customer.endpoint.store.SubscriberDAO
-import org.ostelco.prime.jsonmapper.asJson
-import org.ostelco.prime.model.Identity
 import javax.validation.constraints.NotNull
 import javax.ws.rs.GET
 import javax.ws.rs.POST
@@ -14,7 +13,6 @@ import javax.ws.rs.Produces
 import javax.ws.rs.QueryParam
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
-import javax.ws.rs.core.Response.Status.CREATED
 
 /**
  * Products API.
@@ -25,18 +23,13 @@ class ProductsResource(private val dao: SubscriberDAO) {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    fun getProducts(@Auth token: AccessTokenPrincipal?): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-
-        return dao.getProducts(identity = token.identity)
-                .fold(
-                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                        { Response.status(Response.Status.OK).entity(asJson(it)) })
-                .build()
-    }
+    fun getProducts(@Auth token: AccessTokenPrincipal?): Response =
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                dao.getProducts(identity = token.identity)
+                        .responseBuilder()
+            }.build()
 
     @POST
     @Path("{sku}/purchase")
@@ -48,21 +41,15 @@ class ProductsResource(private val dao: SubscriberDAO) {
                         @QueryParam("sourceId")
                         sourceId: String?,
                         @QueryParam("saveCard")
-                        saveCard: Boolean?): Response {    /* 'false' is default. */
-
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-
-        return dao.purchaseProduct(
-                identity = token.identity,
-                sku = sku,
-                sourceId = sourceId,
-                saveCard = saveCard ?: false)
-                .fold(
-                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                        { productInfo -> Response.status(CREATED).entity(productInfo) })
-                .build()
-    }
+                        saveCard: Boolean?): Response =    /* 'false' is default. */
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                dao.purchaseProduct(
+                        identity = token.identity,
+                        sku = sku,
+                        sourceId = sourceId,
+                        saveCard = saveCard ?: false)
+                        .responseBuilder(Response.Status.CREATED)
+            }.build()
 }

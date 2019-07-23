@@ -1,10 +1,9 @@
 package org.ostelco.prime.customer.endpoint.resources
 
 import io.dropwizard.auth.Auth
+import org.ostelco.prime.apierror.responseBuilder
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.customer.endpoint.store.SubscriberDAO
-import org.ostelco.prime.jsonmapper.asJson
-import org.ostelco.prime.model.Identity
 import javax.validation.constraints.NotNull
 import javax.ws.rs.DELETE
 import javax.ws.rs.GET
@@ -28,74 +27,54 @@ class PaymentSourcesResource(private val dao: SubscriberDAO) {
     fun createSource(@Auth token: AccessTokenPrincipal?,
                      @NotNull
                      @QueryParam("sourceId")
-                     sourceId: String): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-
-        return dao.createSource(
-                identity = token.identity,
-                sourceId = sourceId)
-                .fold(
-                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                        { sourceInfo -> Response.status(Response.Status.CREATED).entity(sourceInfo) })
-                .build()
-    }
-
+                     sourceId: String): Response =
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                dao.createSource(
+                        identity = token.identity,
+                        sourceId = sourceId)
+                        .responseBuilder(Response.Status.CREATED)
+            }.build()
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    fun listSources(@Auth token: AccessTokenPrincipal?): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-        return dao.listSources(
-                identity = token.identity)
-                .fold(
-                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                        { sourceList -> Response.status(Response.Status.OK).entity(sourceList) })
-                .build()
-    }
+    fun listSources(@Auth token: AccessTokenPrincipal?): Response =
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                dao.listSources(
+                        identity = token.identity)
+                        .responseBuilder()
+            }.build()
 
     @PUT
     @Produces(MediaType.APPLICATION_JSON)
     fun setDefaultSource(@Auth token: AccessTokenPrincipal?,
                          @NotNull
                          @QueryParam("sourceId")
-                         sourceId: String): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-
-        return dao.setDefaultSource(
-                identity = token.identity,
-                sourceId = sourceId)
-                .fold(
-                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                        { sourceInfo -> Response.status(Response.Status.OK).entity(sourceInfo) })
-                .build()
-    }
+                         sourceId: String): Response =
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                dao.setDefaultSource(
+                        identity = token.identity,
+                        sourceId = sourceId)
+                        .responseBuilder()
+            }.build()
 
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     fun removeSource(@Auth token: AccessTokenPrincipal?,
                      @NotNull
                      @QueryParam("sourceId")
-                     sourceId: String): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-
-        return dao.removeSource(
-                identity = token.identity,
-                sourceId = sourceId)
-                .fold(
-                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                        { sourceInfo -> Response.status(Response.Status.OK).entity(sourceInfo) })
-                .build()
-    }
+                     sourceId: String): Response =
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                dao.removeSource(
+                        identity = token.identity,
+                        sourceId = sourceId)
+                        .responseBuilder()
+            }.build()
 }
