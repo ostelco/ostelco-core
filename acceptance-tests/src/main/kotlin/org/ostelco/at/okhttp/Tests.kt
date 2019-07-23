@@ -326,7 +326,7 @@ class SourceTest {
             val createdIds = listOf(createTokenWithStripe(client),
                     createSourceWithStripe(client),
                     createTokenWithStripe(client),
-                    createSourceWithStripe(client))
+                    createSourceWithStripeNoAddress(client))
 
             val sources = client.listSources()
 
@@ -456,6 +456,14 @@ class SourceTest {
 
     private fun createSourceWithStripe(client: DefaultApi): String {
         val sourceId = StripePayment.createPaymentSourceId()
+
+        client.createSource(sourceId)
+
+        return sourceId
+    }
+
+    private fun createSourceWithStripeNoAddress(client: DefaultApi): String {
+        val sourceId = StripePayment.createPaymentSourceIdNoAddress()
 
         client.createSource(sourceId)
 
