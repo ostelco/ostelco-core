@@ -46,6 +46,25 @@ object StripePayment {
         return source.id
     }
 
+    fun createPaymentSourceIdNoAddress(): String {
+
+        // https://stripe.com/docs/api/java#create_source
+        Stripe.apiKey = System.getenv("STRIPE_API_KEY")
+
+        val sourceMap = mapOf(
+                "type" to "card",
+                "card" to mapOf(
+                        "number" to "4242424242424242",
+                        "exp_month" to 8,
+                        "exp_year" to 2019,
+                        "cvc" to "314"),
+                "owner" to mapOf(
+                        "email" to "me@somewhere.com")
+        )
+        val source = Source.create(sourceMap)
+        return source.id
+    }
+
     fun getCardIdForTokenId(tokenId: String) : String {
 
         // https://stripe.com/docs/api/java#create_source

@@ -97,13 +97,17 @@ class StripePaymentProcessor : PaymentProcessor {
                                     "email" to paymentSource.owner.email,
                                     "name" to paymentSource.owner.name,
                                     "phone" to paymentSource.owner.phone,
-                                    "address" to mapOf(
-                                            "city" to paymentSource.owner.address.city,
-                                            "country" to paymentSource.owner.address.country,
-                                            "line1" to paymentSource.owner.address.line1,
-                                            "line2" to paymentSource.owner.address.line2,
-                                            "postalCode" to paymentSource.owner.address.postalCode,
-                                            "state" to paymentSource.owner.address.state)),
+                                    "address" to
+                                            if (paymentSource.owner.address != null)
+                                                mapOf(
+                                                        "city" to paymentSource.owner.address.city,
+                                                        "country" to paymentSource.owner.address.country,
+                                                        "line1" to paymentSource.owner.address.line1,
+                                                        "line2" to paymentSource.owner.address.line2,
+                                                        "postalCode" to paymentSource.owner.address.postalCode,
+                                                        "state" to paymentSource.owner.address.state)
+                                            else
+                                                paymentSource.owner.address),
                             "threeDSecure" to paymentSource.threeDSecure)
                 }
                 else -> {
