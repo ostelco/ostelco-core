@@ -29,6 +29,10 @@ const REFUND_PAYMENT_REQUEST = 'REFUND_PAYMENT_REQUEST';
 const REFUND_PAYMENT_SUCCESS = 'REFUND_PAYMENT_SUCCESS';
 const REFUND_PAYMENT_FAILURE = 'REFUND_PAYMENT_FAILURE';
 
+const AUDIT_LOGS_REQUEST = 'AUDIT_LOGS_REQUEST';
+const AUDIT_LOGS_SUCCESS = 'AUDIT_LOGS_SUCCESS';
+const AUDIT_LOGS_FAILURE = 'AUDIT_LOGS_FAILURE';
+
 // Used by global reducer.
 export const subscriberConstants = {
   SUBSCRIBER_BY_EMAIL_FAILURE,
@@ -53,7 +57,10 @@ export const actions = createActions(
   PAYMENT_HISTORY_FAILURE,
   REFUND_PAYMENT_REQUEST,
   REFUND_PAYMENT_SUCCESS,
-  REFUND_PAYMENT_FAILURE
+  REFUND_PAYMENT_FAILURE,
+  AUDIT_LOGS_REQUEST,
+  AUDIT_LOGS_SUCCESS,
+  AUDIT_LOGS_FAILURE
 );
 
 const fetchSubscriberById = (id) => ({
@@ -123,6 +130,17 @@ const putRefundPurchaseByEmail = (email, purchaseRecordId, reason) => ({
   }
 });
 
+const fetchAuditLogsByEmail = (email) => ({
+  [CALL_API]: {
+    actions: [
+      actions.auditLogsRequest,
+      actions.auditLogsSuccess,
+      actions.auditLogsFailure],
+    endpoint: `purchases/${email}`,
+    method: 'GET'
+  }
+});
+
 // TODO: API based implementaion. Reference: https://github.com/reduxjs/redux/issues/1676
 const getSubscriberAndBundlesByEmail = (email) => (dispatch, getState) => {
   email = encodeEmail(email);
@@ -137,6 +155,7 @@ const getSubscriberAndBundlesByEmail = (email) => (dispatch, getState) => {
       const subscriberEmail = encodeEmail(_.get(getState(), 'subscriber.contactEmail'));
       if (subscriberEmail) {
         dispatch(fetchContextByEmail(subscriberEmail)).catch(handleError);
+        dispatch(fetchAuditLogsByEmail(subscriberEmail)).catch(handleError);
         dispatch(fetchSubscriptionsByEmail(subscriberEmail)).catch(handleError);
         return dispatch(fetchBundlesByEmail(subscriberEmail))
           .then(() => {

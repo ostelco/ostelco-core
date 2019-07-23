@@ -73,3 +73,16 @@ export const paymentHistory = handleActions(
   },
   defaultState
 );
+
+export const auditLogs = handleActions(
+  {
+    [actions.auditLogsRequest]: (state, action) => ({
+      loading: true
+    }),
+    [actions.auditLogsSuccess]: (state, action) => action.payload,
+    [actions.auditLogsFailure]: (state, action) => ({
+      ...action.payload
+    })
+  },
+  defaultState
+);
