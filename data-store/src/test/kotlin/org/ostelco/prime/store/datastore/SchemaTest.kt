@@ -19,7 +19,7 @@ class SchemaTest {
     @Test
     fun `test add and fetch from data store`() {
 
-        val testDataStore = EntityStore(entityClass = TestData::class.java)
+        val testDataStore = EntityStore(entityClass = TestData::class)
 
         val testData = TestData(
                 id = UUID.randomUUID().toString(),
@@ -36,7 +36,7 @@ class SchemaTest {
 
     @Test
     fun `test add and fetch of long strings from data store`() {
-        val testDataStore = EntityStore(entityClass = TestData::class.java)
+        val testDataStore = EntityStore(entityClass = TestData::class)
 
         val testData = TestData(
                 id = UUID.randomUUID().toString(),

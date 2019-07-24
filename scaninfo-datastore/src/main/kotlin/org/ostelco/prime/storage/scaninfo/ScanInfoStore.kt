@@ -50,7 +50,7 @@ object ScanInformationStoreSingleton : ScanInformationStore {
     private val logger by getLogger()
 
     internal val scanMetadataStore = EntityStore(
-            entityClass = ScanMetadata::class.java,
+            entityClass = ScanMetadata::class,
             type = ConfigRegistry.config.storeType,
             namespace = ConfigRegistry.config.namespace)
 
