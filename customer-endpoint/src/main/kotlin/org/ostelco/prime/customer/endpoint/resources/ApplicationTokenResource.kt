@@ -1,6 +1,8 @@
 package org.ostelco.prime.customer.endpoint.resources
 
+import arrow.core.flatMap
 import io.dropwizard.auth.Auth
+import org.ostelco.prime.apierror.responseBuilder
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.customer.endpoint.store.SubscriberDAO
 import org.ostelco.prime.jsonmapper.asJson
@@ -24,20 +26,14 @@ class ApplicationTokenResource(private val dao: SubscriberDAO) {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     fun storeApplicationToken(@Auth authToken: AccessTokenPrincipal?,
-                              @NotNull applicationToken: ApplicationToken): Response {
-        if (authToken == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-
-        return dao.getCustomer(identity = authToken.identity)
-                .fold(
-                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                        { customer ->
-                            dao.storeApplicationToken(customer.id, applicationToken).fold(
-                                    { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                                    { Response.status(Response.Status.CREATED).entity(asJson(it)) })
-                        })
-                .build()
-    }
+                              @NotNull applicationToken: ApplicationToken): Response =
+            if (authToken == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                dao.getCustomer(identity = authToken.identity)
+                        .flatMap { customer ->
+                            dao.storeApplicationToken(customer.id, applicationToken)
+                        }
+                        .responseBuilder(Response.Status.CREATED)
+            }.build()
 }
