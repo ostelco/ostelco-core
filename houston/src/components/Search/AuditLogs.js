@@ -9,11 +9,8 @@ import { convertTimestampToDate } from '../../helpers';
 
 function severityToTableRowClass(severity) {
   switch (_.toLower(severity)) {
-    case "free":
     case "warn":
-    case "warning":
       return "table-warning";
-    case "$5":
     case "error":
       return "table-danger";
     default:
@@ -22,11 +19,8 @@ function severityToTableRowClass(severity) {
 }
 function severityToIcon(severity) {
   switch (_.toLower(severity)) {
-    case "free":
     case "warn":
-    case "warning":
       return "exclamation-triangle";
-    case "$5":
     case "error":
       return "bomb";
     default:
@@ -35,31 +29,18 @@ function severityToIcon(severity) {
 }
 export const AuditLogRow = props => {
   return (
-    <tr className={severityToTableRowClass(props.item.product.presentation.priceLabel)}>
-      <th><FontAwesomeIcon icon={severityToIcon(props.item.product.presentation.priceLabel)} />&nbsp; {props.item.product.presentation.priceLabel}</th>
+    <tr className={severityToTableRowClass(props.item.severity)}>
+      <th><FontAwesomeIcon icon={severityToIcon(props.item.severity)} />&nbsp; {props.item.severity}</th>
       <td>{convertTimestampToDate(props.item.timestamp)}</td>
-      <td>{props.item.product.presentation.productLabel}{props.item.product.presentation.productLabel}{props.item.product.presentation.productLabel}</td>
+      <td>{props.item.message}</td>
     </tr>);
 }
 
 AuditLogRow.propTypes = {
   item: PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    product: PropTypes.shape({
-      price: PropTypes.shape({
-        amount: PropTypes.number.isRequired
-      }).isRequired,
-      presentation: PropTypes.shape({
-        priceLabel: PropTypes.string,
-        productLabel: PropTypes.string
-      }).isRequired,
-    }),
-    refund: PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      reason: PropTypes.string,
-      timestamp: PropTypes.number.isRequired
-    }),
-    timestamp: PropTypes.number.isRequired
+    timestamp: PropTypes.number.isRequired,
+    severity: PropTypes.string.isRequired,
+    message: PropTypes.string.isRequired
   })
 };
 
@@ -78,7 +59,7 @@ class AuditLogs extends React.Component {
       return null;
     }
     const listItems = props.auditLogs.map((log) =>
-      <AuditLogRow item={log} key={log.id} />
+      <AuditLogRow item={log} key={log.timestamp} />
     );
 
     return (

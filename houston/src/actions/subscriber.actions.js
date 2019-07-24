@@ -136,7 +136,7 @@ const fetchAuditLogsByEmail = (email) => ({
       actions.auditLogsRequest,
       actions.auditLogsSuccess,
       actions.auditLogsFailure],
-    endpoint: `purchases/${email}`,
+    endpoint: `auditLog/${email}`,
     method: 'GET'
   }
 });
