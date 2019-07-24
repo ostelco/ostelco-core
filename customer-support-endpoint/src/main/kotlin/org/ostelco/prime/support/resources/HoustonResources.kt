@@ -1,10 +1,12 @@
 package org.ostelco.prime.support.resources
 
 import arrow.core.Either
+import arrow.core.flatMap
 import arrow.core.left
 import io.dropwizard.auth.Auth
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.apierror.ApiErrorCode
+import org.ostelco.prime.apierror.ApiErrorCode.FAILED_TO_FETCH_AUDIT_LOGS
 import org.ostelco.prime.apierror.ApiErrorMapper
 import org.ostelco.prime.apierror.InternalServerError
 import org.ostelco.prime.apierror.NotFoundError
@@ -471,9 +473,12 @@ class AuditLogResource {
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
                 getCustomerId(email = email)
-                        .map { customerId ->
+                        .flatMap { customerId ->
                             logger.info("${token.name} fetching audit log of $email customerId: $customerId")
                             auditLogStore.getCustomerActivityHistory(customerId = customerId)
+                                    .mapLeft { errorMessage ->
+                                        InternalServerError(errorMessage, FAILED_TO_FETCH_AUDIT_LOGS)
+                                    }
                         }
                         .responseBuilder()
             }.build()

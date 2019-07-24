@@ -20,7 +20,7 @@ class StoreStripeEvent : PubSubSubscriber(
     private val logger by getLogger()
 
     /* GCP datastore. */
-    private val entityStore = EntityStore(StripeEvent::class.java,
+    private val entityStore = EntityStore(StripeEvent::class,
             type = ConfigRegistry.config.stripeEventStoreType,
             namespace = ConfigRegistry.config.namespace)
 

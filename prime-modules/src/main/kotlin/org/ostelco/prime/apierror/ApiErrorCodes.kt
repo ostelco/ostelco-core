@@ -50,6 +50,9 @@ enum class ApiErrorCode {
     FAILED_TO_UPDATE_CUSTOMER,
     FAILED_TO_REMOVE_CUSTOMER,
 
+    // audit log
+    FAILED_TO_FETCH_AUDIT_LOGS,
+
     // context
     FAILED_TO_FETCH_CONTEXT,
 

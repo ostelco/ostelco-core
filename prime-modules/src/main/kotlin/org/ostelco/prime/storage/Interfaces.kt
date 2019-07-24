@@ -1,6 +1,7 @@
 package org.ostelco.prime.storage
 
 import arrow.core.Either
+import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.model.CustomerActivity
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.module.getResource
@@ -43,7 +44,7 @@ interface AuditLogStore {
      */
     fun getCustomerActivityHistory(
             customerId: String
-    ): Collection<CustomerActivity>
+    ): Either<String, Collection<CustomerActivity>>
 }
 
 // Types
