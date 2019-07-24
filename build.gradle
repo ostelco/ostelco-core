@@ -68,6 +68,8 @@ subprojects {
     prometheusDropwizardVersion = "2.2.0"
     protocVersion="3.7.1" // updating to "3.9.0" causes compile errors in grpc generated code
     slf4jVersion="1.7.26"
+    // IMPORTANT: When Stripe SDK library version is updated, check if the Stripe API version has changed.
+    // If so, then update API version in Stripe Web Console for callback Webhooks.
     stripeVersion = "10.10.0"
     swaggerVersion = "2.0.8"
     swaggerCodegenVersion = "2.4.7"

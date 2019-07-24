@@ -10,6 +10,7 @@ import org.ostelco.prime.apierror.ApiErrorMapper.mapStorageErrorToApiError
 import org.ostelco.prime.apierror.BadRequestError
 import org.ostelco.prime.apierror.InternalServerError
 import org.ostelco.prime.apierror.NotFoundError
+import org.ostelco.prime.auditlog.AuditLog
 import org.ostelco.prime.customer.endpoint.metrics.updateMetricsOnNewSubscriber
 import org.ostelco.prime.customer.endpoint.model.Person
 import org.ostelco.prime.getLogger
@@ -84,6 +85,7 @@ class SubscriberDAOImpl : SubscriberDAO {
             storage.updateCustomer(identity = identity, nickname = nickname, contactEmail = contactEmail)
         } catch (e: Exception) {
             logger.error("Failed to update customer with identity - $identity", e)
+            AuditLog.warn(identity, message = "Failed to update customer")
             return Either.left(InternalServerError("Failed to update customer", ApiErrorCode.FAILED_TO_UPDATE_CUSTOMER))
         }
 
@@ -96,7 +98,8 @@ class SubscriberDAOImpl : SubscriberDAO {
                 NotFoundError("Failed to remove customer.", ApiErrorCode.FAILED_TO_REMOVE_CUSTOMER, it)
             }
         } catch (e: Exception) {
-            logger.error("Failed to fetch customer with identity - $identity", e)
+            logger.error("Failed to remove customer with identity - $identity", e)
+            AuditLog.warn(identity, message = "Failed to remove customer")
             Either.left(NotFoundError("Failed to remove customer", ApiErrorCode.FAILED_TO_REMOVE_CUSTOMER))
         }
     }
@@ -181,10 +184,12 @@ class SubscriberDAOImpl : SubscriberDAO {
     override fun provisionSimProfile(identity: Identity, regionCode: String, profileType: String?): Either<ApiError, SimProfile> {
         return try {
             storage.provisionSimProfile(identity, regionCode, profileType).mapLeft {
+                AuditLog.error(identity, message = "Failed to provision SIM profile.")
                 NotFoundError("Failed to provision SIM profile.", ApiErrorCode.FAILED_TO_PROVISION_SIM_PROFILE, it)
             }
         } catch (e: Exception) {
             logger.error("Failed to provision SIM profile for customer with identity - $identity", e)
+            AuditLog.error(identity, message = "Failed to provision SIM profile.")
             Either.left(InternalServerError("Failed to provision SIM profile", ApiErrorCode.FAILED_TO_PROVISION_SIM_PROFILE))
         }
     }
@@ -192,10 +197,12 @@ class SubscriberDAOImpl : SubscriberDAO {
     override fun updateSimProfile(identity: Identity, regionCode: String, iccId: String, alias: String): Either<ApiError, SimProfile> {
         return try {
             storage.updateSimProfile(identity, regionCode, iccId, alias).mapLeft {
+                AuditLog.warn(identity, message = "Failed to provision SIM profile.")
                 NotFoundError("Failed to update SIM profile.", ApiErrorCode.FAILED_TO_UPDATE_SIM_PROFILE, it)
             }
         } catch (e: Exception) {
             logger.error("Failed to update SIM profile for customer with identity - $identity", e)
+            AuditLog.error(identity, message = "Failed to provision SIM profile.")
             Either.left(InternalServerError("Failed to update SIM profile", ApiErrorCode.FAILED_TO_UPDATE_SIM_PROFILE))
         }
     }
@@ -203,6 +210,7 @@ class SubscriberDAOImpl : SubscriberDAO {
     override fun sendEmailWithEsimActivationQrCode(identity: Identity, regionCode: String, iccId: String): Either<ApiError, SimProfile> {
         return try {
             storage.sendEmailWithActivationQrCode(identity, regionCode, iccId).mapLeft {
+                AuditLog.error(identity, message = "Failed to send email with Activation QR code for customer with identity - $identity")
                 NotFoundError("Failed to send email with Activation QR code.", ApiErrorCode.FAILED_TO_SEND_EMAIL_WITH_ESIM_ACTIVATION_QR_CODE, it)
             }
         } catch (e: Exception) {
