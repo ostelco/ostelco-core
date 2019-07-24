@@ -244,7 +244,8 @@ services:
     ambassadorMappingOptions:
       timeout_ms: 600000
     canary:
-      weight: 0
+      headers:
+        x-mode: prime-direct
 
   prime-alvin-api:
     name: alvin-api
