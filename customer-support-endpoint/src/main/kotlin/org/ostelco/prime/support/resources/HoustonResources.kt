@@ -1,7 +1,6 @@
 package org.ostelco.prime.support.resources
 
 import arrow.core.Either
-import arrow.core.flatMap
 import arrow.core.left
 import io.dropwizard.auth.Auth
 import org.ostelco.prime.apierror.ApiError
@@ -465,22 +464,19 @@ class AuditLogResource {
     @Path("{email}")
     @Produces(MediaType.APPLICATION_JSON)
     fun query(@Auth token: AccessTokenPrincipal?,
-                                @NotNull
-                                @PathParam("email")
-                                email: String): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-        return getCustomerId(email = email).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { customerId ->
-                    logger.info("${token.name} fetching audit log of $email customerId: $customerId")
-                    Response.status(Response.Status.OK).entity(auditLogStore.getCustomerActivityHistory(customerId = customerId))
-                })
-                .build()
-
-    }
+              @NotNull
+              @PathParam("email")
+              email: String): Response =
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                getCustomerId(email = email)
+                        .map { customerId ->
+                            logger.info("${token.name} fetching audit log of $email customerId: $customerId")
+                            auditLogStore.getCustomerActivityHistory(customerId = customerId)
+                        }
+                        .responseBuilder()
+            }.build()
 
     // TODO vihang: duplicate code
     private fun getCustomerId(email: String): Either<ApiError, String> {
