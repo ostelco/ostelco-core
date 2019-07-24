@@ -24,6 +24,7 @@ import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.storage.AdminDataSource
+import org.ostelco.prime.storage.AuditLogStore
 import java.util.regex.Pattern
 import javax.validation.constraints.NotNull
 import javax.ws.rs.DELETE
@@ -458,6 +459,57 @@ class NotifyResource {
 
     }
 
+    private fun getCustomerId(email: String): Either<ApiError, String> {
+        return try {
+            storage.getCustomer(identity = Identity(id = email, type = "EMAIL", provider = "email")).mapLeft {
+                NotFoundError("Did not find msisdn for this subscription.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS, it)
+            }.map {
+                it.id
+            }
+        } catch (e: Exception) {
+            logger.error("Did not find msisdn for email $email", e)
+            InternalServerError("Did not find subscription", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS).left()
+        }
+    }
+}
+
+
+/**
+ * Resource used to handle audit log related REST calls.
+ */
+@Path("/auditLog")
+class AuditLogResource {
+
+    private val logger by getLogger()
+
+    private val storage by lazy { getResource<AdminDataSource>() }
+    private val auditLogStore by lazy { getResource<AuditLogStore>() }
+
+    /**
+     * Sends a notification to all devices for a subscriber.
+     */
+    @GET
+    @Path("{email}")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun query(@Auth token: AccessTokenPrincipal?,
+                                @NotNull
+                                @PathParam("email")
+                                email: String): Response {
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .build()
+        }
+        return getCustomerId(email = email).fold(
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                { customerId ->
+                    logger.info("${token.name} fetching audit log of $email customerId: $customerId")
+                    Response.status(Response.Status.OK).entity(auditLogStore.getCustomerActivityHistory(customerId = customerId))
+                })
+                .build()
+
+    }
+
+    // TODO vihang: duplicate code
     private fun getCustomerId(email: String): Either<ApiError, String> {
         return try {
             storage.getCustomer(identity = Identity(id = email, type = "EMAIL", provider = "email")).mapLeft {

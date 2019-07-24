@@ -20,7 +20,6 @@ include ':email-notifier'
 include ':ext-auth-provider'
 include ':ext-myinfo-emulator'
 include ':firebase-extensions'
-include ':firebase-store'
 include ':graphql'
 include ':imei-lookup'
 include ':jersey'
@@ -68,7 +67,6 @@ project(':ekyc').projectDir = "$rootDir/ekyc" as File
 project(':email-notifier').projectDir = "$rootDir/email-notifier" as File
 project(':ext-auth-provider').projectDir = "$rootDir/ext-auth-provider" as File
 project(':ext-myinfo-emulator').projectDir = "$rootDir/ext-myinfo-emulator" as File
-project(':firebase-store').projectDir = "$rootDir/firebase-store" as File
 project(':firebase-extensions').projectDir = "$rootDir/firebase-extensions" as File
 project(':graphql').projectDir = "$rootDir/graphql" as File
 project(':imei-lookup').projectDir = "$rootDir/imei-lookup" as File

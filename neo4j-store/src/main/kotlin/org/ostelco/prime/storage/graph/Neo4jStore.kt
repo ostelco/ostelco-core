@@ -12,6 +12,7 @@ import arrow.instances.either.monad.monad
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.appnotifier.AppNotifier
+import org.ostelco.prime.auditlog.AuditLog
 import org.ostelco.prime.dsl.ReadTransaction
 import org.ostelco.prime.dsl.WriteTransaction
 import org.ostelco.prime.dsl.forCustomer
@@ -179,7 +180,7 @@ object Neo4jStoreSingleton : GraphStore {
     //
 
     private val identityEntity = Identity::class.entityType
-    
+
     private val customerEntity = Customer::class.entityType
 
     private val productEntity = Product::class.entityType
@@ -367,6 +368,7 @@ object Neo4jStoreSingleton : GraphStore {
                     fact { (Customer withId referredBy) referred (Customer withId customer.id) }.bind()
                 }
                 onNewCustomerAction.apply(identity = identity, customerId = customer.id, transaction = transaction).bind()
+                AuditLog.info(customerId = customer.id, message = "Customer is created")
             }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
@@ -383,6 +385,8 @@ object Neo4jStoreSingleton : GraphStore {
                         existingCustomer.copy(
                                 nickname = nickname ?: existingCustomer.nickname,
                                 contactEmail = contactEmail ?: existingCustomer.contactEmail)
+                    }.map {
+                        AuditLog.info(customerId = existingCustomer.id, message = "Updated nickname/contactEmail")
                     }
                 }
                 .ifFailedThenRollback(transaction)
@@ -581,8 +585,10 @@ object Neo4jStoreSingleton : GraphStore {
                             qrCode = simEntry.eSimActivationCode)
                             .mapLeft {
                                 logger.error(NOTIFY_OPS_MARKER, "Failed to send email to {}", customer.contactEmail)
+                                AuditLog.warn(customerId = customerId, message = "Failed to send email with QR code of provisioned SIM Profile")
                             }
                 }
+                AuditLog.info(customerId = customerId, message = "Provisioned SIM Profile")
                 org.ostelco.prime.model.SimProfile(
                         iccId = simEntry.iccId,
                         alias = "",
@@ -676,7 +682,7 @@ object Neo4jStoreSingleton : GraphStore {
                             ?: NotFoundError(type = simProfileEntity.name, id = iccId).left().bind<SimProfile>()
 
                     update { simProfile.copy(alias = alias) }.bind()
-
+                    AuditLog.info(customerId = customerId, message = "Updated alias of SIM Profile")
                     org.ostelco.prime.model.SimProfile(
                             iccId = simProfile.iccId,
                             alias = simProfile.alias,
@@ -801,7 +807,7 @@ object Neo4jStoreSingleton : GraphStore {
                 bundles.forEach { bundle ->
                     fact { (Subscription withMsisdn msisdn) consumesFrom (Bundle withId bundle.id) using SubscriptionToBundle() }.bind()
                 }
-
+                AuditLog.info(customerId = customerId, message = "Added SIM Profile and Subscription by Admin")
             }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
@@ -1006,6 +1012,7 @@ object Neo4jStoreSingleton : GraphStore {
                     createPurchaseRecordRelation(customer.id, purchaseRecord)
                             .mapLeft {
                                 logger.error("Failed to save purchase record for customer ${customer.id}, invoice-id $invoiceId, invoice will be voided in Stripe")
+                                AuditLog.error(customerId = customer.id, message = "Failed to save purchase record - invoice-id $invoiceId, invoice will be voided in Stripe")
                                 BadGatewayError("Failed to save purchase record",
                                         error = it)
                             }.bind()
@@ -1089,10 +1096,10 @@ object Neo4jStoreSingleton : GraphStore {
     /* Note: 'purchase-relation' info is first added when a successful purchase
              event has been received from Stripe. */
     private fun WriteTransaction.purchasePlan(customer: Customer,
-                             sku: String,
-                             taxRegionId: String?,
-                             sourceId: String?,
-                             saveCard: Boolean): Either<PaymentError, SubscriptionDetailsInfo> {
+                                              sku: String,
+                                              taxRegionId: String?,
+                                              sourceId: String?,
+                                              saveCard: Boolean): Either<PaymentError, SubscriptionDetailsInfo> {
         return IO {
             Either.monad<PaymentError>().binding {
 
@@ -1135,6 +1142,7 @@ object Neo4jStoreSingleton : GraphStore {
                         planId = sku,
                         taxRegionId = taxRegionId)
                         .mapLeft {
+                            AuditLog.error(customerId = customer.id, message = "Failed to subscribe to plan $sku")
                             BadGatewayError("Failed to subscribe ${customer.id} to plan $sku",
                                     error = it)
                         }
@@ -1341,8 +1349,8 @@ object Neo4jStoreSingleton : GraphStore {
                                         id = customerId)
                             })
                 }.bind()
+                AuditLog.info(customerId = customerId, message = "Added $bytes bytes to data bundle")
             }
-
             Unit
         }.fix()
     }.unsafeRunSync()
@@ -1366,7 +1374,7 @@ object Neo4jStoreSingleton : GraphStore {
             }
 
     fun WriteTransaction.createPurchaseRecordRelation(customerId: String,
-                                             purchaseRecord: PurchaseRecord): Either<StoreError, String> {
+                                                      purchaseRecord: PurchaseRecord): Either<StoreError, String> {
 
         val invoiceId = purchaseRecord.properties["invoiceId"]
 
@@ -1474,14 +1482,18 @@ object Neo4jStoreSingleton : GraphStore {
             customerToSegmentStore.create(
                     fromId = customerId,
                     toId = segmentId,
-                    transaction = transaction).mapLeft { storeError ->
-                if (storeError is NotCreatedError && storeError.type == customerToSegmentRelation.name) {
-                    logger.error("Failed to assign Customer - {} to a Segment - {}", customerId, segmentId)
-                    ValidationError(type = customerEntity.name, id = customerId, message = "Unsupported segment: $segmentId")
-                } else {
-                    storeError
-                }
-            }
+                    transaction = transaction)
+                    .map {
+                        AuditLog.info(customerId = customerId, message = "Assigned to segment - $segmentId")
+                    }
+                    .mapLeft { storeError ->
+                        if (storeError is NotCreatedError && storeError.type == customerToSegmentRelation.name) {
+                            logger.error("Failed to assign Customer - {} to a Segment - {}", customerId, segmentId)
+                            ValidationError(type = customerEntity.name, id = customerId, message = "Unsupported segment: $segmentId")
+                        } else {
+                            storeError
+                        }
+                    }
 
     //
     // eKYC - Jumio
@@ -1512,8 +1524,9 @@ object Neo4jStoreSingleton : GraphStore {
                                         kycStatus = KycStatus.PENDING,
                                         transaction = transaction)
                             }
-                            .flatMap {
-                                newScan.right()
+                            .map {
+                                AuditLog.info(customerId = customerId, message = "Created new Jumio scan id - ${newScan.id}")
+                                newScan
                             }
                 }
                 .ifFailedThenRollback(transaction)
@@ -1630,7 +1643,7 @@ object Neo4jStoreSingleton : GraphStore {
                         kycStatus = KycStatus.PENDING).bind()
 
                 val personData = try {
-                    when(version) {
+                    when (version) {
                         V2 -> myInfoKycV2Service
                         V3 -> myInfoKycV3Service
                     }.getPersonData(authorisationCode)
@@ -1780,6 +1793,8 @@ object Neo4jStoreSingleton : GraphStore {
         return IO {
             Either.monad<StoreError>().binding {
 
+                AuditLog.info(customerId = customerId, message = "Setting $kycType status to $kycStatus")
+
                 val approvedKycTypeSetList = getApprovedKycTypeSetList(regionCode)
 
                 val existingCustomerRegion = customerRegionRelationStore.get(
@@ -1803,6 +1818,7 @@ object Neo4jStoreSingleton : GraphStore {
                 }
 
                 if (approvedNow) {
+                    AuditLog.info(customerId = customerId, message = "Approved for region - $regionCode")
                     assignCustomerToSegment(
                             customerId = customerId,
                             segmentId = getInitialSegmentNameForRegion(regionCode, transaction),
@@ -1854,6 +1870,8 @@ object Neo4jStoreSingleton : GraphStore {
     override fun approveRegionForCustomer(
             customerId: String,
             regionCode: String): Either<StoreError, Unit> = writeTransaction {
+
+        AuditLog.info(customerId = customerId, message = "Approved for region - $regionCode by Admin")
 
         customerRegionRelationStore.create(
                 fromId = customerId,
@@ -2203,7 +2221,7 @@ object Neo4jStoreSingleton : GraphStore {
                        duplicates or more of the same transaction. */
                     if (it.value.size > 2)
                         logger.error(NOTIFY_OPS_MARKER,
-                            "${it.value.size} duplicates found for payment transaction/purchase record ${it.value.first()["chargeId"]}")
+                                "${it.value.size} duplicates found for payment transaction/purchase record ${it.value.first()["chargeId"]}")
                     it
                 }.filter {
                     it.value.size == 1

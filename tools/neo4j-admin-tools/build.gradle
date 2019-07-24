@@ -9,7 +9,6 @@ dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
 
   implementation project(":prime-modules")
-  implementation project(":firebase-store")
   implementation "org.neo4j.driver:neo4j-java-driver:$neo4jDriverVersion"
 
 }
