@@ -36,10 +36,9 @@ function severityToIcon(severity) {
 export const AuditLogRow = props => {
   return (
     <tr className={severityToTableRowClass(props.item.product.presentation.priceLabel)}>
-      <th><FontAwesomeIcon icon={severityToIcon(props.item.product.presentation.priceLabel)} /></th>
+      <th><FontAwesomeIcon icon={severityToIcon(props.item.product.presentation.priceLabel)} />&nbsp; {props.item.product.presentation.priceLabel}</th>
       <td>{convertTimestampToDate(props.item.timestamp)}</td>
-      <td>{props.item.product.presentation.priceLabel}</td>
-      <td>{props.item.product.presentation.productLabel}</td>
+      <td>{props.item.product.presentation.productLabel}{props.item.product.presentation.productLabel}{props.item.product.presentation.productLabel}</td>
     </tr>);
 }
 
@@ -89,9 +88,8 @@ class AuditLogs extends React.Component {
           <Table bordered>
             <thead>
               <tr>
-                <th></th>
+                <th><FontAwesomeIcon icon="bell" />&nbsp;Severity</th>
                 <th>Date</th>
-                <th>Severity</th>
                 <th>Message</th>
               </tr>
             </thead>
