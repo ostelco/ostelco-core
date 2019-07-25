@@ -42,7 +42,6 @@ class AppNotifyTokenStoreTest {
         )
 
         // fetch token using id
-        // FIXME
         assertEquals(
                 token1,
                 DocumentDataStoreSingleton.getNotificationToken(CUSTOMER_ID, token1.applicationID)
@@ -55,14 +54,12 @@ class AppNotifyTokenStoreTest {
         DocumentDataStoreSingleton.addNotificationToken(CUSTOMER_ID, token3)
 
         // fetch all stored tokens
-        // FIXME
         assertEquals(
                 setOf(token3, token2),
                 DocumentDataStoreSingleton.getNotificationTokens(CUSTOMER_ID).toSet()
         )
 
         // fetch token using id. Note that 1st and 3rd token share same id
-        // FIXME
         assertEquals(
                 token3,
                 DocumentDataStoreSingleton.getNotificationToken(CUSTOMER_ID, token1.applicationID)
@@ -71,7 +68,7 @@ class AppNotifyTokenStoreTest {
 
     companion object {
 
-        val CUSTOMER_ID = UUID.randomUUID().toString()
+        private val CUSTOMER_ID = UUID.randomUUID().toString()
 
         @JvmStatic
         @BeforeClass

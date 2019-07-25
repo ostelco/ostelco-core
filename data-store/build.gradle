@@ -14,8 +14,9 @@ dependencies {
   implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
 
   implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
+  
+  api "com.google.cloud:google-cloud-core:$googleCloudVersion"
   implementation "com.google.cloud:google-cloud-datastore:$googleCloudVersion"
-  implementation "com.google.cloud:google-cloud-storage:$googleCloudVersion"
 
   testImplementation "com.palantir.docker.compose:docker-compose-rule-junit4:$dockerComposeJunitRuleVersion"
 

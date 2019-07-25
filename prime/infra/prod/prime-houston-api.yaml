@@ -10,6 +10,28 @@ x-google-endpoints:
 schemes:
   - "https"
 paths:
+  "/ping":
+    get:
+      description: "Get current timestamp. Used to check liveliness of service."
+      produces:
+        - application/json
+      operationId: "ping"
+      responses:
+        200:
+          description: "Get current timestamp."
+          schema:
+            $ref: '#/definitions/Pong'
+  "/uuid":
+    get:
+      description: "Get a random uuid. Used to check liveliness of service."
+      produces:
+        - application/json
+      operationId: "uuid"
+      responses:
+        200:
+          description: "Get random UUID."
+          schema:
+            $ref: '#/definitions/Uuid'
   "/profiles/{id}":
     get:
       description: "Get profile for the given email-id or msisdn (url encoded)."
@@ -366,7 +388,45 @@ paths:
           description: "The email of the user"
           required: true
           type: string
+  "/auditLog/{email}":
+    get:
+      description: "Get list of all audit logs."
+      produces:
+        - application/json
+        - text/plain
+      operationId: "getAuditLogsByEmail"
+      responses:
+        200:
+          description: "List of AuditLog records."
+          schema:
+            $ref: '#/definitions/AuditLogList'
+        404:
+          description: "No Records found for the user."
+      security:
+        - auth0_jwt: []
+      parameters:
+        - name: email
+          in: path
+          description: "The email of the user"
+          required: true
+          type: string
+
 definitions:
+  Pong:
+    type: object
+    properties:
+      timestamp:
+        type: integer
+        format: int64
+    required:
+      - timestamp
+  Uuid:
+    type: object
+    properties:
+      uuid:
+        type: string
+    required:
+      - uuid
   Context:
     type: object
     properties:
@@ -532,6 +592,27 @@ definitions:
     - timestamp
     - product
     - end
+  AuditLogList:
+    type: array
+    items:
+      $ref: '#/definitions/AuditLog'
+  AuditLog:
+    type: object
+    properties:
+      timestamp:
+        description: "The time stamp of the log"
+        type: integer
+        format: int64
+      severity:
+        description: "Severity level for the log (INFO, WARN, ERROR)."
+        type: string
+      message:
+        description: "The log message."
+        type: string
+    required:
+      - timestamp
+      - severity
+      - message
   Product:
     type: object
     properties:

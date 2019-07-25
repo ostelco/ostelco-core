@@ -31,17 +31,23 @@ interface ClientDocumentStore {
     /**
      * Add token used for sending notification to user application
      */
-    fun addNotificationToken(customerId: String, token: ApplicationToken): Boolean
+    fun addNotificationToken(
+            customerId: String,
+            token: ApplicationToken): Boolean
 
     /**
      * Get token used for sending notification to user application
      */
-    fun getNotificationToken(customerId: String, applicationID: String): ApplicationToken?
+    fun getNotificationToken(
+            customerId: String,
+            applicationID: String): ApplicationToken?
 
     /**
      * Get token used for sending notification to user application
      */
-    fun removeNotificationToken(customerId: String, applicationID: String): Boolean
+    fun removeNotificationToken(
+            customerId: String,
+            applicationID: String): Boolean
 }
 
 interface AdminDocumentStore
@@ -182,7 +188,7 @@ interface ClientGraphStore {
     /**
      * Save address and Phone number
      */
-    fun saveAddressAndPhoneNumber(identity: Identity, address: String, phoneNumber: String) : Either<StoreError, Unit>
+    fun saveAddressAndPhoneNumber(identity: Identity, address: String, phoneNumber: String): Either<StoreError, Unit>
 }
 
 data class ConsumptionResult(val msisdnAnalyticsId: String, val granted: Long, val balance: Long)
@@ -344,10 +350,4 @@ interface AdminGraphStore {
      * @return differences found
      */
     fun checkPaymentTransactions(start: Long, end: Long): Either<PaymentError, List<Map<String, Any?>>>
-}
-
-interface ScanInformationStore {
-    // Function to upsert scan information data from the 3rd party eKYC scan
-    fun upsertVendorScanInformation(customerId: String, countryCode: String, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit>
-    fun getExtendedStatusInformation(scanInformation: ScanInformation): Map<String, String>
 }
