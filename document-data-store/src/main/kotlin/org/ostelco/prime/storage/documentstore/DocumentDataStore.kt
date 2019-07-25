@@ -17,7 +17,7 @@ object DocumentDataStoreSingleton : DocumentStore {
 
     private val logger by getLogger()
 
-    private const val PARENT_KIND = "Customer"
+    private const val PARENT_KIND = "org.ostelco.prime.model.Customer"
 
     private val notificationTokenStore = EntityStore(
             entityClass = ApplicationToken::class,

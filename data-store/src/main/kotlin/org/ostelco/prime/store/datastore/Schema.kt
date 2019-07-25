@@ -92,7 +92,7 @@ class EntityStore<E : Any>(
 
     fun fetch(query: (EntityQuery.Builder) -> EntityQuery.Builder,
               onAfterQueryResultRead: (QueryResults<Entity>) -> Unit = {}): Collection<E> {
-        val queryBuilder = Query.newEntityQueryBuilder().setKind(entityClass.simpleName)
+        val queryBuilder = Query.newEntityQueryBuilder().setKind(entityClass.qualifiedName)
         val queryResults = datastore.run(query(queryBuilder).build())
         val returnList = queryResults.asSequence().map(this::datastoreEntityToObject).toList()
         onAfterQueryResultRead(queryResults)
@@ -100,7 +100,7 @@ class EntityStore<E : Any>(
     }
 
     fun fetch(keyString: String, vararg parents: Pair<String, String>): Either<Throwable, E> = Try {
-        val keyFactory = parents.fold(initial = datastore.newKeyFactory().setKind(entityClass.simpleName)) { factory, parent ->
+        val keyFactory = parents.fold(initial = datastore.newKeyFactory().setKind(entityClass.qualifiedName)) { factory, parent ->
             factory.addAncestor(PathElement.of(parent.first, parent.second))
         }
         datastoreEntityToObject(datastore.get(keyFactory.newKey(keyString)))
@@ -132,7 +132,7 @@ class EntityStore<E : Any>(
         val map: MutableMap<String, Any?> = objectMapper.convertValue(entity, object : TypeReference<Map<String, Any?>>() {})
 
         val keyFactory = parents.fold(
-                initial = datastore.newKeyFactory().setKind(entityClass.simpleName)
+                initial = datastore.newKeyFactory().setKind(entityClass.qualifiedName)
         ) { factory, parent ->
             factory.addAncestor(PathElement.of(parent.first, parent.second))
         }
@@ -201,7 +201,7 @@ class EntityStore<E : Any>(
     }.toEither()
 
     fun delete(keyString: String, vararg parents: Pair<String, String>) = Try {
-        val keyFactory = parents.fold(initial = datastore.newKeyFactory().setKind(entityClass.simpleName)) { factory, parent ->
+        val keyFactory = parents.fold(initial = datastore.newKeyFactory().setKind(entityClass.qualifiedName)) { factory, parent ->
             factory.addAncestor(PathElement.of(parent.first, parent.second))
         }
         datastore.delete(keyFactory.newKey(keyString))
