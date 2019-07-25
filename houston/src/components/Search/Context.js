@@ -32,7 +32,6 @@ Context.propTypes = {
 
 function mapStateToProps(state) {
   let context = state.context;
-  console.log(JSON.stringify(state, null, 4));
   return {
     context
   };

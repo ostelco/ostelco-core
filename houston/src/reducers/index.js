@@ -1,5 +1,5 @@
 import { combineReducers } from 'redux';
-import  _ from 'lodash';
+import _ from 'lodash';
 import { authConstants, authActions } from '../actions/auth.actions';
 import { store } from '../helpers';
 import { subscriberConstants } from '../actions/subscriber.actions';
@@ -9,7 +9,14 @@ import { notifyConstants } from '../actions/notifiy.actions';
 import alert from '../actions/alert.actions';
 import notification from '../actions/notifiy.actions';
 import authentication from './auth.reducer';
-import { context, subscriber, subscriptions, bundles, paymentHistory } from './subscriber.reducer';
+import {
+  context,
+  subscriber,
+  subscriptions,
+  bundles,
+  paymentHistory,
+  auditLogs
+} from './subscriber.reducer';
 
 
 const appReducer = combineReducers({
@@ -20,7 +27,8 @@ const appReducer = combineReducers({
   context,
   subscriptions,
   bundles,
-  paymentHistory
+  paymentHistory,
+  auditLogs
 });
 
 function checkForAuthenticationFailures(errorObj) {
