@@ -4,12 +4,32 @@ import com.fasterxml.jackson.core.type.TypeReference
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import org.ostelco.prime.jsonmapper.objectMapper
+import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.Identity
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.ClientDataSource
 
 val clientDataSource by lazy { getResource<ClientDataSource>() }
 
+class CreateCustomerDataFetcher : DataFetcher<Map<String, Any>> {
+    override fun get(env: DataFetchingEnvironment): Map<String, Any> {
+
+        val contactEmail = env.getArgument<String>("contactEmail")
+        val name = env.getArgument<String>("nickname")
+        val identity = env.getContext<Identity>()
+        var ret: Map<String, Any>? = null
+
+        clientDataSource.addCustomer(identity = identity, customer = Customer(contactEmail = contactEmail, nickname = name))
+            .fold({}, {
+                clientDataSource.getCustomer(identity)
+                        .map { customer ->
+                            ret = objectMapper.convertValue<Map<String, Any>>(customer, object : TypeReference<Map<String, Any>>() {})
+                        }
+            })
+
+        return ret!!
+    }
+}
 
 class ContextDataFetcher : DataFetcher<Map<String, Any>> {
 

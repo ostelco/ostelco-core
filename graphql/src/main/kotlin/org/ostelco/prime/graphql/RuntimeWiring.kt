@@ -7,5 +7,8 @@ fun buildRuntimeWiring(): RuntimeWiring {
             .type("QueryType") { typeWiring ->
                 typeWiring.dataFetcher("context", ContextDataFetcher())
             }
+            .type("Mutation") { typeWiring ->
+                typeWiring.dataFetcher("createCustomer", CreateCustomerDataFetcher())
+            }
             .build()
 }

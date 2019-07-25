@@ -1,9 +1,14 @@
 schema {
   query: QueryType
+  mutation: Mutation
 }
 
 type QueryType {
   context: Context!
+}
+
+type Mutation {
+  createCustomer(contactEmail: String!, nickname: String!): Customer!
 }
 
 type Context {
