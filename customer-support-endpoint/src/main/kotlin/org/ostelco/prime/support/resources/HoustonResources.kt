@@ -1,17 +1,19 @@
 package org.ostelco.prime.support.resources
 
 import arrow.core.Either
+import arrow.core.flatMap
 import arrow.core.left
 import io.dropwizard.auth.Auth
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.apierror.ApiErrorCode
+import org.ostelco.prime.apierror.ApiErrorCode.FAILED_TO_FETCH_AUDIT_LOGS
 import org.ostelco.prime.apierror.ApiErrorMapper
 import org.ostelco.prime.apierror.InternalServerError
 import org.ostelco.prime.apierror.NotFoundError
+import org.ostelco.prime.apierror.responseBuilder
 import org.ostelco.prime.appnotifier.AppNotifier
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.getLogger
-import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Context
 import org.ostelco.prime.model.Customer
@@ -55,25 +57,20 @@ class ProfilesResource {
     fun getProfile(@Auth token: AccessTokenPrincipal?,
                    @NotNull
                    @PathParam("id")
-                   id: String): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-        return if (!isEmail(id)) {
-            logger.info("${token.name} Accessing profile for msisdn:$id")
-            getProfileForMsisdn(id).fold(
-                    { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                    { Response.status(Response.Status.OK).entity(asJson(it)) })
-                    .build()
-        } else {
-            logger.info("${token.name} Accessing profile for email:$id")
-            getProfile(Identity(id, "EMAIL", "email")).fold(
-                    { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                    { Response.status(Response.Status.OK).entity(asJson(it)) })
-                    .build()
-        }
-    }
+                   id: String): Response =
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                if (!isEmail(id)) {
+                    logger.info("${token.name} Accessing profile for msisdn:$id")
+                    getProfileForMsisdn(id)
+                            .responseBuilder()
+                } else {
+                    logger.info("${token.name} Accessing profile for email:$id")
+                    getProfile(Identity(id, "EMAIL", "email"))
+                            .responseBuilder()
+                }
+            }.build()
 
     /**
      * Get the subscriptions for this subscriber.
@@ -84,17 +81,15 @@ class ProfilesResource {
     fun getSubscriptions(@Auth token: AccessTokenPrincipal?,
                          @NotNull
                          @PathParam("email")
-                         email: String): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-        logger.info("${token.name} Accessing subscriptions for email:$email")
-        return getSubscriptions(Identity(email, "EMAIL", "email")).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { Response.status(Response.Status.OK).entity(asJson(it)) })
-                .build()
-    }
+                         email: String): Response =
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                logger.info("${token.name} Accessing subscriptions for email:$email")
+                getSubscriptions(Identity(email, "EMAIL", "email"))
+                        .responseBuilder()
+            }.build()
+
 
     /**
      * Get all the eKYC scan information for this subscriber.
@@ -105,17 +100,14 @@ class ProfilesResource {
     fun getAllScanInformation(@Auth token: AccessTokenPrincipal?,
                               @NotNull
                               @PathParam("email")
-                              email: String): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-        logger.info("${token.name} Accessing scan information for email:$email")
-        return getAllScanInformation(identity = Identity(id = email, type = "EMAIL", provider = "email")).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { Response.status(Response.Status.OK).entity(asJson(it)) })
-                .build()
-    }
+                              email: String): Response =
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                logger.info("${token.name} Accessing scan information for email:$email")
+                getAllScanInformation(identity = Identity(id = email, type = "EMAIL", provider = "email"))
+                        .responseBuilder()
+            }.build()
 
     private fun getAllScanInformation(identity: Identity): Either<ApiError, Collection<ScanInformation>> {
         return try {
@@ -176,17 +168,15 @@ class ProfilesResource {
     @GET
     @Path("{email}/plans")
     @Produces("application/json")
-    fun getPlans(@PathParam("email") email: String): Response {
-        return storage.getPlans(identity = Identity(id = email, type = "EMAIL", provider = "email")).fold(
-                {
-                    val err = ApiErrorMapper.mapStorageErrorToApiError("Failed to fetch plans",
-                            ApiErrorCode.FAILED_TO_FETCH_PLANS_FOR_SUBSCRIBER,
-                            it)
-                    Response.status(err.status).entity(asJson(err))
-                },
-                { Response.status(Response.Status.OK).entity(asJson(it)) }
-        ).build()
-    }
+    fun getPlans(@PathParam("email") email: String): Response =
+            storage.getPlans(identity = Identity(id = email, type = "EMAIL", provider = "email"))
+                    .mapLeft {
+                        ApiErrorMapper.mapStorageErrorToApiError("Failed to fetch plans",
+                                ApiErrorCode.FAILED_TO_FETCH_PLANS_FOR_SUBSCRIBER,
+                                it)
+                    }
+                    .responseBuilder()
+                    .build()
 
     /**
      * Attaches (subscribes) a subscriber to a plan.
@@ -196,20 +186,18 @@ class ProfilesResource {
     @Produces("application/json")
     fun attachPlan(@PathParam("email") email: String,
                    @PathParam("planId") planId: String,
-                   @QueryParam("trial_end") trialEnd: Long): Response {
-        return storage.subscribeToPlan(
-                identity = Identity(id = email, type = "EMAIL", provider = "email"),
-                planId = planId,
-                trialEnd = trialEnd).fold(
-                {
-                    val err = ApiErrorMapper.mapStorageErrorToApiError("Failed to store subscription",
-                            ApiErrorCode.FAILED_TO_STORE_SUBSCRIPTION,
-                            it)
-                    Response.status(err.status).entity(asJson(err))
-                },
-                { Response.status(Response.Status.CREATED) }
-        ).build()
-    }
+                   @QueryParam("trial_end") trialEnd: Long): Response =
+            storage.subscribeToPlan(
+                    identity = Identity(id = email, type = "EMAIL", provider = "email"),
+                    planId = planId,
+                    trialEnd = trialEnd)
+                    .mapLeft {
+                        ApiErrorMapper.mapStorageErrorToApiError("Failed to store subscription",
+                                ApiErrorCode.FAILED_TO_STORE_SUBSCRIPTION,
+                                it)
+                    }
+                    .responseBuilder(Response.Status.CREATED)
+                    .build()
 
     /**
      * Removes a plan from the list subscriptions for a subscriber.
@@ -218,19 +206,17 @@ class ProfilesResource {
     @Path("{email}/plans/{planId}")
     @Produces("application/json")
     fun detachPlan(@PathParam("email") email: String,
-                   @PathParam("planId") planId: String): Response {
-        return storage.unsubscribeFromPlan(
-                identity = Identity(id = email, type = "EMAIL", provider = "email"),
-                planId = planId).fold(
-                {
-                    val err = ApiErrorMapper.mapStorageErrorToApiError("Failed to remove subscription",
-                            ApiErrorCode.FAILED_TO_REMOVE_SUBSCRIPTION,
-                            it)
-                    Response.status(err.status).entity(asJson(err))
-                },
-                { Response.status(Response.Status.OK) }
-        ).build()
-    }
+                   @PathParam("planId") planId: String): Response =
+            storage.unsubscribeFromPlan(
+                    identity = Identity(id = email, type = "EMAIL", provider = "email"),
+                    planId = planId)
+                    .mapLeft {
+                        ApiErrorMapper.mapStorageErrorToApiError("Failed to remove subscription",
+                                ApiErrorCode.FAILED_TO_REMOVE_SUBSCRIPTION,
+                                it)
+                    }
+                    .responseBuilder()
+                    .build()
 }
 
 /**
@@ -250,17 +236,14 @@ class BundlesResource {
     fun getBundlesByEmail(@Auth token: AccessTokenPrincipal?,
                           @NotNull
                           @PathParam("email")
-                          email: String): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-        logger.info("${token.name} Accessing bundles for $email")
-        return getBundles(Identity(email, "EMAIL", "email")).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { Response.status(Response.Status.OK).entity(asJson(it)) })
-                .build()
-    }
+                          email: String): Response =
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                logger.info("${token.name} Accessing bundles for $email")
+                getBundles(Identity(email, "EMAIL", "email"))
+                        .responseBuilder()
+            }.build()
 
     // TODO: Reuse the one from SubscriberDAO
     private fun getBundles(identity: Identity): Either<ApiError, Collection<Bundle>> {
@@ -292,17 +275,14 @@ class PurchaseResource {
     fun getPurchaseHistoryByEmail(@Auth token: AccessTokenPrincipal?,
                                   @NotNull
                                   @PathParam("email")
-                                  email: String): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-        logger.info("${token.name} Accessing bundles for $email")
-        return getPurchaseHistory(Identity(email, "EMAIL", "email")).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { Response.status(Response.Status.OK).entity(asJson(it)) })
-                .build()
-    }
+                                  email: String): Response =
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                logger.info("${token.name} Accessing bundles for $email")
+                getPurchaseHistory(Identity(email, "EMAIL", "email"))
+                        .responseBuilder()
+            }.build()
 
     // TODO: Reuse the one from SubscriberDAO
     private fun getPurchaseHistory(identity: Identity): Either<ApiError, Collection<PurchaseRecord>> {
@@ -340,20 +320,18 @@ class RefundResource {
                               purchaseRecordId: String,
                               @NotNull
                               @QueryParam("reason")
-                              reason: String): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-        logger.info("${token.name} Refunding purchase for $email at id: $purchaseRecordId")
-        return refundPurchase(Identity(email, "EMAIL", "email"), purchaseRecordId, reason).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                {
-                    logger.info(NOTIFY_OPS_MARKER, "${token.name} refunded the purchase (id:$purchaseRecordId) for $email ")
-                    Response.status(Response.Status.OK).entity(asJson(it))
-                })
-                .build()
-    }
+                              reason: String): Response =
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                logger.info("${token.name} Refunding purchase for $email at id: $purchaseRecordId")
+                refundPurchase(Identity(email, "EMAIL", "email"), purchaseRecordId, reason)
+                        .map {
+                            logger.info(NOTIFY_OPS_MARKER, "${token.name} refunded the purchase (id:$purchaseRecordId) for $email ")
+                            it
+                        }
+                        .responseBuilder()
+            }.build()
 
     private fun refundPurchase(identity: Identity, purchaseRecordId: String, reason: String): Either<ApiError, ProductInfo> {
         return try {
@@ -387,17 +365,14 @@ class ContextResource {
     fun getContextByEmail(@Auth token: AccessTokenPrincipal?,
                           @NotNull
                           @PathParam("email")
-                          email: String): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-        logger.info("${token.name} Accessing context for $email")
-        return getContext(Identity(email, "EMAIL", "email")).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { Response.status(Response.Status.OK).entity(asJson(it)) })
-                .build()
-    }
+                          email: String): Response =
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                logger.info("${token.name} Accessing context for $email")
+                getContext(Identity(email, "EMAIL", "email"))
+                        .responseBuilder()
+            }.build()
 
     // TODO: Reuse the one from SubscriberDAO
     fun getContext(identity: Identity): Either<ApiError, Context> {
@@ -425,8 +400,10 @@ class ContextResource {
 @Path("/notify")
 class NotifyResource {
     private val logger by getLogger()
+
     private val storage by lazy { getResource<AdminDataSource>() }
     private val notifier by lazy { getResource<AppNotifier>() }
+
     /**
      * Sends a notification to all devices for a subscriber.
      */
@@ -442,22 +419,19 @@ class NotifyResource {
                                 title: String,
                                 @NotNull
                                 @QueryParam("message")
-                                message: String): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-        return getCustomerId(email = email).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { customerId ->
-                    logger.info("${token.name} Sending notification to $email customerId: $customerId")
-                    val data = mapOf("timestamp" to "${System.currentTimeMillis()}")
-                    notifier.notify(customerId, title, message, data)
-                    Response.status(Response.Status.OK).entity("Message Sent")
-                })
-                .build()
-
-    }
+                                message: String): Response =
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                getCustomerId(email = email)
+                        .map { customerId ->
+                            logger.info("${token.name} Sending notification to $email customerId: $customerId")
+                            val data = mapOf("timestamp" to "${System.currentTimeMillis()}")
+                            notifier.notify(customerId, title, message, data)
+                            customerId
+                        }
+                        .responseBuilder("Message Sent")
+            }.build()
 
     private fun getCustomerId(email: String): Either<ApiError, String> {
         return try {
@@ -492,22 +466,22 @@ class AuditLogResource {
     @Path("{email}")
     @Produces(MediaType.APPLICATION_JSON)
     fun query(@Auth token: AccessTokenPrincipal?,
-                                @NotNull
-                                @PathParam("email")
-                                email: String): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-        return getCustomerId(email = email).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { customerId ->
-                    logger.info("${token.name} fetching audit log of $email customerId: $customerId")
-                    Response.status(Response.Status.OK).entity(auditLogStore.getCustomerActivityHistory(customerId = customerId))
-                })
-                .build()
-
-    }
+              @NotNull
+              @PathParam("email")
+              email: String): Response =
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                getCustomerId(email = email)
+                        .flatMap { customerId ->
+                            logger.info("${token.name} fetching audit log of $email customerId: $customerId")
+                            auditLogStore.getCustomerActivityHistory(customerId = customerId)
+                                    .mapLeft { errorMessage ->
+                                        InternalServerError(errorMessage, FAILED_TO_FETCH_AUDIT_LOGS)
+                                    }
+                        }
+                        .responseBuilder()
+            }.build()
 
     // TODO vihang: duplicate code
     private fun getCustomerId(email: String): Either<ApiError, String> {

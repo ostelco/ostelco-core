@@ -1,7 +1,9 @@
 package org.ostelco.prime.storage.documentstore
 
+import arrow.core.Either
 import arrow.core.getOrElse
 import com.google.cloud.Timestamp
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Severity
 import org.ostelco.prime.storage.DocumentStore
@@ -13,16 +15,18 @@ class DocumentDataStore : DocumentStore by DocumentDataStoreSingleton
 
 object DocumentDataStoreSingleton : DocumentStore {
 
-    private const val PARENT_KIND = "Customer"
+    private val logger by getLogger()
+
+    private const val PARENT_KIND = "org.ostelco.prime.model.Customer"
 
     private val notificationTokenStore = EntityStore(
-            entityClass = ApplicationToken::class.java,
+            entityClass = ApplicationToken::class,
             type = config.storeType,
             namespace = config.namespace
     )
 
     private val customerActivityStore = EntityStore(
-            entityClass = CustomerActivity::class.java,
+            entityClass = CustomerActivity::class,
             type = config.storeType,
             namespace = config.namespace
     )
@@ -64,18 +68,23 @@ object DocumentDataStoreSingleton : DocumentStore {
     }
 
     override fun getCustomerActivityHistory(
-            customerId: String): Collection<org.ostelco.prime.model.CustomerActivity> {
+            customerId: String): Either<String, Collection<org.ostelco.prime.model.CustomerActivity>> {
 
         return customerActivityStore.fetchAll(
                 parentKind = PARENT_KIND,
                 parentKeyString = customerId)
-                .getOrElse { emptyList() }
-                .map { customerActivity ->
-                    org.ostelco.prime.model.CustomerActivity(
-                            timestamp = customerActivity.timestamp.toDate().time,
-                            severity = Severity.valueOf(customerActivity.severity),
-                            message = customerActivity.message
-                    )
+                .map { customerActivityList ->
+                    customerActivityList.map { customerActivity ->
+                        org.ostelco.prime.model.CustomerActivity(
+                                timestamp = customerActivity.timestamp.toDate().time,
+                                severity = Severity.valueOf(customerActivity.severity),
+                                message = customerActivity.message
+                        )
+                    }
+                }
+                .mapLeft {
+                    logger.error("Failed to fetch customer activity history", it)
+                    it.message ?: "Exception without message."
                 }
     }
 }
