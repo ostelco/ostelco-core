@@ -25,6 +25,9 @@ dependencies {
     api "io.grpc:grpc-protobuf:$grpcVersion"
     api "io.grpc:grpc-stub:$grpcVersion"
     api "io.grpc:grpc-core:$grpcVersion"
+    implementation "com.google.protobuf:protobuf-java:$protocVersion"
+    implementation "com.google.protobuf:protobuf-java-util:$protocVersion"
+    implementation "javax.annotation:javax.annotation-api:$javaxAnnotationVersion"
 
     implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
 

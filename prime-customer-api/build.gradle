@@ -22,7 +22,7 @@ sourceSets.main.resources.srcDir "${swaggerSources.'java-client'.code.outputDir}
 dependencies {
   swaggerCodegen "io.swagger:swagger-codegen-cli:$swaggerCodegenVersion"
 
-  implementation 'javax.annotation:javax.annotation-api:1.3.2'
+  implementation "javax.annotation:javax.annotation-api:$javaxAnnotationVersion"
 
   // taken from build/swagger-code-java-client/build.gradle
   implementation 'io.swagger:swagger-annotations:1.5.22'
