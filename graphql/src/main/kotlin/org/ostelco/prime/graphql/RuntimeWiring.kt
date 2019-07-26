@@ -8,7 +8,9 @@ fun buildRuntimeWiring(): RuntimeWiring {
                 typeWiring.dataFetcher("context", ContextDataFetcher())
             }
             .type("Mutation") { typeWiring ->
-                typeWiring.dataFetcher("createCustomer", CreateCustomerDataFetcher())
+                typeWiring
+                        .dataFetcher("createCustomer", CreateCustomerDataFetcher())
+                        .dataFetcher("deleteCustomer", DeleteCustomerDataFetcher())
             }
             .build()
 }

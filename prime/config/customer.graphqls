@@ -9,6 +9,7 @@ type QueryType {
 
 type Mutation {
   createCustomer(contactEmail: String!, nickname: String!): Customer!
+  deleteCustomer: Customer!
 }
 
 type Context {

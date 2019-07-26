@@ -20,12 +20,38 @@ class CreateCustomerDataFetcher : DataFetcher<Map<String, Any>> {
         var ret: Map<String, Any>? = null
 
         clientDataSource.addCustomer(identity = identity, customer = Customer(contactEmail = contactEmail, nickname = name))
-            .fold({}, {
+            .fold({
+                throw Exception(it.message)
+            }, {
                 clientDataSource.getCustomer(identity)
                         .map { customer ->
                             ret = objectMapper.convertValue<Map<String, Any>>(customer, object : TypeReference<Map<String, Any>>() {})
                         }
             })
+
+        return ret!!
+    }
+}
+
+class DeleteCustomerDataFetcher : DataFetcher<Map<String, Any>> {
+    override fun get(env: DataFetchingEnvironment): Map<String, Any> {
+
+        val identity = env.getContext<Identity>()
+        var ret: Map<String, Any>? = null
+
+        clientDataSource.getCustomer(identity)
+            .map { customer ->
+                ret = objectMapper.convertValue<Map<String, Any>>(customer, object : TypeReference<Map<String, Any>>() {})
+            }
+
+
+        clientDataSource.removeCustomer(identity)
+                .fold({
+                    throw Exception(it.message)
+                }, {
+                    it
+                })
+
 
         return ret!!
     }
