@@ -13,7 +13,7 @@ object Notifications {
     fun lowBalanceAlert(msisdn: String, reserved: Long, balance: Long) {
         val lowBalanceThreshold = ConfigRegistry.config.lowBalanceThreshold
         if ((balance < lowBalanceThreshold) && ((balance + reserved) > lowBalanceThreshold)) {
-            // ToDo : Title and message should differ depending on subscription
+            // TODO martin : Title and message should differ depending on subscription
             storage.getCustomerForMsisdn(msisdn).map { customer ->
                 appNotifier.notify(customer.id, "OYA", "You have less then " + lowBalanceThreshold / 1000000 + "Mb data left")
             }

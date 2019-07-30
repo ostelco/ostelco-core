@@ -80,7 +80,7 @@ object DocumentDataStoreSingleton : DocumentStore {
                                 severity = Severity.valueOf(customerActivity.severity),
                                 message = customerActivity.message
                         )
-                    }
+                    }.sortedByDescending { it.timestamp }
                 }
                 .mapLeft {
                     logger.error("Failed to fetch customer activity history", it)
