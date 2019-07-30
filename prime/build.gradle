@@ -18,7 +18,7 @@ sourceSets {
   }
 }
 
-version = "1.55.5"
+version = "1.55.6"
 
 repositories {
   maven {
