@@ -2,21 +2,13 @@ import React from 'react';
 import _ from 'lodash';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Table, Card, CardBody, CardTitle } from 'reactstrap';
+import { Card, CardBody, CardTitle } from 'reactstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import ReactTable from "react-table"
+import "react-table/react-table.css";
 
 import { convertTimestampToDate } from '../../helpers';
 
-function severityToTableRowClass(severity) {
-  switch (_.toLower(severity)) {
-    case "warn":
-      return "table-warning";
-    case "error":
-      return "table-danger";
-    default:
-      return null; // Default table class
-  }
-}
 function severityToIcon(severity) {
   switch (_.toLower(severity)) {
     case "warn":
@@ -27,22 +19,6 @@ function severityToIcon(severity) {
       return "info"
   }
 }
-export const AuditLogRow = props => {
-  return (
-    <tr className={severityToTableRowClass(props.item.severity)}>
-      <th><FontAwesomeIcon icon={severityToIcon(props.item.severity)} />&nbsp; {props.item.severity}</th>
-      <td>{convertTimestampToDate(props.item.timestamp)}</td>
-      <td>{props.item.message}</td>
-    </tr>);
-}
-
-AuditLogRow.propTypes = {
-  item: PropTypes.shape({
-    timestamp: PropTypes.number.isRequired,
-    severity: PropTypes.string.isRequired,
-    message: PropTypes.string.isRequired
-  })
-};
 
 class AuditLogs extends React.Component {
   constructor(props, context) {
@@ -54,6 +30,44 @@ class AuditLogs extends React.Component {
 
 
   render() {
+    let columns = [
+      {
+        Header: "Date",
+        id: "1",
+        accessor: d => convertTimestampToDate(d.timestamp),
+        width: 200
+      },
+      {
+        Header: "Severity",
+        id: "2",
+        accessor: "severity",
+        width: 200,
+        Cell: row => (
+          <div
+            style={{
+              backgroundColor: row.value == "INFO" ? '#85cc00'
+                : row.value == "WARN" ? '#ffbf00'
+                  : '#ff2e00',
+              borderRadius: '2px',
+              transition: 'all .2s ease-out'
+            }}
+          >
+            &nbsp;&nbsp;&nbsp;
+            <FontAwesomeIcon icon={severityToIcon(row.value)} />
+            &nbsp;&nbsp;
+            {row.value}
+          </div>
+        )
+      },
+      {
+        Header: "Message",
+        id: "3",
+        accessor: "message",
+        filterMethod: (filter, row) =>
+          _.includes(row[filter.id], filter.value)
+      }
+    ]
+
     const { props } = this;
     if (!props.auditLogs) {
       return null;
@@ -66,18 +80,12 @@ class AuditLogs extends React.Component {
       <Card>
         <CardBody>
           <CardTitle>Audit Logs</CardTitle>
-          <Table bordered>
-            <thead>
-              <tr>
-                <th><FontAwesomeIcon icon="bell" />&nbsp;Severity</th>
-                <th>Date</th>
-                <th>Message</th>
-              </tr>
-            </thead>
-            <tbody>
-              {listItems}
-            </tbody>
-          </Table>
+          <ReactTable
+            data={props.auditLogs}
+            columns={columns}
+            className="-striped -highlight"
+            filterable
+          />
         </CardBody>
       </Card>
     );
