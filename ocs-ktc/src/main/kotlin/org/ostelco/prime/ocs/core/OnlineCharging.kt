@@ -3,7 +3,13 @@ package org.ostelco.prime.ocs.core
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.ostelco.ocs.api.*
+import org.ostelco.ocs.api.CreditControlAnswerInfo
+import org.ostelco.ocs.api.CreditControlRequestInfo
+import org.ostelco.ocs.api.MultipleServiceCreditControl
+import org.ostelco.ocs.api.MultipleServiceCreditControlInfo
+import org.ostelco.ocs.api.ReportingReason
+import org.ostelco.ocs.api.ResultCode
+import org.ostelco.ocs.api.ServiceUnit
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.ocs.analytics.AnalyticsReporter
@@ -37,8 +43,8 @@ object OnlineCharging : OcsAsyncRequestConsumer {
             responseBuilder.setRequestNumber(request.requestNumber)
 
             // these are keepalives to keep latency low
-            if (msisdn.equals("keepalive")) {
-                responseBuilder.setRequestId(request.requestId).setMsisdn("keepalive").setResultCode(ResultCode.UNKNOWN)
+            if (msisdn == "keepalive") {
+                responseBuilder.setRequestId(request.requestId).setMsisdn("keepalive").resultCode = ResultCode.UNKNOWN
                 returnCreditControlAnswer(responseBuilder.buildPartial())
             } else {
 
@@ -84,7 +90,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                     doneSignal.await(2, TimeUnit.SECONDS)
 
                     if (responseBuilder.msccCount == 0) {
-                        responseBuilder.setValidityTime(86400)
+                        responseBuilder.validityTime = 86400
                     }
 
                     synchronized(OnlineCharging) {
