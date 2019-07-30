@@ -1,6 +1,5 @@
 package org.ostelco.prime.graphql
 
-import arrow.core.Either
 import com.fasterxml.jackson.core.type.TypeReference
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
