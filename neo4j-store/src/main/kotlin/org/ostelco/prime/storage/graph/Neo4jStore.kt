@@ -1642,30 +1642,40 @@ object Neo4jStoreSingleton : GraphStore {
                         kycType = MY_INFO,
                         kycStatus = KycStatus.PENDING).bind()
 
-                val personData = try {
+                val myInfoData = try {
                     when (version) {
                         V2 -> myInfoKycV2Service
                         V3 -> myInfoKycV3Service
                     }.getPersonData(authorisationCode)
-                            ?.right()
-                            ?: SystemError(
-                                    type = "MyInfo Auth Code",
-                                    id = authorisationCode,
-                                    message = "Failed to fetched MyInfo $version"
-                            ).left() as Either<SystemError, String>
                 } catch (e: Exception) {
                     logger.error("Failed to fetched MyInfo $version using authCode = $authorisationCode", e)
-                    SystemError(
-                            type = "MyInfo Auth Code",
-                            id = authorisationCode,
-                            message = "Failed to fetched MyInfo $version").left()
-                }.bind()
+                    null
+                } ?: SystemError(
+                                type = "MyInfo Auth Code",
+                                id = authorisationCode,
+                                message = "Failed to fetched MyInfo $version").left().bind()
+
+                // TODO vihang: Should we set status for NRIC_FIN to APPROVED?
+
+                // set NRIC_FIN KYC Status to Approved
+//                setKycStatus(
+//                        customerId = customerId,
+//                        regionCode = "sg",
+//                        kycType = NRIC_FIN).bind()
+
+                val personData = myInfoData.personData ?: SystemError(
+                        type = "MyInfo Auth Code",
+                        id = authorisationCode,
+                        message = "Failed to fetched MyInfo $version").left().bind()
 
                 secureArchiveService.archiveEncrypted(
                         customerId = customerId,
                         fileName = "myInfoData",
                         regionCodes = listOf("sg"),
-                        dataMap = mapOf("personData" to personData.toByteArray())
+                        dataMap = mapOf(
+                                "uinFin" to myInfoData.uinFin.toByteArray(),
+                                "personData" to personData.toByteArray()
+                        )
                 ).bind()
 
                 // set MY_INFO KYC Status to Approved
