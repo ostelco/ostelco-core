@@ -11,6 +11,14 @@ fun buildRuntimeWiring(): RuntimeWiring {
                 typeWiring
                         .dataFetcher("createCustomer", CreateCustomerDataFetcher())
                         .dataFetcher("deleteCustomer", DeleteCustomerDataFetcher())
+                        .dataFetcher("createScan", CreateScanDataFetcher())
+                        .dataFetcher("createApplicationToken", CreateApplicationTokenFetcher())
+                        .dataFetcher("purchaseProduct", PurchaseProductDataFetcher())
+                        .dataFetcher("createSimProfile", CreateSimProfileDataFetcher())
+                        .dataFetcher("sendEmailWithActivationQrCode", SendEmailWithActivationQrCodeDataFetcher())
+                        .dataFetcher("createAddressAndPhoneNumber", CreateAddressAndPhoneNumberDataFetcher())
+                        .dataFetcher("validateNRIC", ValidateNRICDataFetcher())
+
             }
             .build()
 }

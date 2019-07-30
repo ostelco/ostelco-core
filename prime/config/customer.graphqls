@@ -10,6 +10,39 @@ type QueryType {
 type Mutation {
   createCustomer(contactEmail: String!, nickname: String!): Customer!
   deleteCustomer: Customer!
+  createScan(regionCode: String!): ScanInformation!
+  createApplicationToken(token: ApplicationTokenInput): ApplicationToken!
+  purchaseProduct(sku: String!, sourceId: String!): Product!
+  createSimProfile(regionCode: String!, profileType: String!): SimProfile!
+  sendEmailWithActivationQrCode(regionCode: String!, iccId: String!): SimProfile!
+  createAddressAndPhoneNumber(address: String!, phoneNumber: String!): AddressInfo!
+  validateNRIC(nric: String!): NricInfo!
+}
+
+type NricInfo {
+  nric: String!
+}
+
+type AddressInfo {
+  address: String!
+  phoneNumber: String!
+}
+
+input ApplicationTokenInput {
+  token: String!
+  tokenType: String!
+  applicationID: String!
+}
+
+type ApplicationToken {
+  token: String!
+  tokenType: String!
+  applicationID: String!
+}
+
+type ScanInformation {
+  id: String!
+  countryCode: String!
 }
 
 type Context {
