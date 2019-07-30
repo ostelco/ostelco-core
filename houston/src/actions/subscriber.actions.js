@@ -143,6 +143,8 @@ const fetchAuditLogsByEmail = (email) => ({
 
 // TODO: API based implementaion. Reference: https://github.com/reduxjs/redux/issues/1676
 const getSubscriberAndBundlesByEmail = (email) => (dispatch, getState) => {
+  localStorage.setItem('searchedEmail', email)
+
   email = encodeEmail(email);
   const handleError = (error) => {
     console.log('Error reported.', error);
