@@ -1642,30 +1642,40 @@ object Neo4jStoreSingleton : GraphStore {
                         kycType = MY_INFO,
                         kycStatus = KycStatus.PENDING).bind()
 
-                val personData = try {
+                val myInfoData = try {
                     when (version) {
                         V2 -> myInfoKycV2Service
                         V3 -> myInfoKycV3Service
                     }.getPersonData(authorisationCode)
-                            ?.right()
-                            ?: SystemError(
-                                    type = "MyInfo Auth Code",
-                                    id = authorisationCode,
-                                    message = "Failed to fetched MyInfo $version"
-                            ).left() as Either<SystemError, String>
                 } catch (e: Exception) {
                     logger.error("Failed to fetched MyInfo $version using authCode = $authorisationCode", e)
-                    SystemError(
-                            type = "MyInfo Auth Code",
-                            id = authorisationCode,
-                            message = "Failed to fetched MyInfo $version").left()
-                }.bind()
+                    null
+                } ?: SystemError(
+                                type = "MyInfo Auth Code",
+                                id = authorisationCode,
+                                message = "Failed to fetched MyInfo $version").left().bind()
+
+                // TODO vihang: Should we set status for NRIC_FIN to APPROVED?
+
+                // set NRIC_FIN KYC Status to Approved
+//                setKycStatus(
+//                        customerId = customerId,
+//                        regionCode = "sg",
+//                        kycType = NRIC_FIN).bind()
+
+                val personData = myInfoData.personData ?: SystemError(
+                        type = "MyInfo Auth Code",
+                        id = authorisationCode,
+                        message = "Failed to fetched MyInfo $version").left().bind()
 
                 secureArchiveService.archiveEncrypted(
                         customerId = customerId,
                         fileName = "myInfoData",
                         regionCodes = listOf("sg"),
-                        dataMap = mapOf("personData" to personData.toByteArray())
+                        dataMap = mapOf(
+                                "uinFin" to myInfoData.uinFin.toByteArray(),
+                                "personData" to personData.toByteArray()
+                        )
                 ).bind()
 
                 // set MY_INFO KYC Status to Approved
@@ -1783,6 +1793,8 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
 
+    // FIXME: vihang This implementation has risk of loss of data due during concurrency to stale read since it does
+    // READ-UPDATE-WRITE.
     private fun setKycStatus(
             customerId: String,
             regionCode: String,
@@ -1793,8 +1805,6 @@ object Neo4jStoreSingleton : GraphStore {
         return IO {
             Either.monad<StoreError>().binding {
 
-                AuditLog.info(customerId = customerId, message = "Setting $kycType status to $kycStatus")
-
                 val approvedKycTypeSetList = getApprovedKycTypeSetList(regionCode)
 
                 val existingCustomerRegion = customerRegionRelationStore.get(
@@ -1803,7 +1813,31 @@ object Neo4jStoreSingleton : GraphStore {
                         transaction = transaction)
                         .getOrElse { CustomerRegion(status = PENDING, kycStatusMap = getKycStatusMapForRegion(regionCode)) }
 
-                val newKycStatusMap = existingCustomerRegion.kycStatusMap.copy(key = kycType, value = kycStatus)
+                val existingKycStatusMap = existingCustomerRegion.kycStatusMap
+                val existingKycStatus = existingKycStatusMap[kycType]
+                val newKycStatus = when(existingKycStatus) {
+                    // APPROVED is end state. No more state change.
+                    KycStatus.APPROVED -> KycStatus.APPROVED
+                    // Only REJECTED to APPROVED is allowed state change.
+                    REJECTED -> when(kycStatus) {
+                        KycStatus.APPROVED -> KycStatus.APPROVED
+                        else -> REJECTED
+                    }
+                    // PENDING to 'any' is allowed
+                    else -> kycStatus
+                }
+
+                if (existingKycStatus != newKycStatus) {
+                    if (kycStatus == newKycStatus) {
+                        AuditLog.info(customerId = customerId, message = "Setting $kycType status from $existingKycStatus to $newKycStatus")
+                    } else {
+                        AuditLog.info(customerId = customerId, message = "Setting $kycType status from $existingKycStatus to $newKycStatus instead of $kycStatus")
+                    }
+                } else {
+                    AuditLog.info(customerId = customerId, message = "Ignoring setting $kycType status to $kycStatus since it is already $existingKycStatus")
+                }
+
+                val newKycStatusMap = existingKycStatusMap.copy(key = kycType, value = newKycStatus)
 
                 val approved = approvedKycTypeSetList.any { kycTypeSet ->
                     newKycStatusMap.filter { it.value == KycStatus.APPROVED }.keys.containsAll(kycTypeSet)

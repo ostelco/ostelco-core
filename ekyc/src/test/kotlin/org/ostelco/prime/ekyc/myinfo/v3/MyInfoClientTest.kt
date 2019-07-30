@@ -108,8 +108,9 @@ class MyInfoClientTest {
     @Test
     fun `test myInfo client`() {
         val durationInMilliSec = measureTimeMillis {
-            val personDataJson = MyInfoClientSingleton.getPersonData(authorisationCode = "authorisation-code")
-            logger.info("MyInfo PersonData: {}", personDataJson)
+            val myInfoData = MyInfoClientSingleton.getPersonData(authorisationCode = "authorisation-code")
+            logger.info("MyInfo - UIN/FIN: {}", myInfoData?.uinFin)
+            logger.info("MyInfo - PersonData: {}", myInfoData?.personData)
         }
         logger.info("Time taken to fetch personData: {} sec", durationInMilliSec / 1000)
     }
