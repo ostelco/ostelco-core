@@ -45,8 +45,8 @@ class AuditLogs extends React.Component {
         Cell: row => (
           <div
             style={{
-              backgroundColor: row.value == "INFO" ? '#85cc00'
-                : row.value == "WARN" ? '#ffbf00'
+              backgroundColor: row.value === "INFO" ? '#85cc00'
+                : row.value === "WARN" ? '#ffbf00'
                   : '#ff2e00',
               borderRadius: '2px',
               transition: 'all .2s ease-out'
@@ -72,9 +72,6 @@ class AuditLogs extends React.Component {
     if (!props.auditLogs) {
       return null;
     }
-    const listItems = props.auditLogs.map((log) =>
-      <AuditLogRow item={log} key={log.timestamp} />
-    );
 
     return (
       <Card>
