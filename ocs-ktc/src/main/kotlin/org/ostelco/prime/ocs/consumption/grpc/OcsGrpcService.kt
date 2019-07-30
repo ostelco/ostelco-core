@@ -7,6 +7,7 @@ import org.ostelco.ocs.api.CreditControlAnswerInfo
 import org.ostelco.ocs.api.CreditControlRequestInfo
 import org.ostelco.ocs.api.CreditControlRequestType.NONE
 import org.ostelco.ocs.api.OcsServiceGrpc
+import org.ostelco.prime.activation.Activation
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.ocs.consumption.OcsAsyncRequestConsumer
 import java.util.*
@@ -38,10 +39,12 @@ import java.util.*
  * see that a client invokes a method, and listens for a stream of information related to
  * that particular stream.
  */
-class OcsGrpcService(private val ocsAsyncRequestConsumer: OcsAsyncRequestConsumer) : OcsServiceGrpc.OcsServiceImplBase() {
+class OcsGrpcService(private val ocsAsyncRequestConsumer: OcsAsyncRequestConsumer)
+    : OcsServiceGrpc.OcsServiceImplBase(), Activation {
 
     private val logger by getLogger()
 
+    private val activationResponseStreams = mutableSetOf<StreamObserver<ActivateResponse>>()
     /**
      * Method to handle Credit-Control-Requests
      *
@@ -104,9 +107,16 @@ class OcsGrpcService(private val ocsAsyncRequestConsumer: OcsAsyncRequestConsume
 
         val initialDummyResponse = ActivateResponse.newBuilder().setMsisdn("").build()
         activateResponse.onNext(initialDummyResponse)
+        activationResponseStreams.add(activateResponse)
     }
 
     private fun newUniqueStreamId(): String {
         return UUID.randomUUID().toString()
+    }
+
+    override fun activate(msisdn: String) {
+        activationResponseStreams.forEach { activateResponse ->
+            activateResponse.onNext(ActivateResponse.newBuilder().setMsisdn(msisdn).build())
+        }
     }
 }
