@@ -90,7 +90,7 @@ internal class ScanInfoShredder(private val config: ScanInfoShredderConfig) {
     val expiryDuration = 1209600000 // 2 Weeks in Milliseconds
 
     internal val scanMetadataStore = EntityStore(
-            entityClass = ScanMetadata::class.java,
+            entityClass = ScanMetadata::class,
             type = config.storeType,
             namespace = config.namespace)
 

@@ -1,7 +1,10 @@
-package org.ostelco.ext.myinfo
+package org.ostelco.ext.myinfo.v2
 
+import org.ostelco.ext.myinfo.JsonUtils.compactJson
+import org.ostelco.ext.myinfo.JweCompactUtils
 import org.ostelco.ext.myinfo.JwtUtils.createAccessToken
 import org.ostelco.ext.myinfo.JwtUtils.getClaims
+import org.ostelco.ext.myinfo.MyInfoEmulatorConfig
 import org.ostelco.prime.getLogger
 import javax.ws.rs.Consumes
 import javax.ws.rs.FormParam
@@ -17,7 +20,7 @@ import javax.ws.rs.core.HttpHeaders
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
-@Path("/token")
+@Path("/v2/token")
 class TokenResource(private val config: MyInfoEmulatorConfig) {
 
     private val logger by getLogger()
@@ -79,7 +82,7 @@ class TokenResource(private val config: MyInfoEmulatorConfig) {
     }
 }
 
-@Path("/person")
+@Path("/v2/person")
 class PersonResource(private val config: MyInfoEmulatorConfig) {
 
     private val logger by getLogger()
@@ -126,7 +129,7 @@ class PersonResource(private val config: MyInfoEmulatorConfig) {
                 .build()
     }
 
-    private fun getPersonData(uinFin: String): String = """
+    private fun getPersonData(uinFin: String): String = compactJson("""
 {
   "name": {
     "lastupdated": "2018-03-20",
@@ -179,6 +182,5 @@ class PersonResource(private val config: MyInfoEmulatorConfig) {
     "building": "PEARL GARDEN"
   },
   "uinfin": "$uinFin"
-}
-    """.trimIndent().replace("\n", "").replace(" ", "")
+}""")
 }

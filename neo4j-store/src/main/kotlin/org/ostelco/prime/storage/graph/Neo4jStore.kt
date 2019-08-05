@@ -12,6 +12,7 @@ import arrow.instances.either.monad.monad
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.appnotifier.AppNotifier
+import org.ostelco.prime.auditlog.AuditLog
 import org.ostelco.prime.dsl.ReadTransaction
 import org.ostelco.prime.dsl.WriteTransaction
 import org.ostelco.prime.dsl.forCustomer
@@ -50,6 +51,9 @@ import org.ostelco.prime.model.KycType.ADDRESS_AND_PHONE_NUMBER
 import org.ostelco.prime.model.KycType.JUMIO
 import org.ostelco.prime.model.KycType.MY_INFO
 import org.ostelco.prime.model.KycType.NRIC_FIN
+import org.ostelco.prime.model.MyInfoApiVersion
+import org.ostelco.prime.model.MyInfoApiVersion.V2
+import org.ostelco.prime.model.MyInfoApiVersion.V3
 import org.ostelco.prime.model.PaymentType.SUBSCRIPTION
 import org.ostelco.prime.model.Plan
 import org.ostelco.prime.model.Price
@@ -176,7 +180,7 @@ object Neo4jStoreSingleton : GraphStore {
     //
 
     private val identityEntity = Identity::class.entityType
-    
+
     private val customerEntity = Customer::class.entityType
 
     private val productEntity = Product::class.entityType
@@ -364,6 +368,7 @@ object Neo4jStoreSingleton : GraphStore {
                     fact { (Customer withId referredBy) referred (Customer withId customer.id) }.bind()
                 }
                 onNewCustomerAction.apply(identity = identity, customerId = customer.id, transaction = transaction).bind()
+                AuditLog.info(customerId = customer.id, message = "Customer is created")
             }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
@@ -380,6 +385,8 @@ object Neo4jStoreSingleton : GraphStore {
                         existingCustomer.copy(
                                 nickname = nickname ?: existingCustomer.nickname,
                                 contactEmail = contactEmail ?: existingCustomer.contactEmail)
+                    }.map {
+                        AuditLog.info(customerId = existingCustomer.id, message = "Updated nickname/contactEmail")
                     }
                 }
                 .ifFailedThenRollback(transaction)
@@ -578,8 +585,10 @@ object Neo4jStoreSingleton : GraphStore {
                             qrCode = simEntry.eSimActivationCode)
                             .mapLeft {
                                 logger.error(NOTIFY_OPS_MARKER, "Failed to send email to {}", customer.contactEmail)
+                                AuditLog.warn(customerId = customerId, message = "Failed to send email with QR code of provisioned SIM Profile")
                             }
                 }
+                AuditLog.info(customerId = customerId, message = "Provisioned SIM Profile")
                 org.ostelco.prime.model.SimProfile(
                         iccId = simEntry.iccId,
                         alias = "",
@@ -673,7 +682,7 @@ object Neo4jStoreSingleton : GraphStore {
                             ?: NotFoundError(type = simProfileEntity.name, id = iccId).left().bind<SimProfile>()
 
                     update { simProfile.copy(alias = alias) }.bind()
-
+                    AuditLog.info(customerId = customerId, message = "Updated alias of SIM Profile")
                     org.ostelco.prime.model.SimProfile(
                             iccId = simProfile.iccId,
                             alias = simProfile.alias,
@@ -798,7 +807,7 @@ object Neo4jStoreSingleton : GraphStore {
                 bundles.forEach { bundle ->
                     fact { (Subscription withMsisdn msisdn) consumesFrom (Bundle withId bundle.id) using SubscriptionToBundle() }.bind()
                 }
-
+                AuditLog.info(customerId = customerId, message = "Added SIM Profile and Subscription by Admin")
             }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
@@ -1003,6 +1012,7 @@ object Neo4jStoreSingleton : GraphStore {
                     createPurchaseRecordRelation(customer.id, purchaseRecord)
                             .mapLeft {
                                 logger.error("Failed to save purchase record for customer ${customer.id}, invoice-id $invoiceId, invoice will be voided in Stripe")
+                                AuditLog.error(customerId = customer.id, message = "Failed to save purchase record - invoice-id $invoiceId, invoice will be voided in Stripe")
                                 BadGatewayError("Failed to save purchase record",
                                         error = it)
                             }.bind()
@@ -1086,10 +1096,10 @@ object Neo4jStoreSingleton : GraphStore {
     /* Note: 'purchase-relation' info is first added when a successful purchase
              event has been received from Stripe. */
     private fun WriteTransaction.purchasePlan(customer: Customer,
-                             sku: String,
-                             taxRegionId: String?,
-                             sourceId: String?,
-                             saveCard: Boolean): Either<PaymentError, SubscriptionDetailsInfo> {
+                                              sku: String,
+                                              taxRegionId: String?,
+                                              sourceId: String?,
+                                              saveCard: Boolean): Either<PaymentError, SubscriptionDetailsInfo> {
         return IO {
             Either.monad<PaymentError>().binding {
 
@@ -1132,6 +1142,7 @@ object Neo4jStoreSingleton : GraphStore {
                         planId = sku,
                         taxRegionId = taxRegionId)
                         .mapLeft {
+                            AuditLog.error(customerId = customer.id, message = "Failed to subscribe to plan $sku")
                             BadGatewayError("Failed to subscribe ${customer.id} to plan $sku",
                                     error = it)
                         }
@@ -1338,8 +1349,8 @@ object Neo4jStoreSingleton : GraphStore {
                                         id = customerId)
                             })
                 }.bind()
+                AuditLog.info(customerId = customerId, message = "Added $bytes bytes to data bundle")
             }
-
             Unit
         }.fix()
     }.unsafeRunSync()
@@ -1363,7 +1374,7 @@ object Neo4jStoreSingleton : GraphStore {
             }
 
     fun WriteTransaction.createPurchaseRecordRelation(customerId: String,
-                                             purchaseRecord: PurchaseRecord): Either<StoreError, String> {
+                                                      purchaseRecord: PurchaseRecord): Either<StoreError, String> {
 
         val invoiceId = purchaseRecord.properties["invoiceId"]
 
@@ -1471,14 +1482,18 @@ object Neo4jStoreSingleton : GraphStore {
             customerToSegmentStore.create(
                     fromId = customerId,
                     toId = segmentId,
-                    transaction = transaction).mapLeft { storeError ->
-                if (storeError is NotCreatedError && storeError.type == customerToSegmentRelation.name) {
-                    logger.error("Failed to assign Customer - {} to a Segment - {}", customerId, segmentId)
-                    ValidationError(type = customerEntity.name, id = customerId, message = "Unsupported segment: $segmentId")
-                } else {
-                    storeError
-                }
-            }
+                    transaction = transaction)
+                    .map {
+                        AuditLog.info(customerId = customerId, message = "Assigned to segment - $segmentId")
+                    }
+                    .mapLeft { storeError ->
+                        if (storeError is NotCreatedError && storeError.type == customerToSegmentRelation.name) {
+                            logger.error("Failed to assign Customer - {} to a Segment - {}", customerId, segmentId)
+                            ValidationError(type = customerEntity.name, id = customerId, message = "Unsupported segment: $segmentId")
+                        } else {
+                            storeError
+                        }
+                    }
 
     //
     // eKYC - Jumio
@@ -1509,8 +1524,9 @@ object Neo4jStoreSingleton : GraphStore {
                                         kycStatus = KycStatus.PENDING,
                                         transaction = transaction)
                             }
-                            .flatMap {
-                                newScan.right()
+                            .map {
+                                AuditLog.info(customerId = customerId, message = "Created new Jumio scan id - ${newScan.id}")
+                                newScan
                             }
                 }
                 .ifFailedThenRollback(transaction)
@@ -1605,12 +1621,14 @@ object Neo4jStoreSingleton : GraphStore {
     // eKYC - MyInfo
     //
 
-    private val myInfoKycService by lazy { getResource<MyInfoKycService>() }
+    private val myInfoKycV2Service by lazy { getResource<MyInfoKycService>("v2") }
+    private val myInfoKycV3Service by lazy { getResource<MyInfoKycService>("v3") }
 
     private val secureArchiveService by lazy { getResource<SecureArchiveService>() }
 
     override fun getCustomerMyInfoData(
             identity: org.ostelco.prime.model.Identity,
+            version: MyInfoApiVersion,
             authorisationCode: String): Either<StoreError, String> {
         return IO {
             Either.monad<StoreError>().binding {
@@ -1624,27 +1642,40 @@ object Neo4jStoreSingleton : GraphStore {
                         kycType = MY_INFO,
                         kycStatus = KycStatus.PENDING).bind()
 
-                val personData = try {
-                    myInfoKycService.getPersonData(authorisationCode)
-                            ?.right()
-                            ?: SystemError(
-                                    type = "MyInfo Auth Code",
-                                    id = authorisationCode,
-                                    message = "Failed to fetched MyInfo"
-                            ).left() as Either<SystemError, String>
+                val myInfoData = try {
+                    when (version) {
+                        V2 -> myInfoKycV2Service
+                        V3 -> myInfoKycV3Service
+                    }.getPersonData(authorisationCode)
                 } catch (e: Exception) {
-                    logger.error("Failed to fetched MyInfo using authCode = $authorisationCode", e)
-                    SystemError(
-                            type = "MyInfo Auth Code",
-                            id = authorisationCode,
-                            message = "Failed to fetched MyInfo").left()
-                }.bind()
+                    logger.error("Failed to fetched MyInfo $version using authCode = $authorisationCode", e)
+                    null
+                } ?: SystemError(
+                                type = "MyInfo Auth Code",
+                                id = authorisationCode,
+                                message = "Failed to fetched MyInfo $version").left().bind()
+
+                // TODO vihang: Should we set status for NRIC_FIN to APPROVED?
+
+                // set NRIC_FIN KYC Status to Approved
+//                setKycStatus(
+//                        customerId = customerId,
+//                        regionCode = "sg",
+//                        kycType = NRIC_FIN).bind()
+
+                val personData = myInfoData.personData ?: SystemError(
+                        type = "MyInfo Auth Code",
+                        id = authorisationCode,
+                        message = "Failed to fetched MyInfo $version").left().bind()
 
                 secureArchiveService.archiveEncrypted(
                         customerId = customerId,
                         fileName = "myInfoData",
                         regionCodes = listOf("sg"),
-                        dataMap = mapOf("personData" to personData.toByteArray())
+                        dataMap = mapOf(
+                                "uinFin" to myInfoData.uinFin.toByteArray(),
+                                "personData" to personData.toByteArray()
+                        )
                 ).bind()
 
                 // set MY_INFO KYC Status to Approved
@@ -1762,6 +1793,8 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
 
+    // FIXME: vihang This implementation has risk of loss of data due during concurrency to stale read since it does
+    // READ-UPDATE-WRITE.
     private fun setKycStatus(
             customerId: String,
             regionCode: String,
@@ -1780,7 +1813,31 @@ object Neo4jStoreSingleton : GraphStore {
                         transaction = transaction)
                         .getOrElse { CustomerRegion(status = PENDING, kycStatusMap = getKycStatusMapForRegion(regionCode)) }
 
-                val newKycStatusMap = existingCustomerRegion.kycStatusMap.copy(key = kycType, value = kycStatus)
+                val existingKycStatusMap = existingCustomerRegion.kycStatusMap
+                val existingKycStatus = existingKycStatusMap[kycType]
+                val newKycStatus = when(existingKycStatus) {
+                    // APPROVED is end state. No more state change.
+                    KycStatus.APPROVED -> KycStatus.APPROVED
+                    // Only REJECTED to APPROVED is allowed state change.
+                    REJECTED -> when(kycStatus) {
+                        KycStatus.APPROVED -> KycStatus.APPROVED
+                        else -> REJECTED
+                    }
+                    // PENDING to 'any' is allowed
+                    else -> kycStatus
+                }
+
+                if (existingKycStatus != newKycStatus) {
+                    if (kycStatus == newKycStatus) {
+                        AuditLog.info(customerId = customerId, message = "Setting $kycType status from $existingKycStatus to $newKycStatus")
+                    } else {
+                        AuditLog.info(customerId = customerId, message = "Setting $kycType status from $existingKycStatus to $newKycStatus instead of $kycStatus")
+                    }
+                } else {
+                    AuditLog.info(customerId = customerId, message = "Ignoring setting $kycType status to $kycStatus since it is already $existingKycStatus")
+                }
+
+                val newKycStatusMap = existingKycStatusMap.copy(key = kycType, value = newKycStatus)
 
                 val approved = approvedKycTypeSetList.any { kycTypeSet ->
                     newKycStatusMap.filter { it.value == KycStatus.APPROVED }.keys.containsAll(kycTypeSet)
@@ -1795,6 +1852,7 @@ object Neo4jStoreSingleton : GraphStore {
                 }
 
                 if (approvedNow) {
+                    AuditLog.info(customerId = customerId, message = "Approved for region - $regionCode")
                     assignCustomerToSegment(
                             customerId = customerId,
                             segmentId = getInitialSegmentNameForRegion(regionCode, transaction),
@@ -1822,7 +1880,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     private fun getApprovedKycTypeSetList(regionCode: String): List<Set<KycType>> {
         return when (regionCode) {
-            "sg" -> listOf(setOf(MY_INFO),
+            "sg" -> listOf(setOf(MY_INFO, ADDRESS_AND_PHONE_NUMBER),
                     setOf(JUMIO, NRIC_FIN, ADDRESS_AND_PHONE_NUMBER))
             else -> listOf(setOf(JUMIO))
         }
@@ -1846,6 +1904,8 @@ object Neo4jStoreSingleton : GraphStore {
     override fun approveRegionForCustomer(
             customerId: String,
             regionCode: String): Either<StoreError, Unit> = writeTransaction {
+
+        AuditLog.info(customerId = customerId, message = "Approved for region - $regionCode by Admin")
 
         customerRegionRelationStore.create(
                 fromId = customerId,
@@ -2195,7 +2255,7 @@ object Neo4jStoreSingleton : GraphStore {
                        duplicates or more of the same transaction. */
                     if (it.value.size > 2)
                         logger.error(NOTIFY_OPS_MARKER,
-                            "${it.value.size} duplicates found for payment transaction/purchase record ${it.value.first()["chargeId"]}")
+                                "${it.value.size} duplicates found for payment transaction/purchase record ${it.value.first()["chargeId"]}")
                     it
                 }.filter {
                     it.value.size == 1

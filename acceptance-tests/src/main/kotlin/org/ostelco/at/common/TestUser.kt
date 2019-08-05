@@ -3,6 +3,7 @@ package org.ostelco.at.common
 import org.apache.commons.lang3.RandomStringUtils
 import org.ostelco.at.jersey.get
 import org.ostelco.at.jersey.post
+import org.ostelco.at.jersey.put
 import org.ostelco.prime.customer.model.Customer
 import org.ostelco.prime.customer.model.ScanInformation
 import java.util.*
@@ -42,6 +43,11 @@ fun enableRegion(email: String, region: String = "no") {
             get<String> {
                 path = "/regions/sg/kyc/myInfo/activation-code"
                 this.email = email
+            }
+            put<String>(expectedResultCode = 204) {
+                path = "/regions/sg/kyc/profile"
+                this.email = email
+                queryParams = mapOf("address" to "Singapore", "phoneNumber" to "1234")
             }
         }
         else -> performJumioKyc(email = email, region = region)

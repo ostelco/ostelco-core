@@ -326,7 +326,7 @@ class SourceTest {
             val createdIds = listOf(createTokenWithStripe(client),
                     createSourceWithStripe(client),
                     createTokenWithStripe(client),
-                    createSourceWithStripe(client))
+                    createSourceWithStripeNoAddress(client))
 
             val sources = client.listSources()
 
@@ -456,6 +456,14 @@ class SourceTest {
 
     private fun createSourceWithStripe(client: DefaultApi): String {
         val sourceId = StripePayment.createPaymentSourceId()
+
+        client.createSource(sourceId)
+
+        return sourceId
+    }
+
+    private fun createSourceWithStripeNoAddress(client: DefaultApi): String {
+        val sourceId = StripePayment.createPaymentSourceIdNoAddress()
 
         client.createSource(sourceId)
 
@@ -592,20 +600,20 @@ class PurchaseTest {
 class SingaporeKycTest {
 
     @Test
-    fun `okhttp test - GET myinfoConfig`() {
+    fun `okhttp test - GET myinfoConfig v2`() {
 
         val email = "myinfo-${randomInt()}@test.com"
         var customerId = ""
         try {
 
-            customerId = createCustomer(name = "Test MyInfoConfig Customer", email = email).id
+            customerId = createCustomer(name = "Test MyInfoConfig v2 Customer", email = email).id
 
             val client = clientForSubject(subject = email)
 
-            val myInfoConfig = client.myInfoConfig
+            val myInfoConfig = client.myInfoV2Config
 
             assertEquals(
-                    "http://ext-myinfo-emulator:8080/authorise" +
+                    "http://ext-myinfo-emulator:8080/v2/authorise" +
                             "?client_id=STG2-MYINFO-SELF-TEST" +
                             "&attributes=name,sex,dob,residentialstatus,nationality,mobileno,email,mailadd" +
                             "&redirect_uri=http://localhost:3001/callback",
@@ -617,7 +625,76 @@ class SingaporeKycTest {
     }
 
     @Test
-    fun `okhttp test - GET myinfo`() {
+    fun `okhttp test - GET myinfoConfig v3`() {
+
+        val email = "myinfo-v3-${randomInt()}@test.com"
+        var customerId = ""
+        try {
+
+            customerId = createCustomer(name = "Test MyInfoConfig v3 Customer", email = email).id
+
+            val client = clientForSubject(subject = email)
+
+            val myInfoConfig = client.myInfoV3Config
+
+            assertEquals(
+                    "http://ext-myinfo-emulator:8080/v3/authorise" +
+                            "?client_id=STG2-MYINFO-SELF-TEST" +
+                            "&attributes=name,sex,dob,residentialstatus,nationality,mobileno,email,mailadd" +
+                            "&redirect_uri=http://localhost:3001/callback",
+                    myInfoConfig.url)
+
+        } finally {
+            StripePayment.deleteCustomer(customerId = customerId)
+        }
+    }
+
+    @Test
+    fun `okhttp test - GET myinfo v2`() {
+
+        val email = "myinfo-v2-${randomInt()}@test.com"
+        var customerId = ""
+        try {
+
+            customerId = createCustomer(name = "Test MyInfo v2 Customer", email = email).id
+
+            val client = clientForSubject(subject = email)
+
+            run {
+                val regionDetailsList = client.allRegions
+
+                assertTrue(regionDetailsList.isEmpty(), "regionDetailsList should be empty")
+            }
+
+            val personData: String = jacksonObjectMapper().writeValueAsString(client.getCustomerMyInfoV2Data("authCode"))
+
+            val expectedPersonData = """{"name":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"TAN XIAO HUI"},"sex":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"F"},"nationality":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"SG"},"dob":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"1970-05-17"},"email":{"lastupdated":"2018-08-23","source":"4","classification":"C","value":"myinfotesting@gmail.com"},"mobileno":{"lastupdated":"2018-08-23","code":"65","source":"4","classification":"C","prefix":"+","nbr":"97399245"},"mailadd":{"country":"SG","unit":"128","street":"BEDOK NORTH AVENUE 4","lastupdated":"2018-03-20","block":"102","postal":"460102","source":"1","classification":"C","floor":"09","building":"PEARL GARDEN"},"uinfin":"S9812381D"}"""
+            assertEquals(expectedPersonData, personData, "MyInfo PersonData do not match")
+
+            run {
+                val regionDetailsList = client.allRegions
+
+                assertEquals(1, regionDetailsList.size, "regionDetailsList should have only one entry")
+
+                val regionDetails = RegionDetails()
+                        .region(Region().id("sg").name("Singapore"))
+                        .status(PENDING)
+                        .kycStatusMap(mutableMapOf(
+                                KycType.JUMIO.name to KycStatus.PENDING,
+                                KycType.MY_INFO.name to KycStatus.APPROVED,
+                                KycType.ADDRESS_AND_PHONE_NUMBER.name to KycStatus.PENDING,
+                                KycType.NRIC_FIN.name to KycStatus.PENDING))
+                        .simProfiles(SimProfileList())
+
+                assertEquals(regionDetails, regionDetailsList.single(), "RegionDetails do not match")
+            }
+        } finally {
+            StripePayment.deleteCustomer(customerId = customerId)
+        }
+    }
+
+    @Test
+    fun `okhttp test - GET myinfo v3`() {
 
         val email = "myinfo-${randomInt()}@test.com"
         var customerId = ""
@@ -633,9 +710,9 @@ class SingaporeKycTest {
                 assertTrue(regionDetailsList.isEmpty(), "regionDetailsList should be empty")
             }
 
-            val personData: String = jacksonObjectMapper().writeValueAsString(client.getCustomerMyInfoData("authCode"))
+            val personData: String = jacksonObjectMapper().writeValueAsString(client.getCustomerMyInfoV3Data("authCode"))
 
-            val expectedPersonData = """{"name":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"TANXIAOHUI"},"sex":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"F"},"nationality":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"SG"},"dob":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"1970-05-17"},"email":{"lastupdated":"2018-08-23","source":"4","classification":"C","value":"myinfotesting@gmail.com"},"mobileno":{"lastupdated":"2018-08-23","code":"65","source":"4","classification":"C","prefix":"+","nbr":"97399245"},"mailadd":{"country":"SG","unit":"128","street":"BEDOKNORTHAVENUE4","lastupdated":"2018-03-20","block":"102","postal":"460102","source":"1","classification":"C","floor":"09","building":"PEARLGARDEN"},"uinfin":"S9812381D"}"""
+            val expectedPersonData = """{"name":{"lastupdated":"2019-04-05","source":"1","classification":"C","value":"TAN XIAO HUI"},"sex":{"lastupdated":"2019-04-05","code":"F","source":"1","classification":"C","desc":"FEMALE"},"nationality":{"lastupdated":"2019-04-05","code":"SG","source":"1","classification":"C","desc":"SINGAPORE CITIZEN"},"dob":{"lastupdated":"2019-04-05","source":"1","classification":"C","value":"1998-06-06"},"email":{"lastupdated":"2019-04-05","source":"2","classification":"C","value":"myinfotesting@gmail.com"},"mobileno":{"lastupdated":"2019-04-05","source":"2","classification":"C","areacode":{"value":"65"},"prefix":{"value":"+"},"nbr":{"value":"97399245"}},"mailadd":{"country":{"code":"SG","desc":"SINGAPORE"},"unit":{"value":"128"},"street":{"value":"BEDOK NORTH AVENUE 4"},"lastupdated":"2019-04-05","block":{"value":"102"},"source":"1","postal":{"value":"460102"},"classification":"C","floor":{"value":"09"},"type":"SG","building":{"value":"PEARL GARDEN"}}}"""
             assertEquals(expectedPersonData, personData, "MyInfo PersonData do not match")
 
             run {
@@ -645,7 +722,7 @@ class SingaporeKycTest {
 
                 val regionDetails = RegionDetails()
                         .region(Region().id("sg").name("Singapore"))
-                        .status(APPROVED)
+                        .status(PENDING)
                         .kycStatusMap(mutableMapOf(
                                 KycType.JUMIO.name to KycStatus.PENDING,
                                 KycType.MY_INFO.name to KycStatus.APPROVED,

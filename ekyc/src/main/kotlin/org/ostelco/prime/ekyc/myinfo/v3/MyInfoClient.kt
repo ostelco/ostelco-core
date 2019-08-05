@@ -1,4 +1,4 @@
-package org.ostelco.prime.ekyc.myinfo
+package org.ostelco.prime.ekyc.myinfo.v3
 
 import io.jsonwebtoken.Jwts
 import org.apache.cxf.rs.security.jose.jwe.JweCompactConsumer
@@ -7,12 +7,16 @@ import org.apache.http.HttpResponse
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity
-import org.ostelco.prime.ekyc.ConfigRegistry.config
+import org.ostelco.prime.ekyc.MyInfoData
 import org.ostelco.prime.ekyc.MyInfoKycService
 import org.ostelco.prime.ekyc.Registry.myInfoClient
+import org.ostelco.prime.ekyc.myinfo.ExtendedCompressionCodecResolver
+import org.ostelco.prime.ekyc.myinfo.HttpMethod
 import org.ostelco.prime.ekyc.myinfo.HttpMethod.GET
 import org.ostelco.prime.ekyc.myinfo.HttpMethod.POST
+import org.ostelco.prime.ekyc.myinfo.TokenApiResponse
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.model.MyInfoConfig
 import java.net.URLEncoder
@@ -24,9 +28,12 @@ import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
 import java.time.Instant
 import java.util.*
+import javax.inject.Named
 import javax.ws.rs.core.MediaType
 import kotlin.system.measureTimeMillis
+import org.ostelco.prime.ekyc.ConfigRegistry.myInfoV3 as config
 
+@Named("v3")
 class MyInfoClient : MyInfoKycService by MyInfoClientSingleton
 
 object MyInfoClientSingleton : MyInfoKycService {
@@ -39,7 +46,7 @@ object MyInfoClientSingleton : MyInfoKycService {
                     "&attributes=${config.myInfoPersonDataAttributes}" +
                     "&redirect_uri=${config.myInfoRedirectUri}")
 
-    override fun getPersonData(authorisationCode: String): String? {
+    override fun getPersonData(authorisationCode: String): MyInfoData? {
 
         // Call /token API to get access_token
         val tokenApiResponse = getToken(authorisationCode = authorisationCode)
@@ -53,9 +60,11 @@ object MyInfoClientSingleton : MyInfoKycService {
         val uinFin = claims.body.subject
 
         // Using access_token and uin_fin, call /person API to get Person Data
-        return getPersonData(
+        val personData = getPersonData(
                 uinFin = uinFin,
                 accessToken = tokenApiResponse.accessToken)
+
+        return MyInfoData(uinFin = uinFin, personData = personData)
     }
 
     private fun getToken(authorisationCode: String): String? =
@@ -69,16 +78,14 @@ object MyInfoClientSingleton : MyInfoKycService {
                             "client_id" to config.myInfoApiClientId,
                             "client_secret" to config.myInfoApiClientSecret))
 
-
-    private fun getClaims(accessToken: String) = Jwts.parser()
+    private fun getClaims(jws: String) = Jwts.parser()
             .setCompressionCodecResolver(ExtendedCompressionCodecResolver)
             .setSigningKey(KeyFactory
                     .getInstance("RSA")
                     .generatePublic(X509EncodedKeySpec(Base64
                             .getDecoder()
                             .decode(config.myInfoServerPublicKey))))
-            .parseClaimsJws(accessToken)
-
+            .parseClaimsJws(jws)
 
     private fun getPersonData(uinFin: String, accessToken: String): String? =
             sendSignedRequest(
@@ -117,11 +124,10 @@ object MyInfoClientSingleton : MyInfoKycService {
 
             // A) Construct the Authorisation Token Parameter
             val defaultAuthHeaders = mapOf(
-                    "apex_l2_eg_timestamp" to "$timestamp",
-                    "apex_l2_eg_nonce" to "$nonce",
-                    "apex_l2_eg_app_id" to config.myInfoApiClientId,
-                    "apex_l2_eg_signature_method" to "SHA256withRSA",
-                    "apex_l2_eg_version" to "1.0")
+                    "app_id" to config.myInfoApiClientId,
+                    "timestamp" to "$timestamp",
+                    "nonce" to "$nonce",
+                    "signature_method" to "RS256")
 
             // B) Forming the Base String
             // Base String is a representation of the entire request (ensures message integrity)
@@ -133,14 +139,8 @@ object MyInfoClientSingleton : MyInfoKycService {
                     .sortedBy { it.key }
                     .joinToString("&") { "${it.key}=${it.value}" }
 
-            // ii) construct request URL ---> url is passed in to this function
-            // NOTE: need to include the ".e." in order for the security authorisation header to work
-            //myinfosgstg.api.gov.sg -> myinfosgstg.e.api.gov.sg
-
-            val url = "${config.myInfoApiUri.toLowerCase().replace(".api.gov.sg", ".e.api.gov.sg")}$path"
-
-            // iii) concatenate request elements (HTTP method + url + base string parameters)
-            val baseString = "$httpMethod&$url&$baseParamString"
+            // ii) concatenate request elements (HTTP method + url + base string parameters)
+            val baseString = "$httpMethod&$requestUrl&$baseParamString"
 
             // C) Signing Base String to get Digital Signature
             // Load pem file containing the x509 cert & private key & sign the base string with it to produce the Digital Signature
@@ -157,11 +157,10 @@ object MyInfoClientSingleton : MyInfoKycService {
 
             // D) Assembling the Authorization Header
 
-            val authHeaders = mapOf("realm" to config.myInfoApiRealm) +
-                    defaultAuthHeaders +
-                    mapOf("apex_l2_eg_signature" to signature)
+            val authHeaders = defaultAuthHeaders +
+                    mapOf("signature" to signature)
 
-            var authHeaderString = "apex_l2_eg " +
+            var authHeaderString = "PKI_SIGN " +
                     authHeaders.entries
                             .joinToString(",") { """${it.key}="${it.value}"""" }
 
@@ -207,13 +206,28 @@ object MyInfoClientSingleton : MyInfoKycService {
         }
 
         if (config.myInfoApiEnableSecurity && httpMethod == GET) {
-            return decodeJweCompact(content)
+            // TODO vihang: Remove after initial testing is done.
+            logger.info("jwe PersonData: {}", content)
+            val jws = decodeJweCompact(content)
+            // TODO vihang: Remove after initial testing is done.
+            logger.info("jws PersonData: {}", jws)
+            return getPersonDataFromJwsClaims(jws)
         }
 
         return content
     }
 
-    internal fun decodeJweCompact(jwePayload: String): String {
+    private fun getPersonDataFromJwsClaims(jws: String): String {
+
+        val correctedJws = jws
+                // removing extra double-quotes
+                .removePrefix("\"")
+                .removeSuffix("\"")
+
+        return asJson(getClaims(correctedJws).body)
+    }
+
+    private fun decodeJweCompact(jwePayload: String): String {
 
         val privateKey = KeyFactory
                 .getInstance("RSA")

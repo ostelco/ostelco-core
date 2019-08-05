@@ -79,6 +79,11 @@ enum class KycStatus {
 
 data class MyInfoConfig(val url: String)
 
+enum class MyInfoApiVersion {
+    V2,
+    V3
+}
+
 enum class ScanStatus {
     PENDING,   // scan results are pending
     REJECTED,  // scanned Id was rejected
@@ -367,3 +372,15 @@ enum class SimProfileStatus {
 data class Context(
         val customer: Customer,
         val regions: Collection<RegionDetails> = emptyList())
+
+data class CustomerActivity(
+        val timestamp: Long,
+        val severity: Severity,
+        val message: String
+)
+
+enum class Severity {
+    INFO,
+    WARN,
+    ERROR
+}

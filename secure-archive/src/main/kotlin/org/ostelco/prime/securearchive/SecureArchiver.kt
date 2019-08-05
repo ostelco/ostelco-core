@@ -11,6 +11,7 @@ import org.ostelco.prime.securearchive.util.FileStore.saveLocalFile
 import org.ostelco.prime.securearchive.util.FileStore.uploadFileToCloudStorage
 import org.ostelco.prime.securearchive.util.Zip.generateZipFile
 import org.ostelco.prime.storage.StoreError
+import java.time.Instant
 
 class SecureArchiver : SecureArchiveService {
 
@@ -39,7 +40,7 @@ class SecureArchiver : SecureArchiveService {
                                 logger.info("No bucket set, saving file locally $filePath")
                                 saveLocalFile(filePath, zipData).bind()
                             } else {
-                                val filePath = "$customerId/$fileName.zip.tk"
+                                val filePath = "$customerId/${fileName}_${Instant.now()}.zip.tk"
                                 val bucket = "$bucketName-global"
                                 logger.info("Saving in cloud storage $bucket --> $filePath")
                                 uploadFileToCloudStorage(bucket, filePath, zipData).bind()

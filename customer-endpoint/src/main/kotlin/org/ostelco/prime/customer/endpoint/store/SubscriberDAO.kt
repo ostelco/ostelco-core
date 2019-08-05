@@ -8,7 +8,7 @@ import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Context
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.Identity
-import org.ostelco.prime.model.MyInfoConfig
+import org.ostelco.prime.model.MyInfoApiVersion
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.RegionDetails
@@ -53,7 +53,7 @@ interface SubscriberDAO {
     // Subscriptions
     //
 
-    fun getSubscriptions(identity: Identity, regionCode: String): Either<ApiError, Collection<Subscription>>
+    fun getSubscriptions(identity: Identity, regionCode: String?): Either<ApiError, Collection<Subscription>>
 
     //
     // SIM Profile
@@ -116,9 +116,7 @@ interface SubscriberDAO {
 
     fun getScanInformation(identity: Identity, scanId: String): Either<ApiError, ScanInformation>
 
-    fun getCustomerMyInfoData(identity: Identity, authorisationCode: String): Either<ApiError, String>
-
-    fun getMyInfoConfig(): Either<ApiError, MyInfoConfig>
+    fun getCustomerMyInfoData(identity: Identity, version: MyInfoApiVersion, authorisationCode: String): Either<ApiError, String>
 
     fun checkNricFinIdUsingDave(identity: Identity, nricFinId: String): Either<ApiError, Unit>
 

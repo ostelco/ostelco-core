@@ -32,7 +32,8 @@ function useFormInput(initialValue, submit) {
 }
 
 export default function SearchForm(props) {
-  const input = useFormInput('prasanth@redotter.sg', props.onSubmit)
+  let email = localStorage.getItem('searchedEmail')
+  const input = useFormInput(email, props.onSubmit)
   return (
     <div className="container">
       <Form onSubmit={input.onSubmit}>

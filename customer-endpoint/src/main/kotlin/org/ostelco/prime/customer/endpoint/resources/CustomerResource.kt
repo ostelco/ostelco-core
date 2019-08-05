@@ -1,6 +1,7 @@
 package org.ostelco.prime.customer.endpoint.resources
 
 import io.dropwizard.auth.Auth
+import org.ostelco.prime.apierror.responseBuilder
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.customer.endpoint.store.SubscriberDAO
 import org.ostelco.prime.getLogger
@@ -28,18 +29,13 @@ class CustomerResource(private val dao: SubscriberDAO) {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    fun getCustomer(@Auth token: AccessTokenPrincipal?): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-
-        return dao.getCustomer(identity = token.identity)
-                .fold(
-                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                        { Response.status(Response.Status.OK).entity(asJson(it)) })
-                .build()
-    }
+    fun getCustomer(@Auth token: AccessTokenPrincipal?): Response =
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                dao.getCustomer(identity = token.identity)
+                        .responseBuilder()
+            }.build()
 
     private fun decodeEmail(email: String): String {
         // if the email is percent encoded, decode it
@@ -60,85 +56,65 @@ class CustomerResource(private val dao: SubscriberDAO) {
     fun createCustomer(@Auth token: AccessTokenPrincipal?,
                        @NotNull @QueryParam("nickname") nickname: String,
                        @NotNull @QueryParam("contactEmail") @Encoded contactEmail: String,
-                       @QueryParam("referredBy") referredBy: String?): Response {
-
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-        logger.info("Create customer with contactEmail = ${decodeEmail(contactEmail)} encoded = $contactEmail")
-        return dao.createCustomer(
-                identity = token.identity,
-                customer = Customer(
-                        id = UUID.randomUUID().toString(),
-                        nickname = nickname,
-                        contactEmail = decodeEmail(contactEmail),
-                        analyticsId = UUID.randomUUID().toString(),
-                        referralId = UUID.randomUUID().toString()),
-                referredBy = referredBy)
-                .fold(
-                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                        { Response.status(Response.Status.CREATED).entity(asJson(it)) })
-                .build()
-    }
+                       @QueryParam("referredBy") referredBy: String?): Response =
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                logger.info("Create customer with contactEmail = ${decodeEmail(contactEmail)} encoded = $contactEmail")
+                dao.createCustomer(
+                        identity = token.identity,
+                        customer = Customer(
+                                id = UUID.randomUUID().toString(),
+                                nickname = nickname,
+                                contactEmail = decodeEmail(contactEmail),
+                                analyticsId = UUID.randomUUID().toString(),
+                                referralId = UUID.randomUUID().toString()),
+                        referredBy = referredBy)
+                        .responseBuilder(Response.Status.CREATED)
+            }.build()
 
     @PUT
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     fun updateCustomer(@Auth token: AccessTokenPrincipal?,
                        @QueryParam("nickname") nickname: String?,
-                       @QueryParam("contactEmail") @Encoded contactEmail: String?): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-        var decodedEmail = contactEmail
-        if (contactEmail != null) {
-            decodedEmail = decodeEmail(contactEmail)
-        }
-        logger.info("Update customer with contactEmail = $decodedEmail")
-        return dao.updateCustomer(
-                identity = token.identity,
-                nickname = nickname,
-                contactEmail = decodedEmail)
-                .fold(
-                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                        { Response.status(Response.Status.OK).entity(asJson(it)) })
-                .build()
-    }
+                       @QueryParam("contactEmail") @Encoded contactEmail: String?): Response =
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                var decodedEmail = contactEmail
+                if (contactEmail != null) {
+                    decodedEmail = decodeEmail(contactEmail)
+                }
+                logger.info("Update customer with contactEmail = $decodedEmail")
+                dao.updateCustomer(
+                        identity = token.identity,
+                        nickname = nickname,
+                        contactEmail = decodedEmail)
+                        .responseBuilder()
+            }.build()
 
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
-    fun removeCustomer(@Auth token: AccessTokenPrincipal?): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-
-        return dao.removeCustomer(identity = token.identity)
-                .fold(
-                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                        { Response.status(Response.Status.NO_CONTENT).entity(asJson("")) })
-                .build()
-    }
+    fun removeCustomer(@Auth token: AccessTokenPrincipal?): Response =
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                dao.removeCustomer(identity = token.identity)
+                        .responseBuilder(Response.Status.NO_CONTENT)
+            }.build()
 
     @GET
     @Path("stripe-ephemeral-key")
     @Produces(MediaType.APPLICATION_JSON)
-    fun getStripeEphemeralKey(
-            @Auth token: AccessTokenPrincipal?,
-            @QueryParam("api_version") apiVersion: String): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-
-        return dao.getStripeEphemeralKey(
-                identity = token.identity,
-                apiVersion = apiVersion)
-                .fold(
-                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                        { stripeEphemeralKey -> Response.status(Response.Status.OK).entity(stripeEphemeralKey) })
-                .build()
-    }
+    fun getStripeEphemeralKey(@Auth token: AccessTokenPrincipal?,
+                              @QueryParam("api_version") apiVersion: String): Response =
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                dao.getStripeEphemeralKey(
+                        identity = token.identity,
+                        apiVersion = apiVersion)
+                        .responseBuilder()
+            }.build()
 }

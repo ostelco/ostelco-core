@@ -8,6 +8,7 @@ import org.ostelco.prime.paymentprocessor.subscribers.StripeEvent
 import org.ostelco.prime.store.datastore.EntityStore
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.fail
 
 
 class StripeEventStoreTest {
@@ -19,16 +20,24 @@ class StripeEventStoreTest {
                 event.account,
                 event.created,
                 payload)
-        val key = entityStore.add(testData).getOrElse { null }
+        val key = entityStore.add(testData)
+                .mapLeft {
+                    fail(it.message)
+                }
+                .getOrElse { null }
         assertNotNull(key)
 
-        val fetched = entityStore.fetch(key).getOrElse { null }
+        val fetched = entityStore.fetch(key)
+                .mapLeft {
+                    fail(it.message)
+                }
+                .getOrElse { null }
         assertNotNull(fetched)
         assertEquals(expected = testData, actual = fetched)
     }
 
     companion object {
-        val entityStore = EntityStore(StripeEvent::class.java)
+        val entityStore = EntityStore(StripeEvent::class)
         val payload = """
               {
                 "id": "charge.captured_00000000000000",

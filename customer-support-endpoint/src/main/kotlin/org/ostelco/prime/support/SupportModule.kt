@@ -3,6 +3,7 @@ package org.ostelco.prime.support
 import com.fasterxml.jackson.annotation.JsonTypeName
 import io.dropwizard.setup.Environment
 import org.ostelco.prime.module.PrimeModule
+import org.ostelco.prime.support.resources.AuditLogResource
 import org.ostelco.prime.support.resources.BundlesResource
 import org.ostelco.prime.support.resources.ContextResource
 import org.ostelco.prime.support.resources.NotifyResource
@@ -21,5 +22,6 @@ class SupportModule : PrimeModule {
         jerseySever.register(RefundResource())
         jerseySever.register(NotifyResource())
         jerseySever.register(ContextResource())
+        jerseySever.register(AuditLogResource())
     }
 }

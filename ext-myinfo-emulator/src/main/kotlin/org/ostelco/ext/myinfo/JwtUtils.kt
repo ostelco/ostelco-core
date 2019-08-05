@@ -2,6 +2,7 @@ package org.ostelco.ext.myinfo
 
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm.RS256
+import org.ostelco.ext.myinfo.JsonUtils.compactJson
 import java.security.KeyFactory
 import java.security.KeyPair
 import java.security.KeyPairGenerator
@@ -19,7 +20,7 @@ object JwtUtils {
                 .setHeaderParam("typ", "JWT")
                 .setHeaderParam("zip", "NONE")
                 .setHeaderParam("kid", "AldO1lzsCInrpAQ2FF29oJsAGHk=")
-                .setPayload("""
+                .setPayload(compactJson("""
             {
               "sub": "S9812381D",
               "auth_level": 0,
@@ -48,7 +49,7 @@ object JwtUtils {
               "expires_in": 1800,
               "jti": "be832d1c-21b7-4ba3-8c04-ec78a0928533"
             }
-            """.trimIndent().replace("\n", "").replace(" ", ""))
+            """))
                 .signWith(RS256, KeyFactory
                         .getInstance("RSA")
                         .generatePrivate(PKCS8EncodedKeySpec(Base64.getDecoder().decode(signingPrivateKey))))
@@ -63,6 +64,17 @@ object JwtUtils {
                             .getDecoder()
                             .decode(signingPublicKey))))
             .parseClaimsJws(accessToken)
+
+    fun createJws(signingPrivateKey: String, payload: String): String {
+        return Jwts.builder()
+                .setHeaderParam("alg", "RS256")
+                .setHeaderParam("kid", "C6Q-0bsHc4qyNq6MBEtftpB-DsTHNth4ZnlrFPUQ8PI")
+                .setPayload(payload)
+                .signWith(RS256, KeyFactory
+                        .getInstance("RSA")
+                        .generatePrivate(PKCS8EncodedKeySpec(Base64.getDecoder().decode(signingPrivateKey))))
+                .compact()
+    }
 }
 
 fun main() {

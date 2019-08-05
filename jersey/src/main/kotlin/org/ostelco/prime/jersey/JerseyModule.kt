@@ -39,7 +39,7 @@ class JerseyModule : PrimeModule {
         // Configure CORS parameters
         corsFilterRegistration.setInitParameter("allowedOrigins", "*")
         corsFilterRegistration.setInitParameter("allowedHeaders",
-                "Cache-Control,If-Modified-Since,Pragma,Content-Type,Authorization,X-Requested-With,Content-Length,Accept,Origin")
+                "Cache-Control,If-Modified-Since,Pragma,Content-Type,Authorization,X-Requested-With,Content-Length,Accept,Origin,x-mode")
         corsFilterRegistration.setInitParameter("allowedMethods", "OPTIONS,GET,PUT,POST,DELETE,HEAD")
         corsFilterRegistration.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType::class.java), true, "/*")
 
