@@ -181,6 +181,7 @@ server:
       - type: console
         layout:
           type: access-json
+          includes: [timestamp, remoteAddress, remoteUser, protocol, method, requestUri, statusCode, requestTime, contentLength, userAgent, requestContent, responseContent]
         filterFactories:
           - type: URI
             uriSet: [ prometheus-metrics, ping ]
