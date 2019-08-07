@@ -23,6 +23,8 @@ import javax.ws.rs.ext.Provider
 @Provider
 class ES2PlusIncomingHeadersFilter : ContainerRequestFilter {
 
+    private val logger = LoggerFactory.getLogger(ES2PlusIncomingHeadersFilter::class.java)
+
     companion object {
         fun addEs2PlusDefaultFiltersAndInterceptors(env: JerseyEnvironment) {
 
@@ -39,20 +41,28 @@ class ES2PlusIncomingHeadersFilter : ContainerRequestFilter {
     @Throws(IOException::class)
     override fun filter(ctx: ContainerRequestContext) {
 
-        if (!ctx.uriInfo.path.startsWith(ES2PLUS_PATH_PREFIX)) {
+        val uri = ctx.uriInfo.path
+        if (!uri.startsWith(ES2PLUS_PATH_PREFIX)) {
+            logger.error("Invalid URI: {}, expected URI to start with {}", uri, ES2PLUS_PATH_PREFIX)
             return
         }
 
-        val adminProtocol = ctx.headers.getFirst("X-Admin-Protocol")
-        val userAgent = ctx.headers.getFirst("User-Agent")
+        val adminProtocol: String? = ctx.headers.getFirst("X-Admin-Protocol")
+        val userAgent: String? = ctx.headers.getFirst("User-Agent")
 
         if ("gsma-rsp-lpad" != userAgent) {
+            logger.error("Illegal user agent, expected: 'gsma-rsp-lpad', actual: '{}'", userAgent)
+            // TODO rmz: Add configuration to make strict mode configurable
+//            ctx.abortWith(Response.status(Response.Status.BAD_REQUEST)
+//                    .entity("Illegal user agent, expected gsma-rsp-lpad")
+//                    .build())
+//            return
+        }
+
+        if (adminProtocol == null || !adminProtocol.startsWith("gsma/rsp/")) {
+            logger.error("Illegal X-Admin-Protocol header: {}, expected something starting with 'gsma/rsp/'", adminProtocol)
             ctx.abortWith(Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Illegal user agent, expected gsma-rsp-lpad")
-                    .build())
-        } else if (adminProtocol == null || !adminProtocol.startsWith("gsma/rsp/")) {
-            ctx.abortWith(Response.status(Response.Status.BAD_REQUEST)
-                    .entity("""Illegal X-Admin-Protocol header, expected something starting with "gsma/rsp/"""")
+                    .entity("Illegal X-Admin-Protocol header, expected something starting with 'gsma/rsp/'")
                     .build())
         }
     }
@@ -80,7 +90,7 @@ class ES2PlusOutgoingHeadersFilter : ContainerResponseFilter {
  */
 class SmdpExceptionMapper : ExceptionMapper<SmDpPlusException> {
 
-    val logger = LoggerFactory.getLogger(SmdpExceptionMapper::class.java)
+    private val logger = LoggerFactory.getLogger(SmdpExceptionMapper::class.java)
 
     override fun toResponse(ex: SmDpPlusException): Response {
 
