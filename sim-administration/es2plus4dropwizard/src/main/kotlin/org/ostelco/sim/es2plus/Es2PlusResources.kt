@@ -50,8 +50,9 @@ class ES2PlusIncomingHeadersFilter : ContainerRequestFilter {
         val adminProtocol: String? = ctx.headers.getFirst("X-Admin-Protocol")
         val userAgent: String? = ctx.headers.getFirst("User-Agent")
 
-        if ("gsma-rsp-lpad" != userAgent) {
-            logger.error("Illegal user agent, expected: 'gsma-rsp-lpad', actual: '{}'", userAgent)
+
+        if ("gsma-rsp-lpad" != userAgent || "gsma-rsp-lpae" != userAgent ) {
+            logger.error("Illegal user agent, expected: 'gsma-rsp-lpad' or 'gsma-rsp-lpae', actual: '{}'", userAgent)
             // TODO rmz: Add configuration to make strict mode configurable
 //            ctx.abortWith(Response.status(Response.Status.BAD_REQUEST)
 //                    .entity("Illegal user agent, expected gsma-rsp-lpad")
