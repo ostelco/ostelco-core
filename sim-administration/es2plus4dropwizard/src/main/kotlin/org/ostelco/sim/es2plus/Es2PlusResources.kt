@@ -43,7 +43,6 @@ class ES2PlusIncomingHeadersFilter : ContainerRequestFilter {
 
         val uri = ctx.uriInfo.path
         if (!uri.startsWith(ES2PLUS_PATH_PREFIX)) {
-            logger.error("Invalid URI: {}, expected URI to start with {}", uri, ES2PLUS_PATH_PREFIX)
             return
         }
 
