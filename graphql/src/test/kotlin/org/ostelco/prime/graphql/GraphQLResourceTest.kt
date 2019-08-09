@@ -34,6 +34,7 @@ class GraphQLResourceTest {
                 .thenReturn(Optional.of(AccessTokenPrincipal(Identity(email, type = "EMAIL", provider = "email"))))
     }
 
+    /*
     @Test
     fun `test handlePost`() {
         val resp = RULE.target("/graphql")
@@ -55,6 +56,7 @@ class GraphQLResourceTest {
 
         Assert.assertEquals(email, resp.data?.context?.customer?.contactEmail)
     }
+     */
 
     @Test
     fun `test introspection`() {

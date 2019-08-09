@@ -65,14 +65,12 @@ class GraphQLResource(private val queryHandler: QueryHandler) {
         logger.info("GraphQLRequest: {}", request)
         val result = mutableMapOf<String, Any>()
         if (executionResult.errors.isNotEmpty()) {
-            result["errors"] = executionResult.errors.map { it.message }
+            result["errors"] = executionResult.errors
         }
         val data: Map<String, Any>? = executionResult.getData()
-        if (data != null) {
-            result["data"] = data
-        }
+        // result["data"] = data
         val response = asJson(result)
         logger.info("GraphQLResponse: {}", response)
-        return Response.ok(response).build()
+        return Response.ok(executionResult.toSpecification()).build()
     }
 }

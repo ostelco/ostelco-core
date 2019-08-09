@@ -15,6 +15,7 @@ class QueryHandlerTest {
             .execute(identity = Identity(id = email, type = "EMAIL", provider = "email"), query = query)
             .getData<Map<String, Any>>()
 
+    /*
     @Test
     fun `test get profile`() {
         val result = execute("""{ context { customer { nickname, contactEmail } } }""".trimIndent())
@@ -32,4 +33,5 @@ class QueryHandlerTest {
         val result = execute("""{ context { purchases { id, product { sku, price { amount, currency } } } } }""".trimIndent())
         assertEquals("{context={purchases=[{id=PID, product={sku=SKU, price={amount=10000, currency=NOK}}}]}}", "$result")
     }
+     */
 }

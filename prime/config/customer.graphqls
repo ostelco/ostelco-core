@@ -1,146 +1,241 @@
-schema {
-  query: QueryType
-  mutation: Mutation
+# Interface to reduce schema complexity: https://graphqlmastery.com/blog/graphql-interfaces-and-unions-how-to-design-graphql-schema
+interface Node {
+    id: ID!
+    #createdAt: DateTime! # Nice to have, but not required
+    #updatedAt: DateTime! # Nice to have, but not required
 }
 
-type QueryType {
-  context: Context!
-}
-
-type Mutation {
-  createCustomer(contactEmail: String!, nickname: String!): Customer!
-  deleteCustomer: Customer!
-  createScan(regionCode: String!): ScanInformation!
-  createApplicationToken(token: ApplicationTokenInput): ApplicationToken!
-  purchaseProduct(sku: String!, sourceId: String!): Product!
-  createSimProfile(regionCode: String!, profileType: String!): SimProfile!
-  sendEmailWithActivationQrCode(regionCode: String!, iccId: String!): SimProfile!
-  createAddressAndPhoneNumber(address: String!, phoneNumber: String!): AddressInfo!
-  validateNRIC(nric: String!): NricInfo!
-}
-
-type NricInfo {
-  nric: String!
-}
-
-type AddressInfo {
-  address: String!
-  phoneNumber: String!
-}
-
-input ApplicationTokenInput {
-  token: String!
-  tokenType: String!
-  applicationID: String!
-}
-
-type ApplicationToken {
-  token: String!
-  tokenType: String!
-  applicationID: String!
-}
-
-type ScanInformation {
-  id: String!
-  countryCode: String!
-}
-
-type Context {
-  customer: Customer
-  bundles: [Bundle!]!
-  regions(regionCode: String): [RegionDetails!]!
-  products: [Product!]!
-  purchases: [Purchase!]!
-}
-
-type Customer {
-  id: String!
-  contactEmail: String!
-  nickname: String!
-  referralId: String!
-  analyticsId: String!
-}
-
-type Bundle {
-  id: String!
-  balance: Long!
-}
-
-type RegionDetails {
-  region: Region!
-  status: CustomerRegionStatus!
-  kycStatusMap: KycStatusMap!
-  simProfiles: [SimProfile!]
-}
-
-type Region {
-  id: String!
-  name: String!
+enum RegionCode {
+    SG
+    NO
+    US
 }
 
 enum CustomerRegionStatus {
-  PENDING
-  APPROVED
-}
-
-type KycStatusMap {
-  JUMIO: KycStatus
-  MY_INFO: KycStatus
-  NRIC_FIN: KycStatus
-  ADDRESS_AND_PHONE_NUMBER: KycStatus
+    PENDING
+    APPROVED
 }
 
 enum KycStatus {
-  PENDING
-  REJECTED
-  APPROVED
-}
-
-type SimProfile {
-  iccId: String!
-  eSimActivationCode: String!
-  status: SimProfileStatus!
-  alias: String!
+    PENDING
+    REJECTED
+    APPROVED
 }
 
 enum SimProfileStatus {
-  NOT_READY
-  AVAILABLE_FOR_DOWNLOAD
-  DOWNLOADED
-  INSTALLED
-  ENABLED
+    NOT_READY
+    AVAILABLE_FOR_DOWNLOAD
+    DOWNLOADED
+    INSTALLED
+    ENABLED
 }
 
-type Product {
-  sku: String!
-  price: Price!
-  properties: Properties!
-  presentation: Presentation!
+enum SimProfileType {
+    IPHONE
+    LOLTEL
+    TEST
+}
+
+type DeleteCustomerPayload {
+    customer: Customer
+}
+
+type ApplicationToken {
+    token: String!
+    tokenType: String!
+    applicationID: String!
+}
+
+input CreateApplicationTokenInput {
+    token: String!
+    tokenType: String!
+    applicationID: String!
+}
+
+type CreateApplicationTokenPayload {
+    applicationToken: ApplicationToken!
+}
+
+type JumioScan implements Node {
+    id: ID!
+    regionCode: RegionCode!
+}
+
+input CreateJumioScanInput {
+    regionCode: RegionCode!
+}
+
+type CreateJumioScanPayload {
+    jumioScan: JumioScan!
+}
+
+type Region implements Node {
+    id: ID!
+    name: String!
+}
+
+type KycStatusMap {
+    JUMIO: KycStatus
+    MY_INFO: KycStatus
+    NRIC_FIN: KycStatus
+    ADDRESS_AND_PHONE_NUMBER: KycStatus
+}
+
+type SimProfile implements Node {
+    id: ID!
+    iccId: String!
+    eSimActivationCode: String!
+    status: SimProfileStatus!
+    alias: String!
+}
+
+input CreateSimProfileInput {
+    regionCode: RegionCode!
+    profileType: SimProfileType!
+}
+
+type CreateSimProfilePayload {
+    simProfile: SimProfile!
+}
+
+type RegionDetails {
+    region: Region!
+    status: CustomerRegionStatus!
+    kycStatusMap: KycStatusMap!
+    simProfiles: [SimProfile!]
+}
+
+type Address {
+    address: String!
+    phoneNumber: String!
+}
+
+input CreateAddressInput {
+    address: String!
+    phoneNumber: String!
+}
+
+type CreateAddressPayload {
+    address: Address!
 }
 
 type Properties {
-  productClass: String
+    productClass: String
 }
 
 # TODO Vihang: How do we make this generic?
 type Presentation {
-  subTotal: String
-  payeeLabel: String
-  priceLabel: String!
-  taxLabel: String
-  tax: String
-  subTotalLabel: String
-  productLabel: String!
-  label: String
+    subTotal: String
+    payeeLabel: String
+    priceLabel: String!
+    taxLabel: String
+    tax: String
+    subTotalLabel: String
+    productLabel: String!
+    label: String
 }
 
 type Price {
-  amount: Int!
-  currency: String!
+    amount: Int!
+    currency: String!
 }
 
-type Purchase {
-  id: String!
-  product: Product!
-  timestamp: Long!
+type Product implements Node {
+    id: ID!
+    sku: String!
+    price: Price!
+    properties: Properties!
+    presentation: Presentation!
+}
+
+type Purchase implements Node {
+    id: ID!
+    product: Product!
+    timestamp: Long!
+}
+
+input CreatePurchaseInput {
+    sku: String!
+    sourceId: String!
+}
+
+type CreatePurchasePayload {
+    purchase: Purchase!
+}
+
+type Customer implements Node {
+    id: ID!
+    contactEmail: String!
+    nickname: String!
+    referralId: String!
+    analyticsId: String!
+
+    # bundles: [Bundle!]!
+    allRegions: [RegionDetails!]
+    # products: [Product!]!
+    #purchases(
+    #  """Cursor"""
+    #  after: String,
+    #  """Cursor"""
+    #  before: String,
+    #  """Give me first n results"""
+    #  first: Int = 10,
+    #  """Give me last n results"""
+    #  last: Int
+    #): PurchaseConnection!
+}
+
+input CreateCustomerInput {
+    contactEmail: String!
+    nickname: String!
+}
+
+type CreateCustomerPayload {
+    customer: Customer
+}
+
+type NricInfo {
+    value: String!
+}
+
+input ValidateNricInput {
+    nric: String!
+}
+
+type ValidateNricPayload {
+    nric: NricInfo
+}
+
+input ResendEmailInput {
+    regionCode: RegionCode!
+    iccId: String!
+}
+
+type ResendEmailPayload {
+    simProfile: SimProfile!
+}
+
+type Query {
+    customer: Customer
+    # TODO: Add pagination to purchases
+    allPurchases: [Purchase!]
+    validateNric(input: ValidateNricInput): ValidateNricPayload
+    resendEmail(input: ResendEmailInput): ResendEmailPayload
+    allProducts: [Product!]
+    # TODO: What about bundles and subscriptions
+}
+
+type Mutation {
+    createCustomer(input: CreateCustomerInput!): CreateCustomerPayload
+    createApplicationToken(input: CreateApplicationTokenInput!): CreateApplicationTokenPayload
+    deleteCustomer: DeleteCustomerPayload
+    createJumioScan(input: CreateJumioScanInput!): CreateJumioScanPayload
+    createAddress(input: CreateAddressInput!): CreateAddressPayload
+    createSimProfile(input: CreateSimProfileInput!): CreateSimProfilePayload
+    createPurchase(input: CreatePurchaseInput): CreatePurchasePayload!
+}
+
+schema {
+    query: Query
+    mutation: Mutation
 }
