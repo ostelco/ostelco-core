@@ -8,7 +8,7 @@ fun buildRuntimeWiring(): RuntimeWiring {
             .type("Query") { typeWiring -> typeWiring
                     .dataFetcher("customer", CustomerDataFetcher()).dataFetcher("purchases", AllPurchasesDataFetcher())
                     .dataFetcher("products", AllProductsDataFetcher())
-                    .dataFetcher("validateNric", ValidateNRICDataFetcher())
+                    .dataFetcher("validateNric", ValidateNricDataFetcher())
                     .dataFetcher("resendEmail", SendEmailWithActivationQrCodeDataFetcher())
                     .dataFetcher("bundles", AllBundlesDataFetcher())
             }

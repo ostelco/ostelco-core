@@ -31,7 +31,7 @@ data class Address(val address: String, val phoneNumber: String)
 data class CreateAddressPayload(val address: Address)
 data class CreateSimProfilePayload(val simProfile: SimProfile)
 data class CreatePurchasePayload(val purchase: ProductInfo) // TODO: Should be a PurchaseRecord
-data class NricInfo(val nric: String)
+data class NricInfo(val value: String)
 data class ValidateNricPayload(val nric: NricInfo)
 data class ResendEmailPayload(val simProfile: SimProfile)
 
@@ -253,7 +253,7 @@ class CreateAddressAndPhoneNumberDataFetcher : DataFetcher<DataFetcherResult<Cre
     }
 }
 
-class ValidateNRICDataFetcher : DataFetcher<DataFetcherResult<ValidateNricPayload>> {
+class ValidateNricDataFetcher : DataFetcher<DataFetcherResult<ValidateNricPayload>> {
     override fun get(env: DataFetchingEnvironment): DataFetcherResult<ValidateNricPayload> {
 
         val result = DataFetcherResult.newResult<ValidateNricPayload>()
@@ -267,7 +267,7 @@ class ValidateNRICDataFetcher : DataFetcher<DataFetcherResult<ValidateNricPayloa
                 identity = identity,
                 nricFinId = nric
         ).map{
-            ValidateNricPayload(nric = NricInfo(nric = nric))
+            ValidateNricPayload(nric = NricInfo(value = nric))
         }.fold({
             err.message(it.message)
             result.error(err.build())
