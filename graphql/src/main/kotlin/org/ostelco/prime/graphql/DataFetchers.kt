@@ -290,7 +290,14 @@ class AllRegionsDataFetcher : DataFetcher<DataFetcherResult<Collection<RegionDet
             err.message(it.message)
             result.error(GraphqlErrorBuilder.newError().message(it.message).build())
         }, {
-            result.data(it)
+
+            val regionCode = env.getArgument<String?>("regionCode")
+            if (regionCode != null) {
+                val filteredList = it.filter{ it.region.id == regionCode}
+                result.data(filteredList)
+            } else {
+                result.data(it)
+            }
         }).build()
     }
 }

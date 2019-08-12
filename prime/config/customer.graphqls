@@ -1,3 +1,5 @@
+scalar Long
+
 # Interface to reduce schema complexity: https://graphqlmastery.com/blog/graphql-interfaces-and-unions-how-to-design-graphql-schema
 interface Node {
     id: ID!
@@ -37,7 +39,7 @@ enum SimProfileType {
 }
 
 type DeleteCustomerPayload {
-    customer: Customer
+    customer: Customer!
 }
 
 type ApplicationToken {
@@ -70,7 +72,8 @@ type CreateJumioScanPayload {
 }
 
 type Region implements Node {
-    id: ID!
+    id: ID! # This is also RegionCode
+    code: RegionCode # To keep ID field consistent, it needs to have the same field name and same field type and that conflicts if we want to use Enums like RegionCode. Better make a separate field to handle this
     name: String!
 }
 
@@ -171,7 +174,7 @@ type Customer implements Node {
     analyticsId: String!
 
     # bundles: [Bundle!]!
-    allRegions: [RegionDetails!]
+    regions(regionCode: RegionCode): [RegionDetails!]
     # products: [Product!]!
     #purchases(
     #  """Cursor"""
@@ -191,7 +194,7 @@ input CreateCustomerInput {
 }
 
 type CreateCustomerPayload {
-    customer: Customer
+    customer: Customer!
 }
 
 type NricInfo {
@@ -203,7 +206,7 @@ input ValidateNricInput {
 }
 
 type ValidateNricPayload {
-    nric: NricInfo
+    nric: NricInfo!
 }
 
 input ResendEmailInput {
@@ -215,14 +218,20 @@ type ResendEmailPayload {
     simProfile: SimProfile!
 }
 
+type Bundle implements Node {
+    id: ID!
+    balance: Long!
+}
+
 type Query {
     customer: Customer
     # TODO: Add pagination to purchases
-    allPurchases: [Purchase!]
+    purchases: [Purchase!]
     validateNric(input: ValidateNricInput): ValidateNricPayload
     resendEmail(input: ResendEmailInput): ResendEmailPayload
-    allProducts: [Product!]
-    # TODO: What about bundles and subscriptions
+    products: [Product!]
+    bundles: [Bundle!]
+    # TODO: What about subscriptions
 }
 
 type Mutation {
@@ -232,7 +241,7 @@ type Mutation {
     createJumioScan(input: CreateJumioScanInput!): CreateJumioScanPayload
     createAddress(input: CreateAddressInput!): CreateAddressPayload
     createSimProfile(input: CreateSimProfileInput!): CreateSimProfilePayload
-    createPurchase(input: CreatePurchaseInput): CreatePurchasePayload!
+    createPurchase(input: CreatePurchaseInput): CreatePurchasePayload
 }
 
 schema {

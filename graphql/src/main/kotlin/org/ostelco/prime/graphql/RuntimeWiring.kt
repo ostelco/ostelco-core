@@ -6,14 +6,15 @@ import graphql.schema.idl.TypeRuntimeWiring
 fun buildRuntimeWiring(): RuntimeWiring {
     return RuntimeWiring.newRuntimeWiring()
             .type("Query") { typeWiring -> typeWiring
-                    .dataFetcher("customer", CustomerDataFetcher()).dataFetcher("allPurchases", AllPurchasesDataFetcher())
-                    .dataFetcher("allProducts", AllProductsDataFetcher())
+                    .dataFetcher("customer", CustomerDataFetcher()).dataFetcher("purchases", AllPurchasesDataFetcher())
+                    .dataFetcher("products", AllProductsDataFetcher())
                     .dataFetcher("validateNric", ValidateNRICDataFetcher())
                     .dataFetcher("resendEmail", SendEmailWithActivationQrCodeDataFetcher())
-                    .dataFetcher("allBundles", AllBundlesDataFetcher())
+                    .dataFetcher("bundles", AllBundlesDataFetcher())
             }
             .type("Customer") { typeWiring ->
-                typeWiring.dataFetcher("allRegions", AllRegionsDataFetcher())
+                typeWiring.dataFetcher("regions", AllRegionsDataFetcher())
+                        .dataFetcher("bundles", AllBundlesDataFetcher())
             }
             .type(TypeRuntimeWiring.newTypeWiring("RegionDetails")
                     .typeResolver { env ->
