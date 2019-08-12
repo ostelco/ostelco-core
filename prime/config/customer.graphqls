@@ -38,6 +38,12 @@ enum SimProfileType {
     TEST
 }
 
+type PageInfo {
+    # Implement as we want, though hasNextPage is quite nice, we can also add things like number of items on current page inside here.
+    hasPreviousPage: Boolean!
+    hasNextPage: Boolean!
+}
+
 type DeleteCustomerPayload {
     customer: Customer!
 }
@@ -166,6 +172,16 @@ type CreatePurchasePayload {
     purchase: Purchase!
 }
 
+type UserPurchasesConnection {
+    pageInfo: PageInfo!
+    edges: [UserPurchasesEdge!]
+}
+
+type UserPurchasesEdge {
+    cursor: String!
+    node: Purchase # Should this be null or non null?
+}
+
 type Customer implements Node {
     id: ID!
     contactEmail: String!
@@ -225,8 +241,21 @@ type Bundle implements Node {
 
 type Query {
     customer: Customer
-    # TODO: Add pagination to purchases
-    purchases: [Purchase!]
+    # Examples on pagination
+    # https://www.graphql-java-kickstart.com/tools/relay/
+    # https://facebook.github.io/relay/graphql/connections.htm
+    # https://blog.apollographql.com/explaining-graphql-connections-c48b7c3d6976
+    purchases(
+        """Give me first n results"""
+        first: Int = 10,
+        """Cursor"""
+        after: String,
+        """Give me last n results"""
+        last: Int,
+        """Cursor"""
+        before: String
+    ): UserPurchasesConnection
+    # TODO: Does not look like queries should have a payload like mutations, rather the direct type
     validateNric(input: ValidateNricInput): ValidateNricPayload
     resendEmail(input: ResendEmailInput): ResendEmailPayload
     products: [Product!]
