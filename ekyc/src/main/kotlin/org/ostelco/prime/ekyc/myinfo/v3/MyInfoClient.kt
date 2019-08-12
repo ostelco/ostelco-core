@@ -7,6 +7,7 @@ import org.apache.http.HttpResponse
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity
+import org.ostelco.prime.ekyc.MyInfoData
 import org.ostelco.prime.ekyc.MyInfoKycService
 import org.ostelco.prime.ekyc.Registry.myInfoClient
 import org.ostelco.prime.ekyc.myinfo.ExtendedCompressionCodecResolver
@@ -45,7 +46,7 @@ object MyInfoClientSingleton : MyInfoKycService {
                     "&attributes=${config.myInfoPersonDataAttributes}" +
                     "&redirect_uri=${config.myInfoRedirectUri}")
 
-    override fun getPersonData(authorisationCode: String): String? {
+    override fun getPersonData(authorisationCode: String): MyInfoData? {
 
         // Call /token API to get access_token
         val tokenApiResponse = getToken(authorisationCode = authorisationCode)
@@ -59,9 +60,11 @@ object MyInfoClientSingleton : MyInfoKycService {
         val uinFin = claims.body.subject
 
         // Using access_token and uin_fin, call /person API to get Person Data
-        return getPersonData(
+        val personData = getPersonData(
                 uinFin = uinFin,
                 accessToken = tokenApiResponse.accessToken)
+
+        return MyInfoData(uinFin = uinFin, personData = personData)
     }
 
     private fun getToken(authorisationCode: String): String? =

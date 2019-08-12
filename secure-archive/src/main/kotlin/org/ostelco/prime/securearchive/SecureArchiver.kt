@@ -26,7 +26,7 @@ class SecureArchiver : SecureArchiveService {
         return IO {
             Either.monad<StoreError>().binding {
                 val bucketName = config.storageBucket
-                logger.info("Generating Plain Zip data for customerId = $customerId")
+                logger.info("Generating Plain Zip data for customerId = {}", customerId)
                 val plainZipData = generateZipFile(fileName, dataMap).bind()
                 (regionCodes
                         .filter(config.regions::contains)
@@ -37,12 +37,12 @@ class SecureArchiver : SecureArchiveService {
                             val zipData = getEncrypter(regionCode).encrypt(plainZipData)
                             if (bucketName.isEmpty()) {
                                 val filePath = "${regionCode}_$fileName.zip.tk"
-                                logger.info("No bucket set, saving file locally $filePath")
+                                logger.info("No bucket set, saving file locally {}", filePath)
                                 saveLocalFile(filePath, zipData).bind()
                             } else {
                                 val filePath = "$customerId/${fileName}_${Instant.now()}.zip.tk"
-                                val bucket = "$bucketName-global"
-                                logger.info("Saving in cloud storage $bucket --> $filePath")
+                                val bucket = "$bucketName-$regionCode"
+                                logger.info("Saving in cloud storage {} --> {}", bucket, filePath)
                                 uploadFileToCloudStorage(bucket, filePath, zipData).bind()
                             }
                         }

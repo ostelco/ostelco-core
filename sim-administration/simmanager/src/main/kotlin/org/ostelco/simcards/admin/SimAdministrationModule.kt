@@ -1,5 +1,6 @@
 package org.ostelco.simcards.admin
 
+import ch.qos.logback.access.servlet.TeeFilter
 import com.codahale.metrics.health.HealthCheck
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonTypeName
@@ -112,6 +113,11 @@ class SimAdministrationModule : PrimeModule {
                 httpClient = httpClient,
                 hssAdapterProxy = hssAdapters,
                 profileVendors = config.profileVendors))
+
+        // logging request and response contents
+        env.servlets()
+                .addFilter("teeFilter", TeeFilter::class.java)
+                .addMappingForUrlPatterns(null, false, "/gsma/rsp2/es2plus/handleDownloadProgressInfo")
     }
 
 
