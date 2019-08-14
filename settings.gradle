@@ -24,6 +24,7 @@ include ':graphql'
 include ':imei-lookup'
 include ':jersey'
 include ':kts-engine'
+include ':logging'
 include ':model'
 include ':neo4j-admin-tools'
 include ':neo4j-store'
@@ -72,6 +73,7 @@ project(':graphql').projectDir = "$rootDir/graphql" as File
 project(':imei-lookup').projectDir = "$rootDir/imei-lookup" as File
 project(':jersey').projectDir = "$rootDir/jersey" as File
 project(':kts-engine').projectDir = "$rootDir/kts-engine" as File
+project(':logging').projectDir = "$rootDir/logging" as File
 project(':model').projectDir = "$rootDir/model" as File
 project(':neo4j-admin-tools').projectDir = "$rootDir/tools/neo4j-admin-tools" as File
 project(':neo4j-store').projectDir = "$rootDir/neo4j-store" as File
