@@ -86,8 +86,10 @@ class Auth0Authenticator(private val client: Client, private val claims: JsonNod
         return if (claims.has("$NAMESPACE/email")) {
             claims.get("$NAMESPACE/email").textValue()
         } else {
-            logger.warn("Missing '{}/email' field in claims part of JWT token {}",
-                    NAMESPACE, claims)
+            if (claims.get("iss")?.textValue()?.contains("admin") != true) {
+                logger.warn("Missing '{}/email' field in claims part of JWT token {}",
+                        NAMESPACE, claims)
+            }
             null
         }
     }
