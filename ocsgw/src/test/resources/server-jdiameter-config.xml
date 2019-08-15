@@ -7,13 +7,13 @@
     <IPAddresses>
       <IPAddress value="127.0.0.1"/>
     </IPAddresses>
-    <Realm value="loltel" />
+    <Realm value="loltel_ocs" />
     <VendorID value="193" />
     <ProductName value="jDiameter" />
     <FirmwareRevision value="1" />
     <Applications>
       <ApplicationID>
-        <VendorId value="10416"/>
+        <VendorId value="0"/>
         <AuthApplId value="4"/>
         <AcctApplId value="0"/>
       </ApplicationID>
@@ -60,13 +60,13 @@
       <!-- Seagull Peer -->
       <Peer name="aaa://seagull" attempt_connect="false" rating="1" />
         <!-- testclient Peer -->
-        <Peer name="aaa://testclient" attempt_connect="false" rating="1" />
+        <Peer name="aaa://pgw" attempt_connect="false" rating="1" />
     </Peers>
     <Realms>
       <!-- Gy -->
-      <Realm name="loltel" peers="aaa://testclient" local_action="LOCAL" dynamic="false" exp_time="1">
+      <Realm name="loltel_pgw" peers="aaa://pgw" local_action="LOCAL" dynamic="false" exp_time="1">
       <ApplicationID>
-        <VendorId value="10415" />
+        <VendorId value="0" />
         <AuthApplId value="4" />
         <AcctApplId value="0" />
       </ApplicationID>
