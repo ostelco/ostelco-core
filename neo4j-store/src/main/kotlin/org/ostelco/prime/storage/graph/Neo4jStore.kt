@@ -1935,6 +1935,22 @@ object Neo4jStoreSingleton : GraphStore {
         }
     }
 
+
+    override fun getIdentityForContactEmail(contactEmail: String): Either<StoreError, ModelIdentity> = readTransaction {
+        read("""
+                MATCH (customer:${customerEntity.name} { contactEmail:'$contactEmail' })<-[:${identifiesRelation.name}]-(identity:${identityEntity.name})
+                RETURN identity
+                """.trimIndent(),
+                transaction) {
+            if (it.hasNext()) {
+                val identity = identityEntity.createEntity(it.single().get("identity").asMap())
+                Either.right(ModelIdentity(id = identity.id, type = identity.type, provider = "any"))
+            } else {
+                Either.left(NotFoundError(type = customerEntity.name, id = contactEmail))
+            }
+        }
+    }
+
     //
     // For metrics
     //
