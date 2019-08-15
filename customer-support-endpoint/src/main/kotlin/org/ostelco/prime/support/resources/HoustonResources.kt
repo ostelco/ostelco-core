@@ -409,11 +409,33 @@ class ContextResource {
     }
 }
 
+open class HoustonResource {
+    private val logger by getLogger()
+
+    private val storage by lazy { getResource<AdminDataSource>() }
+    private val notifier by lazy { getResource<AppNotifier>() }
+
+    fun getCustomerId(contactEmail: String): Either<ApiError, String> {
+        return try {
+            storage.getIdentityForContactEmail(contactEmail = contactEmail).flatMap { identity: Identity ->
+                storage.getCustomer(identity = identity)
+            }.mapLeft {
+                NotFoundError("Did not find subscription.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS, it)
+            }.map {
+                it.id
+            }
+        } catch (e: Exception) {
+            logger.error("Did not find subscription for email $contactEmail", e)
+            InternalServerError("Did not find subscription", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS).left()
+        }
+    }
+}
+
 /**
  * Resource used to handle notification related REST calls.
  */
 @Path("/notify")
-class NotifyResource {
+class NotifyResource: HoustonResource() {
     private val logger by getLogger()
 
     private val storage by lazy { getResource<AdminDataSource>() }
@@ -438,7 +460,7 @@ class NotifyResource {
             if (token == null) {
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
-                getCustomerId(email = email)
+                getCustomerId(contactEmail = email)
                         .map { customerId ->
                             logger.info("${token.name} Sending notification to $email customerId: $customerId")
                             val data = mapOf("timestamp" to "${System.currentTimeMillis()}")
@@ -447,21 +469,6 @@ class NotifyResource {
                         }
                         .responseBuilder("Message Sent")
             }.build()
-
-    private fun getCustomerId(email: String): Either<ApiError, String> {
-        return try {
-            storage.getIdentityForContactEmail(contactEmail = email).flatMap { identity: Identity ->
-                storage.getCustomer(identity = identity)
-            }.mapLeft {
-                NotFoundError("Did not find subscription.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS, it)
-            }.map {
-                it.id
-            }
-        } catch (e: Exception) {
-            logger.error("Did not find subscription for email $email", e)
-            InternalServerError("Did not find subscription", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS).left()
-        }
-    }
 }
 
 
@@ -469,7 +476,7 @@ class NotifyResource {
  * Resource used to handle audit log related REST calls.
  */
 @Path("/auditLog")
-class AuditLogResource {
+class AuditLogResource: HoustonResource() {
 
     private val logger by getLogger()
 
@@ -489,7 +496,7 @@ class AuditLogResource {
             if (token == null) {
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
-                getCustomerId(email = email)
+                getCustomerId(contactEmail = email)
                         .flatMap { customerId ->
                             logger.info("${token.name} fetching audit log of $email customerId: $customerId")
                             auditLogStore.getCustomerActivityHistory(customerId = customerId)
@@ -499,19 +506,4 @@ class AuditLogResource {
                         }
                         .responseBuilder()
             }.build()
-
-    private fun getCustomerId(email: String): Either<ApiError, String> {
-        return try {
-            storage.getIdentityForContactEmail(contactEmail = email).flatMap { identity: Identity ->
-                storage.getCustomer(identity = identity)
-            }.mapLeft {
-                NotFoundError("Did not find subscription.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS, it)
-            }.map {
-                it.id
-            }
-        } catch (e: Exception) {
-            logger.error("Did not find msisdn for email $email", e)
-            InternalServerError("Did not find subscription", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS).left()
-        }
-    }
 }

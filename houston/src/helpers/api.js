@@ -39,7 +39,8 @@ const apiCaller = async (endpoint, method, body, allowEmptyResponse, params = []
     method,
     headers: {
       Accept: 'application/json',
-      Authorization: auth.header
+      Authorization: auth.header,
+      "x-mode": "prime-direct"
     }
   };
   if (body) {
