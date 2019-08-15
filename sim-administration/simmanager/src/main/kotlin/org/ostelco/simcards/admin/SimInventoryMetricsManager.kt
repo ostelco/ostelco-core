@@ -28,7 +28,7 @@ class SimInventoryMetricsManager(private val dao: SimInventoryDAO, metrics: Metr
      *  Start execution service.  Do not permit restarts even of stopped instances.
      */
     override fun start() {
-        logger.warn("Starting metrics for sim inventory")
+        logger.info("Starting metrics for sim inventory")
         if (!isRunning.getAndSet(true)) {
             if (hasRun.getAndSet(true)) {
                 throw RuntimeException("Attempt to start an already started instance.")

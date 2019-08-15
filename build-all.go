@@ -7,8 +7,10 @@ package main
 
 import (
 	"./github.com/ostelco-core/goscript"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
@@ -103,6 +105,13 @@ func main() {
 	//
 
 	goscript.AssertThatScriptCommandsAreAvailable("docker-compose", "./gradlew", "docker", "cmp")
+
+    projectProfile := parseServiceAccountFile("prime-service-account.json")
+
+    gcpProjectId := projectProfile.ProjectId
+    
+    os.Setenv("GCP_PROJECT_ID", gcpProjectId)
+
 	goscript.AssertThatEnvironmentVariableaAreSet("STRIPE_API_KEY", "GCP_PROJECT_ID")
 	goscript.AssertDockerIsRunning()
 	generateDummyStripeEndpointSecretIfNotSet()
@@ -123,6 +132,40 @@ func main() {
 	runIntegrationTestsViaDocker(stayUpPtr)
 
 	log.Printf("Build and integration tests succeeded\n")
+}
+
+type GcpProjectProfile struct {
+	Type                    string `json:"type"`
+	ProjectId               string `json:"project_id"`
+	PrivateKeyId            string `json:"private_key_id"`
+	PrivateKey              string `json:"private_key"`
+	ClientEmail             string `json:"client_email"`
+	ClientId                string `json:"client_id"`
+	AuthUri                 string `json:"auth_uri"`
+	TokenUri                string `json:"token_uri"`
+	AuthProviderX509CertUrl string `json:"auth_provider_x509_cert_url"`
+	ClientX509CertUrl       string `json:"client_x509_cert_url"`
+}
+
+func parseServiceAccountFile(filename string) (GcpProjectProfile) {
+	// Open our jsonFile
+	jsonFile, err := os.Open(filename)
+	// if we os.Open returns an error then handle it
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println("Successfully Opened $filename")
+	byteValue, _ := ioutil.ReadAll(jsonFile)
+	// defer the closing of our jsonFile so that we can parse it later on
+	defer jsonFile.Close()
+
+	var profile GcpProjectProfile
+
+	// we unmarshal our byteArray which contains our
+	// jsonFile's content into 'users' which we defined above
+	json.Unmarshal(byteValue, &profile)
+
+	return profile
 }
 
 func runIntegrationTestsViaDocker(stayUpPtr *bool) {

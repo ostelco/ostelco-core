@@ -181,8 +181,11 @@ server:
       - type: console
         layout:
           type: access-json
+          # Overriding default array value with additional fields - "requestContent", "responseContent".
+          # This also needs code change - see TeeFilter
           includes: [timestamp, remoteAddress, remoteUser, protocol, method, requestUri, statusCode, requestTime, contentLength, userAgent, requestContent, responseContent]
         filterFactories:
+          # Do not log access logs for these URIs.
           - type: URI
             uriSet: [ prometheus-metrics, ping ]
 
@@ -196,5 +199,24 @@ logging:
     - type: console
       layout:
         type: json
+        customFieldNames:
+          # GCP Stack-driver logging needs "level" to be named as "severity"
+          level: severity
+      filterFactories:
+        # Hiding duplicate WARN and ERROR logs since they are logged again with separate console appender
+        - type: level-filter-factory
+          level: WARN
+          onMatch: DENY
+        - type: level-filter-factory
+          level: ERROR
+          onMatch: DENY
+    # This is to send logs with WARN and above level to GCP Error reporting.
+    - type: console
+      # If this threshold is changed, also change the levels in filterFactories above.
+      threshold: WARN
+      layout:
+        type: json
+        additionalFields:
+          "@type": "type.googleapis.com/google.devtools.clouderrorreporting.v1beta1.ReportedErrorEvent"
         customFieldNames:
           level: severity
