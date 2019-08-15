@@ -1,22 +1,14 @@
 package org.ostelco.prime.graphql
 
-import com.fasterxml.jackson.core.type.TypeReference
-import graphql.ExceptionWhileDataFetching
-import graphql.GraphQLError
-import graphql.GraphQLException
-import graphql.GraphqlErrorBuilder
+import graphql.*
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
-import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.ClientDataSource
 import graphql.execution.DataFetcherExceptionHandler
 import graphql.execution.DataFetcherExceptionHandlerParameters
 import graphql.execution.DataFetcherExceptionHandlerResult
 import graphql.execution.DataFetcherResult
-import org.ostelco.prime.apierror.ForbiddenError
-import org.ostelco.prime.apierror.InternalServerError
-import org.ostelco.prime.apierror.NotFoundError
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.*
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
@@ -35,6 +27,7 @@ data class NricInfo(val value: String)
 data class ValidateNricPayload(val nric: NricInfo)
 data class ResendEmailPayload(val simProfile: SimProfile)
 
+// TODO: Increase code reuse by abstracting code in DataFetchers (they are all very similar). The library graphql-java-tools has already done this abstraction.
 data class Customer(
         val id: String,
         val nickname: String,
@@ -61,16 +54,17 @@ class CreateCustomerDataFetcher : DataFetcher<DataFetcherResult<CreateCustomerPa
 
         return clientDataSource.addCustomer(identity = identity, customer = customer)
                 .fold({
-                    err.message(it.message)
-                    err.extensions(mapOf("id" to it.id, "type" to it.type))
+                    err.message("Failed to create customer.")
+                    err.extensions(mapOf("id" to it.id, "type" to it.type, "message" to it.message))
                     result.error(err.build())
                 }, {
+                    // TODO: If the below fails, will the customer still be created? (If anything fails, the customer creation should be rolled back.)
                     clientDataSource.getCustomer(identity).map{
                         CreateCustomerPayload(customer = Customer(id = it.id, nickname = it.nickname, contactEmail = it.contactEmail, analyticsId = it.analyticsId, referralId =  it.referralId))
                     }
                     .fold({
-                        err.message(it.message)
-                        err.extensions(mapOf("id" to it.id, "type" to it.type))
+                        err.message("Failed to get customer.")
+                        err.extensions(mapOf("id" to it.id, "type" to it.type, "message" to it.message))
                         result.error(err.build())
                     }, {
                         result.data(it)
@@ -94,8 +88,8 @@ class CreateJumioScanDataFetcher : DataFetcher<DataFetcherResult<CreateJumioScan
                     CreateJumioScanPayload(jumioScan = it)
                 }
                 .fold({
-                    err.message(it.message)
-                    err.extensions(mapOf("id" to it.id, "type" to it.type))
+                    err.message("Failed to create jumio scan ID.")
+                    err.extensions(mapOf("id" to it.id, "type" to it.type, "message" to it.message))
                     result.error(err.build())
                 }, {
                     result.data(it)
@@ -114,8 +108,8 @@ class CustomerDataFetcher : DataFetcher<DataFetcherResult<Customer>>{
         return clientDataSource.getCustomer(identity).map{
             Customer(id = it.id, nickname = it.nickname, contactEmail = it.contactEmail, analyticsId = it.analyticsId, referralId = it.referralId)
         }.fold({
-            err.message(it.message)
-            err.extensions(mapOf("id" to it.id, "type" to it.type))
+            err.message("Failed to get customer.")
+            err.extensions(mapOf("id" to it.id, "type" to it.type, "message" to it.message))
             result.error(err.build())
         }, {
             result.data(it)
@@ -139,7 +133,9 @@ class DeleteCustomerDataFetcher : DataFetcher<DataFetcherResult<CreateCustomerPa
                         }
                 }
                 .fold({
-                    result.error(err.message(it.message).build())
+                    err.message("Failed to delete customer.")
+                    err.extensions(mapOf("id" to it.id, "type" to it.type, "message" to it.message))
+                    result.error(err.build())
                 }, {
                     result
                 }).build()
@@ -168,6 +164,7 @@ class CreateApplicationTokenDataFetcher : DataFetcher<DataFetcherResult<CreateAp
             return result.data(payload).build()
         } else {
             err.message("Failed to store push token.")
+            // TODO: Add extension of error id, type and possible internal message to make this error the same format as the other errors.
             return result.error(err.build()).build()
         }
     }
@@ -192,7 +189,8 @@ class CreateSimProfileDataFetcher : DataFetcher<DataFetcherResult<CreateSimProfi
         ).map{
             CreateSimProfilePayload(simProfile = it)
         }.fold({
-            err.message(it.message)
+            err.message("Failed to create sim profile.")
+            err.extensions(mapOf("id" to it.id, "type" to it.type, "message" to it.message))
             result.error(err.build())
         }, {
             result.data(it)
@@ -218,7 +216,8 @@ class SendEmailWithActivationQrCodeDataFetcher : DataFetcher<DataFetcherResult<R
         ).map{
             ResendEmailPayload(simProfile=it)
         }.fold({
-            err.message(it.message)
+            err.message("Failed to resend email.")
+            err.extensions(mapOf("id" to it.id, "type" to it.type, "message" to it.message))
             result.error(err.build())
         }, {
             result.data(it)
@@ -245,7 +244,8 @@ class CreateAddressAndPhoneNumberDataFetcher : DataFetcher<DataFetcherResult<Cre
         ).map{
             CreateAddressPayload(address=Address(address = address, phoneNumber = phoneNumber))
         }.fold({
-            err.message(it.message)
+            err.message("Failed to create address.")
+            err.extensions(mapOf("id" to it.id, "type" to it.type, "message" to it.message))
             result.error(err.build())
         }, {
             result.data(it)
@@ -269,7 +269,8 @@ class ValidateNricDataFetcher : DataFetcher<DataFetcherResult<ValidateNricPayloa
         ).map{
             ValidateNricPayload(nric = NricInfo(value = nric))
         }.fold({
-            err.message(it.message)
+            err.message("Failed to validate nric.") // TODO: Does the checkNricFinIdUSingDave return a store error if the value is invalid? If so, we might want to consider separating an actual error from an invalid nric by returning positive response for valid / invalid nric and an error on any other unexpected error.
+            err.extensions(mapOf("id" to it.id, "type" to it.type, "message" to it.message))
             result.error(err.build())
         }, {
             result.data(it)
@@ -287,7 +288,8 @@ class AllRegionsDataFetcher : DataFetcher<DataFetcherResult<Collection<RegionDet
         return clientDataSource.getAllRegionDetails(identity = identity).map{
             it
         }.fold({
-            err.message(it.message)
+            err.message("Failde to get region details.")
+            err.extensions(mapOf("id" to it.id, "type" to it.type, "message" to it.message))
             result.error(GraphqlErrorBuilder.newError().message(it.message).build())
         }, {
 
@@ -312,7 +314,8 @@ class AllProductsDataFetcher : DataFetcher<DataFetcherResult<Collection<Product>
         return clientDataSource.getProducts(identity = identity).map{
             it.values
         }.fold({
-            err.message(it.message)
+            err.message("Failed to get products.")
+            err.extensions(mapOf("id" to it.id, "type" to it.type, "message" to it.message))
             response.error(err.build())
         }, {
             response.data(it)
@@ -328,7 +331,8 @@ class AllBundlesDataFetcher : DataFetcher<DataFetcherResult<Collection<Bundle>>>
         val identity = env.getContext<Identity>()
 
         return clientDataSource.getBundles(identity).fold({
-            err.message(it.message)
+            err.message("Failed to get bundles.")
+            err.extensions(mapOf("id" to it.id, "type" to it.type, "message" to it.message))
             response.error(err.build())
         }, {
             response.data(it)
@@ -370,7 +374,8 @@ class AllPurchasesDataFetcher : DataFetcher<DataFetcherResult<Collection<Purchas
         return clientDataSource.getPurchaseRecords(identity = identity).map{
             it
         }.fold({
-            err.message(it.message)
+            err.message("Failed to get purchases.")
+            err.extensions(mapOf("id" to it.id, "type" to it.type, "message" to it.message))
             response.error(err.build())
         }, {
             response.data(it)
@@ -396,70 +401,12 @@ class CreatePurchaseDataFetcher : DataFetcher<DataFetcherResult<CreatePurchasePa
             CreatePurchasePayload(purchase = it)
         }.fold({
             err.message(it.message)
+            // TODO: Payment error does not have id and type? We need type.
+            err.extensions(mapOf("message" to it.message))
             response.error(err.build())
         }, {
             response.data(it)
         }).build()
-    }
-}
-
-// TODO: Not in use as of now, replaced by smaller DataFetchers, not sure if we need the selectionSet.contains pattern right now, since each section would be a separate call either way
-class ContextDataFetcher : DataFetcher<Map<String, Any>> {
-
-    override fun get(env: DataFetchingEnvironment): Map<String, Any>? {
-
-        return env.getContext<Identity>()?.let { identity ->
-            val map = mutableMapOf<String, Any>()
-            if (env.selectionSet.contains("customer/*")) {
-                clientDataSource.getCustomer(identity)
-                        .map { customer ->
-                            map.put("customer", objectMapper.convertValue(customer, object : TypeReference<Map<String, Any>>() {}))
-                        }
-            }
-            if (env.selectionSet.contains("bundles/*")) {
-                clientDataSource.getBundles(identity)
-                        .map { bundles ->
-                            map.put("bundles", bundles.map { bundle ->
-                                objectMapper.convertValue<Map<String, Any>>(bundle, object : TypeReference<Map<String, Any>>() {})
-                            })
-                        }
-            }
-            if (env.selectionSet.contains("regions/*")) {
-                val regionCode: String? = env.selectionSet.getField("regions").arguments["regionCode"]?.toString()
-                if (regionCode.isNullOrBlank()) {
-                    clientDataSource.getAllRegionDetails(identity)
-                            .map { regions ->
-                                map.put("regions", regions.map { region ->
-                                    objectMapper.convertValue<Map<String, Any>>(region, object : TypeReference<Map<String, Any>>() {})
-                                })
-                            }
-                } else {
-                    clientDataSource.getRegionDetails(identity, regionCode.toLowerCase())
-                            .map { region ->
-                                map.put("regions",
-                                        listOf(objectMapper.convertValue<Map<String, Any>>(region, object : TypeReference<Map<String, Any>>() {}))
-                                )
-                            }
-                }
-            }
-            if (env.selectionSet.contains("products/*")) {
-                clientDataSource.getProducts(identity)
-                        .map { productsMap ->
-                            map.put("products", productsMap.values.map { product ->
-                                objectMapper.convertValue<Map<String, Any>>(product, object : TypeReference<Map<String, Any>>() {})
-                            })
-                        }
-            }
-            if (env.selectionSet.contains("purchases/*")) {
-                clientDataSource.getPurchaseRecords(identity)
-                        .map { purchaseRecords ->
-                            map.put("purchases", purchaseRecords.map { purchaseRecord ->
-                                objectMapper.convertValue<Map<String, Any>>(purchaseRecord, object : TypeReference<Map<String, Any>>() {})
-                            })
-                        }
-            }
-            map
-        }
     }
 }
 
@@ -471,6 +418,7 @@ class CustomDataFetcherExceptionHandler : DataFetcherExceptionHandler {
         val sourceLocation = handlerParameters.sourceLocation
         val path = handlerParameters.path
 
+        // TODO: Any exception thrown while fetching data using graphql ends up here. Should map out what kind of errors and construct the same type of errors as in the DataFetchers. (We need to add type at least inside extensions)
         val error: GraphQLError = when(exception) {
             // is ValidationException -> ValidationDataFetchingGraphQLError(exception.constraintErrors, path, exception, sourceLocation)
             else -> ExceptionWhileDataFetching(path, exception, sourceLocation)
