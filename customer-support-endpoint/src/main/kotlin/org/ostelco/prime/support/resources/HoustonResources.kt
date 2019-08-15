@@ -438,17 +438,30 @@ class NotifyResource {
             if (token == null) {
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
-                storage.getIdentityForContactEmail(contactEmail = email)
-                        .map { identity ->
-                            logger.info("${token.name} Sending notification to $email customerId: ${identity.id}")
+                getCustomerId(email = email)
+                        .map { customerId ->
+                            logger.info("${token.name} Sending notification to $email customerId: $customerId")
                             val data = mapOf("timestamp" to "${System.currentTimeMillis()}")
-                            notifier.notify(identity.id, title, message, data)
-                            identity.id
-                        }.mapLeft {
-                            NotFoundError("Failed to fetch customer.", ApiErrorCode.FAILED_TO_FETCH_CUSTOMER, it)
+                            notifier.notify(customerId, title, message, data)
+                            customerId
                         }
                         .responseBuilder("Message Sent")
             }.build()
+
+    private fun getCustomerId(email: String): Either<ApiError, String> {
+        return try {
+            storage.getIdentityForContactEmail(contactEmail = email).flatMap { identity: Identity ->
+                storage.getCustomer(identity = identity)
+            }.mapLeft {
+                NotFoundError("Did not find subscription.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS, it)
+            }.map {
+                it.id
+            }
+        } catch (e: Exception) {
+            logger.error("Did not find subscription for email $email", e)
+            InternalServerError("Did not find subscription", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS).left()
+        }
+    }
 }
 
 
@@ -464,7 +477,7 @@ class AuditLogResource {
     private val auditLogStore by lazy { getResource<AuditLogStore>() }
 
     /**
-     * Sends a notification to all devices for a subscriber.
+     * Fetch all audit logs for a subscriber.
      */
     @GET
     @Path("{email}")
@@ -476,17 +489,29 @@ class AuditLogResource {
             if (token == null) {
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
-                storage.getIdentityForContactEmail(contactEmail = email)
-                        .mapLeft {
-                            NotFoundError("Failed to fetch customer.", ApiErrorCode.FAILED_TO_FETCH_CUSTOMER, it)
-                        }
-                        .flatMap { identity ->
-                            logger.info("${token.name} fetching audit log of $email customerId: $identity.id")
-                            auditLogStore.getCustomerActivityHistory(customerId = identity.id)
+                getCustomerId(email = email)
+                        .flatMap { customerId ->
+                            logger.info("${token.name} fetching audit log of $email customerId: $customerId")
+                            auditLogStore.getCustomerActivityHistory(customerId = customerId)
                                     .mapLeft { errorMessage ->
                                         InternalServerError(errorMessage, FAILED_TO_FETCH_AUDIT_LOGS)
                                     }
                         }
                         .responseBuilder()
             }.build()
+
+    private fun getCustomerId(email: String): Either<ApiError, String> {
+        return try {
+            storage.getIdentityForContactEmail(contactEmail = email).flatMap { identity: Identity ->
+                storage.getCustomer(identity = identity)
+            }.mapLeft {
+                NotFoundError("Did not find subscription.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS, it)
+            }.map {
+                it.id
+            }
+        } catch (e: Exception) {
+            logger.error("Did not find msisdn for email $email", e)
+            InternalServerError("Did not find subscription", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS).left()
+        }
+    }
 }
