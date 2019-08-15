@@ -67,7 +67,7 @@ class ProtobufDataSource {
                         }
                     }
                 } else {
-                    logger.warn("No stored CCR or Session for [{}] [{}] [{}]", answer.msisdn, answer.requestId, answer.requestNumber)
+                    logger.warn("No session found for [{}] [{}] [{}]", answer.msisdn, answer.requestId, answer.requestNumber)
                 }
             } else {
                 logger.warn("Missing CreditControlContext for [{}] [{}] [{}]", answer.msisdn, answer.requestId, answer.requestNumber)

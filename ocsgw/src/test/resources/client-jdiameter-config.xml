@@ -2,18 +2,18 @@
 <Configuration xmlns="http://www.jdiameter.org/jdiameter-server">
 
   <LocalPeer>
-    <URI value="aaa://testclient" />
+    <URI value="aaa://pgw" />
 
     <IPAddresses>
       <IPAddress value="127.0.0.1" />
     </IPAddresses>
-    <Realm value="loltel"/>
+    <Realm value="loltel_pgw"/>
     <VendorID value="8164"/>
     <ProductName value="jDiameter"/>
     <FirmwareRevision value="1"/>
     <Applications>
       <ApplicationID>
-        <VendorId value="10415"/>
+        <VendorId value="0"/>
         <AuthApplId value="4"/>
         <AcctApplId value="0"/>
       </ApplicationID>
@@ -59,18 +59,18 @@
       <Peer name="ocs" attempt_connect="true" rating="1" ip="127.0.0.1" />
     </Peers>
     <Realms>
-      <Realm name="loltel" peers="aaa://127.0.0.1" local_action="LOCAL" dynamic="false" exp_time="1">
+      <Realm name="loltel_ocs" peers="aaa://127.0.0.1" local_action="LOCAL" dynamic="false" exp_time="1">
         <ApplicationID>
-            <VendorId value="10415" />
+            <VendorId value="0" />
             <AuthApplId value="4" />
-            <AcctApplId value="10415" />
+            <AcctApplId value="0" />
         </ApplicationID>
         </Realm>
-        <Realm name="loltel" peers="aaa://testclient" local_action="LOCAL" dynamic="false" exp_time="1">
+        <Realm name="loltel_ocs" peers="aaa://ocs" local_action="LOCAL" dynamic="false" exp_time="1">
             <ApplicationID>
-                <VendorId value="10415" />
+                <VendorId value="0" />
                 <AuthApplId value="4" />
-                <AcctApplId value="10415" />
+                <AcctApplId value="0" />
             </ApplicationID>
         </Realm>
     </Realms>

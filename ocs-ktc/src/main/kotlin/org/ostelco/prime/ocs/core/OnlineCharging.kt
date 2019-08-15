@@ -104,14 +104,6 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                         request = request,
                         bundleBytes = consumptionResult.balance)
             }
-
-            // FIXME vihang: get customerId for MSISDN
-            /*launch {
-            Notifications.lowBalanceAlert(
-                customerId = msisdn,
-                reserved = consumptionResult.granted,
-                balance = consumptionResult.balance)
-        }*/
         }
     }
 

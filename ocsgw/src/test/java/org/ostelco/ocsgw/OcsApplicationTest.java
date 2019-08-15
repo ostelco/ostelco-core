@@ -37,10 +37,10 @@ public class OcsApplicationTest {
 
     private static final int VENDOR_ID_3GPP = 10415;
 
-    private static final String OCS_REALM = "loltel";
+    private static final String OCS_REALM = "loltel_ocs";
     private static final String OCS_HOST = "ocs";
-    private static final String PGW_HOST = "testclient";
-    private static final String PGW_REALM = "loltel";
+    private static final String PGW_HOST = "pgw";
+    private static final String PGW_REALM = "loltel_pgw";
     private static final String APN = "loltel-test";
     private static final String MCC_MNC = "24201";
     private static final String MSISDN = "4790300123";
