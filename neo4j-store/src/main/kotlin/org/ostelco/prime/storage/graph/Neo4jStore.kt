@@ -1944,7 +1944,7 @@ object Neo4jStoreSingleton : GraphStore {
                 transaction) {
             if (it.hasNext()) {
                 val identity = identityEntity.createEntity(it.single().get("identity").asMap())
-                Either.right(ModelIdentity(id = identity.id, type = identity.type, provider = "any"))
+                Either.right(ModelIdentity(id = identity.id, type = identity.type, provider = "internal"))
             } else {
                 Either.left(NotFoundError(type = customerEntity.name, id = contactEmail))
             }
