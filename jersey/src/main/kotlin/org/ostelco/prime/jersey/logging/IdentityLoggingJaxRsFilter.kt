@@ -10,7 +10,7 @@ import javax.ws.rs.container.ContainerRequestFilter
 import javax.ws.rs.container.ContainerResponseContext
 import javax.ws.rs.container.ContainerResponseFilter
 
-class IdentityLoggingFilter : ContainerRequestFilter, ContainerResponseFilter {
+class IdentityLoggingJaxRsFilter : ContainerRequestFilter, ContainerResponseFilter {
 
     override fun filter(ctx: ContainerRequestContext) {
         val userPrincipal: Principal? = ctx.securityContext.userPrincipal

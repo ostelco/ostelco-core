@@ -54,9 +54,9 @@ configurations {
 shadowJar {
     mainClassName = 'org.ostelco.simcards.hss.HssAdapterApplicationKt'
     mergeServiceFiles()
-    classifier = "uber"
+    archiveClassifier = "uber"
     zip64 true
-    version = null
+    archiveVersion = ""
 }
 
 protobuf {

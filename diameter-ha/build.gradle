@@ -19,7 +19,7 @@ dependencies {
   }
   implementation "org.slf4j:log4j-over-slf4j:$slf4jVersion"
 
-  compile 'io.lettuce:lettuce-core:5.1.7.RELEASE'
+  compile 'io.lettuce:lettuce-core:5.1.8.RELEASE'
 
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
   testRuntimeOnly 'org.hamcrest:hamcrest-all:1.3'
