@@ -1605,7 +1605,7 @@ object Neo4jStoreSingleton : GraphStore {
                             body = FCMStrings.JUMIO_IDENTITY_FAILED.s,
                             data = extendedStatus
                     )
-                    logger.warn(NOTIFY_OPS_MARKER, "Jumio verification failed for ${customer.contactEmail} Info: $extendedStatus")
+                    logger.info(NOTIFY_OPS_MARKER, "Jumio verification failed for ${customer.contactEmail} Info: $extendedStatus")
                     setKycStatus(
                             customerId = customer.id,
                             regionCode = scanInformation.countryCode.toLowerCase(),
