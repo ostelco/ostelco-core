@@ -169,7 +169,7 @@ class Neo4jStoreTest {
                 { identity: Identity ->
                     assertEquals("EMAIL", identity.type)
                     assertEquals(EMAIL, identity.id)
-                    assertEquals("internal", identity.provider)
+                    assertEquals(IDENTITY.provider, identity.provider)
                 })
     }
 
