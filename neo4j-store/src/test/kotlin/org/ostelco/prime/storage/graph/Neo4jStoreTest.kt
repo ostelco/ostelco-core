@@ -139,6 +139,41 @@ class Neo4jStoreTest {
     }
 
     @Test
+    fun `test - get customer identity from contactEmail`() {
+
+        Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER,
+                referredBy = null)
+                .mapLeft { fail(it.message) }
+
+        Neo4jStoreSingleton.getIdentityForContactEmail(contactEmail = EMAIL).bimap(
+                { fail(it.message) },
+                { identity: Identity ->
+                    Neo4jStoreSingleton.getCustomer(identity).bimap(
+                            { fail(it.message) },
+                            { assertEquals(CUSTOMER, it) })})
+    }
+
+    @Test
+    fun `test - customer identity from contactEmail`() {
+
+        Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER,
+                referredBy = null)
+                .mapLeft { fail(it.message) }
+
+        Neo4jStoreSingleton.getIdentityForContactEmail(contactEmail = EMAIL).bimap(
+                { fail(it.message) },
+                { identity: Identity ->
+                    assertEquals("EMAIL", identity.type)
+                    assertEquals(EMAIL, identity.id)
+                    assertEquals(IDENTITY.provider, identity.provider)
+                })
+    }
+
+    @Test
     fun `test - fail to add customer with invalid referred by`() {
 
         Neo4jStoreSingleton.addCustomer(
