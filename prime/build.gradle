@@ -51,6 +51,8 @@ dependencies {
   runtimeOnly project(':scaninfo-datastore')
   runtimeOnly project(':sim-administration:simmanager')
 
+
+  compile "io.opentracing.contrib.dropwizard:dropwizard-opentracing:$dropwizardOpentracingVersion"
   implementation "io.dropwizard:dropwizard-http2:$dropwizardVersion"
   runtimeOnly "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"
   implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"

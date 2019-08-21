@@ -43,6 +43,7 @@ subprojects {
     cxfVersion = "3.3.2"
     dockerComposeJunitRuleVersion = "1.0.0"
     dropwizardVersion = "1.3.12"
+    dropwizardOpentracingVersion = "0.2.2"
     metricsVersion = "4.1.0"
     firebaseVersion = "6.9.0"
     googleCloudVersion = "1.84.0"
