@@ -12,6 +12,8 @@ import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter.Builder
 import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.client.JerseyClientConfiguration
 import io.dropwizard.setup.Environment
+import io.opentracing.contrib.dropwizard.DropWizardTracer
+import io.opentracing.contrib.dropwizard.ServerTracingFeature
 import org.eclipse.jetty.servlets.CrossOriginFilter
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.auth.OAuthAuthenticator
@@ -26,6 +28,8 @@ import javax.validation.Valid
 import javax.validation.constraints.NotNull
 import javax.ws.rs.client.Client
 
+
+
 @JsonTypeName("jersey")
 class JerseyModule : PrimeModule {
 
@@ -33,6 +37,12 @@ class JerseyModule : PrimeModule {
     var config: Config = Config()
 
     override fun init(env: Environment) {
+
+        val jaegerTracer = io.jaegertracing.Configuration.fromEnv().getTracer()
+        val  tracer =  DropWizardTracer(jaegerTracer)
+        // registers filters for tracing
+        env.jersey().register(ServerTracingFeature.Builder(tracer)
+                .build())
 
         // Allow CORS
         val corsFilterRegistration = env.servlets().addFilter("CORS", CrossOriginFilter::class.java)

@@ -49,6 +49,7 @@ subprojects {
     googleCloudVersion = "1.84.0"
     grpcVersion = "1.22.1"
     guavaVersion = "28.0-jre"
+    jaegertracingVersion = "1.0.0"
     jacksonVersion = "2.9.9"
     javaxActivationVersion = "1.1.1"
     javaxActivationApiVersion = "1.2.0"

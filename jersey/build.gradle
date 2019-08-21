@@ -6,6 +6,8 @@ plugins {
 dependencies {
   implementation project(":prime-modules")
   implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
+  implementation "io.opentracing.contrib.dropwizard:dropwizard-opentracing:$dropwizardOpentracingVersion"
+  implementation "io.jaegertracing:jaeger-thrift:$jaegertracingVersion"
 
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation "io.jsonwebtoken:jjwt-api:$jjwtVersion"
