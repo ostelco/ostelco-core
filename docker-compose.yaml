@@ -1,6 +1,12 @@
 version: "3.3"
 
 services:
+  jaeger:
+     container_name: jaeger
+     image: jaegertracing/all-in-one:latest
+     ports:
+      - "5775:5775/udp"
+      - "16686:16686"
   prime:
     container_name: prime
     build:
@@ -19,6 +25,9 @@ services:
       - DATASTORE_PROJECT_ID=${GCP_PROJECT_ID}
       - MANDRILL_API_KEY=
       - LOCAL_TESTING=true
+      - JAEGER_SERVICE_NAME=jaeger
+      - JAEGER_AGENT_HOST=localhost
+      - JAEGER_AGENT_PORT=5775
     ports:
       - "9090:8080"
       - "8082:8082"

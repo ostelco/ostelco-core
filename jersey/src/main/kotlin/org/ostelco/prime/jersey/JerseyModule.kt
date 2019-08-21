@@ -12,6 +12,7 @@ import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter.Builder
 import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.client.JerseyClientConfiguration
 import io.dropwizard.setup.Environment
+import io.jaegertracing.internal.JaegerTracer
 import io.opentracing.contrib.dropwizard.DropWizardTracer
 import io.opentracing.contrib.dropwizard.ServerTracingFeature
 import org.eclipse.jetty.servlets.CrossOriginFilter
@@ -38,7 +39,10 @@ class JerseyModule : PrimeModule {
 
     override fun init(env: Environment) {
 
-        val jaegerTracer = io.jaegertracing.Configuration.fromEnv().getTracer()
+
+        // XXX io.jaegertracing.Configuration.fromEnv().getTracer()
+
+        val jaegerTracer = JaegerTracer.Builder(env.name).build()
         val  tracer =  DropWizardTracer(jaegerTracer)
         // registers filters for tracing
         env.jersey().register(ServerTracingFeature.Builder(tracer)
