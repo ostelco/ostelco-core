@@ -47,6 +47,7 @@ class JerseyModule : PrimeModule {
         // registers filters for tracing
         env.jersey().register(ServerTracingFeature.Builder(tracer)
                 .build())
+        
 
         // Allow CORS
         val corsFilterRegistration = env.servlets().addFilter("CORS", CrossOriginFilter::class.java)

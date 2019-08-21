@@ -26,7 +26,7 @@ services:
       - MANDRILL_API_KEY=
       - LOCAL_TESTING=true
       - JAEGER_SERVICE_NAME=jaeger
-      - JAEGER_AGENT_HOST=localhost
+      - JAEGER_AGENT_HOST=jaeger
       - JAEGER_AGENT_PORT=5775
     ports:
       - "9090:8080"
