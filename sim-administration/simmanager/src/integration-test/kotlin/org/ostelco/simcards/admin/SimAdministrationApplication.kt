@@ -6,6 +6,8 @@ import io.dropwizard.configuration.EnvironmentVariableSubstitutor
 import io.dropwizard.configuration.SubstitutingSourceProvider
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
+import io.opentracing.contrib.dropwizard.DropWizardTracer
+import io.opentracing.contrib.dropwizard.ServerTracingFeature
 
 
 /**
@@ -42,12 +44,26 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
 
     override fun run(config: SimAdministrationConfiguration,
                      env: Environment) {
+
+/*
+        GlobalTracer.registerIfAbsent(config.jaegerConfig.tracer)
+        com.uber.jaeger.context.TracingUtils.setTracer(config.jaegerConfig.tracer)
+        val jaegerFeature = JaegerFeature(config.jaegerConfig)
+
+        env.jersey().register(jaegerFeature);
+
+ */
+        // // Goal 1: Get any packets at all through to jaeger, inspect using wireshark.
+        val jaegerTracer =config.jaegerConfig.tracer
+        val tracer = DropWizardTracer(jaegerTracer)
+        // registers filters for tracing
+        env.jersey().register(ServerTracingFeature.Builder(tracer).build())
+
         simAdminModule.setConfig(config)
         simAdminModule.init(env)
     }
 
     fun getDAO() =  simAdminModule.getDAO()
-
 
     fun triggerMetricsGeneration() {
         simAdminModule.triggerMetricsGeneration()

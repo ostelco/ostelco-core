@@ -89,7 +89,6 @@ class SimInventoryMetricsManager(private val dao: SimInventoryDAO, metrics: Metr
                                     result.add(MetricValue("sims.noOfReleasedEntries", currentMetric.simProfileName, it.noOfReleasedEntries))
                                     result.add(MetricValue("sims.noOfUnallocatedEntries", currentMetric.simProfileName, it.noOfUnallocatedEntries))
                                     result.add(MetricValue("sims.noOfReservedEntries", currentMetric.simProfileName, it.noOfReservedEntries))
-                                    // XXX Missing: Profiles in error, or somehow not part of the things listed above
                                 }
                     }
                 }

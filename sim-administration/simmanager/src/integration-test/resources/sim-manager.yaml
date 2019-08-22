@@ -45,3 +45,6 @@ database:
   user: ${DB_USER:-test}
   password: ${DB_PASSWORD:-test}
   url: jdbc:postgresql://example.com/simmgr_test
+
+jaeger:
+  serviceName: sim-manager

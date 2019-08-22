@@ -15,14 +15,16 @@ import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import javax.validation.Valid
 
 
+
 data class SimAdministrationConfiguration(
-        val database: DataSourceFactory = DataSourceFactory(),
-        val httpClient: HttpClientConfiguration = HttpClientConfiguration(),
-        val openApi: OpenapiResourceAdderConfig = OpenapiResourceAdderConfig(),
-        val profileVendors: List<ProfileVendorConfig>,
+        var database: DataSourceFactory = DataSourceFactory(),
+        var httpClient: HttpClientConfiguration = HttpClientConfiguration(),
+        var openApi: OpenapiResourceAdderConfig = OpenapiResourceAdderConfig(),
+        var profileVendors: List<ProfileVendorConfig>,
         var hssAdapter: HssAdapterConfig? = null,
         @JsonProperty("hlrs") val hssVendors: List<HssConfig>,
-        val phoneTypes: List<PhoneTypeConfig>
+        var phoneTypes: List<PhoneTypeConfig>,
+        @JsonProperty("jaeger")  val jaegerConfig : com.uber.jaeger.dropwizard.Configuration
 ) : Configuration() {
 
     private val logger by getLogger()

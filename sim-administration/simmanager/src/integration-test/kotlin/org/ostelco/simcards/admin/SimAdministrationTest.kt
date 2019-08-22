@@ -80,7 +80,7 @@ class SimAdministrationTest {
                 ResourceHelpers.resourceFilePath("sm-dp-plus.yaml"))
 
 
-        // XXX Don't do this! Use an HLR emulator
+        // XXX Don't do this! Use a java-based  HLR emulator
         @JvmField
         @ClassRule
         val HLR_RULE: KFixedHostPortGenericContainer = KFixedHostPortGenericContainer("python:3-alpine")

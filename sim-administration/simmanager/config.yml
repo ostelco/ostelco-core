@@ -45,4 +45,6 @@ httpClient:
     keyStorePassword: foobar
     verifyHostname: false
     trustSelfSignedCertificates: true
-    
+
+jaeger:
+  serviceName: sim-manager

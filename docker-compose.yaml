@@ -25,7 +25,7 @@ services:
       - DATASTORE_PROJECT_ID=${GCP_PROJECT_ID}
       - MANDRILL_API_KEY=
       - LOCAL_TESTING=true
-      - JAEGER_SERVICE_NAME=jaeger
+      - JAEGER_SERVICE_NAME=prime
       - JAEGER_AGENT_HOST=jaeger
       - JAEGER_AGENT_PORT=5775
     ports:

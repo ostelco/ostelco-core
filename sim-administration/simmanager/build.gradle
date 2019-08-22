@@ -40,6 +40,11 @@ dependencies {
         force = true
     }
 
+    implementation "io.opentracing.contrib.dropwizard:dropwizard-opentracing:$dropwizardOpentracingVersion"
+    implementation "com.uber.jaeger:jaeger-dropwizard:0.27.0"
+    implementation "io.opentracing:opentracing-api:0.33.0"
+    implementation "io.opentracing.contrib:opentracing-jaxrs2-discovery:0.5.0"
+
     // CSV
     implementation "org.apache.commons:commons-csv:$csvVersion"
 
