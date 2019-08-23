@@ -81,11 +81,13 @@ open class AppSessionDataReplicatedImpl(val id: String, val replicatedStorage: R
     }
 
     protected fun storeValue(key: String, value: String) : Boolean {
-        logger.debug("Storing key : $key , value : $value , id : $id")
-        return this.replicatedStorage.storeValue(id, key, value)
+        val stored = this.replicatedStorage.storeValue(id, key, value)
+        logger.debug("Storing key : $key , value : $value , id : $id stored : $stored" )
+        return stored
     }
 
     protected fun getValue(key: String) : String? {
+        logger.debug("Get key : $key , id : $id")
         val value = this.replicatedStorage.getValue(id, key)
         logger.debug("Got key : $key , value : $value , id : $id")
         return value
