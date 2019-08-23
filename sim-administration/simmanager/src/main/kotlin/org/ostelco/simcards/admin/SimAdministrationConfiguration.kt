@@ -23,8 +23,7 @@ data class SimAdministrationConfiguration(
         var profileVendors: List<ProfileVendorConfig>,
         var hssAdapter: HssAdapterConfig? = null,
         @JsonProperty("hlrs") val hssVendors: List<HssConfig>,
-        var phoneTypes: List<PhoneTypeConfig>,
-        @JsonProperty("jaeger")  val jaegerConfig : com.uber.jaeger.dropwizard.Configuration
+        var phoneTypes: List<PhoneTypeConfig>
 ) : Configuration() {
 
     private val logger by getLogger()

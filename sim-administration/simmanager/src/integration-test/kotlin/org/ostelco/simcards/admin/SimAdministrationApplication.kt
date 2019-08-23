@@ -26,7 +26,7 @@ import io.opentracing.contrib.dropwizard.ServerTracingFeature
 class SimAdministrationApplication : Application<SimAdministrationConfiguration>() {
 
 
-    private val simAdminModule =  SimAdministrationModule()
+    private val simAdminModule = SimAdministrationModule()
 
     override fun getName(): String {
         return "SIM inventory application"
@@ -54,16 +54,18 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
 
  */
         // // Goal 1: Get any packets at all through to jaeger, inspect using wireshark.
-        val jaegerTracer =config.jaegerConfig.tracer
-        val tracer = DropWizardTracer(jaegerTracer)
+
         // registers filters for tracing
+        val jaegerTracer = io.jaegertracing.Configuration.fromEnv().getTracer()
+        val tracer : DropWizardTracer =  DropWizardTracer(jaegerTracer)
+
         env.jersey().register(ServerTracingFeature.Builder(tracer).build())
 
         simAdminModule.setConfig(config)
         simAdminModule.init(env)
     }
 
-    fun getDAO() =  simAdminModule.getDAO()
+    fun getDAO() = simAdminModule.getDAO()
 
     fun triggerMetricsGeneration() {
         simAdminModule.triggerMetricsGeneration()
