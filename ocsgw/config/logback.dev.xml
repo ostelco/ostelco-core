@@ -15,7 +15,7 @@
   </appender>
 
   <logger name="org.ostelco" level="DEBUG"/>
-  <logger name="org.ostelco.diameter.ha" level="INFO"/>
+  <logger name="org.ostelco.diameter.ha" level="DEBUG"/>
   <logger name="org.mobicents.tests.diameter" level="INFO"/>
   <logger name="org.jdiameter.common.impl.validation" level="INFO"/>
   <logger name="jdiameter.statistic" level="INFO"/>
