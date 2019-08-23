@@ -13,8 +13,9 @@
       <pattern>%d{dd MMM yyyy HH:mm:ss,SSS} %-5p %c{1} - %m%n</pattern>
     </encoder>
   </appender>
-
+  
   <logger name="org.ostelco" level="INFO"/>
+  <logger name="org.ostelco.diameter.ha" level="INFO"/>
   <logger name="org.mobicents.tests.diameter" level="INFO"/>
   <logger name="org.jdiameter.common.impl.validation" level="INFO"/>
   <logger name="jdiameter.statistic" level="INFO"/>
