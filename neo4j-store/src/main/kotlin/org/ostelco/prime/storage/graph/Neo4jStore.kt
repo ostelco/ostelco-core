@@ -1605,7 +1605,7 @@ object Neo4jStoreSingleton : GraphStore {
                             body = FCMStrings.JUMIO_IDENTITY_FAILED.s,
                             data = extendedStatus
                     )
-                    logger.warn(NOTIFY_OPS_MARKER, "Jumio verification failed for ${customer.contactEmail} Info: $extendedStatus")
+                    logger.info(NOTIFY_OPS_MARKER, "Jumio verification failed for ${customer.contactEmail} Info: $extendedStatus")
                     setKycStatus(
                             customerId = customer.id,
                             regionCode = scanInformation.countryCode.toLowerCase(),
@@ -1932,6 +1932,24 @@ object Neo4jStoreSingleton : GraphStore {
                 Either.right(customerEntity.createEntity(it.single().get("customer").asMap()))
             else
                 Either.left(NotFoundError(type = customerEntity.name, id = msisdn))
+        }
+    }
+
+
+    override fun getIdentityForContactEmail(contactEmail: String): Either<StoreError, ModelIdentity> = readTransaction {
+        read("""
+                MATCH (:${customerEntity.name} { contactEmail:'$contactEmail' })<-[r:${identifiesRelation.name}]-(identity:${identityEntity.name})
+                RETURN identity, r.provider as provider
+                """.trimIndent(),
+                transaction) {
+            if (it.hasNext()) {
+                val record = it.single()
+                val identity = identityEntity.createEntity(record.get("identity").asMap())
+                val provider = record.get("provider").asString()
+                Either.right(ModelIdentity(id = identity.id, type = identity.type, provider = provider))
+            } else {
+                Either.left(NotFoundError(type = customerEntity.name, id = contactEmail))
+            }
         }
     }
 

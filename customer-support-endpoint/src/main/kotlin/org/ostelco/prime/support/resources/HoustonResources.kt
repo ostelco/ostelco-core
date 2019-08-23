@@ -67,7 +67,7 @@ class ProfilesResource {
                             .responseBuilder()
                 } else {
                     logger.info("${token.name} Accessing profile for email:$id")
-                    getProfile(Identity(id, "EMAIL", "email"))
+                    getProfile(contactEmail = id)
                             .responseBuilder()
                 }
             }.build()
@@ -86,7 +86,7 @@ class ProfilesResource {
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
                 logger.info("${token.name} Accessing subscriptions for email:$email")
-                getSubscriptions(Identity(email, "EMAIL", "email"))
+                getSubscriptions(contactEmail = email)
                         .responseBuilder()
             }.build()
 
@@ -105,29 +105,33 @@ class ProfilesResource {
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
                 logger.info("${token.name} Accessing scan information for email:$email")
-                getAllScanInformation(identity = Identity(id = email, type = "EMAIL", provider = "email"))
+                getAllScanInformation(contactEmail = email)
                         .responseBuilder()
             }.build()
 
-    private fun getAllScanInformation(identity: Identity): Either<ApiError, Collection<ScanInformation>> {
+    private fun getAllScanInformation(contactEmail: String): Either<ApiError, Collection<ScanInformation>> {
         return try {
-            storage.getAllScanInformation(identity = identity).mapLeft {
+            storage.getIdentityForContactEmail(contactEmail = contactEmail).flatMap {identity: Identity ->
+                storage.getAllScanInformation(identity = identity)
+            }.mapLeft {
                 NotFoundError("Failed to fetch scan information.", ApiErrorCode.FAILED_TO_FETCH_SCAN_INFORMATION, it)
             }
         } catch (e: Exception) {
-            logger.error("Failed to fetch scan information for customer with identity - $identity", e)
+            logger.error("Failed to fetch scan information for customer with contactEmail - $contactEmail", e)
             Either.left(NotFoundError("Failed to fetch scan information", ApiErrorCode.FAILED_TO_FETCH_SCAN_INFORMATION))
         }
     }
 
     // TODO: Reuse the one from SubscriberDAO
-    private fun getProfile(identity: Identity): Either<ApiError, Customer> {
+    private fun getProfile(contactEmail: String): Either<ApiError, Customer> {
         return try {
-            storage.getCustomer(identity).mapLeft {
+            storage.getIdentityForContactEmail(contactEmail = contactEmail).flatMap {identity: Identity ->
+                storage.getCustomer(identity)
+            }.mapLeft {
                 NotFoundError("Failed to fetch profile.", ApiErrorCode.FAILED_TO_FETCH_CUSTOMER, it)
             }
         } catch (e: Exception) {
-            logger.error("Failed to fetch profile for customer with identity - $identity", e)
+            logger.error("Failed to fetch profile for customer with contactEmail - $contactEmail", e)
             Either.left(NotFoundError("Failed to fetch profile", ApiErrorCode.FAILED_TO_FETCH_CUSTOMER))
         }
     }
@@ -150,13 +154,15 @@ class ProfilesResource {
     }
 
     // TODO: Reuse the one from SubscriberDAO
-    private fun getSubscriptions(identity: Identity): Either<ApiError, Collection<Subscription>> {
+    private fun getSubscriptions(contactEmail: String): Either<ApiError, Collection<Subscription>> {
         return try {
-            storage.getSubscriptions(identity).mapLeft {
+            storage.getIdentityForContactEmail(contactEmail = contactEmail).flatMap {identity: Identity ->
+                storage.getSubscriptions(identity)
+            }.mapLeft {
                 NotFoundError("Failed to get subscriptions.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS, it)
             }
         } catch (e: Exception) {
-            logger.error("Failed to get subscriptions for customer with identity - $identity", e)
+            logger.error("Failed to get subscriptions for customer with contactEmail - $contactEmail", e)
             InternalServerError("Failed to get subscriptions", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS).left()
         }
     }
@@ -169,12 +175,13 @@ class ProfilesResource {
     @Path("{email}/plans")
     @Produces("application/json")
     fun getPlans(@PathParam("email") email: String): Response =
-            storage.getPlans(identity = Identity(id = email, type = "EMAIL", provider = "email"))
-                    .mapLeft {
-                        ApiErrorMapper.mapStorageErrorToApiError("Failed to fetch plans",
-                                ApiErrorCode.FAILED_TO_FETCH_PLANS_FOR_SUBSCRIBER,
-                                it)
-                    }
+            storage.getIdentityForContactEmail(contactEmail = email).flatMap { identity: Identity ->
+                storage.getPlans(identity = identity)
+            }.mapLeft {
+                ApiErrorMapper.mapStorageErrorToApiError("Failed to fetch plans",
+                        ApiErrorCode.FAILED_TO_FETCH_PLANS_FOR_SUBSCRIBER,
+                        it)
+            }
                     .responseBuilder()
                     .build()
 
@@ -187,15 +194,16 @@ class ProfilesResource {
     fun attachPlan(@PathParam("email") email: String,
                    @PathParam("planId") planId: String,
                    @QueryParam("trial_end") trialEnd: Long): Response =
-            storage.subscribeToPlan(
-                    identity = Identity(id = email, type = "EMAIL", provider = "email"),
-                    planId = planId,
-                    trialEnd = trialEnd)
-                    .mapLeft {
-                        ApiErrorMapper.mapStorageErrorToApiError("Failed to store subscription",
-                                ApiErrorCode.FAILED_TO_STORE_SUBSCRIPTION,
-                                it)
-                    }
+            storage.getIdentityForContactEmail(contactEmail = email).flatMap { identity: Identity ->
+                storage.subscribeToPlan(
+                        identity = identity,
+                        planId = planId,
+                        trialEnd = trialEnd)
+            }.mapLeft {
+                ApiErrorMapper.mapStorageErrorToApiError("Failed to store subscription",
+                        ApiErrorCode.FAILED_TO_STORE_SUBSCRIPTION,
+                        it)
+            }
                     .responseBuilder(Response.Status.CREATED)
                     .build()
 
@@ -207,14 +215,15 @@ class ProfilesResource {
     @Produces("application/json")
     fun detachPlan(@PathParam("email") email: String,
                    @PathParam("planId") planId: String): Response =
-            storage.unsubscribeFromPlan(
-                    identity = Identity(id = email, type = "EMAIL", provider = "email"),
-                    planId = planId)
-                    .mapLeft {
-                        ApiErrorMapper.mapStorageErrorToApiError("Failed to remove subscription",
-                                ApiErrorCode.FAILED_TO_REMOVE_SUBSCRIPTION,
-                                it)
-                    }
+            storage.getIdentityForContactEmail(contactEmail = email).flatMap { identity: Identity ->
+                storage.unsubscribeFromPlan(
+                        identity = identity,
+                        planId = planId)
+            }.mapLeft {
+                ApiErrorMapper.mapStorageErrorToApiError("Failed to remove subscription",
+                        ApiErrorCode.FAILED_TO_REMOVE_SUBSCRIPTION,
+                        it)
+            }
                     .responseBuilder()
                     .build()
 }
@@ -241,18 +250,20 @@ class BundlesResource {
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
                 logger.info("${token.name} Accessing bundles for $email")
-                getBundles(Identity(email, "EMAIL", "email"))
+                getBundles(contactEmail = email)
                         .responseBuilder()
             }.build()
 
     // TODO: Reuse the one from SubscriberDAO
-    private fun getBundles(identity: Identity): Either<ApiError, Collection<Bundle>> {
+    private fun getBundles(contactEmail: String): Either<ApiError, Collection<Bundle>> {
         return try {
-            storage.getBundles(identity).mapLeft {
+            storage.getIdentityForContactEmail(contactEmail = contactEmail).flatMap { identity: Identity ->
+                storage.getBundles(identity)
+            }.mapLeft {
                 NotFoundError("Failed to get bundles. ${it.message}", ApiErrorCode.FAILED_TO_FETCH_BUNDLES)
             }
         } catch (e: Exception) {
-            logger.error("Failed to get bundles for customer with identity - $identity", e)
+            logger.error("Failed to get bundles for customer with contactEmail - $contactEmail", e)
             Either.left(NotFoundError("Failed to get bundles", ApiErrorCode.FAILED_TO_FETCH_BUNDLES))
         }
     }
@@ -280,18 +291,20 @@ class PurchaseResource {
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
                 logger.info("${token.name} Accessing bundles for $email")
-                getPurchaseHistory(Identity(email, "EMAIL", "email"))
+                getPurchaseHistory(contactEmail = email)
                         .responseBuilder()
             }.build()
 
     // TODO: Reuse the one from SubscriberDAO
-    private fun getPurchaseHistory(identity: Identity): Either<ApiError, Collection<PurchaseRecord>> {
+    private fun getPurchaseHistory(contactEmail: String): Either<ApiError, Collection<PurchaseRecord>> {
         return try {
-            return storage.getPurchaseRecords(identity).bimap(
+            storage.getIdentityForContactEmail(contactEmail = contactEmail).flatMap { identity: Identity ->
+                storage.getPurchaseRecords(identity)
+            }.bimap(
                     { NotFoundError("Failed to get purchase history.", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_HISTORY, it) },
                     { it.toList() })
         } catch (e: Exception) {
-            logger.error("Failed to get purchase history for customer with identity - $identity", e)
+            logger.error("Failed to get purchase history for customer with contactEmail - $contactEmail", e)
             Either.left(InternalServerError("Failed to get purchase history", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_HISTORY))
         }
     }
@@ -325,7 +338,7 @@ class RefundResource {
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
                 logger.info("${token.name} Refunding purchase for $email at id: $purchaseRecordId")
-                refundPurchase(Identity(email, "EMAIL", "email"), purchaseRecordId, reason)
+                refundPurchase(email, purchaseRecordId, reason)
                         .map {
                             logger.info(NOTIFY_OPS_MARKER, "${token.name} refunded the purchase (id:$purchaseRecordId) for $email ")
                             it
@@ -333,16 +346,18 @@ class RefundResource {
                         .responseBuilder()
             }.build()
 
-    private fun refundPurchase(identity: Identity, purchaseRecordId: String, reason: String): Either<ApiError, ProductInfo> {
+    private fun refundPurchase(contactEmail: String, purchaseRecordId: String, reason: String): Either<ApiError, ProductInfo> {
         return try {
-            return storage.refundPurchase(identity, purchaseRecordId, reason).mapLeft {
+            storage.getIdentityForContactEmail(contactEmail = contactEmail).flatMap { identity: Identity ->
+                storage.refundPurchase(identity, purchaseRecordId, reason)
+            }.mapLeft {
                 when (it) {
                     is ForbiddenError -> org.ostelco.prime.apierror.ForbiddenError("Failed to refund purchase. ${it.description}", ApiErrorCode.FAILED_TO_REFUND_PURCHASE)
-                    else -> NotFoundError("Failed to refund purchase. ${it.description}", ApiErrorCode.FAILED_TO_REFUND_PURCHASE)
+                    else -> NotFoundError("Failed to refund purchase. ${it.toString()}", ApiErrorCode.FAILED_TO_REFUND_PURCHASE)
                 }
             }
         } catch (e: Exception) {
-            logger.error("Failed to refund purchase for customer with identity - $identity, id: $purchaseRecordId", e)
+            logger.error("Failed to refund purchase for customer with contactEmail - $contactEmail, id: $purchaseRecordId", e)
             Either.left(InternalServerError("Failed to refund purchase", ApiErrorCode.FAILED_TO_REFUND_PURCHASE))
         }
     }
@@ -370,26 +385,48 @@ class ContextResource {
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
                 logger.info("${token.name} Accessing context for $email")
-                getContext(Identity(email, "EMAIL", "email"))
+                getContext(contactEmail = email)
                         .responseBuilder()
             }.build()
 
     // TODO: Reuse the one from SubscriberDAO
-    fun getContext(identity: Identity): Either<ApiError, Context> {
+    fun getContext(contactEmail: String): Either<ApiError, Context> {
         return try {
-            storage.getCustomer(identity)
-                    .mapLeft {
-                        NotFoundError("Failed to fetch customer.", ApiErrorCode.FAILED_TO_FETCH_CONTEXT, it)
-                    }
-                    .map { customer ->
-                        storage.getAllRegionDetails(identity = identity)
-                                .fold(
-                                        { Context(customer = customer) },
-                                        { regionDetailsCollection -> Context(customer = customer, regions = regionDetailsCollection) })
-                    }
+            storage.getIdentityForContactEmail(contactEmail = contactEmail).flatMap { identity: Identity ->
+                storage.getCustomer(identity).map { customer ->
+                    storage.getAllRegionDetails(identity = identity)
+                            .fold(
+                                    { Context(customer = customer) },
+                                    { regionDetailsCollection -> Context(customer = customer, regions = regionDetailsCollection) })
+                }
+            }.mapLeft {
+                NotFoundError("Failed to fetch customer.", ApiErrorCode.FAILED_TO_FETCH_CONTEXT, it)
+            }
         } catch (e: Exception) {
-            logger.error("Failed to fetch context for customer with identity - $identity", e)
+            logger.error("Failed to fetch context for customer with contactEmail - $contactEmail", e)
             Either.left(NotFoundError("Failed to fetch context", ApiErrorCode.FAILED_TO_FETCH_CONTEXT))
+        }
+    }
+}
+
+open class HoustonResource {
+    private val logger by getLogger()
+
+    private val storage by lazy { getResource<AdminDataSource>() }
+    private val notifier by lazy { getResource<AppNotifier>() }
+
+    fun getCustomerId(contactEmail: String): Either<ApiError, String> {
+        return try {
+            storage.getIdentityForContactEmail(contactEmail = contactEmail).flatMap { identity: Identity ->
+                storage.getCustomer(identity = identity)
+            }.mapLeft {
+                NotFoundError("Did not find subscription.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS, it)
+            }.map {
+                it.id
+            }
+        } catch (e: Exception) {
+            logger.error("Did not find subscription for email $contactEmail", e)
+            InternalServerError("Did not find subscription", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS).left()
         }
     }
 }
@@ -398,7 +435,7 @@ class ContextResource {
  * Resource used to handle notification related REST calls.
  */
 @Path("/notify")
-class NotifyResource {
+class NotifyResource: HoustonResource() {
     private val logger by getLogger()
 
     private val storage by lazy { getResource<AdminDataSource>() }
@@ -423,7 +460,7 @@ class NotifyResource {
             if (token == null) {
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
-                getCustomerId(email = email)
+                getCustomerId(contactEmail = email)
                         .map { customerId ->
                             logger.info("${token.name} Sending notification to $email customerId: $customerId")
                             val data = mapOf("timestamp" to "${System.currentTimeMillis()}")
@@ -432,19 +469,6 @@ class NotifyResource {
                         }
                         .responseBuilder("Message Sent")
             }.build()
-
-    private fun getCustomerId(email: String): Either<ApiError, String> {
-        return try {
-            storage.getCustomer(identity = Identity(id = email, type = "EMAIL", provider = "email")).mapLeft {
-                NotFoundError("Did not find msisdn for this subscription.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS, it)
-            }.map {
-                it.id
-            }
-        } catch (e: Exception) {
-            logger.error("Did not find msisdn for email $email", e)
-            InternalServerError("Did not find subscription", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS).left()
-        }
-    }
 }
 
 
@@ -452,7 +476,7 @@ class NotifyResource {
  * Resource used to handle audit log related REST calls.
  */
 @Path("/auditLog")
-class AuditLogResource {
+class AuditLogResource: HoustonResource() {
 
     private val logger by getLogger()
 
@@ -460,7 +484,7 @@ class AuditLogResource {
     private val auditLogStore by lazy { getResource<AuditLogStore>() }
 
     /**
-     * Sends a notification to all devices for a subscriber.
+     * Fetch all audit logs for a subscriber.
      */
     @GET
     @Path("{email}")
@@ -472,7 +496,7 @@ class AuditLogResource {
             if (token == null) {
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
-                getCustomerId(email = email)
+                getCustomerId(contactEmail = email)
                         .flatMap { customerId ->
                             logger.info("${token.name} fetching audit log of $email customerId: $customerId")
                             auditLogStore.getCustomerActivityHistory(customerId = customerId)
@@ -482,18 +506,4 @@ class AuditLogResource {
                         }
                         .responseBuilder()
             }.build()
-
-    // TODO vihang: duplicate code
-    private fun getCustomerId(email: String): Either<ApiError, String> {
-        return try {
-            storage.getCustomer(identity = Identity(id = email, type = "EMAIL", provider = "email")).mapLeft {
-                NotFoundError("Did not find msisdn for this subscription.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS, it)
-            }.map {
-                it.id
-            }
-        } catch (e: Exception) {
-            logger.error("Did not find msisdn for email $email", e)
-            InternalServerError("Did not find subscription", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS).left()
-        }
-    }
 }

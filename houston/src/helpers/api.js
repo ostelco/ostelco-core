@@ -39,7 +39,9 @@ const apiCaller = async (endpoint, method, body, allowEmptyResponse, params = []
     method,
     headers: {
       Accept: 'application/json',
-      Authorization: auth.header
+      Authorization: auth.header,
+      //TODO: remove this when we are ready to deploy in all versions of prime
+      //"x-mode": "prime-direct"
     }
   };
   if (body) {
