@@ -1,0 +1,47 @@
+logging:
+  level: INFO
+
+openApi:
+  name: SIM admin
+  description: SIM Administration Service
+  termsOfService: http://example.org
+  contactEmail: dev@redotter.sg
+  resourcePackage: org.ostelco
+
+hlrs:
+  - name: Foo
+    hlrType: SWT
+    hssNameUsedInAPI: loltel
+    endpoint: http://localhost:9180/default/provision
+    userId: user
+    apiKey: xyz
+
+profileVendors:
+  - name: Bar
+    es2plusEndpoint: http://localhost:9080/gsma/rsp2/es2plus
+    requesterIdentifier: 123
+    es9plusEndpoint: http://localhost:9080/notrealjustfortest/
+
+# Note, list must end with a wildcard match
+phoneTypes:
+  - regex: "android.*"
+    profile: ANDROID_PROFILE_1
+  - regex: "iphone.*"
+    profile: IPHONE_PROFILE_1
+  - regex: ".*"
+    profile: IPHONE_PROFILE_2
+
+server:
+  type: default
+  applicationConnectors:
+    - type: http
+      port: 8090
+  adminConnectors:
+    - type: http
+      port: 8091
+
+database:
+  driverClass: org.postgresql.Driver
+  user: ${DB_USER:-test}
+  password: ${DB_PASSWORD:-test}
+  url: jdbc:postgresql://example.com/simmgr_test
