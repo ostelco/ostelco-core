@@ -1,8 +1,8 @@
 package org.ostelco.diameter.ha.common
 
 import org.jdiameter.api.ApplicationId
-import org.jdiameter.api.acc.ClientAccSession
 import org.jdiameter.api.app.AppSession
+import org.jdiameter.api.cca.ServerCCASession
 import org.jdiameter.common.api.app.IAppSessionData
 import org.ostelco.diameter.ha.logger
 import java.io.ByteArrayInputStream
@@ -132,7 +132,7 @@ open class AppSessionDataReplicatedImpl(val id: String, val replicatedStorage: R
             if (value != null) {
                 return fromBase64String(value) as Class<out AppSession>
             }
-            return ClientAccSession::class.java
+            return ServerCCASession::class.java
         }
 
         /**
