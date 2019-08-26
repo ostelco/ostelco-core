@@ -9,7 +9,7 @@ kind: CronJob
 metadata:
   name: transaction-check
 spec:
-  schedule: "* */2 * * *"
+  schedule: "0 */2 * * *"
   jobTemplate:
     spec:
       template:
