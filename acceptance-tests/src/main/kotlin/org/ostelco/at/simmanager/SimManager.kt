@@ -6,6 +6,6 @@ class SimManager {
 
     @Test
     fun emptyTest() {
-    }
 
+    }
 }

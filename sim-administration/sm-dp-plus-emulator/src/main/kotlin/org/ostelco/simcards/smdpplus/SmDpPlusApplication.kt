@@ -30,7 +30,7 @@ fun main(args: Array<String>) = SmDpPlusApplication().run(*args)
 
 /**
  * NOTE: This is not a proper SM-DP+ application, it is a test fixture
- * to be used when accpetance-testing the sim administration application.
+ * to be used when acceptance-testing the sim administration application.
  *
  * The intent of the SmDpPlusApplication is to be run in Docker Compose,
  * to serve a few simple ES2+ commands, and to do so consistently, and to
