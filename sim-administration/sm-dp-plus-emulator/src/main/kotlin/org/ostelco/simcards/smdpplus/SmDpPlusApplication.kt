@@ -60,7 +60,6 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 
     private lateinit var serverResource: SmDpPlusServerResource
 
-
     private lateinit var smdpPlusService: SmDpPlusEmulator
 
     override fun run(config: SmDpPlusAppConfiguration,
@@ -82,6 +81,7 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
                 certConfig = config.certConfig)))
 
 
+        // XXX This is weird, is it even necessary?  Probably not.
         jerseyEnvironment.register(CertificateAuthorizationFilter(
                 RBACService(rolesConfig = config.rolesConfig,
                         certConfig = config.certConfig)))
