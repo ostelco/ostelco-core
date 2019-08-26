@@ -43,7 +43,7 @@ func distributeServiceAccountConfigs(
 	serviceAccountJsonFilename string,
 	serviceAccountFileMD5Checksum string,
 	dirsThatNeedsServiceAccountConfigs ...string) {
-	log.Printf("Distributing service account configs\n")
+	log.Printf("Distributing service account configs ...\n")
 	if !goscript.FileExists(serviceAccountJsonFilename) {
 		log.Fatalf("ERROR: : Could not find master service-account file'%s'", serviceAccountJsonFilename)
 	}
@@ -72,6 +72,7 @@ func distributeServiceAccountConfigs(
 			_ = goscript.CopyFile(serviceAccountJsonFilename, currentFilename)
 		}
 	}
+	log.Printf("    Done\n")
 }
 
 func generateDummyStripeEndpointSecretIfNotSet() {
