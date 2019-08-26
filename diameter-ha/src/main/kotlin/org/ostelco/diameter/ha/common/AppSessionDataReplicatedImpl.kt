@@ -22,6 +22,8 @@ open class AppSessionDataReplicatedImpl(val id: String, val replicatedStorage: R
 
     private val apiId = "apiId"
 
+    private var applicationId: ApplicationId? = null
+
     fun setAppSessionIface(iface: Class<out AppSession>) {
         storeValue(SIFACE, toBase64String(iface))
     }
@@ -40,6 +42,7 @@ open class AppSessionDataReplicatedImpl(val id: String, val replicatedStorage: R
      */
     override fun setApplicationId(applicationId: ApplicationId?) {
         if (applicationId != null) {
+            this.applicationId = applicationId
             storeValue(apiId, toBase64String(applicationId))
         }
     }
@@ -50,6 +53,12 @@ open class AppSessionDataReplicatedImpl(val id: String, val replicatedStorage: R
      * @return the Application-Id
      */
     override fun getApplicationId(): ApplicationId {
+
+        val localApplicationId = applicationId
+        if (localApplicationId != null) {
+            return localApplicationId
+        }
+
         val value = getValue(apiId)
         if (value != null) {
             return fromBase64String(value) as ApplicationId
@@ -81,8 +90,11 @@ open class AppSessionDataReplicatedImpl(val id: String, val replicatedStorage: R
     }
 
     protected fun storeValue(key: String, value: String) : Boolean {
+        logger.debug("Storing key : $key , value : $value , id : $id")
         val stored = this.replicatedStorage.storeValue(id, key, value)
-        logger.debug("Storing key : $key , value : $value , id : $id stored : $stored" )
+        if (!stored) {
+            logger.warn("Failed to store key : $key , value : $value , id : $id")
+        }
         return stored
     }
 
