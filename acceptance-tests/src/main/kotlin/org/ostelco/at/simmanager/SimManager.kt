@@ -1,22 +1,6 @@
-package org.ostelco.simcards.admin
+package  org.ostelco.at.simmanager
 
-import arrow.core.Either
-import io.dropwizard.jdbi3.JdbiFactory
-import org.jdbi.v3.core.Jdbi
 import org.junit.Test
-import org.ostelco.prime.simmanager.SimManagerError
-import org.ostelco.simcards.hss.DirectHssDispatcher
-import org.ostelco.simcards.hss.HealthCheckRegistrar
-import org.ostelco.simcards.hss.SimManagerToHssDispatcherAdapter
-import org.ostelco.simcards.inventory.HssState
-import org.ostelco.simcards.inventory.ProvisionState
-import org.ostelco.simcards.inventory.SimEntry
-import org.ostelco.simcards.inventory.SimProfileKeyStatistics
-import org.ostelco.simcards.smdpplus.SmDpPlusApplication
-import org.testcontainers.containers.BindMode
-import org.testcontainers.containers.FixedHostPortGenericContainer
-import org.testcontainers.containers.PostgreSQLContainer
-import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 
 // Trello card being used to manage development of this file: https://trello.com/c/48els9Gt
 
