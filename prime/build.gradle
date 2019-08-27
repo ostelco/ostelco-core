@@ -18,13 +18,7 @@ sourceSets {
   }
 }
 
-version = "1.56.0"
-
-repositories {
-  maven {
-    url 'https://dl.bintray.com/palantir/releases' // docker-compose-rule is published on bintray
-  }
-}
+version = "1.57.0"
 
 dependencies {
   // interface module between prime and prime-modules
@@ -85,9 +79,9 @@ build.dependsOn integration
 shadowJar {
   mainClassName = 'org.ostelco.prime.PrimeApplicationKt'
   mergeServiceFiles()
-  classifier = "uber"
+  archiveClassifier = "uber"
   zip64 true
-  version = null
+  archiveVersion = ""
 }
 
 task version {

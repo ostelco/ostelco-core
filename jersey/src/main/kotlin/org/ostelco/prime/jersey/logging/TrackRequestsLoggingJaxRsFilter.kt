@@ -12,7 +12,7 @@ import javax.ws.rs.ext.Provider
  * Add an unique id to each request simplyfying tracking of requests in logs.
  */
 @Provider
-class TrackRequestsLoggingFilter : ContainerRequestFilter, ContainerResponseFilter {
+class TrackRequestsLoggingJaxRsFilter : ContainerRequestFilter, ContainerResponseFilter {
 
     /* Commonly used HTTP header for tracing requests. */
     private val requestTraceHeader = "X-Request-ID"

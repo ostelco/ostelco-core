@@ -2,9 +2,9 @@
 plugins {
   id "java"
   id "project-report"
-  id "com.github.ben-manes.versions" version "0.21.0"
+  id "com.github.ben-manes.versions" version "0.22.0"
   id "jacoco"
-  id "org.jetbrains.kotlin.jvm" version "1.3.41" apply false
+  id "org.jetbrains.kotlin.jvm" version "1.3.50" apply false
   id "com.google.protobuf" version "0.8.10" apply false
   id "com.github.johnrengelman.shadow" version "5.1.0" apply false
 }
@@ -17,10 +17,11 @@ allprojects {
 
   repositories {
     mavenCentral()
+    maven { url "https://dl.bintray.com/palantir/releases" } // docker-compose-rule is published on bintray
     jcenter()
-    maven { url = "http://repository.jboss.org/nexus/content/repositories/releases/" }
-    maven { url = "https://maven.repository.redhat.com/ga/" }
-    maven { url = "http://clojars.org/repo/" }
+    maven { url "http://repository.jboss.org/nexus/content/repositories/releases/" }
+    maven { url "https://maven.repository.redhat.com/ga/" }
+    maven { url "http://clojars.org/repo/" }
     maven { url "https://jitpack.io" }
   }
 
@@ -36,17 +37,17 @@ subprojects {
     options.encoding = 'UTF-8'
   }
   ext {
-    assertJVersion = "3.12.2"
+    assertJVersion = "3.13.2"
     arrowVersion = "0.8.2"
-    beamVersion = "2.13.0"
+    beamVersion = "2.15.0"
     csvVersion = "1.7"
-    cxfVersion = "3.3.2"
-    dockerComposeJunitRuleVersion = "1.0.0"
-    dropwizardVersion = "1.3.12"
+    cxfVersion = "3.3.3"
+    dockerComposeJunitRuleVersion = "1.3.0"
+    dropwizardVersion = "1.3.14"
     metricsVersion = "4.1.0"
     firebaseVersion = "6.9.0"
-    googleCloudVersion = "1.84.0"
-    grpcVersion = "1.22.1"
+    googleCloudVersion = "1.88.0"
+    grpcVersion = "1.23.0"
     guavaVersion = "28.0-jre"
     jacksonVersion = "2.9.9"
     javaxActivationVersion = "1.1.1"
@@ -55,24 +56,24 @@ subprojects {
     // Keeping it version 1.16.1 to be consistent with grpc via PubSub client lib
     // Keeping it version 1.16.1 to be consistent with netty via Firebase lib
     jaxbVersion = "2.3.1"
-    jdbi3Version = "3.9.0"
+    jdbi3Version = "3.9.1"
     jjwtVersion = "0.10.7"
     junit5Version = "5.5.1"
-    kotlinVersion = "1.3.41"
-    kotlinXCoroutinesVersion = "1.2.2"
+    kotlinVersion = "1.3.50"
+    kotlinXCoroutinesVersion = "1.3.0"
     mockitoVersion = "3.0.0"
     mockitoKotlinVersion = "2.1.0"
     neo4jDriverVersion="1.7.5"
     neo4jVersion="3.5.8"
     postgresqlVersion = "42.2.6"  // See comment in ./sim-administration/simmanager/build.gradle
     prometheusDropwizardVersion = "2.2.0"
-    protocVersion="3.9.0"
-    slf4jVersion="1.7.26"
+    protocVersion="3.9.1"
+    slf4jVersion="1.7.28"
     // IMPORTANT: When Stripe SDK library version is updated, check if the Stripe API version has changed.
     // If so, then update API version in Stripe Web Console for callback Webhooks.
-    stripeVersion = "10.12.0"
-    swaggerVersion = "2.0.8"
-    swaggerCodegenVersion = "2.4.7"
+    stripeVersion = "11.3.0"
+    swaggerVersion = "2.0.9"
+    swaggerCodegenVersion = "2.4.8"
     testcontainersVersion = "1.12.0"
     tinkVersion = "1.2.2"
     zxingVersion = "3.4.0"

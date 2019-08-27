@@ -12,7 +12,7 @@ dependencies {
 
   // https://mvnrepository.com/artifact/org.conscrypt/conscrypt-openjdk
   //  XXX Delete next line?
-  implementation "org.conscrypt:conscrypt-openjdk:2.1.0"
+  implementation "org.conscrypt:conscrypt-openjdk:2.2.1"
 
   implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
@@ -24,7 +24,7 @@ dependencies {
   implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
   implementation "io.dropwizard:dropwizard-jdbi:$dropwizardVersion"
 
-  implementation "org.conscrypt:conscrypt-openjdk-uber:2.1.0"
+  implementation "org.conscrypt:conscrypt-openjdk-uber:2.2.1"
 
   implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
   implementation "org.apache.commons:commons-csv:$csvVersion"
@@ -38,8 +38,8 @@ dependencies {
 shadowJar {
   mainClassName = "org.ostelco.simcards.smdpplus.SmDpPlusApplicationKt"
   mergeServiceFiles()
-  classifier = "uber"
-  version = null
+  archiveClassifier = "uber"
+  archiveVersion = ""
 }
 
 apply from: '../../gradle/jacoco.gradle'
