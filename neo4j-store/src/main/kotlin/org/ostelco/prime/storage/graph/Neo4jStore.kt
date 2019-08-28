@@ -2245,11 +2245,14 @@ object Neo4jStoreSingleton : GraphStore {
                 val paymentRecords = getPaymentTransactions(startPadded, endPadded)
                         .bind()
 
+                /* TODO: For handling amounts and currencies consider to use
+                         JSR-354 Currency and Money API. */
+
                 purchaseRecords.map {
                     mapOf("type" to "purchaseRecord",
                             "chargeId" to it.id,
                             "amount" to it.product.price.amount,
-                            "currency" to it.product.price.currency,
+                            "currency" to it.product.price.currency.toLowerCase(),
                             "refunded" to (it.refund != null),
                             "created" to it.timestamp,
                             "properties" to it.properties)
@@ -2258,14 +2261,12 @@ object Neo4jStoreSingleton : GraphStore {
                             mapOf("type" to "paymentRecord",
                                     "chargeId" to it.id,
                                     "amount" to it.amount,
-                                    "currency" to it.currency,
+                                    "currency" to it.currency,   /* (Stripe) Always lower case. */
                                     "refunded" to it.refunded,
                                     "created" to it.created,
                                     "properties" to it.properties)
                         }
-                ).map {
-                    it
-                }.groupBy {
+                ).groupBy {
                     it["chargeId"].hashCode() + it["amount"].hashCode() +
                             it["currency"].hashCode() + it["refunded"].hashCode()
                 }.map {
