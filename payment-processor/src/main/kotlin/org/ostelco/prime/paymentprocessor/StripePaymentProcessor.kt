@@ -106,9 +106,11 @@ class StripePaymentProcessor : PaymentProcessor {
                                                         "line2" to paymentSource.owner.address.line2,
                                                         "postalCode" to paymentSource.owner.address.postalCode,
                                                         "state" to paymentSource.owner.address.state)
+                                                        .filterValues { it != null }
                                             else
                                                 paymentSource.owner.address),
                             "threeDSecure" to paymentSource.threeDSecure)
+                            .filterValues { it != null }
                 }
                 else -> {
                     logger.error("Received unsupported Stripe source/account type: {}",

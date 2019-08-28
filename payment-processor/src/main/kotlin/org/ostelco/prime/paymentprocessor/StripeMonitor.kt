@@ -52,7 +52,7 @@ class StripeMonitor {
                                 else -> {
                                     logger.error(NOTIFY_OPS_MARKER,
                                             "Stripe API version mismatch between Stripe events and library, " +
-                                                    "found ${it.first().apiVersion}, expected ${Stripe.API_VERSION}")
+                                                    "got ${it.first().apiVersion}, expected ${Stripe.API_VERSION}")
                                     false
                                 }
                             }.right()
