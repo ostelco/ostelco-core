@@ -435,15 +435,16 @@ class SimAdministrationTest {
     }
 
 
-
-
     @Test
     fun testHealthchecks() {
         val healtchecks = getJsonFromEndpoint(healthcheckEndpoint)
 
         fun assertHealthy(nameOfHealthcheck: String) {
             try {
-                assertTrue(getJsonElement(endpointValue = healtchecks, name = nameOfHealthcheck, valueName = "healthy").asBoolean)
+                assertTrue(getJsonElement(
+                        endpointValue = healtchecks,
+                        name = nameOfHealthcheck,
+                        valueName = "healthy").asBoolean)
             } catch (t: Throwable) {
                 fail("Could not prove health of $nameOfHealthcheck")
             }
@@ -453,7 +454,6 @@ class SimAdministrationTest {
         assertHealthy("postgresql")
         assertHealthy("smdp")
     }
-
 
 
     fun getJsonElement(
