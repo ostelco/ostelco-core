@@ -61,6 +61,7 @@ class SimAdministrationTest {
         @JvmField
         @ClassRule
         val psql: KPostgresContainer = KPostgresContainer("postgres:11-alpine")
+                // XXX Beware of  the multiple init.sql files floating around!
                 .withInitScript("init.sql")
                 .withDatabaseName("sim_manager")
                 .withUsername("test")
@@ -125,10 +126,7 @@ class SimAdministrationTest {
     class KFixedHostPortGenericContainer(imageName: String) :
             FixedHostPortGenericContainer<KFixedHostPortGenericContainer>(imageName)
 
-    private val hssName = "Foo"
-    private val profileVendor = "Bar"
-    private val phoneType = "rababara"
-    private val expectedProfile = "IPHONE_PROFILE_2"
+
 
     /* Test endpoint. */
     private val simManagerEndpoint = "http://localhost:${SIM_MANAGER_RULE.localPort}/ostelco/sim-inventory"
@@ -164,6 +162,11 @@ class SimAdministrationTest {
 
         dao.clearTables()
     }
+
+    private val hssName = "Foo"
+    private val profileVendor = "Bar"
+    private val phoneType = "rababara"
+    private val expectedProfile = "IPHONE_PROFILE_2"
 
     private fun presetTables() {
         val dao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().getDAO()

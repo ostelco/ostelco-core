@@ -70,7 +70,6 @@ class SimManager {
         return targetElement.get(valueName)
     }
 
-
     @Test
     fun testHealthchecks() {
         val healthcheckEndpoint = "http://prime:8081/healthcheck"

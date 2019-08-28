@@ -158,7 +158,7 @@ modules:
         password: ${DB_PASSWORD}
         url: ${DB_URL}
         # the SQL query to run when validating a connection's liveness
-        validationQuery: "/* MyService Health Check */ SELECT 1"
+        validationQuery: "/* Prime Health Check */ SELECT 1"
       httpClient:
         timeout: 10000ms
         tls:

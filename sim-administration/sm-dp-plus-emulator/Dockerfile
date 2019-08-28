@@ -11,7 +11,6 @@ COPY config /config
 RUN mkdir -p src/test/resources/fixtures
 COPY src/test/resources/fixtures/sample-sim-batch-for-sm-dp+.csv  src/test/resources/fixtures/sample-sim-batch-for-sm-dp+.csv
 
-
 COPY build/libs/sm-dp-plus-emulator-uber.jar /sm-dp-plus-emulator.jar
 
 EXPOSE 8080

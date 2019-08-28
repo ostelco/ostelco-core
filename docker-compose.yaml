@@ -19,6 +19,9 @@ services:
       - DATASTORE_PROJECT_ID=${GCP_PROJECT_ID}
       - MANDRILL_API_KEY=
       - LOCAL_TESTING=true
+      - DB_USER=postgres_user
+      - DB_PASSWORD=postgres_password
+      - DB_URL=postgres:5432/sim-inventory
     ports:
       - "9090:8080"
       - "8082:8082"
@@ -126,11 +129,12 @@ services:
   postgres:
     container_name: postgres
     image: postgres:9.6
-    environment:
-      POSTGRES_USER: postgres_user
-      POSTGRES_PASSWORD: postgres_password
-      POSTGRES_DB: sim-inventory
+    build:
+      context: sim-administration/postgres
+      dockerfile: Dockerfile
     tmpfs: "//var/lib/postgresql/data"
+    ports:
+      - "55432:5432"
 
 networks:
   net:
