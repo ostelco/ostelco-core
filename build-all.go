@@ -155,7 +155,7 @@ func parseServiceAccountFile(filename string) (GcpProjectProfile) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Println("Successfully Opened $filename")
+	fmt.Println("Successfully Opened ", filename)
 	byteValue, _ := ioutil.ReadAll(jsonFile)
 	// defer the closing of our jsonFile so that we can parse it later on
 	defer jsonFile.Close()
