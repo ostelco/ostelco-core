@@ -37,11 +37,6 @@ services:
           - "prime"
         ipv4_address: 172.16.238.5
       default:
-    healthcheck:
-      test: ["CMD", "bash",              "curl", "-f", "http://127.0.0.1/healthcheck", "|",  "jq" , ".smdp.healthy" ,"|", "grep", "true" , "&&",              "curl", "-f", "http://127.0.0.1/healthcheck", "|",  "jq" , ".postgresql.healthy" ,"|", "grep", "true" , "&&",              "curl", "-f", "http://127.0.0.1/healthcheck", "|",  "jq" , ".db.healthy" ,"|", "grep", "true" ]
-      interval: 5s
-      timeout: 10s
-      retries: 3
 
   ocsgw:
     container_name: ocsgw
