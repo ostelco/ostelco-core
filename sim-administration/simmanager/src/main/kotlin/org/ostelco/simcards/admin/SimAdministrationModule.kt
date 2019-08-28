@@ -114,6 +114,9 @@ class SimAdministrationModule : PrimeModule {
                 hssAdapterProxy = hssAdapters,
                 profileVendors = config.profileVendors))
 
+        env.healthChecks().register("SM-DP+ connections",
+                SmdpPlusHealthceck(getDAO(), httpClient, config.profileVendors))
+
         // logging request and response contents
         env.servlets()
                 .addFilter("teeFilter", TeeFilter::class.java)

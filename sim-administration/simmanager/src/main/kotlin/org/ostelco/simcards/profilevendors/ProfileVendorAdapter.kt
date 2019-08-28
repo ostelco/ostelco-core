@@ -78,9 +78,9 @@ data class ProfileVendorAdapter(
      * @return Updated SIM profile
      */
     private fun downloadOrder(httpClient: CloseableHttpClient,
-                      config: ProfileVendorConfig,
-                      dao: SimInventoryDAO,
-                      simEntry: SimEntry): Either<SimManagerError, SimEntry> {
+                              config: ProfileVendorConfig,
+                              dao: SimInventoryDAO,
+                              simEntry: SimEntry): Either<SimManagerError, SimEntry> {
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = config.requesterIdentifier,
                 functionCallIdentifier = "downloadOrder"
@@ -161,10 +161,10 @@ data class ProfileVendorAdapter(
      * @return Updated SIM profile
      */
     private fun confirmOrder(httpClient: CloseableHttpClient,
-                     config: ProfileVendorConfig,
-                     dao: SimInventoryDAO,
-                     eid: String? = null,
-                     simEntry: SimEntry): Either<SimManagerError, SimEntry> {
+                             config: ProfileVendorConfig,
+                             dao: SimInventoryDAO,
+                             eid: String? = null,
+                             simEntry: SimEntry): Either<SimManagerError, SimEntry> {
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = config.requesterIdentifier,
                 functionCallIdentifier = UUID.randomUUID().toString()
@@ -278,7 +278,7 @@ data class ProfileVendorAdapter(
 
     /* XXX Missing:
            1. unit tests
-           2. enabled integration test - depends on support in SM-DP+ emulator */
+     */
 
     /**
      * Downloads the SM-DP+ 'profile status' information for a list of ICCIDs
@@ -368,4 +368,21 @@ data class ProfileVendorAdapter(
                     .left()
         }
     }
+
+    /**
+     * A dummy ICCID. Should never return a valid profile from any HSS or SM-DP+, but is
+     * useful for checking of there is an SM-DP+ in the other end of the connection.
+     */
+    val invalidICCID = listOf("012345677890123456789")
+
+    /**
+     * Contact the ES2+  endpoint of the SM-DP+, and return true if the answer indicates
+     * that it's up.
+     */
+    fun ping(httpClient: CloseableHttpClient,
+             config: ProfileVendorConfig): Either<SimManagerError, List<ProfileStatus>> =
+            getProfileStatus(
+                    httpClient = httpClient,
+                    config = config,
+                    iccidList = invalidICCID)
 }

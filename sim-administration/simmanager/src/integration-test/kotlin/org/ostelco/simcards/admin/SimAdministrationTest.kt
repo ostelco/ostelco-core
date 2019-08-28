@@ -435,7 +435,7 @@ class SimAdministrationTest {
 
 
     @Test
-    fun testHealthchecs() {
+    fun testHealthchecks() {
         val healtchecks = getJsonFromEndpoint(healthcheckEndpoint)
         assertTrue(getJsonElement(endpointValue =  healtchecks, name = "db",  valueName = "healthy").asBoolean)
         assertTrue(getJsonElement(endpointValue =  healtchecks, name = "postgresql",  valueName = "healthy").asBoolean)

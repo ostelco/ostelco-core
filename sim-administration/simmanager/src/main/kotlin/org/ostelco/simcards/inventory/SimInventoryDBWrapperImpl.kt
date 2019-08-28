@@ -161,6 +161,12 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
                 db.addProfileVendorAdapter(name)
             }
 
+
+    override fun getAllProfileVendors(): Either<SimManagerError, List<ProfileVendorAdapter>> =
+            either(NotFoundError("Found no SIM profile vendors.")) {
+                db.getAllProfileVendors()
+            }
+
     override fun getProfileVendorAdapterByName(name: String): Either<SimManagerError, ProfileVendorAdapter> =
             either(NotFoundError("Found no SIM profile vendor with metricName $name")) {
                 db.getProfileVendorAdapterByName(name)

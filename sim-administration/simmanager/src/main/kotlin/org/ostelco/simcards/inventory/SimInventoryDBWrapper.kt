@@ -20,6 +20,8 @@ interface SimInventoryDBWrapper {
 
     fun findNextReadyToUseSimProfileForHss(hssId: Long, profile: String): Either<SimManagerError, SimEntry>
 
+    fun getAllProfileVendors(): Either<SimManagerError, List<ProfileVendorAdapter>>
+
     /**
      * Sets the EID value of a SIM entry (profile).
      * @param iccid  SIM entry to update
