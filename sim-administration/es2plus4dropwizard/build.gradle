@@ -4,17 +4,14 @@ plugins {
 
 dependencies {
     implementation project(":sim-administration:jersey-json-schema-validator")
+    implementation project(":prime-modules")
 
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
-    implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
     implementation "io.swagger.core.v3:swagger-core:$swaggerVersion"
     implementation "io.swagger.core.v3:swagger-jaxrs2:$swaggerVersion"
     implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
 
     testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
     testImplementation "org.mockito:mockito-core:$mockitoVersion"
-    testImplementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
-    testImplementation "javax.xml.bind:jaxb-api:$jaxbVersion"
 }
 
 apply from: '../../gradle/jacoco.gradle'

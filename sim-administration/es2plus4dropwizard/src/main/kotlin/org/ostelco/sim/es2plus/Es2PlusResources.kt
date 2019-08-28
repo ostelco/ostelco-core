@@ -2,6 +2,7 @@ package org.ostelco.sim.es2plus
 
 import io.dropwizard.jersey.setup.JerseyEnvironment
 import org.ostelco.jsonschema.DynamicES2ValidatorAdder
+import org.ostelco.prime.jersey.logging.Critical
 import org.ostelco.sim.es2plus.ES2PlusClient.Companion.X_ADMIN_PROTOCOL_HEADER_VALUE
 import org.ostelco.sim.es2plus.SmDpPlusServerResource.Companion.ES2PLUS_PATH_PREFIX
 import org.slf4j.LoggerFactory
@@ -182,6 +183,7 @@ class SmDpPlusCallbackResource(private val smDpPlus: SmDpPlusCallbackService) {
      * back to the  operator's BSS system about the progress of various
      * operations.
      */
+    @Critical
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("handleDownloadProgressInfo")
     @POST

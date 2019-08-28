@@ -38,8 +38,8 @@ dependencies {
 shadowJar {
     mainClassName = 'org.ostelco.ocsgw.OcsApplication'
     mergeServiceFiles()
-    classifier = "uber"
-    version = null
+    archiveClassifier = "uber"
+    archiveVersion = ""
 }
 
 version = "1.1.27"

@@ -1,5 +1,5 @@
 
-[![Kotlin version badge](https://img.shields.io/badge/kotlin-1.3.41-blue.svg)](http://kotlinlang.org/)
+[![Kotlin version badge](https://img.shields.io/badge/kotlin-1.3.50-blue.svg)](http://kotlinlang.org/)
 [![Prime version](https://img.shields.io/github/tag/ostelco/ostelco-core.svg)](https://github.com/ostelco/ostelco-core/tags)
 [![GitHub license](https://img.shields.io/github/license/ostelco/ostelco-core.svg)](https://github.com/ostelco/ostelco-core/blob/master/LICENSE)
 

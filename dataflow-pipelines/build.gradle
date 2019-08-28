@@ -28,8 +28,8 @@ dependencies {
 shadowJar {
   mainClassName = 'org.ostelco.dataflow.pipelines.DeployPipelineKt'
   mergeServiceFiles()
-  classifier = "uber"
-  version = null
+  archiveClassifier = "uber"
+  archiveVersion = ""
 }
 
 sourceCompatibility = "1.8"

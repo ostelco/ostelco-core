@@ -3,11 +3,6 @@ plugins {
   id "java-library"
 }
 
-repositories {
-  maven {
-    url 'https://dl.bintray.com/palantir/releases' // docker-compose-rule is published on bintray
-  }
-}
 dependencies {
 
   implementation project(":prime-modules")

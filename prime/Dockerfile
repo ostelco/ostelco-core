@@ -2,6 +2,8 @@ FROM azul/zulu-openjdk:12.0.2
 
 LABEL maintainer="dev@redotter.sg"
 
+COPY profiler_java_agent /opt/cprof
+
 COPY script/start.sh /start.sh
 
 COPY config/customer.graphqls /config/

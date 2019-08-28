@@ -5,6 +5,7 @@ import com.google.gson.JsonSyntaxException
 import com.stripe.exception.SignatureVerificationException
 import com.stripe.net.Webhook
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.jersey.logging.Critical
 import org.ostelco.prime.paymentprocessor.publishers.StripeEventPublisher
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
@@ -27,6 +28,7 @@ class StripeWebhookResource() {
     private val endpointSecret = System.getenv("STRIPE_ENDPOINT_SECRET")
             ?: throw Error("Missing environment variable STRIPE_ENDPOINT_SECRET")
 
+    @Critical
     @POST
     @Produces("application/json")
     fun handleEvent(@NotNull @Valid @HeaderParam("Stripe-Signature")
