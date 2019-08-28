@@ -60,6 +60,9 @@ class SmdpPlusHealthceck(
                     val profileVendorAdaptorList = simInventoryDAO.getAllProfileVendors().bind()
                     for (profileVendor in profileVendorAdaptorList) {
                         val currentConfig = profileVendorConfigList.first { it.name == profileVendor.name }
+
+                        // This isn't working very well in the acceptance tests, so we need to log a little.
+                        logger.info("About to ping config: $currentConfig")
                         profileVendor.ping(
                                 httpClient = httpClient,
                                 config = currentConfig

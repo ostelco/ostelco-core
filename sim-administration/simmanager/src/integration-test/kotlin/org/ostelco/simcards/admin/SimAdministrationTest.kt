@@ -421,19 +421,6 @@ class SimAdministrationTest {
     }
 
 
-    private fun getJsonFromEndpoint(endpoint: String): JsonObject {
-        var response = client.target(endpoint)
-                .request()
-                .get()
-        assertEquals(200, response.status)
-        var entity = response.readEntity(String::class.java)
-
-
-        val jelement = JsonParser().parse(entity)
-        var jobject = jelement.getAsJsonObject()
-        return jobject
-    }
-
 
     @Test
     fun testHealthchecks() {
@@ -453,6 +440,20 @@ class SimAdministrationTest {
         assertHealthy("db")
         assertHealthy("postgresql")
         assertHealthy("smdp")
+    }
+
+
+    private fun getJsonFromEndpoint(endpoint: String): JsonObject {
+        var response = client.target(endpoint)
+                .request()
+                .get()
+        assertEquals(200, response.status)
+        var entity = response.readEntity(String::class.java)
+
+
+        val jelement = JsonParser().parse(entity)
+        var jobject = jelement.getAsJsonObject()
+        return jobject
     }
 
 

@@ -20,6 +20,7 @@ class TestSuite {
                 checkResult(
                         JUnitCore.runClasses(
                                 ParallelComputer(true, true),
+                                /*
                                 org.ostelco.at.okhttp.CustomerTest::class.java,
                                 // org.ostelco.at.okhttp.SubscriptionsTest::class.java,
                                 org.ostelco.at.okhttp.RegionsTest::class.java,
@@ -42,6 +43,8 @@ class TestSuite {
                                 org.ostelco.at.jersey.GraphQlTests::class.java,
                                 org.ostelco.at.jersey.JumioKycTest::class.java,
                                 org.ostelco.at.pgw.OcsTest::class.java,
+                                ... Commented out just to be able to test the sim manager tests more quickly.
+                                 */
                                 org.ostelco.at.simmanager.SimManager::class.java
                         )
                 )
