@@ -17,6 +17,7 @@ import org.jdbi.v3.core.Jdbi
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -434,12 +435,25 @@ class SimAdministrationTest {
     }
 
 
+
+
     @Test
     fun testHealthchecks() {
         val healtchecks = getJsonFromEndpoint(healthcheckEndpoint)
-        assertTrue(getJsonElement(endpointValue =  healtchecks, name = "db",  valueName = "healthy").asBoolean)
-        assertTrue(getJsonElement(endpointValue =  healtchecks, name = "postgresql",  valueName = "healthy").asBoolean)
+
+        fun assertHealthy(nameOfHealthcheck: String) {
+            try {
+                assertTrue(getJsonElement(endpointValue = healtchecks, name = nameOfHealthcheck, valueName = "healthy").asBoolean)
+            } catch (t: Throwable) {
+                fail("Could not prove health of $nameOfHealthcheck")
+            }
+        }
+
+        assertHealthy("db")
+        assertHealthy("postgresql")
+        assertHealthy("smdp")
     }
+
 
 
     fun getJsonElement(
