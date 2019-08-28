@@ -3,7 +3,7 @@
 
   <appender name="CLOUD" class="com.google.cloud.logging.logback.LoggingAppender">
     <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-      <level>INFO</level>
+      <level>DEBUG</level>
     </filter>
     <log>ocsgw</log>
   </appender>
@@ -14,8 +14,8 @@
     </encoder>
   </appender>
   
-  <logger name="org.ostelco" level="INFO"/>
-  <logger name="org.ostelco.diameter.ha" level="INFO"/>
+  <logger name="org.ostelco" level="DEBUG"/>
+  <logger name="org.ostelco.diameter.ha" level="DEBUG"/>
   <logger name="org.mobicents.tests.diameter" level="INFO"/>
   <logger name="org.jdiameter.common.impl.validation" level="INFO"/>
   <logger name="jdiameter.statistic" level="INFO"/>
@@ -24,7 +24,7 @@
   <logger name="io.lettuce.core" level="INFO" />
   <logger name="io.netty" level="INFO" />
 
-  <root level="INFO">
+  <root level="DEBUG">
     <appender-ref ref="CLOUD"/>
   </root>
 

@@ -18,7 +18,7 @@ dependencies {
     implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
     implementation "io.dropwizard:dropwizard-jdbi:$dropwizardVersion"
 
-    implementation 'org.conscrypt:conscrypt-openjdk-uber:2.1.0'
+    implementation 'org.conscrypt:conscrypt-openjdk-uber:2.2.1'
 
     testImplementation "javax.activation:javax.activation-api:$javaxActivationApiVersion"
     implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"

@@ -25,7 +25,7 @@ dependencies {
   implementation "javax.annotation:javax.annotation-api:$javaxAnnotationVersion"
 
   // taken from build/swagger-code-java-client/build.gradle
-  implementation 'io.swagger:swagger-annotations:1.5.22'
+  implementation 'io.swagger:swagger-annotations:1.5.23'
   implementation 'com.google.code.gson:gson:2.8.5'
   implementation 'com.squareup.okhttp:okhttp:2.7.5'
   implementation 'com.squareup.okhttp:logging-interceptor:2.7.5'

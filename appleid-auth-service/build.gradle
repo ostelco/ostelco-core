@@ -21,8 +21,8 @@ dependencies {
 shadowJar {
   mainClassName = 'org.ostelco.auth.AuthServerApplicationKt'
   mergeServiceFiles()
-  classifier = "uber"
-  version = null
+  archiveClassifier = "uber"
+  archiveVersion = ""
 }
 
 apply from: '../gradle/jacoco.gradle'

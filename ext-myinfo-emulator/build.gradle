@@ -25,8 +25,8 @@ dependencies {
 shadowJar {
   mainClassName = 'org.ostelco.ext.myinfo.MyInfoEmulatorAppKt'
   mergeServiceFiles()
-  classifier = "uber"
-  version = null
+  archiveClassifier = "uber"
+  archiveVersion = ""
 }
 
 apply from: '../gradle/jacoco.gradle'
