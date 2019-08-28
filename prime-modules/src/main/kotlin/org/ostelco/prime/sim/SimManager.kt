@@ -6,6 +6,9 @@ import org.ostelco.prime.model.SimProfileStatus
 
 /**
  * This is the external interface for sim management.
+ * XXX TODO:   Error situations should be reported in a fashion that makes it possible for user agents to
+ *             provide sensible error messages.   This is happening accoring to some protocol that is described
+ *             somewhere, but not here.  That is obviously an error that should be amended.
  */
 interface SimManager {
 
