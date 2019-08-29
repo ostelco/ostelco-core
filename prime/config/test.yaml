@@ -7,6 +7,7 @@ modules:
       jerseyClient:
         timeout: 3s
         connectionRequestTimeout: 1s
+  - type: tracing
   - type: doc-data-store
     config:
       storeType: emulator

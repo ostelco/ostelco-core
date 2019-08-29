@@ -1,0 +1,16 @@
+plugins {
+  id "org.jetbrains.kotlin.jvm"
+  id "java-library"
+}
+
+dependencies {
+  implementation project(":prime-modules")
+
+  implementation "io.opencensus:opencensus-api:$opencensusVersion"
+  runtimeOnly "io.opencensus:opencensus-impl:$opencensusVersion"
+  implementation "io.opencensus:opencensus-exporter-trace-stackdriver:$opencensusVersion"
+
+  testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
+}
+
+apply from: '../gradle/jacoco.gradle'

@@ -19,7 +19,7 @@ sourceSets {
 }
 
 // Update version in [script/start.sh] too.
-version = "1.58.0"
+version = "1.59.0"
 
 dependencies {
   // interface module between prime and prime-modules
@@ -45,6 +45,7 @@ dependencies {
   runtimeOnly project(':secure-archive')
   runtimeOnly project(':scaninfo-datastore')
   runtimeOnly project(':sim-administration:simmanager')
+  runtimeOnly project(':tracing')
 
   runtimeOnly project(':logging')
 

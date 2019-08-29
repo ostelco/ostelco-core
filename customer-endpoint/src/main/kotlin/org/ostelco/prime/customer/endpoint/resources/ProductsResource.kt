@@ -4,6 +4,7 @@ import io.dropwizard.auth.Auth
 import org.ostelco.prime.apierror.responseBuilder
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.customer.endpoint.store.SubscriberDAO
+import org.ostelco.prime.tracing.EnableTracing
 import javax.validation.constraints.NotNull
 import javax.ws.rs.GET
 import javax.ws.rs.POST
@@ -31,6 +32,7 @@ class ProductsResource(private val dao: SubscriberDAO) {
                         .responseBuilder()
             }.build()
 
+    @EnableTracing
     @POST
     @Path("{sku}/purchase")
     @Produces(MediaType.APPLICATION_JSON)

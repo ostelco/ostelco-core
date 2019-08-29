@@ -41,14 +41,14 @@ class SimCardBatchDescriptorReaderTest {
         val iccidGen  = IccidGenerator(startSerialNum = 0)
         val profileName = "FooTel_STD"
 
-        val writer = PrintWriter("sample-sim-batch-for-sm-dp+.csv", StandardCharsets.UTF_8)
-        writer.println("IMSI, ICCID, PROFILE")
-        for (i in 1..100) {
-            val imsi = imsiGen.next()
-            val iccid = iccidGen.next()
-            writer.println("%s,%s,%s".format(imsi, iccid, profileName))
+        PrintWriter("sample-sim-batch-for-sm-dp+.csv", StandardCharsets.UTF_8).use { writer ->
+            writer.println("IMSI, ICCID, PROFILE")
+            for (i in 1..100) {
+                val imsi = imsiGen.next()
+                val iccid = iccidGen.next()
+                writer.println("%s,%s,%s".format(imsi, iccid, profileName))
+            }
         }
-        writer.close()
     }
 }
 

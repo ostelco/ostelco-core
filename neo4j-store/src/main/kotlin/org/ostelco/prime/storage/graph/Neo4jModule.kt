@@ -29,7 +29,7 @@ class Neo4jModule : PrimeModule {
         Neo4jClient.start()
 
         // For Acceptance Tests
-        if (System.getenv("FIREBASE_ROOT_PATH") == "test") {
+        if (System.getenv("ACCEPTANCE_TESTING") == "true") {
             RunnableKotlinScript(ClasspathResourceTextReader("/AcceptanceTestSetup.kts").readText()).eval<Any?>()
         }
     }

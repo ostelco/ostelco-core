@@ -10,6 +10,7 @@ import org.ostelco.prime.model.MyInfoApiVersion
 import org.ostelco.prime.model.MyInfoApiVersion.V2
 import org.ostelco.prime.model.MyInfoApiVersion.V3
 import org.ostelco.prime.module.getResource
+import org.ostelco.prime.tracing.EnableTracing
 import javax.validation.constraints.NotNull
 import javax.ws.rs.GET
 import javax.ws.rs.POST
@@ -83,6 +84,7 @@ class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(regionCo
     fun myInfoV3Resource(): MyInfoResource =
          MyInfoResource(dao = dao, version = V3, myInfoKycService = getResource("v3"))
 
+    @EnableTracing
     @GET
     @Path("/dave/{nricFinId}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -102,6 +104,7 @@ class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(regionCo
         }.build()
     }
 
+    @EnableTracing
     @PUT
     @Path("/profile")
     @Produces(MediaType.APPLICATION_JSON)
@@ -127,6 +130,7 @@ class MyInfoResource(private val dao: SubscriberDAO,
                      private val version: MyInfoApiVersion,
                      private val myInfoKycService: MyInfoKycService) {
 
+    @EnableTracing
     @GET
     @Path("/personData/{authorisationCode}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -157,6 +161,7 @@ class MyInfoResource(private val dao: SubscriberDAO,
 
 class JumioKycResource(private val regionCode: String, private val dao: SubscriberDAO) {
 
+    @EnableTracing
     @POST
     @Path("/scans")
     @Produces(MediaType.APPLICATION_JSON)

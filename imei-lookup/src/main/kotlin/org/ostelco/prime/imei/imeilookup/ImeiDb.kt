@@ -1,6 +1,7 @@
 package org.ostelco.prime.imei.imeilookup
 
 import arrow.core.Either
+import arrow.core.right
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.imei.ImeiLookup
 import org.ostelco.prime.imei.core.BadRequestError
@@ -9,7 +10,6 @@ import org.ostelco.prime.imei.core.ImeiLookupError
 import org.ostelco.prime.imei.core.ImeiNotFoundError
 import java.io.BufferedReader
 import java.io.FileReader
-import java.io.IOException
 
 
 /**
@@ -47,43 +47,37 @@ object ImeiDdSingleton : ImeiLookup {
         return Either.left(ImeiNotFoundError("Not implemented jet"))
     }
 
-    fun loadFile(fileName: String): Either<ImeiLookupError, Boolean> {
+    fun loadFile(fileName: String): Either<ImeiLookupError, Unit> {
         logger.info("Loading file $fileName")
 
-        var fileReader: BufferedReader? = null
-
         try {
-            fileReader = BufferedReader(FileReader(fileName))
+            BufferedReader(FileReader(fileName)).use { fileReader ->
 
-            // Read CSV header
-            fileReader.readLine()
+                // Read CSV header
+                fileReader.readLine()
 
-            var line = fileReader.readLine()
-            while (line != null) {
-                val tokens = line.split("|")
-                if (tokens.isNotEmpty()) {
-                    val imei = Imei(
-                            tokens[TAC_IDX],
-                            tokens[MARKETING_NAME_IDX],
-                            tokens[MANUFACTURER_IDX],
-                            tokens[BRAND_NAME_IDX],
-                            tokens[MODEL_NAME_IDX],
-                            tokens[OPERATING_SYSTEM_IDX],
-                            tokens[DEVICE_TYPE_IDX],
-                            tokens[OEM_IDX])
-                    db[imei.tac] = imei
+                var line = fileReader.readLine()
+                while (line != null) {
+                    val tokens = line.split("|")
+                    if (tokens.isNotEmpty()) {
+                        val imei = Imei(
+                                tokens[TAC_IDX],
+                                tokens[MARKETING_NAME_IDX],
+                                tokens[MANUFACTURER_IDX],
+                                tokens[BRAND_NAME_IDX],
+                                tokens[MODEL_NAME_IDX],
+                                tokens[OPERATING_SYSTEM_IDX],
+                                tokens[DEVICE_TYPE_IDX],
+                                tokens[OEM_IDX])
+                        db[imei.tac] = imei
+                    }
+                    line = fileReader.readLine()
                 }
-                line = fileReader.readLine()
             }
         } catch (e: Exception) {
             logger.error("Reading CSV Error!", e)
-        } finally {
-            try {
-                fileReader!!.close()
-            } catch (e: IOException) {
-                logger.error("Closing fileReader Error!", e)
-            }
         }
-        return Either.right(true)
+
+        return Unit.right()
     }
 }
