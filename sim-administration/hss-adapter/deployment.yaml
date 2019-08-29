@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hss-adapter
+spec:
+  containers:
+  - name: hss-adapter
+    image: hss-adapter:latest
+    imagePullPolicy: Never
+    - containerPort: 9000
