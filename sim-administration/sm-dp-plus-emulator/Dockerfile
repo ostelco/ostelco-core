@@ -4,12 +4,10 @@ LABEL maintainer="dev@redotter.sg"
 
 COPY script/start.sh /start.sh
 
-COPY config /config
-
-# This is bad form, but it's just to make it possible to run
-# the emulator both in docker and from IDE using the same config.
-RUN mkdir -p src/test/resources/fixtures
-COPY src/test/resources/fixtures/sample-sim-batch-for-sm-dp+.csv  src/test/resources/fixtures/sample-sim-batch-for-sm-dp+.csv
+RUN mkdir config
+COPY config/sample-sim-batch-for-sm-dp+.csv /config
+COPY config/config.yaml /config
+COPY config/sk_keys.jks /config
 
 COPY build/libs/sm-dp-plus-emulator-uber.jar /sm-dp-plus-emulator.jar
 

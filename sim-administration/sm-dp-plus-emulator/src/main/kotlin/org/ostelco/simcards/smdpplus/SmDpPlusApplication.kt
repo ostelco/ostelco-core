@@ -134,7 +134,15 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
 
     init {
         incomingEntries.forEach { originalEntries.add(it) }
-        log.info("Just read ${entries.size} SIM entries.")
+
+        val noOfEntries = entries.size
+
+        if (noOfEntries != 0) {
+            log.info("Just read ${noOfEntries} SIM entries.")
+        }  else {
+            log.error("Just read zero SIM entries, this is useless, will abort!")
+            System.exit(0)
+        }
     }
 
     inner class SmDpPlusEmulatorHealthCheck() : HealthCheck() {
