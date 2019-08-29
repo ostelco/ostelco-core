@@ -54,6 +54,7 @@ class SmdpPlusHealthceck(
      * Contact the available SM-DP+ instances, return true if they are all available, otherwise false.
      */
     private fun checkIfSmdpPlusIsUp(): Boolean {
+        logger.info("About to test SMDP+ list for up/down status.")
         try {
             return IO {
                 Either.monad<SimManagerError>().binding {
