@@ -25,6 +25,7 @@ import org.ostelco.sim.es2plus.SmDpPlusServerResource
 import org.ostelco.sim.es2plus.SmDpPlusService
 import org.ostelco.sim.es2plus.eS2SuccessResponseHeader
 import org.slf4j.LoggerFactory
+import java.io.File
 import java.io.FileInputStream
 
 
@@ -51,6 +52,8 @@ fun main(args: Array<String>) = SmDpPlusApplication().run(*args)
  */
 class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 
+    private val log = LoggerFactory.getLogger(javaClass)
+
     override fun getName(): String {
         return "SM-DP+ implementation (partial, only for testing of sim admin service)"
     }
@@ -75,6 +78,21 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
         addOpenapiResourceToJerseyEnv(jerseyEnvironment, config.openApi)
         addEs2PlusDefaultFiltersAndInterceptors(jerseyEnvironment)
 
+        log.info("Reading configs from '${config.simBatchData}'")
+        if (!File(config.simBatchData).exists()) {
+            log.error("Input file '$config.simBatchData' does not exist, bailing out!")
+            System.exit(0)
+        } else {
+            log.info("Input file '$config.simBatchData' does exist, will try to read it!")
+        }
+
+        if (!File(config.simBatchData).canRead()) {
+            log.error("Input file '$config.simBatchData' can't be read, bailing out!")
+            System.exit(0)
+        } else {
+            log.info("Input file '$config.simBatchData' is readable, will try to read it!")
+        }
+
         val simEntriesIterator = SmDpSimEntryIterator(FileInputStream(config.simBatchData))
         val smDpPlusEmulator =  SmDpPlusEmulator(simEntriesIterator)
         this.smdpPlusService = smDpPlusEmulator
@@ -85,7 +103,6 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
         jerseyEnvironment.register(CertificateAuthorizationFilter(RBACService(
                 rolesConfig = config.rolesConfig,
                 certConfig = config.certConfig)))
-
 
         // XXX This is weird, is it even necessary?  Probably not.
         jerseyEnvironment.register(CertificateAuthorizationFilter(
@@ -341,6 +358,7 @@ data class SmDpPlusAppConfiguration(
         /**
          * Path to file containing simulated SIM data.
          */
+        @JsonProperty("simBatchData")
         val simBatchData: String = "",
 
         /**
