@@ -9,7 +9,6 @@ import java.nio.charset.Charset
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.AtomicLong
 
-
 /**
  * Read a CSV input stream containing simulated input to an SM-DP+, with columns
  * ICCID, IMSI and Profile.  Return an iterator over SmDpSimEntry instances.
@@ -38,12 +37,10 @@ class SmDpSimEntryIterator(csvInputStream: InputStream) : Iterator<SmDpSimEntry>
                     val imsi = record.get("IMSI")
                     val profile = record.get("PROFILE")
 
-
                     val value = SmDpSimEntry(
                             iccid = iccid,
                             imsi = imsi,
-                            profile = profile
-                    )
+                            profile = profile)
 
                     values.add(value)
                     count.incrementAndGet()

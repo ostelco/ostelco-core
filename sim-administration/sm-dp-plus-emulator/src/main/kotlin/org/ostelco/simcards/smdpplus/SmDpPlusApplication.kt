@@ -93,6 +93,7 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
             log.info("Input file '$config.simBatchData' is readable, will try to read it!")
         }
 
+
         val simEntriesIterator = SmDpSimEntryIterator(FileInputStream(config.simBatchData))
         val smDpPlusEmulator =  SmDpPlusEmulator(simEntriesIterator)
         this.smdpPlusService = smDpPlusEmulator
