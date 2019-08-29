@@ -118,6 +118,8 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
                 httpClient = httpClient)
 
         env.healthChecks().register("coreEmulatorHealthcheck", smDpPlusEmulator.getHealthCheckInstance())
+
+        reset()
     }
 
     fun reset() {
@@ -152,6 +154,8 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
 
     init {
         incomingEntries.forEach { originalEntries.add(it) }
+
+        reset()
 
         val noOfEntries = entries.size
 
