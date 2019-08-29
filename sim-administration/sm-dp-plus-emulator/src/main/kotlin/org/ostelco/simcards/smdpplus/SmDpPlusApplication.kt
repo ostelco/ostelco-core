@@ -143,7 +143,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
         override fun check(): HealthCheck.Result {
             return if (entries.isNotEmpty()) {
                 HealthCheck.Result.healthy()
-            } else HealthCheck.Result.unhealthy("Has no entries.")
+            } else HealthCheck.Result.unhealthy("Has no entries, should have at least one.")
         }
     }
 
