@@ -125,6 +125,9 @@ services:
   smdp-plus-emulator:
     container_name: smdp-plus-emulator
     build: sim-administration/sm-dp-plus-emulator
+    ports:
+      - "10080:8080"
+      - "18081:8081"
 
   postgres:
     container_name: postgres

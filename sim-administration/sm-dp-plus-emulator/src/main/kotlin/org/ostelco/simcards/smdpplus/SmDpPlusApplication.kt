@@ -1,5 +1,6 @@
 package org.ostelco.simcards.smdpplus
 
+import com.codahale.metrics.health.HealthCheck
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.dropwizard.Application
@@ -25,6 +26,10 @@ import org.ostelco.sim.es2plus.SmDpPlusService
 import org.ostelco.sim.es2plus.eS2SuccessResponseHeader
 import org.slf4j.LoggerFactory
 import java.io.FileInputStream
+
+
+
+
 
 fun main(args: Array<String>) = SmDpPlusApplication().run(*args)
 
@@ -71,7 +76,8 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
         addEs2PlusDefaultFiltersAndInterceptors(jerseyEnvironment)
 
         val simEntriesIterator = SmDpSimEntryIterator(FileInputStream(config.simBatchData))
-        this.smdpPlusService = SmDpPlusEmulator(simEntriesIterator)
+        val smDpPlusEmulator =  SmDpPlusEmulator(simEntriesIterator)
+        this.smdpPlusService = smDpPlusEmulator
 
         this.serverResource = SmDpPlusServerResource(
                 smDpPlus = smdpPlusService)
@@ -92,12 +98,16 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
                 host = config.es2plusConfig.host,
                 port = config.es2plusConfig.port,
                 httpClient = httpClient)
+
+        env.healthChecks().register("coreEmulatorHealthcheck", smDpPlusEmulator.getHealthCheckInstance())
     }
 
     fun reset() {
         this.smdpPlusService.reset();
     }
 }
+
+
 
 /**
  * A very reduced  functionality SmDpPlus, essentially handling only
@@ -120,11 +130,25 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
 
     private val originalEntries: MutableSet<SmDpSimEntry> = mutableSetOf()
 
+    private val  healthCheck: HealthCheck = SmDpPlusEmulatorHealthCheck()
+
     init {
         incomingEntries.forEach { originalEntries.add(it) }
-
         log.info("Just read ${entries.size} SIM entries.")
     }
+
+    inner class SmDpPlusEmulatorHealthCheck() : HealthCheck() {
+
+        @Throws(Exception::class)
+        override fun check(): HealthCheck.Result {
+            return if (entries.isNotEmpty()) {
+                HealthCheck.Result.healthy()
+            } else HealthCheck.Result.unhealthy("Has no entries.")
+        }
+    }
+
+    fun getHealthCheckInstance(): HealthCheck =  this.healthCheck
+
 
     fun reset() {
         entries.clear()
@@ -277,6 +301,8 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
     override fun releaseProfile(iccid: String) {
         TODO("not implemented")
     }
+
+
 }
 
 /**

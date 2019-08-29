@@ -18,6 +18,7 @@ interface SmDpPlusService {
 
     @Throws(SmDpPlusException::class)
     fun releaseProfile(iccid: String)
+
 }
 
 interface  SmDpPlusCallbackService {
