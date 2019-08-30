@@ -276,10 +276,6 @@ data class ProfileVendorAdapter(
                         it.first().right()
                     }
 
-    /* XXX Missing:
-           1. unit tests
-     */
-
     /**
      * Downloads the SM-DP+ 'profile status' information for a list of ICCIDs
      * from a SM-DP+ service.

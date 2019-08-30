@@ -16,12 +16,12 @@ interface SmDpPlusService {
     @Throws(SmDpPlusException::class)
     fun cancelOrder(eid: String?, iccid: String?, matchingId: String?, finalProfileStatusIndicator: String?)
 
+
+    @Throws(SmDpPlusException::class)
+    fun getProfileStatus(iccid: String): Es2ProfileStatusResponse
+
     @Throws(SmDpPlusException::class)
     fun releaseProfile(iccid: String)
-
-    @Throws(SmDpPlusException::class)
-    fun getProfileStatus(iccid: String)
-
 }
 
 interface  SmDpPlusCallbackService {

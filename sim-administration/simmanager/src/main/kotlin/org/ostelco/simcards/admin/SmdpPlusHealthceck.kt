@@ -95,8 +95,8 @@ class SmdpPlusHealthceck(
                                 httpClient = httpClient,
                                 config = currentConfig!!
                         )
-                        pingResult.mapLeft {
-                            logger.error("Could not reach SM-DP+ via HTTP PING:", it)
+                        pingResult.mapLeft { error ->
+                            logger.error("Could not reach SM-DP+ via HTTP PING:", error)
                         }
                         pingResult.bind()
                     }

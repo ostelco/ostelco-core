@@ -262,12 +262,12 @@ data class ES2StatusCodeData(
 ///    Convenience functions to generate headers
 ///
 
-fun newErrorHeader(e: SmDpPlusException): ES2ResponseHeader {
+fun newErrorHeader(exception: SmDpPlusException): ES2ResponseHeader {
     return ES2ResponseHeader(
             functionExecutionStatus =
             FunctionExecutionStatus(
                     status = FunctionExecutionStatusType.Failed,
-                    statusCodeData = e.statusCodeData))
+                    statusCodeData = exception.statusCodeData))
 }
 
 fun eS2SuccessResponseHeader() =

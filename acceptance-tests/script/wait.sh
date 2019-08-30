@@ -48,14 +48,23 @@ PROFILE_STATUS_CMD_PAYLOAD=$GET_PROFILE_STATUS_PAYLOAD
 CMD_URL="${ES2PLUS_ENDPOINT}${GET_PROFILE_STATUS_PATH}"
 CMD_PAYLOAD=$PROFILE_STATUS_CMD_PAYLOAD
 
-curl \
-  -vvv \
-  --header "X-Admin-Protocol: gsma/rsp/v2.0.0" \
-  --header "Content-Type: application/json" \
-  --request POST \
-  --data "$CMD_PAYLOAD" \
-  --insecure \
-  $CMD_URL
+
+
+## Loop until the result of curling the sm-dp+ emulator is
+## satisfactory.
+CURL_RESULT=""
+until [[ ! -z "$CURL_RESULT" ]] ; do
+  CURL_RESULT=$(curl \
+    -vvv \
+    --header "X-Admin-Protocol: gsma/rsp/v2.0.0" \
+    --header "Content-Type: application/json" \
+    --request POST \
+    --data "$CMD_PAYLOAD" \
+    --insecure \
+    $CMD_URL)
+  ## XXX MISSING: Something that verifies that the result
+  ##     is legit.
+done
 
 
 

@@ -61,6 +61,12 @@ class Es2plusApplication : Application<Es2plusConfiguration>() {
 
 
 class PlaceholderSmDpPlusService : SmDpPlusService {
+    override fun getProfileStatus(iccid: String) : Es2ProfileStatusResponse{
+        return Es2ProfileStatusResponse(
+                profileStatusList = listOf(ProfileStatus(iccid = iccid, state = "ALLOCATED")),
+                completionTimestamp="2019-09-20Z11:22:233")
+    }
+
     @Throws(SmDpPlusException::class)
     override fun downloadOrder(eid: String?, iccid: String?, profileType: String?): Es2DownloadOrderResponse {
         return Es2DownloadOrderResponse(eS2SuccessResponseHeader(), iccid="01234567890123456789")

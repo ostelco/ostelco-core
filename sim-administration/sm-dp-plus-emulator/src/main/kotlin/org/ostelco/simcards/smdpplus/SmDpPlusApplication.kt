@@ -25,10 +25,14 @@ import org.ostelco.sim.es2plus.EsTwoPlusConfig
 import org.ostelco.sim.es2plus.ProfileStatus
 import org.ostelco.sim.es2plus.SmDpPlusServerResource
 import org.ostelco.sim.es2plus.SmDpPlusService
+import org.ostelco.sim.es2plus.StatusCodeData
 import org.ostelco.sim.es2plus.eS2SuccessResponseHeader
+import org.ostelco.sim.es2plus.newErrorHeader
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.FileInputStream
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 
 fun main(args: Array<String>) = SmDpPlusApplication().run(*args)
@@ -206,11 +210,25 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
     override fun getProfileStatus(iccid: String): Es2ProfileStatusResponse {
         val entry = entriesByIccid.get(iccid)
 
+
+        val current = LocalDateTime.now()
+
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-ddZHH:mm:ss")
+        val formattedTimestamp = current.format(formatter)
+
         if (entry != null) {
             val profileStatus = ProfileStatus(iccid = iccid, state = entry.getState())
-            // XXX THis is most likely wrong!
+
             return Es2ProfileStatusResponse(
-                    profileStatusList = listOf(profileStatus)
+                    profileStatusList = listOf(profileStatus),
+                    completionTimestamp = formattedTimestamp
+            )
+        } else {
+            // XXX The actual status code is bogus
+            val exception = org.ostelco.sim.es2plus.SmDpPlusException(StatusCodeData("this", "is", "bogus", "content"))
+            return Es2ProfileStatusResponse(
+                    header = newErrorHeader(exception = exception),
+                    completionTimestamp = formattedTimestamp
             )
         }
     }
