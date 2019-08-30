@@ -20,16 +20,15 @@ import org.ostelco.sim.es2plus.ES2PlusClient
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
 import org.ostelco.sim.es2plus.Es2ConfirmOrderResponse
 import org.ostelco.sim.es2plus.Es2DownloadOrderResponse
+import org.ostelco.sim.es2plus.Es2ProfileStatusResponse
 import org.ostelco.sim.es2plus.EsTwoPlusConfig
+import org.ostelco.sim.es2plus.ProfileStatus
 import org.ostelco.sim.es2plus.SmDpPlusServerResource
 import org.ostelco.sim.es2plus.SmDpPlusService
 import org.ostelco.sim.es2plus.eS2SuccessResponseHeader
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.FileInputStream
-
-
-
 
 
 fun main(args: Array<String>) = SmDpPlusApplication().run(*args)
@@ -95,7 +94,7 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 
 
         val simEntriesIterator = SmDpSimEntryIterator(FileInputStream(config.simBatchData))
-        val smDpPlusEmulator =  SmDpPlusEmulator(simEntriesIterator)
+        val smDpPlusEmulator = SmDpPlusEmulator(simEntriesIterator)
         this.smdpPlusService = smDpPlusEmulator
 
         this.serverResource = SmDpPlusServerResource(
@@ -128,7 +127,6 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 }
 
 
-
 /**
  * A very reduced  functionality SmDpPlus, essentially handling only
  * happy day scenarios, and not particulary efficient, and in-memory
@@ -150,7 +148,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
 
     private val originalEntries: MutableSet<SmDpSimEntry> = mutableSetOf()
 
-    private val  healthCheck: HealthCheck = SmDpPlusEmulatorHealthCheck()
+    private val healthCheck: HealthCheck = SmDpPlusEmulatorHealthCheck()
 
     init {
         incomingEntries.forEach { originalEntries.add(it) }
@@ -161,7 +159,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
 
         if (noOfEntries != 0) {
             log.info("Just read ${noOfEntries} SIM entries.")
-        }  else {
+        } else {
             log.error("Just read zero SIM entries, this is useless, will abort!")
             System.exit(0)
         }
@@ -177,7 +175,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
         }
     }
 
-    fun getHealthCheckInstance(): HealthCheck =  this.healthCheck
+    fun getHealthCheckInstance(): HealthCheck = this.healthCheck
 
 
     fun reset() {
@@ -205,6 +203,17 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
         entries.forEach { if (it.allocated) throw RuntimeException("Already allocated new entry $it") }
     }
 
+    override fun getProfileStatus(iccid: String): Es2ProfileStatusResponse {
+        val entry = entriesByIccid.get(iccid)
+
+        if (entry != null) {
+            val profileStatus = ProfileStatus(iccid = iccid, state = entry.getState())
+            // XXX THis is most likely wrong!
+            return Es2ProfileStatusResponse(
+                    profileStatusList = listOf(profileStatus)
+            )
+        }
+    }
 
     // TODO; What about the reservation flag?
     override fun downloadOrder(eid: String?, iccid: String?, profileType: String?): Es2DownloadOrderResponse {

@@ -19,6 +19,9 @@ interface SmDpPlusService {
     @Throws(SmDpPlusException::class)
     fun releaseProfile(iccid: String)
 
+    @Throws(SmDpPlusException::class)
+    fun getProfileStatus(iccid: String)
+
 }
 
 interface  SmDpPlusCallbackService {

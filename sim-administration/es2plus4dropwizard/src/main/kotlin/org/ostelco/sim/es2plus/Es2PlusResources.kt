@@ -172,6 +172,17 @@ class SmDpPlusServerResource(private val smDpPlus: SmDpPlusService) {
         smDpPlus.releaseProfile(iccid = order.iccid)
         return HeaderOnlyResponse()
     }
+
+    /**
+     * Provided by SM-DP+, called by operator's BSS system.
+     */
+    @Path("getProfileStatus")
+    @POST
+    fun getProfileStatus(order: Es2ReleaseProfile): HeaderOnlyResponse {
+
+        smDpPlus.getProfileStatus(iccid = order.iccid)
+        return HeaderOnlyResponse()
+    }
 }
 
 
@@ -199,6 +210,7 @@ class SmDpPlusCallbackResource(private val smDpPlus: SmDpPlusCallbackService) {
                 resultData = order.resultData,
                 imei = order.imei
         )
+
         /* According to the SM-DP+ spec. the response should 204. */
         return Response.status(Response.Status.NO_CONTENT)
                 .build()

@@ -3,7 +3,9 @@ FROM azul/zulu-openjdk:12.0.2
 LABEL maintainer="dev@redotter.sg"
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends netcat \
+ && apt-get install -y --no-install-recommends \
+   netcat \
+   curl \
  && rm -rf /var/lib/apt/lists/*
 
 COPY config/ /secret/
