@@ -118,7 +118,7 @@ modules:
           hlrType: DUMMY
       profileVendors:
         - name: Bar
-          es2plusEndpoint: http://smdp-plus-emulator
+          es2plusEndpoint: ${SMDPLUS_ES2PLUS_ENDPOINT}
           es9plusEndpoint: http://smdp-plus-emulator
           requesterIdentifier: Dunderhonning
       # Note, list must end with a wildcard match
