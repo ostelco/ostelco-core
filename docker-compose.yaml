@@ -30,6 +30,7 @@ services:
       - "ext-auth-provider"
       - "datastore-emulator"
       - "pubsub-emulator"
+      - "smdp-plus-emulator"
       - "neo4j"
     command: ["/bin/bash", "./wait.sh"]
     tmpfs:
