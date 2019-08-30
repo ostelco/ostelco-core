@@ -5,8 +5,8 @@
 //     prime to generate sequences and checksums, but that will require a major
 //     extension of a program that is soon going into production, so I'm keeping this
 //     complexity external for now. However, the existance of this program should be
-//     considered technical debt, and the debt can be internalizing the logic
-//     into prime.
+//     considered technical debt, and the debt can be paid back e.g. by 
+//     internalizing the logic into prime.
 
 package main
 
@@ -38,6 +38,7 @@ func generatePostingCurlscript(url string, payload string) {
 	fmt.Printf("%s", payload)
 	fmt.Print(("EOF\n"))
 }
+
 func generateControlDigit(luhnString string) int {
 	controlDigit := calculateChecksum(luhnString, true) % 10
 
