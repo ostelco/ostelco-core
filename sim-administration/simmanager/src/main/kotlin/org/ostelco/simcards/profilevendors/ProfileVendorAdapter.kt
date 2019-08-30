@@ -360,10 +360,8 @@ data class ProfileVendorAdapter(
                 }
             }
         } catch (e: Exception) {
-            logger.error("SM-DP+ 'profile-status' message to service {} for ICCID {} failed with error: {}",
-                    config.name,
-                    iccids,
-                    e)
+            logger.error("SM-DP+ 'profile-status' message to service ${config.name} for ICCID ${iccids} failed with error.",
+                   e)
             AdapterError("SM-DP+ 'profile-status' message to service ${config.name} failed with error: $e")
                     .left()
         }
