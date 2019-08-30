@@ -31,7 +31,9 @@ class SmdpPlusHealthceck(
     // and update the status based on that info.
     init {
         val executorService = Executors.newSingleThreadScheduledExecutor()
-        executorService.scheduleAtFixedRate( this::updateStatus, 0, 1, TimeUnit.MINUTES)
+        // XXX Currently checking every ten seconds. Every minute or five is more reasonable in a
+        //     production setting. Perhaps a config setting is reasonable to regulate this?
+        executorService.scheduleAtFixedRate(this::updateStatus, 0, 10, TimeUnit.SECONDS)
     }
 
     // The last known status
@@ -39,7 +41,10 @@ class SmdpPlusHealthceck(
 
     // Do the status check
     private fun updateStatus() {
-        this.status.set(checkIfSmdpPlusIsUp())
+        logger.info("About to test SMDP+ list for up/down status.")
+        val value = checkIfSmdpPlusIsUp()
+        this.status.set(value)
+        logger.info("    value is ${value}.")
     }
 
     // Based on the last polled value, return a health status.
@@ -54,20 +59,46 @@ class SmdpPlusHealthceck(
      * Contact the available SM-DP+ instances, return true if they are all available, otherwise false.
      */
     private fun checkIfSmdpPlusIsUp(): Boolean {
-        logger.info("About to test SMDP+ list for up/down status.")
+
+        logger.info("starting checkIfSmdpPlusIsUp")
+
         try {
             return IO {
                 Either.monad<SimManagerError>().binding {
-                    val profileVendorAdaptorList = simInventoryDAO.getAllProfileVendors().bind()
+                    logger.info("Before polling all profile vendors.")
+                    val vendorsRaw = simInventoryDAO.getAllProfileVendors()
+                    vendorsRaw.mapLeft {
+                        logger.info("Couldn't find any profile vendors: ", it)
+                    }
+
+                    logger.info("The profileVendorConfigList is ${profileVendorConfigList}")
+
+                    val profileVendorAdaptorList = vendorsRaw.bind()
+                    logger.info("After polling all profile vendors, found ${profileVendorAdaptorList.size}: ${profileVendorAdaptorList}")
+
+                    if (profileVendorAdaptorList.isEmpty()) {
+                        logger.info("No SM-DP+ instances to ping, that's a mistake.")
+                    } else {
+                        logger.info("SM-DP+  list is not empty, that's good.")
+                    }
+
                     for (profileVendor in profileVendorAdaptorList) {
-                        val currentConfig = profileVendorConfigList.first { it.name == profileVendor.name }
+                        logger.info("Processing vendor: $profileVendor")
+                        val currentConfig: ProfileVendorConfig? = profileVendorConfigList.firstOrNull { it.name == profileVendor.name }
+                        if (currentConfig == null) {
+                            logger.error("Could not find config for profile vendor '${profileVendor.name}' while attempting to ping remote SM-DP+ adapter")
+                        }
 
                         // This isn't working very well in the acceptance tests, so we need to log a little.
                         logger.info("About to ping config: $currentConfig")
-                        profileVendor.ping(
+                        val pingResult = profileVendor.ping(
                                 httpClient = httpClient,
-                                config = currentConfig
-                        ).bind()
+                                config = currentConfig!!
+                        )
+                        pingResult.mapLeft {
+                            logger.error("Could not reach SM-DP+ via HTTP PING:", it)
+                        }
+                        pingResult.bind()
                     }
                 }.fix()
             }.unsafeRunSync().isRight()
