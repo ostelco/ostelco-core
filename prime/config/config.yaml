@@ -1,3 +1,10 @@
+##
+## NOTE: This is the prime config file for _PRODUCTION_ like settings.
+##       Prime's config file for acceptance tests are in test.yaml
+##
+
+
+
 modules:
   - type: jersey
     config:

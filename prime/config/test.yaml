@@ -1,4 +1,7 @@
-# This config is used as config.yaml when prime is running using docker-compose for Acceptance Testing
+##
+## This config is used as config.yaml when prime is running
+## using docker-compose for Acceptance Testing
+##
 
 modules:
   - type: jersey
@@ -114,10 +117,10 @@ modules:
         - name: M1
           hlrType: DUMMY
       profileVendors:
-        - name: Idemia
+        - name: Bar
           es2plusEndpoint: http://smdp-plus-emulator
           es9plusEndpoint: http://smdp-plus-emulator
-          requesterIdentifier: ${FUNCTION_REQUESTER_IDENTIFIER}
+          requesterIdentifier: Dunderhonning
       # Note, list must end with a wildcard match
       phoneTypes:
         - regex: "M1.android"
