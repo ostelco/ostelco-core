@@ -24,7 +24,7 @@ services:
       - DB_URL=postgres:5432/sim-inventory
       # XXX This really should be https, but we'll let that
       #     be an improvement for a later time.
-      - SMDPLUS_ES2PLUS_ENDPOINT=http://smdp-plus-emulator:18080
+      - SMDPLUS_ES2PLUS_ENDPOINT=http://smdp-plus-emulator:8080
     ports:
       - "9090:8080"
       - "8082:8082"
@@ -135,7 +135,6 @@ services:
 
   postgres:
     container_name: postgres
-    image: postgres:9.6
     build:
       context: sim-administration/postgres
       dockerfile: Dockerfile
