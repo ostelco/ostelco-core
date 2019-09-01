@@ -173,7 +173,7 @@ class ES2PlusClient(
         val es2ProtocolPayload = Es2PlusProfileStatus(
                 header = ES2RequestHeader(
                         functionRequesterIdentifier = requesterId,
-                        functionCallIdentifier = "profileStatus"),
+                        functionCallIdentifier = "profileStatus"), // XXX Should be a serial number of sorts
                 iccidList = wrappedIccidList)
 
         return postEs2ProtocolCmd(

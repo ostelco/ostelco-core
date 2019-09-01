@@ -2,6 +2,7 @@ package org.ostelco.sim.es2plus
 
 import io.dropwizard.jersey.setup.JerseyEnvironment
 import org.ostelco.jsonschema.DynamicES2ValidatorAdder
+import org.ostelco.jsonschema.getLogger
 import org.ostelco.prime.jersey.logging.Critical
 import org.ostelco.sim.es2plus.ES2PlusClient.Companion.X_ADMIN_PROTOCOL_HEADER_VALUE
 import org.ostelco.sim.es2plus.SmDpPlusServerResource.Companion.ES2PLUS_PATH_PREFIX
@@ -114,6 +115,8 @@ class SmdpExceptionMapper : ExceptionMapper<SmDpPlusException> {
 @Path(ES2PLUS_PATH_PREFIX)
 class SmDpPlusServerResource(private val smDpPlus: SmDpPlusService) {
 
+    private val logger = getLogger()
+
     companion object {
         const val ES2PLUS_PATH_PREFIX : String = "gsma/rsp2/es2plus/"
     }
@@ -153,7 +156,6 @@ class SmDpPlusServerResource(private val smDpPlus: SmDpPlusService) {
     @Path("cancelOrder")
     @POST
     fun cancelOrder(order: Es2CancelOrder): HeaderOnlyResponse {
-
         smDpPlus.cancelOrder(
                 eid = order.eid,
                 iccid = order.iccid,
@@ -168,23 +170,23 @@ class SmDpPlusServerResource(private val smDpPlus: SmDpPlusService) {
     @Path("releaseProfile")
     @POST
     fun releaseProfile(order: Es2ReleaseProfile): HeaderOnlyResponse {
-
         smDpPlus.releaseProfile(iccid = order.iccid)
         return HeaderOnlyResponse()
     }
 
     /**
-     * Provided by SM-DP+, called by operator's BSS system.
+     * Return status objects for a list of ICCIds that are part of the
+     * command object.
      */
     @Path("getProfileStatus")
     @POST
     fun getProfileStatus(order: Es2ProfileStatusCommand): Es2ProfileStatusResponse {
+        logger.value.info("Logging getProfileStatusOrder with order = $order")
         return smDpPlus.getProfileStatus(iccidList = order.iccidList)
     }
 }
 
-
-@Path("/gsma/rsp2/es2plus/")
+@Path("/gsma/rsp2/es2plus/") // XXX Use ES2PLUS_PATH_PREFIX ?
 class SmDpPlusCallbackResource(private val smDpPlus: SmDpPlusCallbackService) {
 
     /**

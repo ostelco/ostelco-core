@@ -276,6 +276,11 @@ data class ProfileVendorAdapter(
                         it.first().right()
                     }
 
+
+
+    // XXXX Stop using this abomination!!!! Use the Es2PlusClient instead.
+    // This code is buggy and (obviously) untested.
+
     /**
      * Downloads the SM-DP+ 'profile status' information for a list of ICCIDs
      * from a SM-DP+ service.
@@ -304,7 +309,8 @@ data class ProfileVendorAdapter(
         val payload = mapper.writeValueAsString(body)
 
         val request = RequestBuilder.post()
-                .setUri("${config.es2plusEndpoint}/getProfileStatus")
+                // XXX This is a hack due to previous sloppiness and lack of testing.
+                .setUri("${config.es2plusEndpoint}/gsma/rsp2/es2plus/getProfileStatus")
                 .setHeader("User-Agent", "gsma-rsp-lpad")
                 .setHeader("X-Admin-Protocol", "gsma/rsp/v2.0.0")
                 .setHeader("Content-Type", MediaType.APPLICATION_JSON)

@@ -122,8 +122,7 @@ data class IccidListEntry(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Es2ProfileStatusCommand(
         @JsonProperty("header") val header: ES2RequestHeader,
-        @JsonProperty("iccidList") val iccidList: List<String> =  listOf()
-        )
+        @JsonProperty("iccidList") val iccidList: List<String> =  listOf())
 
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

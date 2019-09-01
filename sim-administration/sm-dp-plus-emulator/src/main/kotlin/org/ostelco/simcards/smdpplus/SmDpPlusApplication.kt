@@ -75,6 +75,9 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 
     private lateinit var smdpPlusService: SmDpPlusEmulator
 
+
+    fun noOfEntries () : Int = smdpPlusService.getNoOfEntries()
+
     override fun run(config: SmDpPlusAppConfiguration,
                      env: Environment) {
 
@@ -119,7 +122,7 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
                 hostname = config.es2plusConfig.host,
                 portNumber = config.es2plusConfig.port,
                 requesterId = config.es2plusConfig.requesterId,
-                smdpPlus =  smdpPlusService)
+                smdpPlus = smdpPlusService)
 
         val commandsProcessor = CommandsProcessorResource(callbackClient)
         jerseyEnvironment.register(commandsProcessor)
@@ -242,6 +245,8 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
         }
     }
 
+    fun getNoOfEntries () : Int = entries.size
+
     fun getHealthCheckInstance(): HealthCheck = this.healthCheck
 
 
@@ -271,7 +276,6 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
     }
 
     fun getEntryByIccid(iccid: String): SmDpSimEntry? = entriesByIccid[iccid]
-
 
 
     // TODO; What about the reservation flag?
@@ -394,17 +398,19 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
 
     @Throws(org.ostelco.sim.es2plus.SmDpPlusException::class)
     override fun getProfileStatus(iccidList: List<String>): Es2ProfileStatusResponse {
-        val result:List<ProfileStatus> = iccidList.map { getProfileStatusForIccid(it) }
+        log.info("In getProfileStatus with iccidList = $iccidList")
+
+        val result: List<ProfileStatus> = iccidList.map { getProfileStatusForIccid(it) }
                 .filterNotNull()
         return Es2ProfileStatusResponse(profileStatusList = result)
     }
 
     private fun getProfileStatusForIccid(iccid: String): ProfileStatus? {
-       val entry = entriesByIccid[iccid]
+        val entry = entriesByIccid[iccid]
         return if (entry != null) {
             ProfileStatus(iccid = iccid, state = entry.getState())
         } else {
-             null
+            null
         }
     }
 

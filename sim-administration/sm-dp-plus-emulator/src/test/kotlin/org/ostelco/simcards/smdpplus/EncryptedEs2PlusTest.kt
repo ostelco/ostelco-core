@@ -38,7 +38,6 @@ class EncryptedEs2PlusTest {
         assertEquals(FunctionExecutionStatusType.ExecutedSuccess, downloadResponse.header.functionExecutionStatus.status)
         assertEquals(iccid, downloadResponse.iccid)
 
-
         val confirmResponse =
                 client.confirmOrder(
                         eid = eid,
