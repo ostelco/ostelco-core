@@ -25,6 +25,7 @@ class ES2PlusClient(
         private val host: String = "127.0.0.1",
         private val port: Int = 8443,
         private val httpClient: HttpClient? = null,
+        private val useHttps: Boolean = true,
         private val jerseyClient: Client? = null) {
 
     companion object {
@@ -50,7 +51,12 @@ class ES2PlusClient(
             val objectMapper = ObjectMapper()
             val payload = objectMapper.writeValueAsString(es2ProtocolPayload)
 
-            val req = HttpPost("https://%s:%d%s".format(host, port, path))
+            val url = if (useHttps) {
+                "https://%s:%d%s".format(host, port, path)
+            } else {
+                "http://%s:%d%s".format(host, port, path)
+            }
+            val req = HttpPost(url)
 
             req.setHeader("User-Agent", "gsma-rsp-lpad")
             req.setHeader("X-Admin-Protocol", X_ADMIN_PROTOCOL_HEADER_VALUE)
@@ -64,7 +70,6 @@ class ES2PlusClient(
             // Validate returned response
             val statusCode = result.statusLine.statusCode
             if (expectedReturnCode != statusCode) {
-
                 val msg = "Expected return value $expectedReturnCode, but got $statusCode.  Body was \"${result.entity.content}\""
                 throw ES2PlusClientException(msg)
             }
