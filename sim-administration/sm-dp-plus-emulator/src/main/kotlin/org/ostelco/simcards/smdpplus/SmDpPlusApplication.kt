@@ -16,6 +16,7 @@ import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiReso
 import org.ostelco.dropwizardutils.OpenapiResourceAdderConfig
 import org.ostelco.dropwizardutils.RBACService
 import org.ostelco.dropwizardutils.RolesConfig
+import org.ostelco.sim.es2plus.ES2NotificationPointStatus
 import org.ostelco.sim.es2plus.ES2PlusClient
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
 import org.ostelco.sim.es2plus.Es2ConfirmOrderResponse
@@ -25,14 +26,15 @@ import org.ostelco.sim.es2plus.EsTwoPlusConfig
 import org.ostelco.sim.es2plus.ProfileStatus
 import org.ostelco.sim.es2plus.SmDpPlusServerResource
 import org.ostelco.sim.es2plus.SmDpPlusService
-import org.ostelco.sim.es2plus.StatusCodeData
 import org.ostelco.sim.es2plus.eS2SuccessResponseHeader
-import org.ostelco.sim.es2plus.newErrorHeader
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.FileInputStream
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import javax.ws.rs.GET
+import javax.ws.rs.Path
+import javax.ws.rs.PathParam
+import javax.ws.rs.WebApplicationException
+import javax.ws.rs.core.Response
 
 
 fun main(args: Array<String>) = SmDpPlusApplication().run(*args)
@@ -77,6 +79,9 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
                      env: Environment) {
 
         val jerseyEnvironment = env.jersey()
+        this.httpClient = HttpClientBuilder(env).using(config.httpClientConfiguration).build(name)
+
+        // simulate-download-of/iccid/${allocatedProfile.iccid}
 
         addOpenapiResourceToJerseyEnv(jerseyEnvironment, config.openApi)
         addEs2PlusDefaultFiltersAndInterceptors(jerseyEnvironment)
@@ -108,12 +113,23 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
                 rolesConfig = config.rolesConfig,
                 certConfig = config.certConfig)))
 
+
+        val callbackClient = SmDpPlusCallbackClient(
+                httpClient = httpClient,
+                hostname = config.es2plusConfig.host,
+                portNumber = config.es2plusConfig.port,
+                requesterId = config.es2plusConfig.requesterId,
+                smdpPlus =  smdpPlusService)
+
+        val commandsProcessor = CommandsProcessorResource(callbackClient)
+        jerseyEnvironment.register(commandsProcessor)
+
+
         // XXX This is weird, is it even necessary?  Probably not.
         jerseyEnvironment.register(CertificateAuthorizationFilter(
                 RBACService(rolesConfig = config.rolesConfig,
                         certConfig = config.certConfig)))
 
-        this.httpClient = HttpClientBuilder(env).using(config.httpClientConfiguration).build(name)
         this.es2plusClient = ES2PlusClient(
                 requesterId = config.es2plusConfig.requesterId,
                 host = config.es2plusConfig.host,
@@ -130,6 +146,53 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
     }
 }
 
+
+class SmDpPlusCallbackClient(
+        val httpClient: HttpClient,
+        val hostname: String,
+        val portNumber: Int,
+        val requesterId: String,
+        val smdpPlus: SmDpPlusEmulator) {
+
+    private val log = LoggerFactory.getLogger(javaClass)
+
+    val client: ES2PlusClient
+
+    init {
+        this.client = ES2PlusClient(requesterId = requesterId, httpClient = httpClient, host = hostname, port = portNumber)
+    }
+
+    @Throws(WebApplicationException::class)
+    fun reportDownload(iccid: String) {
+        val entry = smdpPlus.getEntryByIccid(iccid)
+        if (entry == null) {
+            log.error("Attempt to report download for unknown ICCID=$iccid")
+            throw WebApplicationException(Response.Status.NOT_FOUND)
+        }
+        client.handleDownloadProgressInfo(iccid = iccid,
+                profileType = entry.profile,
+                notificationPointId = 4711, // XXX Obviously a placeholder
+                notificationPointStatus = ES2NotificationPointStatus())  // XXX Also a placeholder
+    }
+}
+
+/**
+ * Misc. commands that are useful to give the SM-DP+ outside of its standardized
+ * ES2+ commands.   In particular  we add a REST command to simulate an  ES9+ download
+ * of a profile.  This command will trigger an ES2+ callback into the prime entity
+ * that has been registred to receive the callbacks.
+ */
+@Path("commands")
+class CommandsProcessorResource(private val callbackClient: SmDpPlusCallbackClient) {
+
+
+    @Path("simulate-download-of/iccid/{iccid}")
+    @GET
+    fun simulateDownloadOf(@PathParam("iccid") iccid: String): String {
+        callbackClient.reportDownload(iccid = iccid)
+        return "Simulated download of iccid ${iccid} went well."
+    }
+}
 
 /**
  * A very reduced  functionality SmDpPlus, essentially handling only
@@ -207,31 +270,9 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
         entries.forEach { if (it.allocated) throw RuntimeException("Already allocated new entry $it") }
     }
 
-    override fun getProfileStatus(iccid: String): Es2ProfileStatusResponse {
-        val entry = entriesByIccid.get(iccid)
+    fun getEntryByIccid(iccid: String): SmDpSimEntry? = entriesByIccid[iccid]
 
 
-        val current = LocalDateTime.now()
-
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-ddZHH:mm:ss")
-        val formattedTimestamp = current.format(formatter)
-
-        if (entry != null) {
-            val profileStatus = ProfileStatus(iccid = iccid, state = entry.getState())
-
-            return Es2ProfileStatusResponse(
-                    profileStatusList = listOf(profileStatus),
-                    completionTimestamp = formattedTimestamp
-            )
-        } else {
-            // XXX The actual status code is bogus
-            val exception = org.ostelco.sim.es2plus.SmDpPlusException(StatusCodeData("this", "is", "bogus", "content"))
-            return Es2ProfileStatusResponse(
-                    header = newErrorHeader(exception = exception),
-                    completionTimestamp = formattedTimestamp
-            )
-        }
-    }
 
     // TODO; What about the reservation flag?
     override fun downloadOrder(eid: String?, iccid: String?, profileType: String?): Es2DownloadOrderResponse {
@@ -351,6 +392,22 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
                 matchingId = entry.machingId)
     }
 
+    @Throws(org.ostelco.sim.es2plus.SmDpPlusException::class)
+    override fun getProfileStatus(iccidList: List<String>): Es2ProfileStatusResponse {
+        val result:List<ProfileStatus> = iccidList.map { getProfileStatusForIccid(it) }
+                .filterNotNull()
+        return Es2ProfileStatusResponse(profileStatusList = result)
+    }
+
+    private fun getProfileStatusForIccid(iccid: String): ProfileStatus? {
+       val entry = entriesByIccid[iccid]
+        return if (entry != null) {
+            ProfileStatus(iccid = iccid, state = entry.getState())
+        } else {
+             null
+        }
+    }
+
     override fun cancelOrder(eid: String?, iccid: String?, matchingId: String?, finalProfileStatusIndicator: String?) {
         TODO("not implemented")
     }
@@ -358,8 +415,6 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
     override fun releaseProfile(iccid: String) {
         TODO("not implemented")
     }
-
-
 }
 
 /**

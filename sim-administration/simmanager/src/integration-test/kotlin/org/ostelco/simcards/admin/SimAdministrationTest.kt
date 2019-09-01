@@ -127,7 +127,6 @@ class SimAdministrationTest {
             FixedHostPortGenericContainer<KFixedHostPortGenericContainer>(imageName)
 
 
-
     /* Test endpoint. */
     private val simManagerEndpoint = "http://localhost:${SIM_MANAGER_RULE.localPort}/ostelco/sim-inventory"
 
@@ -423,8 +422,6 @@ class SimAdministrationTest {
         assertEquals(ProvisionState.RESERVED, getSimEntryByICCIDFromLoadedBatch("8901000000000000993")?.provisionState)
     }
 
-
-
     @Test
     fun testHealthchecks() {
         val healtchecks = getJsonFromEndpoint(healthcheckEndpoint)
@@ -458,7 +455,6 @@ class SimAdministrationTest {
         var jobject = jelement.getAsJsonObject()
         return jobject
     }
-
 
     fun getJsonElement(
             endpointValue: JsonObject? = null,

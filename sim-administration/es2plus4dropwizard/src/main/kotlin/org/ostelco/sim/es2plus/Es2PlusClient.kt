@@ -4,9 +4,10 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.apache.http.HttpResponse
 import org.apache.http.client.HttpClient
-
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
 import javax.ws.rs.client.Client
@@ -256,12 +257,24 @@ class ES2PlusClient(
             eid: String? = null,
             iccid: String,
             profileType: String,
-            timestamp: String,
+            timestamp: String? = null,
             notificationPointId: Int,
             notificationPointStatus: ES2NotificationPointStatus,
             resultData: String? = null,
             imei: String? = null
     ) {
+
+        val currentTimestamp: String
+        if (timestamp == null) {
+            // XXX This  should be extracted into a separate ES2+ DATETIME-generating method.
+            var formatter =
+                    DateTimeFormatter.ofPattern("dd-MM-yyyyThh:mm:ssZ")
+            var now = LocalDate.now()
+            currentTimestamp = now.format(formatter)
+        } else {
+            currentTimestamp = timestamp
+        }
+
         postEs2ProtocolCmdNoContentReturned("/gsma/rsp2/es2plus/handleDownloadProgressInfo",
                 Es2HandleDownloadProgressInfo(
                         header = ES2RequestHeader(
@@ -271,7 +284,7 @@ class ES2PlusClient(
                         eid = eid,
                         iccid = iccid,
                         profileType = profileType,
-                        timestamp = timestamp,
+                        timestamp = currentTimestamp,
                         notificationPointId = notificationPointId,
                         notificationPointStatus = notificationPointStatus,
                         resultData = resultData,

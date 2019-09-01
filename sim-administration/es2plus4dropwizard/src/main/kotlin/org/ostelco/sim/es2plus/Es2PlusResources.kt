@@ -178,8 +178,8 @@ class SmDpPlusServerResource(private val smDpPlus: SmDpPlusService) {
      */
     @Path("getProfileStatus")
     @POST
-    fun getProfileStatus(order: Es2ReleaseProfile): Es2ProfileStatusResponse {
-        return smDpPlus.getProfileStatus(iccid = order.iccid)
+    fun getProfileStatus(order: Es2ProfileStatusCommand): Es2ProfileStatusResponse {
+        return smDpPlus.getProfileStatus(iccidList = order.iccidList)
     }
 }
 

@@ -4,6 +4,19 @@ import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.ostelco.jsonschema.JsonSchema
+import java.time.Instant
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+
+class DateProvider {
+    companion object {
+        fun getNowAsDatetime(): String {
+            val now = Instant.from(ZonedDateTime.now())
+            val formatter = DateTimeFormatter.ofPattern("YYYY-MM-DDThh:mm:ssZ")
+            return formatter.format(now)
+        }
+    }
+}
 
 
 ///
@@ -106,13 +119,18 @@ data class IccidListEntry(
         @JsonProperty("iccid") val iccid: String?
 )
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Es2ProfileStatusCommand(
+        @JsonProperty("header") val header: ES2RequestHeader,
+        @JsonProperty("iccidList") val iccidList: List<String> =  listOf()
+        )
 
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Es2ProfileStatusResponse(
         @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader(),
         @JsonProperty("profileStatusList") val profileStatusList: List<ProfileStatus>? = listOf(),
-        @JsonProperty("completionTimestamp") val completionTimestamp: String?
+        @JsonProperty("completionTimestamp") val completionTimestamp: String? = DateProvider.getNowAsDatetime() // XXX Repeat in all similar cases!!
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

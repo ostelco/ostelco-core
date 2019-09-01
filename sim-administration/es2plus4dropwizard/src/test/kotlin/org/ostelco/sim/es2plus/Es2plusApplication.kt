@@ -60,11 +60,13 @@ class Es2plusApplication : Application<Es2plusConfiguration>() {
 }
 
 
+// A class that will ge syntactically correct, but otherwise meaningless responses.
+
 class PlaceholderSmDpPlusService : SmDpPlusService {
-    override fun getProfileStatus(iccid: String) : Es2ProfileStatusResponse{
+    override fun getProfileStatus(iccidList: List<String>): Es2ProfileStatusResponse {
+        val statuses : List<ProfileStatus> = iccidList.map {iccid ->ProfileStatus(iccid = iccid, state = "ALLOCATED")}
         return Es2ProfileStatusResponse(
-                profileStatusList = listOf(ProfileStatus(iccid = iccid, state = "ALLOCATED")),
-                completionTimestamp="2019-09-20Z11:22:233")
+                profileStatusList = statuses)
     }
 
     @Throws(SmDpPlusException::class)

@@ -71,7 +71,7 @@ echo "SM-DP+ launched"
 echo "Add profiles into SM-DP+"
 # XXX Still needs a little tweaking
 
-curl  -H 'Content-Type: text/plain' -X PUT --data-binary @-  http://prime:8080/ostelco/sim-inventory/M1/import-batch/profilevendor/Idemia?initialHssState=ACTIVATED <<EOF
+curl  -H 'Content-Type: text/plain' -X PUT --data-binary @-  http://prime:8080/ostelco/sim-inventory/Foo/import-batch/profilevendor/Bar?initialHssState=ACTIVATED <<EOF
 ICCID, IMSI, MSISDN, PIN1, PIN2, PUK1, PUK2, PROFILE
 8901000000000000001, 310150000000000, 4790900700,,,,,IPHONE_PROFILE_2
 8901000000000000019, 310150000000001, 4790900701,,,,,IPHONE_PROFILE_2
