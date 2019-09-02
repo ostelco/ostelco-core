@@ -41,10 +41,8 @@ class SmdpPlusHealthceck(
 
     // Do the status check
     private fun updateStatus() {
-        logger.info("About to test SMDP+ list for up/down status.")
         val value = checkIfSmdpPlusIsUp()
         this.status.set(value)
-        logger.info("    value is ${value}.")
     }
 
     // Based on the last polled value, return a health status.
