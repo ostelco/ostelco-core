@@ -75,7 +75,7 @@ class SimManager {
         assertHealthy("postgresql")
         assertHealthy("HSS profilevendors for Hss named 'Loltel'")
         assertHealthy("HSS profilevendors for Hss named 'M1'")
-        // assertHealthy("smdp") XXX  Fails. It really shouldn't
+        assertHealthy("smdp")
     }
 
 
@@ -153,7 +153,6 @@ class SimManager {
 
     @Test
     fun testFreeProfileAllocationAndSimulatedDownload() {
-
         val hss = "Bar"
         val firstIccid = "8901000000000000001"
         val firstMsisdn = "4790900700"
@@ -176,7 +175,7 @@ class SimManager {
 
         logger.info("Poll for status again, to check if the SM-DP+ state has been transformed  into 'RELEASED'")
         val updatedStatus = getSimEntryByIccid(hss = hss, iccid = firstIccid)
-        assertEquals(SmDpPlusState.RELEASED, firstProfile.smdpPlusState)
+        assertEquals(SmDpPlusState.RELEASED, updatedStatus.smdpPlusState)
 
         logger.info("Allocate first free profile")
         val allocatedProfile = allocateFirstFreeSimProfileByHss(hss)

@@ -38,7 +38,6 @@ public class SmDpPlusTest {
         this.client = ES2PlusClient(httpClient = httpClient, port = localPort, requesterId = "Dunderhonning", useHttps = false)
     }
 
-
     @Test
     fun testThatCorrectNumberOfProfilesAreLoaded() {
         val app: SmDpPlusApplication = SM_DP_PLUS_RULE.getApplication<SmDpPlusApplication>()
