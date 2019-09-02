@@ -104,7 +104,6 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
             log.info("Input file '$config.simBatchData' is readable, will try to read it!")
         }
 
-
         val simEntriesIterator = SmDpSimEntryIterator(FileInputStream(config.simBatchData))
         val smDpPlusEmulator = SmDpPlusEmulator(simEntriesIterator)
         this.smdpPlusService = smDpPlusEmulator
@@ -112,9 +111,10 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
         this.serverResource = SmDpPlusServerResource(
                 smDpPlus = smdpPlusService)
         jerseyEnvironment.register(serverResource)
-        jerseyEnvironment.register(CertificateAuthorizationFilter(RBACService(
+
+        /* jerseyEnvironment.register(CertificateAuthorizationFilter(RBACService(
                 rolesConfig = config.rolesConfig,
-                certConfig = config.certConfig)))
+                certConfig = config.certConfig))) */
 
 
         val callbackClient = SmDpPlusCallbackClient(
@@ -126,7 +126,6 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 
         val commandsProcessor = CommandsProcessorResource(callbackClient)
         jerseyEnvironment.register(commandsProcessor)
-
 
         // XXX This is weird, is it even necessary?  Probably not.
         jerseyEnvironment.register(CertificateAuthorizationFilter(

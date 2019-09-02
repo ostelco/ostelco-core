@@ -38,7 +38,7 @@ class ES2PlusClient(
             path: String,
             es2ProtocolPayload: T,
             sclass: Class<S>,
-            expectedReturnCode: Int = 200): S {
+            expectedStatusCode: Int = 200): S {
 
         /// XXX TODO:
         //       We  currently need jersey client for integration test and  httpClient for functional
@@ -69,8 +69,8 @@ class ES2PlusClient(
 
             // Validate returned response
             val statusCode = result.statusLine.statusCode
-            if (expectedReturnCode != statusCode) {
-                val msg = "Expected return value $expectedReturnCode, but got $statusCode.  Body was \"${result.entity.content}\""
+            if (expectedStatusCode != statusCode) {
+                val msg = "Expected return value $expectedStatusCode, but got $statusCode.  Body was \"${result.entity.content}\""
                 throw ES2PlusClientException(msg)
             }
 
@@ -100,8 +100,8 @@ class ES2PlusClient(
                     .post(entity)
 
             // Validate returned response
-            if (expectedReturnCode != result.status) {
-                val msg = "Expected return value $expectedReturnCode, but got ${result.status}.  Body was \"${result.readEntity(String::class.java)}\""
+            if (expectedStatusCode != result.status) {
+                val msg = "Expected return value $expectedStatusCode, but got ${result.status}.  Body was \"${result.readEntity(String::class.java)}\""
                 throw ES2PlusClientException(msg)
             }
 
@@ -185,7 +185,7 @@ class ES2PlusClient(
                 "/gsma/rsp2/es2plus/getProfileStatus",
                 es2ProtocolPayload,
                 Es2ProfileStatusResponse::class.java,
-                expectedReturnCode = 200)
+                expectedStatusCode = 200)
     }
 
     fun downloadOrder(
@@ -204,7 +204,7 @@ class ES2PlusClient(
                 "/gsma/rsp2/es2plus/downloadOrder",
                 es2ProtocolPayload,
                 Es2DownloadOrderResponse::class.java,
-                expectedReturnCode = 200)
+                expectedStatusCode = 200)
     }
 
     fun confirmOrder(eid: String? = null,
@@ -227,7 +227,7 @@ class ES2PlusClient(
         return postEs2ProtocolCmd(
                 "/gsma/rsp2/es2plus/confirmOrder",
                 es2ProtocolPayload = es2ProtocolPayload,
-                expectedReturnCode = 200,
+                expectedStatusCode = 200,
                 sclass = Es2ConfirmOrderResponse::class.java)
     }
 
@@ -243,7 +243,7 @@ class ES2PlusClient(
                         matchingId = matchingId,
                         finalProfileStatusIndicator = finalProfileStatusIndicator),
                 sclass = HeaderOnlyResponse::class.java,
-                expectedReturnCode = 200)
+                expectedStatusCode = 200)
     }
 
     fun releaseProfile(iccid: String): HeaderOnlyResponse {
@@ -255,7 +255,7 @@ class ES2PlusClient(
                         ),
                         iccid = iccid),
                 sclass = HeaderOnlyResponse::class.java,
-                expectedReturnCode = 200)
+                expectedStatusCode = 200)
     }
 
     fun handleDownloadProgressInfo(
