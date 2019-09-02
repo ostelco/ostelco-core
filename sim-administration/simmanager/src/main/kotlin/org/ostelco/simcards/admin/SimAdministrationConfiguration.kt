@@ -25,9 +25,6 @@ data class SimAdministrationConfiguration(
         val phoneTypes: List<PhoneTypeConfig>
 ) : Configuration() {
 
-    init {
-        ProfileVendorConfig.validateConfigList(profileVendors)
-    }
     private val logger by getLogger()
 
     /* XXX Ideally the regex should be built when the config file is loaded,
@@ -133,15 +130,14 @@ data class ProfileVendorConfig(
 ) {
     companion object {
         val ALPHANUMERIC_REGEX = Regex("[a-zA-Z0-9_]+")
-        val ENDPOINT_REGEX = Regex("[\\.-a-zA-Z0-9_]+(:[0-9]+)?")
-
-        // Do remember to call this function, it's easy to mess up the configuration
-        fun validateConfigList(profileVendors: List<ProfileVendorConfig>) {
-                profileVendors.forEach { it.validate() }
-        }
+        val ENDPOINT_REGEX = Regex("https?://[\\.a-zA-Z0-9_]+(:[0-9]+)?")
     }
 
+    init {
+        validate()
+    }
 
+    // If the instance does not contain valid fields, then cry foul.
     fun validate() {
         if (!name.matches(ALPHANUMERIC_REGEX)) {
             throw  ProfileVendorConfigException("Profile vendor name '$name' does not match regex ${ALPHANUMERIC_REGEX.pattern}")

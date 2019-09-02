@@ -108,7 +108,6 @@ class SimAdministrationModule : PrimeModule {
                 simInventoryDAO = this.DAO
         )
 
-        ProfileVendorConfig.validateConfigList(config.profileVendors)
         env.admin().addTask(PreallocateProfilesTask(
                 simInventoryDAO = this.DAO,
                 httpClient = httpClient,

@@ -25,11 +25,6 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
 
     private val logger by getLogger()
 
-    init {
-        ProfileVendorConfig.validateConfigList(config.profileVendors)
-    }
-
-
     fun findSimProfileByIccid(hlrName: String, iccid: String): Either<SimManagerError, SimEntry> =
             IO {
                 Either.monad<SimManagerError>().binding {
