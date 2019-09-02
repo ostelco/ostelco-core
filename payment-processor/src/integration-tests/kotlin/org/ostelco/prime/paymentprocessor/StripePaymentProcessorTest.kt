@@ -28,7 +28,7 @@ class StripePaymentProcessorTest {
         val cardMap = mapOf(
                 "number" to "4242424242424242",
                 "exp_month" to 8,
-                "exp_year" to 2019,
+                "exp_year" to 2022,
                 "cvc" to "314")
         val tokenMap = mapOf("card" to cardMap)
 
@@ -43,7 +43,7 @@ class StripePaymentProcessorTest {
                 "card" to mapOf(
                         "number" to "4242424242424242",
                         "exp_month" to 8,
-                        "exp_year" to 2019,
+                        "exp_year" to 2022,
                         "cvc" to "314"),
                 "owner" to mapOf(
                         "address" to mapOf(
