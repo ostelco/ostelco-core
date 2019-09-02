@@ -92,7 +92,7 @@ data class ProfileVendorAdapter(
         val payload = mapper.writeValueAsString(body)
 
         val request = RequestBuilder.post()
-                .setUri("${config.es2plusEndpoint}/gsma/rsp2/es2plus/downloadOrder")
+                .setUri("${config.es2plusEndpoint}/downloadOrder")
                 .setHeader("User-Agent", "gsma-rsp-lpad")
                 .setHeader("X-Admin-Protocol", "gsma/rsp/v2.0.0")
                 .setHeader("Content-Type", MediaType.APPLICATION_JSON)
@@ -178,7 +178,7 @@ data class ProfileVendorAdapter(
         val payload = mapper.writeValueAsString(body)
 
         val request = RequestBuilder.post()
-                .setUri("${config.es2plusEndpoint}/gsma/rsp2/es2plus/confirmOrder")
+                .setUri("${config.es2plusEndpoint}/confirmOrder")
                 .setHeader("User-Agent", "gsma-rsp-lpad")
                 .setHeader("X-Admin-Protocol", "gsma/rsp/v2.0.0")
                 .setHeader("Content-Type", MediaType.APPLICATION_JSON)
