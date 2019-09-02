@@ -4,17 +4,12 @@ import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.ostelco.jsonschema.JsonSchema
-import java.time.Instant
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 class DateProvider {
     companion object {
-        fun getNowAsDatetime(): String {
-            val now = Instant.from(ZonedDateTime.now())
-            val formatter = DateTimeFormatter.ofPattern("YYYY-MM-DDThh:mm:ssZ")
-            return formatter.format(now)
-        }
+        fun getNowAsDatetime(): String  = DateTimeFormatter.ofPattern("YYYY-MM-DD'T'hh:mm:ssZ").format(ZonedDateTime.now())
     }
 }
 
@@ -122,7 +117,7 @@ data class IccidListEntry(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Es2ProfileStatusCommand(
         @JsonProperty("header") val header: ES2RequestHeader,
-        @JsonProperty("iccidList") val iccidList: List<String> =  listOf())
+        @JsonProperty("iccidList") val iccidList: List<IccidListEntry> =  listOf())
 
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

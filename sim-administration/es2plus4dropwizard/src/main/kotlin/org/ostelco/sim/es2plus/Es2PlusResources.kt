@@ -182,7 +182,7 @@ class SmDpPlusServerResource(private val smDpPlus: SmDpPlusService) {
     @POST
     fun getProfileStatus(order: Es2ProfileStatusCommand): Es2ProfileStatusResponse {
         logger.value.info("Logging getProfileStatusOrder with order = $order")
-        return smDpPlus.getProfileStatus(iccidList = order.iccidList)
+        return smDpPlus.getProfileStatus(iccidList = order.iccidList.map {it.iccid}.filterNotNull())
     }
 }
 
