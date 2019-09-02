@@ -31,7 +31,7 @@ public class SmDpPlusTest {
 
     // This happens to be the matching ID used for everything in the test application, not a good
     // assumption for production code, but this isn't that.  XXX Should be fixed!!
-    val magicMatchingID = "0123-ABCD-KGBC-IAMSO-SAD0"
+    val magicMatchingID = "0123-ABCD-KGBC-IAMOS-SAD0"
 
     init {
         this.httpClient = HttpClientBuilder(SM_DP_PLUS_RULE.environment).build("Test client")
@@ -74,7 +74,7 @@ public class SmDpPlusTest {
                         eid = eid,
                         iccid = firstIccid,
                         releaseFlag = true)
-        
+
         assertEquals(FunctionExecutionStatusType.ExecutedSuccess, confirmResponse.header.functionExecutionStatus.status)
         assertEquals(eid, confirmResponse.eid)
         assertEquals(magicMatchingID, confirmResponse.matchingId)

@@ -375,7 +375,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
         if (machingId != null) {
             entry.machingId = confirmationCode
         } else {
-            entry.machingId = "0123-ABC-KGBC-IAMOS-SAD0"  /// XXX This is obviously bogus code!
+            entry.machingId = "0123-ABCD-KGBC-IAMOS-SAD0"  /// XXX This is obviously bogus code!
         }
 
         entry.released = releaseFlag
