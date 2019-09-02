@@ -87,8 +87,6 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
         val jerseyEnvironment = env.jersey()
         this.httpClient = HttpClientBuilder(env).using(config.httpClientConfiguration).build(name)
 
-        // simulate-download-of/iccid/${allocatedProfile.iccid}
-
         addOpenapiResourceToJerseyEnv(jerseyEnvironment, config.openApi)
         addEs2PlusDefaultFiltersAndInterceptors(jerseyEnvironment)
 
@@ -294,6 +292,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
 
             // Then mark the entry as allocated and return the corresponding ICCID.
             entry.allocated = true
+            entry.setCurrentState("DOWNLOADED")
 
             // Finally return the ICCID uniquely identifying the profile instance.
             return Es2DownloadOrderResponse(eS2SuccessResponseHeader(),
@@ -381,7 +380,10 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
             entry.machingId = "0123-ABCD-KGBC-IAMOS-SAD0"  /// XXX This is obviously bogus code!
         }
 
+        // XXX The state mechanism in this class is a pice of .... Fix it!
         entry.released = releaseFlag
+        entry.setCurrentState("RELEASED")
+
 
         if (confirmationCode != null) {
             entry.confirmationCode = confirmationCode
@@ -410,7 +412,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
     private fun getProfileStatusForIccid(iccid: String): ProfileStatus? {
         val entry = entriesByIccid[iccid]
         return if (entry != null) {
-            ProfileStatus(iccid = iccid, state = entry.getState())
+            ProfileStatus(iccid = iccid, state = entry.state)
         } else {
             null
         }

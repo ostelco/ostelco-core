@@ -145,7 +145,7 @@ class SimManager {
     }
 
     fun allocateFirstFreeSimProfileByHss(hss: String): SimEntry {
-        val webTarget = client.target("http://prime:8080/ostelco/sim-inventory/${hss}/esim}")
+        val webTarget = client.target("http://prime:8080/ostelco/sim-inventory/${hss}/esim")
         val response = webTarget.request().get()
         val responseCode = response.status
         assertEquals( 200, responseCode)
@@ -155,7 +155,7 @@ class SimManager {
 
     @Test
     fun testFreeProfileAllocationAndSimulatedDownload() {
-        val hss = "Bar"
+        val hss = "Foo"
         val firstIccid = "8901000000000000001"
         val firstMsisdn = "4790900700"
         val firstImsi = "310150000000000"
@@ -174,10 +174,6 @@ class SimManager {
         val result = target.request().buildPost(Entity.json("")).invoke()
         val returnValue = result.status
         assert( returnValue == 200 || returnValue == 201)
-
-        logger.info("Poll for status again, to check if the SM-DP+ state has been transformed  into 'RELEASED'")
-        val updatedStatus = getSimEntryByIccid(hss = hss, iccid = firstIccid)
-        assertEquals(SmDpPlusState.RELEASED, updatedStatus.smdpPlusState)
 
         logger.info("Allocate first free profile")
         val allocatedProfile = allocateFirstFreeSimProfileByHss(hss)

@@ -1,8 +1,11 @@
 package org.ostelco.simcards.smdpplus
 
+import org.slf4j.LoggerFactory
+
 class SmDpSimEntry (val iccid: String,
                     val imsi: String,
-                    val profile: String) {
+                    val profile: String,
+                    var state: String = "AVAILABLE") {
     var allocated: Boolean = false
     var eid: String? = null
     var released: Boolean = false
@@ -10,19 +13,15 @@ class SmDpSimEntry (val iccid: String,
     var machingId: String? = null
     var smdsAddress :String? = null
 
-    // XXX This probably gets it wrong.
-    fun getState(): String  {
-        if (allocated) {
-            return "ALLOCATED"
-        } else if (released) {
-            return "RELEASED"
-        } else {
-            return "INITIAL"
-        }
-    }
 
+    private val log = LoggerFactory.getLogger(javaClass)
 
     fun clone(): SmDpSimEntry {
-        return SmDpSimEntry(iccid = iccid, imsi=imsi, profile=profile)
+        return SmDpSimEntry(iccid = iccid, imsi=imsi, profile=profile, state = state)
+    }
+
+    fun setCurrentState(s: String) {
+        log.info("Changing state if sim entry for iccid $iccid from ${this.state} to $s")
+        this.state = s
     }
 }
