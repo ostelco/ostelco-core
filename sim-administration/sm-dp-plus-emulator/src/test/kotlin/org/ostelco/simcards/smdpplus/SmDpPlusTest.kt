@@ -11,7 +11,6 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.ostelco.sim.es2plus.ES2PlusClient
 import org.ostelco.sim.es2plus.FunctionExecutionStatusType
-import org.ostelco.simcards.smdpplus.EncryptedEs2PlusTest.Companion.SUPPORT
 
 public class SmDpPlusTest {
 
@@ -25,6 +24,14 @@ public class SmDpPlusTest {
     private val httpClient: CloseableHttpClient
     private val localPort: Int
     private val client: ES2PlusClient
+
+    // First iccid in the .csv file used to prime the sm-dp+.   Used in
+    // various tests.
+    val firstIccid = "8901000000000000001"
+
+    // This happens to be the matching ID used for everything in the test application, not a good
+    // assumption for production code, but this isn't that.  XXX Should be fixed!!
+    val magicMatchingID = "0123-ABCD-KGBC-IAMSO-SAD0"
 
     init {
         this.httpClient = HttpClientBuilder(SM_DP_PLUS_RULE.environment).build("Test client")
@@ -42,41 +49,34 @@ public class SmDpPlusTest {
 
     @Test
     fun testGettingInfo() {
-        val iccid = "8901000000000000001"
-        val profileStatus = client.profileStatus(listOf(iccid))
+        val profileStatus = client.profileStatus(listOf(firstIccid))
         val profileStatusList = profileStatus.profileStatusList
         assertNotNull(profileStatusList)
         if (profileStatusList == null) {
             fail("profileStatusList == null")
         } else {
             val first = profileStatusList[0]
-            assertEquals(iccid, first.iccid)
+            assertEquals(firstIccid, first.iccid)
         }
     }
 
 
     @Test
     fun testFullRoundtrip() {
-        val client: ES2PlusClient =
-                SUPPORT.getApplication<SmDpPlusApplication>().es2plusClient
         val eid = "12345678980123456789012345678901"
-        val iccid = "8901000000000000001"
-        val downloadResponse = client.downloadOrder(eid = eid, iccid = iccid, profileType = "FooTel_STD")
+        val downloadResponse = client.downloadOrder(eid = eid, iccid = firstIccid, profileType = "FooTel_STD")
 
         assertEquals(FunctionExecutionStatusType.ExecutedSuccess, downloadResponse.header.functionExecutionStatus.status)
-        assertEquals(iccid, downloadResponse.iccid)
+        assertEquals(firstIccid, downloadResponse.iccid)
 
         val confirmResponse =
                 client.confirmOrder(
                         eid = eid,
-                        iccid = iccid,
+                        iccid = firstIccid,
                         releaseFlag = true)
-
-        // This happens to be the matching ID used for everything in the test application, not a good
-        // assumption for production code, but this isn't that.
-        val matchingId = "0123-ABCD-KGBC-IAMSO-SAD0"
+        
         assertEquals(FunctionExecutionStatusType.ExecutedSuccess, confirmResponse.header.functionExecutionStatus.status)
         assertEquals(eid, confirmResponse.eid)
-        assertEquals(matchingId, confirmResponse.matchingId)
+        assertEquals(magicMatchingID, confirmResponse.matchingId)
     }
 }
