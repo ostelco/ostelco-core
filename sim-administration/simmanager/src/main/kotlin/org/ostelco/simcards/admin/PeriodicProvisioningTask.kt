@@ -45,6 +45,10 @@ class PreallocateProfilesTask(
         val hssAdapterProxy: SimManagerToHssDispatcherAdapter,
         val profileVendors: List<ProfileVendorConfig>) : Task("preallocate_sim_profiles") {
 
+    init {
+        ProfileVendorConfig.validateConfigList(profileVendors)
+    }
+
     private val logger by getLogger()
 
     @Throws(Exception::class)

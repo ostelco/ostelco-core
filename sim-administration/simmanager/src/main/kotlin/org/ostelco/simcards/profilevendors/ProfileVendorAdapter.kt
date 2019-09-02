@@ -38,6 +38,8 @@ import javax.ws.rs.core.MediaType
  * Will connect to the SM-DP+  and then activate the profile, so that when
  * user equpiment tries to download a profile, it will get a profile to
  * download.
+ *
+ * XXX Why on earth is the json property set to "metricName"? It makes no sense.
  */
 data class ProfileVendorAdapter(
         @JsonProperty("id") val id: Long,
@@ -91,8 +93,15 @@ data class ProfileVendorAdapter(
         )
         val payload = mapper.writeValueAsString(body)
 
+        // XXX Make it so that the config for acceptance, unit and integration tests are the same, otherwise
+        //     the thing wil break spectacularly. Consider adding a test to ensure that no path elements
+        //     are made part of the es2plusEndpoint.
+
+        val uri = "${config.es2plusEndpoint}/gsma/rsp2/es2plus/downloadOrder"
+        logger.info("URI  for downloadOrder = '$uri'")
+
         val request = RequestBuilder.post()
-                .setUri("${config.es2plusEndpoint}/downloadOrder")
+                .setUri(uri)
                 .setHeader("User-Agent", "gsma-rsp-lpad")
                 .setHeader("X-Admin-Protocol", "gsma/rsp/v2.0.0")
                 .setHeader("Content-Type", MediaType.APPLICATION_JSON)
@@ -165,6 +174,7 @@ data class ProfileVendorAdapter(
                              dao: SimInventoryDAO,
                              eid: String? = null,
                              simEntry: SimEntry): Either<SimManagerError, SimEntry> {
+
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = config.requesterIdentifier,
                 functionCallIdentifier = UUID.randomUUID().toString()

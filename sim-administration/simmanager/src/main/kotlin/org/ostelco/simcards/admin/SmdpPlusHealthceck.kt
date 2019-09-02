@@ -24,8 +24,12 @@ class SmdpPlusHealthceck(
         private val httpClient: CloseableHttpClient,
         private val profileVendorConfigList: List<ProfileVendorConfig>) : HealthCheck() {
 
+
     private val logger by getLogger()
 
+    init {
+        ProfileVendorConfig.validateConfigList(profileVendorConfigList)
+    }
 
     // Set up a periodic task that will poll the SM-DP+ instances every minute
     // and update the status based on that info.

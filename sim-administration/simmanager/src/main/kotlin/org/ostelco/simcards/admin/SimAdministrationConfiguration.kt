@@ -25,6 +25,9 @@ data class SimAdministrationConfiguration(
         val phoneTypes: List<PhoneTypeConfig>
 ) : Configuration() {
 
+    init {
+        ProfileVendorConfig.validateConfigList(profileVendors)
+    }
     private val logger by getLogger()
 
     /* XXX Ideally the regex should be built when the config file is loaded,
@@ -113,12 +116,50 @@ data class SwtHssConfig(
         val apiKey: String
 ) : HssConfig(name = name)
 
+
+class ProfileVendorConfigException(msg: String): Exception(msg)
+
+/**
+ * Configuration for profile vendors.  The name is a name alphanumeric + undrescore)
+ * the es2plus endpoint is an fqdn, with an optional portnumber.  Similarly for the es9plus
+ * endpoint.  The requester identifier is a string that is intended to identify the requester,
+ * obviously in addition to client certificate.
+ */
 data class ProfileVendorConfig(
         val name: String,
         val es2plusEndpoint: String,
         val requesterIdentifier: String,
         val es9plusEndpoint: String
-)
+) {
+    companion object {
+        val ALPHANUMERIC_REGEX = Regex("[a-zA-Z0-9_]+")
+        val ENDPOINT_REGEX = Regex("[\\.-a-zA-Z0-9_]+(:[0-9]+)?")
+
+        // Do remember to call this function, it's easy to mess up the configuration
+        fun validateConfigList(profileVendors: List<ProfileVendorConfig>) {
+                profileVendors.forEach { it.validate() }
+        }
+    }
+
+
+    fun validate() {
+        if (!name.matches(ALPHANUMERIC_REGEX)) {
+            throw  ProfileVendorConfigException("Profile vendor name '$name' does not match regex ${ALPHANUMERIC_REGEX.pattern}")
+        }
+
+        if (!es2plusEndpoint.matches(ENDPOINT_REGEX)) {
+            throw  ProfileVendorConfigException("es2plusEndpoint '$es2plusEndpoint' does not match regex ${ENDPOINT_REGEX.pattern}")
+        }
+
+        if (!es9plusEndpoint.matches(ENDPOINT_REGEX)) {
+            throw  ProfileVendorConfigException("es9plusEndpoint '$es9plusEndpoint' does not match regex ${ENDPOINT_REGEX.pattern}")
+        }
+
+        if (!requesterIdentifier.matches(ALPHANUMERIC_REGEX)) {
+            throw  ProfileVendorConfigException("requesterIdentifier '$es9plusEndpoint' does not match regex ${ALPHANUMERIC_REGEX.pattern}")
+        }
+    }
+}
 
 data class PhoneTypeConfig(
         val regex: String,
