@@ -72,13 +72,6 @@ class SmdpPlusHealthceck(
                     logger.info("The profileVendorConfigList is ${profileVendorConfigList}")
 
                     val profileVendorAdaptorList = vendorsRaw.bind()
-                    logger.info("After polling all profile vendors, found ${profileVendorAdaptorList.size}: ${profileVendorAdaptorList}")
-
-                    if (profileVendorAdaptorList.isEmpty()) {
-                        logger.info("No SM-DP+ instances to ping, that's a mistake.")
-                    } else {
-                        logger.info("SM-DP+  list is not empty, that's good.")
-                    }
 
                     for (profileVendor in profileVendorAdaptorList) {
                         logger.info("Processing vendor: $profileVendor")
