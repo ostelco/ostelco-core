@@ -5,6 +5,7 @@ import org.ostelco.prime.auth.firebase.FirebaseAuthUtil
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.jwt.JwtParser
+import org.ostelco.prime.tracing.EnableTracing
 import javax.ws.rs.Consumes
 import javax.ws.rs.POST
 import javax.ws.rs.Path
@@ -18,6 +19,7 @@ class AppleIdAuthResource {
 
     private val logger by getLogger()
 
+    @EnableTracing
     @POST
     @Path("/authorize")
     @Produces(MediaType.APPLICATION_JSON)

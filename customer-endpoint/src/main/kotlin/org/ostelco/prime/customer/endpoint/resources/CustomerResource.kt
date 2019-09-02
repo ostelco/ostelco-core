@@ -5,8 +5,8 @@ import org.ostelco.prime.apierror.responseBuilder
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.customer.endpoint.store.SubscriberDAO
 import org.ostelco.prime.getLogger
-import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.model.Customer
+import org.ostelco.prime.tracing.EnableTracing
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.util.*
@@ -27,6 +27,7 @@ import javax.ws.rs.core.Response
 class CustomerResource(private val dao: SubscriberDAO) {
     private val logger by getLogger()
 
+    @EnableTracing
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     fun getCustomer(@Auth token: AccessTokenPrincipal?): Response =
@@ -50,6 +51,7 @@ class CustomerResource(private val dao: SubscriberDAO) {
         return email
     }
 
+    @EnableTracing
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
@@ -104,6 +106,7 @@ class CustomerResource(private val dao: SubscriberDAO) {
                         .responseBuilder(Response.Status.NO_CONTENT)
             }.build()
 
+    @EnableTracing
     @GET
     @Path("stripe-ephemeral-key")
     @Produces(MediaType.APPLICATION_JSON)

@@ -8,7 +8,6 @@ services:
       dockerfile: Dockerfile.test
     environment:
       - GCP_PROJECT_ID=${GCP_PROJECT_ID}
-      - FIREBASE_ROOT_PATH=test
       - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
       - PUBSUB_PROJECT_ID=${GCP_PROJECT_ID}
       - JUMIO_API_TOKEN=
@@ -18,8 +17,8 @@ services:
       - DATASTORE_EMULATOR_HOST=localhost:9090
       - DATASTORE_PROJECT_ID=${GCP_PROJECT_ID}
       - MANDRILL_API_KEY=
-      - LOCAL_TESTING=true
       - LOAD_TESTING=true
+      - ACCEPTANCE_TESTING=true
     ports:
       - "9090:8080"
       - "8082:8082"

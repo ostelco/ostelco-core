@@ -50,6 +50,7 @@ import org.ostelco.prime.sim.SimManager
 import org.ostelco.prime.storage.NotFoundError
 import org.ostelco.prime.storage.ScanInformationStore
 import org.ostelco.prime.storage.graph.model.Segment
+import org.ostelco.prime.tracing.Trace
 import java.time.Instant
 import java.util.*
 import javax.ws.rs.core.MultivaluedHashMap
@@ -62,26 +63,27 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 
 private val mockPaymentProcessor = Mockito.mock(PaymentProcessor::class.java)
-
 class MockPaymentProcessor : PaymentProcessor by mockPaymentProcessor
 
 class MockAnalyticsService : AnalyticsService by Mockito.mock(AnalyticsService::class.java)
 
 private val mockScanInformationStore = Mockito.mock(ScanInformationStore::class.java)
-
 class MockScanInformationStore : ScanInformationStore by mockScanInformationStore
 
 private val mockSimManager = Mockito.mock(SimManager::class.java)
-
 class MockSimManager : SimManager by mockSimManager
 
 private val mockEmailNotifier = Mockito.mock(EmailNotifier::class.java)
-
 class MockEmailNotifier : EmailNotifier by mockEmailNotifier
 
 private val mockAppNotifier = Mockito.mock(AppNotifier::class.java)
-
 class MockAppNotifier : AppNotifier by mockAppNotifier
+
+private val trace = object : Trace {
+    override fun <T> childSpan(name: String, work: () -> T): T = work()
+}
+
+class MockTrace : Trace by trace
 
 class Neo4jStoreTest {
 

@@ -121,6 +121,7 @@ import org.ostelco.prime.storage.graph.model.PlanSubscription
 import org.ostelco.prime.storage.graph.model.Segment
 import org.ostelco.prime.storage.graph.model.SimProfile
 import org.ostelco.prime.storage.graph.model.SubscriptionToBundle
+import org.ostelco.prime.tracing.Trace
 import java.time.Instant
 import java.util.*
 import java.util.stream.Collectors
@@ -501,6 +502,7 @@ object Neo4jStoreSingleton : GraphStore {
     // SIM Profile
     //
 
+    private val trace by lazy { getResource<Trace>() }
 
     private val simManager = object : SimManager {
 
@@ -514,7 +516,9 @@ object Neo4jStoreSingleton : GraphStore {
                         eSimActivationCode = "Dummy eSIM",
                         msisdnList = emptyList()).right()
             } else {
-                simManager.allocateNextEsimProfile(hlr, phoneType)
+                trace.childSpan("simManager.allocateNextEsimProfile") {
+                    simManager.allocateNextEsimProfile(hlr, phoneType)
+                }
             }
         }
 
@@ -526,12 +530,16 @@ object Neo4jStoreSingleton : GraphStore {
                         eSimActivationCode = "Dummy eSIM",
                         msisdnList = emptyList()).right()
             } else {
-                simManager.getSimProfile(hlr, iccId)
+                trace.childSpan("simManager.getSimProfile") {
+                    simManager.getSimProfile(hlr, iccId)
+                }
             }
         }
 
         override fun getSimProfileStatusUpdates(onUpdate: (iccId: String, status: SimProfileStatus) -> Unit) {
-            return simManager.getSimProfileStatusUpdates(onUpdate)
+            return trace.childSpan("simManager.getSimProfileStatusUpdates") {
+                simManager.getSimProfileStatusUpdates(onUpdate)
+            }
         }
     }
 

@@ -40,6 +40,7 @@ include ':scaninfo-datastore'
 include ':scaninfo-shredder'
 include ':secure-archive'
 include ':slack'
+include ':tracing'
 
 include ':sim-administration:es2plus4dropwizard'
 include ':sim-administration:jersey-json-schema-validator'
@@ -89,6 +90,7 @@ project(':scaninfo-datastore').projectDir = "$rootDir/scaninfo-datastore" as Fil
 project(':scaninfo-shredder').projectDir = "$rootDir/scaninfo-shredder" as File
 project(':secure-archive').projectDir = "$rootDir/secure-archive" as File
 project(':slack').projectDir = "$rootDir/slack" as File
+project(':tracing').projectDir = "$rootDir/tracing" as File
 
 project(':sim-administration:es2plus4dropwizard').projectDir = "$rootDir/sim-administration/es2plus4dropwizard" as File
 project(':sim-administration:jersey-json-schema-validator').projectDir = "$rootDir/sim-administration/jersey-json-schema-validator" as File

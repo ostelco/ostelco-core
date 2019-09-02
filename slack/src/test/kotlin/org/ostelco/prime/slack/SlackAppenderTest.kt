@@ -42,11 +42,11 @@ class SlackAppenderTest {
 
         Thread.sleep(3000)
 
-        logger.trace(NOTIFY_OPS_MARKER, "Some trace message text")
-        logger.debug(NOTIFY_OPS_MARKER, "Some debug message text")
-        logger.info(NOTIFY_OPS_MARKER, "Some Info message text")
-        logger.warn(NOTIFY_OPS_MARKER, "Some Warning message text")
-        logger.error(NOTIFY_OPS_MARKER, "Some Error message text")
+        logger.trace(NOTIFY_OPS_MARKER, "Some {} message text", "trace")
+        logger.debug(NOTIFY_OPS_MARKER, "Some {} message text", "debug")
+        logger.info(NOTIFY_OPS_MARKER, "Some {} message text", "Info")
+        logger.warn(NOTIFY_OPS_MARKER, "Some {} message text", "Warning")
+        logger.error(NOTIFY_OPS_MARKER, "Some {} message text", "Error")
 
         Thread.sleep(7000)
     }

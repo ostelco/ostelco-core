@@ -4,6 +4,7 @@ import com.stripe.Stripe
 import com.stripe.model.Customer
 import com.stripe.model.Source
 import com.stripe.model.Token
+import java.time.Year
 
 object StripePayment {
 
@@ -14,8 +15,8 @@ object StripePayment {
 
         val cardMap = mapOf(
                 "number" to "4242424242424242",
-                "exp_month" to 8,
-                "exp_year" to 2022,
+                "exp_month" to 12,
+                "exp_year" to nextYear(),
                 "cvc" to "314")
 
         val tokenMap = mapOf("card" to cardMap)
@@ -32,8 +33,8 @@ object StripePayment {
                 "type" to "card",
                 "card" to mapOf(
                         "number" to "4242424242424242",
-                        "exp_month" to 8,
-                        "exp_year" to 2022,
+                        "exp_month" to 12,
+                        "exp_year" to nextYear(),
                         "cvc" to "314"),
                 "owner" to mapOf(
                         "address" to mapOf(
@@ -55,8 +56,8 @@ object StripePayment {
                 "type" to "card",
                 "card" to mapOf(
                         "number" to "4242424242424242",
-                        "exp_month" to 8,
-                        "exp_year" to 2022,
+                        "exp_month" to 12,
+                        "exp_year" to nextYear(),
                         "cvc" to "314"),
                 "owner" to mapOf(
                         "email" to "me@somewhere.com")
@@ -121,6 +122,8 @@ object StripePayment {
                     }
         }
     }
+
+    private fun nextYear() = Year.now().value + 1
 }
 
 // use this just for cleanup

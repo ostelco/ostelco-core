@@ -13,6 +13,7 @@ import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.model.HasId
+import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.AlreadyExistsError
 import org.ostelco.prime.storage.NotCreatedError
 import org.ostelco.prime.storage.NotDeletedError
@@ -22,6 +23,7 @@ import org.ostelco.prime.storage.StoreError
 import org.ostelco.prime.storage.graph.Graph.read
 import org.ostelco.prime.storage.graph.Graph.write
 import org.ostelco.prime.storage.graph.ObjectHandler.getProperties
+import org.ostelco.prime.tracing.Trace
 import java.util.concurrent.CompletionStage
 
 //
@@ -535,20 +537,28 @@ object Graph {
 
     private val LOG by getLogger()
 
+    private val trace by lazy { getResource<Trace>() }
+
     fun <R> write(query: String, transaction: Transaction, transform: (StatementResult) -> R): R {
         LOG.trace("write:[\n$query\n]")
-        return transaction.run(query).let(transform)
+        return trace.childSpan("neo4j.write") {
+            transaction.run(query)
+        }.let(transform)
     }
 
     fun <R> read(query: String, transaction: Transaction, transform: (StatementResult) -> R): R {
         LOG.trace("read:[\n$query\n]")
-        return transaction.run(query).let(transform)
+        return trace.childSpan("neo4j.read") {
+            transaction.run(query)
+        }.let(transform)
     }
 
     suspend fun <R> writeSuspended(query: String, transaction: Transaction, transform: (CompletionStage<StatementResultCursor>) -> R) {
         LOG.trace("write:[\n$query\n]")
         withContext(Dispatchers.Default) {
-            transaction.runAsync(query)
+            trace.childSpan("neo4j.writeAsync") {
+                transaction.runAsync(query)
+            }
         }.let(transform)
     }
 }

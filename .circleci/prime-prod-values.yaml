@@ -36,7 +36,6 @@ prime:
   configDataBucket: "gs://pi-ostelco-prod-prime-files/prod"
 
   env:
-    FIREBASE_ROOT_PATH: v2
     NEO4J_HOST: neo4j-neo4j.neo4j.svc.cluster.local
     SLACK_CHANNEL: prime-alerts
     SLACK_ENV: Production
