@@ -18,9 +18,9 @@ hlrs:
 
 profileVendors:
   - name: Bar
-    es2plusEndpoint: http://localhost:9080/gsma/rsp2/es2plus
+    es2plusEndpoint: http://localhost:9080
     requesterIdentifier: 123
-    es9plusEndpoint: http://localhost:9080/notrealjustfortest/
+    es9plusEndpoint: http://localhost:9080
 
 # Note, list must end with a wildcard match
 phoneTypes:

@@ -108,10 +108,6 @@ data class ProfileVendorAdapter(
                 .setEntity(StringEntity(payload))
                 .build()
 
-        logger.info("SM-DP+ 'order-download' message to service {} for ICCID {} starting.",
-                config.name,
-                simEntry.iccid)
-
         return try {
             httpClient.execute(request).use {
                 when (it.statusLine.statusCode) {
@@ -119,18 +115,15 @@ data class ProfileVendorAdapter(
                         val status = mapper.readValue(it.entity.content, Es2DownloadOrderResponse::class.java)
 
                         if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess) {
-                            logger.error("SM-DP+ 'order-download' message to service {} for ICCID {} failed with execution status {} (call-id: {})",
+                            logger.error("SM-DP+ 'order-download' message to service {} for ICCID {} failed with execution status {} (call-id: {}, uri = {})",
                                     config.name,
                                     simEntry.iccid,
                                     status.header.functionExecutionStatus,
-                                    header.functionCallIdentifier)
+                                    header.functionCallIdentifier,
+                                    uri)
                             NotUpdatedError("SM-DP+ 'order-download' to ${config.name} failed with status: ${status.header.functionExecutionStatus}")
                                     .left()
                         } else {
-                            logger.info("SM-DP+ 'order-download' message to service {} for ICCID {} completed OK (call-id: {})",
-                                    config.name,
-                                    simEntry.iccid,
-                                    header.functionCallIdentifier)
                             if (simEntry.id == null) {
                                 NotUpdatedError("simEntry without id.  simEntry=$simEntry").left()
                             } else {

@@ -58,18 +58,13 @@ class SmdpPlusHealthceck(
      */
     private fun checkIfSmdpPlusIsUp(): Boolean {
 
-        logger.info("starting checkIfSmdpPlusIsUp")
-
         try {
             return IO {
                 Either.monad<SimManagerError>().binding {
-                    logger.info("Before polling all profile vendors.")
                     val vendorsRaw = simInventoryDAO.getAllProfileVendors()
                     vendorsRaw.mapLeft {
                         logger.info("Couldn't find any profile vendors: ", it)
                     }
-
-                    logger.info("The profileVendorConfigList is ${profileVendorConfigList}")
 
                     val profileVendorAdaptorList = vendorsRaw.bind()
 
