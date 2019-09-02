@@ -10,6 +10,7 @@ import io.dropwizard.client.HttpClientConfiguration
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
 import org.apache.http.client.HttpClient
+import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.dropwizardutils.CertAuthConfig
 import org.ostelco.dropwizardutils.CertificateAuthorizationFilter
 import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
@@ -67,9 +68,9 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
         bootstrap.objectMapper.registerModule(KotlinModule())
     }
 
-    private lateinit var httpClient: HttpClient
+    private lateinit var httpClient: CloseableHttpClient
 
-    internal lateinit var es2plusClient: ES2PlusClient
+    internal lateinit var es2PlusCLientForCallbacks: ES2PlusClient
 
     private lateinit var serverResource: SmDpPlusServerResource
 
@@ -77,6 +78,8 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 
 
     fun noOfEntries () : Int = smdpPlusService.getNoOfEntries()
+
+    fun getHttpClient() = httpClient
 
     override fun run(config: SmDpPlusAppConfiguration,
                      env: Environment) {
@@ -132,7 +135,7 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
                 RBACService(rolesConfig = config.rolesConfig,
                         certConfig = config.certConfig)))
 
-        this.es2plusClient = ES2PlusClient(
+        this.es2PlusCLientForCallbacks = ES2PlusClient(
                 requesterId = config.es2plusConfig.requesterId,
                 host = config.es2plusConfig.host,
                 port = config.es2plusConfig.port,

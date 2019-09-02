@@ -1,6 +1,5 @@
 package org.ostelco.simcards.smdpplus;
 
-import io.dropwizard.client.HttpClientBuilder
 import io.dropwizard.testing.ResourceHelpers
 import io.dropwizard.testing.junit.DropwizardAppRule
 import junit.framework.TestCase.assertEquals
@@ -34,7 +33,7 @@ public class SmDpPlusTest {
     val magicMatchingID = "0123-ABCD-KGBC-IAMOS-SAD0"
 
     init {
-        this.httpClient = HttpClientBuilder(SM_DP_PLUS_RULE.environment).build("Test client")
+        this.httpClient = SM_DP_PLUS_RULE.getApplication<SmDpPlusApplication>().getHttpClient()
         this.localPort = SM_DP_PLUS_RULE.localPort
         this.client = ES2PlusClient(httpClient = httpClient, port = localPort, requesterId = "Dunderhonning", useHttps = false)
     }
@@ -43,7 +42,8 @@ public class SmDpPlusTest {
     @Test
     fun testThatCorrectNumberOfProfilesAreLoaded() {
         val app: SmDpPlusApplication = SM_DP_PLUS_RULE.getApplication<SmDpPlusApplication>()
-        assertEquals(100, app.noOfEntries())
+        val noOfEntries = app.noOfEntries()
+        assertEquals(100, noOfEntries)
     }
 
 
