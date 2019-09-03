@@ -183,7 +183,7 @@ class SimManager {
         // using an API provided just for this test (or should we perhaps just do the
         // callback directly?)
         logger.info("Trigger ES2+ callback from sm-dp+")
-        val webTarget = client.target("http://smdp-plus-emulator:8080/commands/simulate-download-of/iccid/${allocatedProfile.iccid}}")
+        val webTarget = client.target("http://smdp-plus-emulator:8080/commands/simulate-download-of/iccid/${allocatedProfile.iccid}")
         assertEquals(200, webTarget.request().get().status)
 
         logger.info("Check that state of allocated sim entry has changed because of the  ES2+ callback")

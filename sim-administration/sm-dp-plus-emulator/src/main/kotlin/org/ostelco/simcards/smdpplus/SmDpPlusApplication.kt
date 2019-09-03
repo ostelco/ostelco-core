@@ -167,15 +167,22 @@ class SmDpPlusCallbackClient(
 
     @Throws(WebApplicationException::class)
     fun reportDownload(iccid: String) {
-        val entry = smdpPlus.getEntryByIccid(iccid)
-        if (entry == null) {
-            log.error("Attempt to report download for unknown ICCID=$iccid")
-            throw WebApplicationException(Response.Status.NOT_FOUND)
+        try {
+            val entry = smdpPlus.getEntryByIccid(iccid)
+            if (entry == null) {
+                log.error("Attempt to report download for unknown ICCID=$iccid")
+                throw WebApplicationException(Response.Status.NOT_FOUND)
+            }
+
+            client.handleDownloadProgressInfo(
+                    iccid = iccid,
+                    profileType = entry.profile,
+                    notificationPointId = 4711, // XXX Obviously a placeholder
+                    notificationPointStatus = ES2NotificationPointStatus())  // XXX Also a placeholder
+        } catch (e: Throwable) {
+            log.error("Failure while reporting download ", e)
+            throw WebApplicationException("Failure while reporting download ", e)
         }
-        client.handleDownloadProgressInfo(iccid = iccid,
-                profileType = entry.profile,
-                notificationPointId = 4711, // XXX Obviously a placeholder
-                notificationPointStatus = ES2NotificationPointStatus())  // XXX Also a placeholder
     }
 }
 

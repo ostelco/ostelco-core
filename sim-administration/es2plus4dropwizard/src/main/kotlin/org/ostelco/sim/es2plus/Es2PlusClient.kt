@@ -6,7 +6,7 @@ import org.apache.http.HttpResponse
 import org.apache.http.client.HttpClient
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity
-import java.time.LocalDate
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
@@ -65,7 +65,8 @@ class ES2PlusClient(
             req.setHeader("Content-type", "application/json")
             req.entity = StringEntity(payload)
 
-            val result: HttpResponse = httpClient.execute(req) ?: throw ES2PlusClientException("Null response from http httpClient")
+            val result: HttpResponse = httpClient.execute(req)
+                    ?: throw ES2PlusClientException("Null response from http httpClient")
 
             // Validate returned response
             val statusCode = result.statusLine.statusCode
@@ -90,7 +91,8 @@ class ES2PlusClient(
                 throw ES2PlusClientException("Expected header Content-Type to be '$expectedContentType' but was '$returnedContentType'")
             }
 
-            return objectMapper.readValue(result.entity.content, sclass) ?: throw ES2PlusClientException("null return value")
+            return objectMapper.readValue(result.entity.content, sclass)
+                    ?: throw ES2PlusClientException("null return value")
         } else if (jerseyClient != null) {
             val entity: Entity<T> = Entity.entity(es2ProtocolPayload, MediaType.APPLICATION_JSON)
             val result: Response = jerseyClient.target(path)
@@ -144,7 +146,8 @@ class ES2PlusClient(
             req.setHeader("Content-type", "application/json")
             req.entity = StringEntity(payload)
 
-            val result: HttpResponse = httpClient.execute(req) ?: throw ES2PlusClientException("Null response from http httpClient")
+            val result: HttpResponse = httpClient.execute(req)
+                    ?: throw ES2PlusClientException("Null response from http httpClient")
 
             // Validate returned response
             val statusCode = result.statusLine.statusCode
@@ -173,7 +176,7 @@ class ES2PlusClient(
     fun profileStatus(
             iccidList: List<String>): Es2ProfileStatusResponse {
 
-        val wrappedIccidList = iccidList.map { IccidListEntry(iccid=it) }
+        val wrappedIccidList = iccidList.map { IccidListEntry(iccid = it) }
 
         val es2ProtocolPayload = Es2PlusProfileStatus(
                 header = ES2RequestHeader(
@@ -191,7 +194,7 @@ class ES2PlusClient(
     fun downloadOrder(
             eid: String? = null,
             iccid: String,
-            profileType: String?=null): Es2DownloadOrderResponse {
+            profileType: String? = null): Es2DownloadOrderResponse {
         val es2ProtocolPayload = Es2PlusDownloadOrder(
                 header = ES2RequestHeader(
                         functionRequesterIdentifier = requesterId,
@@ -231,7 +234,7 @@ class ES2PlusClient(
                 sclass = Es2ConfirmOrderResponse::class.java)
     }
 
-    fun cancelOrder(iccid: String, finalProfileStatusIndicator: String, eid: String? = null,matchingId: String? = null): HeaderOnlyResponse {
+    fun cancelOrder(iccid: String, finalProfileStatusIndicator: String, eid: String? = null, matchingId: String? = null): HeaderOnlyResponse {
         return postEs2ProtocolCmd("/gsma/rsp2/es2plus/cancelOrder",
                 es2ProtocolPayload = Es2CancelOrder(
                         header = ES2RequestHeader(
@@ -258,6 +261,9 @@ class ES2PlusClient(
                 expectedStatusCode = 200)
     }
 
+
+    fun getNowAsDatetime(): String = DateTimeFormatter.ofPattern("YYYY-MM-DD'T'hh:mm:ssZ").format(ZonedDateTime.now())
+
     fun handleDownloadProgressInfo(
             eid: String? = null,
             iccid: String,
@@ -269,17 +275,6 @@ class ES2PlusClient(
             imei: String? = null
     ) {
 
-        val currentTimestamp: String
-        if (timestamp == null) {
-            // XXX This  should be extracted into a separate ES2+ DATETIME-generating method.
-            var formatter =
-                    DateTimeFormatter.ofPattern("dd-MM-yyyyThh:mm:ssZ")
-            var now = LocalDate.now()
-            currentTimestamp = now.format(formatter)
-        } else {
-            currentTimestamp = timestamp
-        }
-
         postEs2ProtocolCmdNoContentReturned("/gsma/rsp2/es2plus/handleDownloadProgressInfo",
                 Es2HandleDownloadProgressInfo(
                         header = ES2RequestHeader(
@@ -289,7 +284,7 @@ class ES2PlusClient(
                         eid = eid,
                         iccid = iccid,
                         profileType = profileType,
-                        timestamp = currentTimestamp,
+                        timestamp = (timestamp ?: getNowAsDatetime()),
                         notificationPointId = notificationPointId,
                         notificationPointStatus = notificationPointStatus,
                         resultData = resultData,
