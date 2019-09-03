@@ -1,3 +1,5 @@
+# This docker-compose is used in Acceptance testing locally and on build pipeline as quality gate.
+
 version: "3.3"
 
 services:
@@ -8,7 +10,9 @@ services:
       dockerfile: Dockerfile.test
     environment:
       - GCP_PROJECT_ID=${GCP_PROJECT_ID}
+      # used by Stackdriver Tracing
       - GOOGLE_CLOUD_PROJECT=${GCP_PROJECT_ID}
+      # used by Datastore, Pub/Sub, Stackdriver Tracing
       - GOOGLE_APPLICATION_CREDENTIALS=/secret/prime-service-account.json
       - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
       - PUBSUB_PROJECT_ID=${GCP_PROJECT_ID}
