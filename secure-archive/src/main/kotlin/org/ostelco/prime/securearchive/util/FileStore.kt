@@ -35,10 +35,10 @@ object FileStore {
      * Save byte array as local file, used only for testing
      */
     fun saveLocalFile(fileName: String, data: ByteArray): Either<StoreError, String> {
-        val fos = FileOutputStream(File(fileName))
         try {
-            fos.write(data)
-            fos.close()
+            FileOutputStream(File(fileName)).use { fos ->
+                fos.write(data)
+            }
         } catch (e: IOException) {
             return Either.left(NotCreatedError(TYPE_NAME.s, fileName))
         }

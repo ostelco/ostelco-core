@@ -15,20 +15,19 @@ object Zip {
      * Creates the zip file
      */
     fun generateZipFile(fileName: String, dataMap: Map<String, ByteArray>): Either<StoreError, ByteArray> {
-        val outputStream = ByteArrayOutputStream()
-        val zos = ZipOutputStream(BufferedOutputStream(outputStream))
-        try {
-            dataMap.forEach { (name, data) ->
-                zos.putNextEntry(ZipEntry(name))
-                zos.write(data)
-                zos.closeEntry()
+        return try {
+            val outputStream = ByteArrayOutputStream()
+            ZipOutputStream(BufferedOutputStream(outputStream)).use { zos ->
+                dataMap.forEach { (name, data) ->
+                    zos.putNextEntry(ZipEntry(name))
+                    zos.write(data)
+                    zos.closeEntry()
+                }
+                zos.finish()
             }
-            zos.finish()
+            Either.right(outputStream.toByteArray())
         } catch (e: IOException) {
-            return Either.left(NotCreatedError(type = "ZIP", id = fileName))
-        } finally {
-            zos.close()
+            Either.left(NotCreatedError(type = "ZIP", id = fileName))
         }
-        return Either.right(outputStream.toByteArray())
     }
 }

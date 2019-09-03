@@ -40,7 +40,7 @@ class SlackAppender : AppenderBase<ILoggingEvent>() {
             if (eventObject.marker == NOTIFY_OPS_MARKER) {
                 SlackNotificationReporter.notifyEvent(
                         level = Level.valueOf(eventObject.level.levelStr),
-                        message = eventObject.message)
+                        message = eventObject.formattedMessage)
             }
         }
     }

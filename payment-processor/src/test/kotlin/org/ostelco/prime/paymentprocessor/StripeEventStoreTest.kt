@@ -6,6 +6,7 @@ import com.stripe.net.ApiResource
 import org.junit.Test
 import org.ostelco.prime.paymentprocessor.subscribers.StripeEvent
 import org.ostelco.prime.store.datastore.EntityStore
+import java.time.Year
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.fail
@@ -109,8 +110,8 @@ class StripeEventStoreTest {
                         "cvc_check": "pass",
                         "default_for_currency": null,
                         "dynamic_last4": null,
-                        "exp_month": 8,
-                        "exp_year": 2019,
+                        "exp_month": 12,
+                        "exp_year": ${Year.now().value + 1},
                         "fingerprint": "0iYTxuneb6pNlFWV",
                         "funding": "credit",
                         "last4": "4242",

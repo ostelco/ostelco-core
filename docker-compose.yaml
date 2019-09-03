@@ -1,3 +1,5 @@
+# This docker-compose is used in Acceptance testing locally and on build pipeline as quality gate.
+
 version: "3.3"
 
 services:
@@ -8,7 +10,10 @@ services:
       dockerfile: Dockerfile.test
     environment:
       - GCP_PROJECT_ID=${GCP_PROJECT_ID}
-      - FIREBASE_ROOT_PATH=test
+      # used by Stackdriver Tracing
+      - GOOGLE_CLOUD_PROJECT=${GCP_PROJECT_ID}
+      # used by Datastore, Pub/Sub, Stackdriver Tracing
+      - GOOGLE_APPLICATION_CREDENTIALS=/secret/prime-service-account.json
       - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
       - PUBSUB_PROJECT_ID=${GCP_PROJECT_ID}
       - JUMIO_API_TOKEN=
@@ -25,6 +30,7 @@ services:
       # XXX This really should be https, but we'll let that
       #     be an improvement for a later time.
       - SMDPLUS_ES2PLUS_ENDPOINT=http://smdp-plus-emulator:8080
+      - ACCEPTANCE_TESTING=true
     ports:
       - "9090:8080"
       - "8082:8082"

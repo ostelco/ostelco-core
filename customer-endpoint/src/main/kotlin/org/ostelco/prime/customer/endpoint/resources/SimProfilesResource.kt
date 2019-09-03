@@ -4,6 +4,7 @@ import io.dropwizard.auth.Auth
 import org.ostelco.prime.apierror.responseBuilder
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.customer.endpoint.store.SubscriberDAO
+import org.ostelco.prime.tracing.EnableTracing
 import javax.validation.constraints.NotNull
 import javax.ws.rs.GET
 import javax.ws.rs.POST
@@ -30,6 +31,7 @@ class SimProfilesResource(private val regionCode: String, private val dao: Subsc
                         .responseBuilder()
             }.build()
 
+    @EnableTracing
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     fun provisionSimProfile(@Auth token: AccessTokenPrincipal?,
@@ -66,6 +68,7 @@ class SimProfilesResource(private val regionCode: String, private val dao: Subsc
                         .responseBuilder()
             }.build()
 
+    @EnableTracing
     @GET
     @Path("/{iccId}/resendEmail")
     @Produces(MediaType.APPLICATION_JSON)

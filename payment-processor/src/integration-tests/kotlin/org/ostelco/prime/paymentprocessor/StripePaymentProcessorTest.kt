@@ -10,6 +10,7 @@ import org.junit.Before
 import org.junit.Test
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.paymentprocessor.core.PaymentError
+import java.time.Year
 import java.util.*
 import kotlin.test.Ignore
 import kotlin.test.assertEquals
@@ -28,8 +29,8 @@ class StripePaymentProcessorTest {
 
         val cardMap = mapOf(
                 "number" to "4242424242424242",
-                "exp_month" to 8,
-                "exp_year" to 2019,
+                "exp_month" to 12,
+                "exp_year" to nextYear(),
                 "cvc" to "314")
         val tokenMap = mapOf("card" to cardMap)
 
@@ -44,7 +45,7 @@ class StripePaymentProcessorTest {
                 "card" to mapOf(
                         "number" to "4242424242424242",
                         "exp_month" to 8,
-                        "exp_year" to 2019,
+                        "exp_year" to 2022,
                         "cvc" to "314"),
                 "owner" to mapOf(
                         "address" to mapOf(
@@ -328,4 +329,6 @@ class StripePaymentProcessorTest {
     /* Helper function to unpack the 'right' part of an 'either'. */
     private fun <T> right(arg: Either<PaymentError, T>): T =
         arg.fold({ fail("Invalid argument, expected a 'right' value but was ${it}") }, { it })
+
+    private fun nextYear() = Year.now().value + 1
 }

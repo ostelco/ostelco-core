@@ -1,3 +1,5 @@
+# This docker-compose is used for testing GCP ESP and Swagger spec.
+
 version: "3.7"
 
 services:
@@ -8,7 +10,10 @@ services:
       dockerfile: Dockerfile.test
     environment:
       - GCP_PROJECT_ID=${GCP_PROJECT_ID}
-      - FIREBASE_ROOT_PATH=test
+      # used by Stackdriver Tracing
+      - GOOGLE_CLOUD_PROJECT=${GCP_PROJECT_ID}
+      # used by Datastore, Pub/Sub, Stackdriver Tracing
+      - GOOGLE_APPLICATION_CREDENTIALS=/secret/prime-service-account.json
       - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
       - PUBSUB_PROJECT_ID=${GCP_PROJECT_ID}
       - JUMIO_API_TOKEN=
@@ -18,7 +23,7 @@ services:
       - DATASTORE_EMULATOR_HOST=localhost:9090
       - DATASTORE_PROJECT_ID=${GCP_PROJECT_ID}
       - MANDRILL_API_KEY=
-      - LOCAL_TESTING=true
+      - ACCEPTANCE_TESTING=true
     ports:
       - "9090:8080"
       - "8082:8082"

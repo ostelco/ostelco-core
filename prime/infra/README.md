@@ -45,7 +45,6 @@ If changes are required to the kubernetes deployment of Prime, you need to edit 
 Non-secret environment variables can be defined in the `env` section of the helm values file. Example: 
 ```yaml
 env: 
-    FIREBASE_ROOT_PATH: dev
     NEO4J_HOST: neo4j-neo4j.neo4j.svc.cluster.local
 ```
 ### Adding Secrets as environment variables

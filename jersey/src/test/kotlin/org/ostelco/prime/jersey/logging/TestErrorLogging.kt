@@ -15,7 +15,6 @@ class TestErrorLogging {
     @Test
     fun `test - error logging non-200 responses`() {
 
-
         resourceTestRule.target("/test/success")
                 .request()
                 .get()

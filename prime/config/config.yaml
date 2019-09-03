@@ -11,6 +11,7 @@ modules:
       authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
       jerseyClient:
         timeout: 2s
+  - type: tracing
   - type: slack
     config:
       notifications:
