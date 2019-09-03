@@ -145,7 +145,7 @@ class SimManager {
     }
 
     fun allocateFirstFreeSimProfileByHss(hss: String): SimEntry {
-        val webTarget = client.target("http://prime:8080/ostelco/sim-inventory/${hss}/esim")
+        val webTarget = client.target("http://prime:8080/ostelco/sim-inventory/${hss}/esim?phoneType=${hss}.iphone")
         val response = webTarget.request().get()
         val responseCode = response.status
         assertEquals( 200, responseCode)

@@ -131,6 +131,8 @@ modules:
           profile: Loltel_ANDROID_1
         - regex: "Loltel.*"
           profile: LOLTEL_IPHONE_1
+        - regex: "Foo.*"
+          profile: IPHONE_PROFILE_2
       database:
         driverClass: org.postgresql.Driver
         user: postgres_user
