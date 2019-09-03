@@ -1,0 +1,72 @@
+logging:
+  level: INFO
+
+simBatchData: config/sample-sim-batch-for-sm-dp+.csv
+
+openApi:
+  name: SM-DP-emulator
+  description: Test fixture simulating ES2+ interactions of an SM-DP+
+  termsOfService: http://example.org
+  contactEmail: rmz@telenordigital.com
+  resourcePackage: org.ostelco
+
+server:
+  adminMinThreads: 1
+  adminMaxThreads: 64
+  adminContextPath: /
+  applicationContextPath: /
+  applicationConnectors:
+    - type: http
+      port: 8080
+    - type: https
+      port: 8443
+      # Enabling conscrypt blows the whole thing up, so don't do that.
+      #jceProvider: Conscrypt
+      keyStoreType: JKS
+      keyStorePath: config/sk_keys.jks
+      keyStorePassword: superSecreet
+      validateCerts: false
+      needClientAuth: true
+      wantClientAuth: true
+      supportedProtocols: [TLSv1.1, TLSv1.2, TLSv1.3]
+      excludedProtocols: [SSLv2Hello, SSLv3]
+
+httpClient:
+  timeout: 5000000ms
+  tls:
+    # Default is 500 milliseconds, we need more when debugging.
+    protocol: TLSv1.2
+    keyStoreType: JKS
+    keyStorePath: config/sk_keys.jks
+    keyStorePassword: superSecreet
+    #    validateCerts: false
+    #    keyStorePath: config/sk_keys.jks
+    #    keyStorePassword: superSecreet
+    #    keyStoreType: JKS
+    #    trustStorePath: sk_trust.jks
+    #    trustStorePassword: superSecreet
+    #    trustStoreType: JKS
+    verifyHostname: false
+    trustSelfSignedCertificates: true
+
+#  CN=*.not-really-ostelco.org, O=Not really SMDP org, L=Oslo, ST=Oslo, C=NO
+certAuth:
+  certAuths:
+    - userId: MrFish
+      country: 'NO'
+      location: Oslo
+      state: ''
+      organization: Not really SMDP org
+      commonName: '*.not-really-ostelco.org'
+      roles:
+        - flyfisher
+
+roles:
+  definitions:
+    - name: flyfisher
+      description: Obviously just a dummy role
+
+es2plusClient:
+  requesterId: abc
+  host: prime
+  port: 8080

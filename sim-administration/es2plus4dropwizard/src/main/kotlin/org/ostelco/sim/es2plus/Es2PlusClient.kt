@@ -6,6 +6,7 @@ import org.apache.http.HttpResponse
 import org.apache.http.client.HttpClient
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity
+import org.ostelco.prime.getLogger
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import javax.validation.Valid
@@ -32,6 +33,14 @@ class ES2PlusClient(
         const val X_ADMIN_PROTOCOL_HEADER_VALUE = "gsma/rsp/v2.0.0"
     }
 
+    val logger = getLogger()
+
+    private fun url(path: String) = if (useHttps) {
+        "https://%s:%d%s".format(host, port, path)
+    } else {
+        "http://%s:%d%s".format(host, port, path)
+    }
+
     /* For test cases where content should be returned. */
     @Throws(ES2PlusClientException::class)
     private fun <T, S> postEs2ProtocolCmd(
@@ -51,11 +60,7 @@ class ES2PlusClient(
             val objectMapper = ObjectMapper()
             val payload = objectMapper.writeValueAsString(es2ProtocolPayload)
 
-            val url = if (useHttps) {
-                "https://%s:%d%s".format(host, port, path)
-            } else {
-                "http://%s:%d%s".format(host, port, path)
-            }
+            val url = url(path)
             val req = HttpPost(url)
 
             req.setHeader("User-Agent", "gsma-rsp-lpad")
@@ -137,7 +142,7 @@ class ES2PlusClient(
             val objectMapper = ObjectMapper()
             val payload = objectMapper.writeValueAsString(es2ProtocolPayload)
 
-            val req = HttpPost("https://%s:%d%s".format(host, port, path))
+            val req = HttpPost(url(path))
 
             req.setHeader("User-Agent", "gsma-rsp-lpad")
             req.setHeader("X-Admin-Protocol", X_ADMIN_PROTOCOL_HEADER_VALUE)
@@ -262,7 +267,8 @@ class ES2PlusClient(
     }
 
 
-    fun getNowAsDatetime(): String = DateTimeFormatter.ofPattern("YYYY-MM-DD'T'hh:mm:ssZ").format(ZonedDateTime.now())
+    /*  ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[T,D,Z]{1}$ */
+    fun getNowAsDatetime(): String = DateTimeFormatter.ofPattern("YYYY-MM-DD'T'hh:mm:ss'Z'").format(ZonedDateTime.now())
 
     fun handleDownloadProgressInfo(
             eid: String? = null,
@@ -274,6 +280,9 @@ class ES2PlusClient(
             resultData: String? = null,
             imei: String? = null
     ) {
+        // val currentTimestamp = (timestamp ?: getNowAsDatetime())
+        // Faking it!
+        val currentTimestamp = "2019-09-02T23:24:25Z"
 
         postEs2ProtocolCmdNoContentReturned("/gsma/rsp2/es2plus/handleDownloadProgressInfo",
                 Es2HandleDownloadProgressInfo(
@@ -284,7 +293,7 @@ class ES2PlusClient(
                         eid = eid,
                         iccid = iccid,
                         profileType = profileType,
-                        timestamp = (timestamp ?: getNowAsDatetime()),
+                        timestamp = currentTimestamp,
                         notificationPointId = notificationPointId,
                         notificationPointStatus = notificationPointStatus,
                         resultData = resultData,

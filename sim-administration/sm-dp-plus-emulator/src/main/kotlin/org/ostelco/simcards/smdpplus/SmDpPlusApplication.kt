@@ -120,6 +120,7 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 
         val callbackClient = SmDpPlusCallbackClient(
                 httpClient = httpClient,
+
                 hostname = config.es2plusConfig.host,
                 portNumber = config.es2plusConfig.port,
                 requesterId = config.es2plusConfig.requesterId,
@@ -162,7 +163,7 @@ class SmDpPlusCallbackClient(
     val client: ES2PlusClient
 
     init {
-        this.client = ES2PlusClient(requesterId = requesterId, httpClient = httpClient, host = hostname, port = portNumber)
+        this.client = ES2PlusClient(requesterId = requesterId, httpClient = httpClient, host = hostname, port = portNumber, useHttps = false)
     }
 
     @Throws(WebApplicationException::class)
@@ -177,7 +178,7 @@ class SmDpPlusCallbackClient(
             client.handleDownloadProgressInfo(
                     iccid = iccid,
                     profileType = entry.profile,
-                    notificationPointId = 4711, // XXX Obviously a placeholder
+                    notificationPointId = 3,  //3 -> Download.  This is a magic number XXX must be fixed.
                     notificationPointStatus = ES2NotificationPointStatus())  // XXX Also a placeholder
         } catch (e: Throwable) {
             log.error("Failure while reporting download ", e)
