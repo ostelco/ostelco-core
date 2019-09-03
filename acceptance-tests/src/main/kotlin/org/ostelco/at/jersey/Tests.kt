@@ -1671,6 +1671,104 @@ class SingaporeKycTest {
             StripePayment.deleteCustomer(customerId = customerId)
         }
     }
+
+    @Test
+    fun `jersey test - Jumio and address`() {
+
+        val email = "myinfo-${randomInt()}@test.com"
+        var customerId = ""
+        try {
+            customerId = createCustomer(name = "Test MyInfo Customer", email = email).id
+
+            run {
+                val regionDetailsList = get<RegionDetailsList> {
+                    path = "/regions"
+                    this.email = email
+                }
+
+                assertTrue(regionDetailsList.isEmpty(), "regionDetailsList should be empty")
+            }
+
+            val scanInfo: ScanInformation = post {
+                path = "/regions/sg/kyc/jumio/scans"
+                this.email = email
+            }
+
+            assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
+
+            val dataMap = MultivaluedHashMap<String, String>()
+            dataMap["jumioIdScanReference"] = listOf(UUID.randomUUID().toString())
+            dataMap["idScanStatus"] = listOf("SUCCESS")
+            dataMap["verificationStatus"] = listOf("APPROVED_VERIFIED")
+            dataMap["callbackDate"] = listOf("2018-12-07T09:19:07.036Z")
+            dataMap["idType"] = listOf("LICENSE")
+            dataMap["idCountry"] = listOf("NOR")
+            dataMap["idFirstName"] = listOf("Test User")
+            dataMap["idLastName"] = listOf("Test Family")
+            dataMap["idDob"] = listOf("1990-12-09")
+            dataMap["merchantIdScanReference"] = listOf(scanInfo.scanId)
+            val identityVerification = """{ "similarity":"MATCH", "validity":"TRUE"}"""
+            dataMap["identityVerification"] = listOf(identityVerification)
+            val imgUrl = "https://www.gstatic.com/webp/gallery3/1.png"
+            val imgUrl2 = "https://www.gstatic.com/webp/gallery3/2.png"
+            dataMap["livenessImages"] = listOf(imgUrl, imgUrl2)
+
+            post<ScanInformation>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
+                path = "/ekyc/callback"
+                body = dataMap
+            }
+
+            run {
+                val regionDetailsList = get<Collection<RegionDetails>> {
+                    path = "/regions"
+                    this.email = email
+                }
+
+                assertEquals(1, regionDetailsList.size, "regionDetailsList should have only one entry")
+
+                val regionDetails = RegionDetails()
+                        .region(Region().id("sg").name("Singapore"))
+                        .status(PENDING)
+                        .kycStatusMap(mutableMapOf(
+                                KycType.MY_INFO.name to KycStatus.PENDING,
+                                KycType.NRIC_FIN.name to KycStatus.PENDING,
+                                KycType.JUMIO.name to KycStatus.APPROVED,
+                                KycType.ADDRESS_AND_PHONE_NUMBER.name to KycStatus.PENDING))
+                        .simProfiles(SimProfileList())
+
+                assertEquals(regionDetails, regionDetailsList.single(), "RegionDetails do not match")
+            }
+
+            put<String>(expectedResultCode = 204) {
+                path = "/regions/sg/kyc/profile"
+                this.email = email
+                queryParams = mapOf("address" to "Singapore", "phoneNumber" to "1234")
+            }
+
+            run {
+                val regionDetailsList = get<RegionDetailsList> {
+                    path = "/regions"
+                    this.email = email
+                }
+
+                assertEquals(1, regionDetailsList.size, "regionDetailsList should have only one entry")
+
+                val regionDetails = RegionDetails()
+                        .region(Region().id("sg").name("Singapore"))
+                        .status(APPROVED)
+                        .kycStatusMap(mutableMapOf(
+                                KycType.JUMIO.name to KycStatus.APPROVED,
+                                KycType.MY_INFO.name to KycStatus.PENDING,
+                                KycType.ADDRESS_AND_PHONE_NUMBER.name to KycStatus.APPROVED,
+                                KycType.NRIC_FIN.name to KycStatus.PENDING))
+                        .simProfiles(SimProfileList())
+
+                assertEquals(regionDetails, regionDetailsList.single(), "RegionDetails do not match")
+            }
+        } finally {
+            StripePayment.deleteCustomer(customerId = customerId)
+        }
+    }
 }
 
 class ReferralTest {

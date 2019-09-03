@@ -11,6 +11,20 @@ dependencies {
   implementation "io.opencensus:opencensus-exporter-trace-stackdriver:$opencensusVersion"
 
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
+
+  testImplementation "org.junit.jupiter:junit-jupiter-api:$junit5Version"
+  testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junit5Version"
+}
+
+test {
+  // native support to Junit5 in Gradle 4.6+
+  useJUnitPlatform {
+    includeEngines 'junit-jupiter'
+  }
+  testLogging {
+    exceptionFormat = 'full'
+    events "PASSED", "FAILED", "SKIPPED"
+  }
 }
 
 apply from: '../gradle/jacoco.gradle'

@@ -8,7 +8,7 @@ import io.dropwizard.configuration.SubstitutingSourceProvider
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.condition.DisabledIf
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import org.ostelco.prime.module.PrimeModule
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.notifications.EmailNotifier
@@ -31,7 +31,7 @@ data class TestConfig(val modules: List<PrimeModule>): Configuration()
 
 class MandrillClientTest {
 
-    @DisabledIf("systemEnvironment.get('MANDRILL_API_KEY') == null")
+    @EnabledIfEnvironmentVariable(named = "MANDRILL_API_KEY", matches = "*")
     @Test
     fun `send test email via Mandrill`() {
 

@@ -6,7 +6,7 @@ import org.junit.Test
 import org.junit.experimental.ParallelComputer
 import org.junit.runner.JUnitCore
 import org.ostelco.at.common.getLogger
-import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class TestSuite {
 
@@ -50,10 +50,13 @@ class TestSuite {
 
     private fun checkResult(result: org.junit.runner.Result) {
 
+        println()
+        println("Test result: ${result.runCount - result.failureCount} of ${result.runCount} tests passed. ${result.ignoreCount} marked to be ignored.")
+
         result.failures.forEach {
             logger.error("{} {} {} {}", it.testHeader, it.message, it.description, it.trace)
         }
 
-        assertEquals(expected = 0, actual = result.failureCount)
+        assertTrue(result.wasSuccessful(), "${result.failureCount} tests failed!")
     }
 }

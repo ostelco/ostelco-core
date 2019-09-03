@@ -1889,7 +1889,7 @@ object Neo4jStoreSingleton : GraphStore {
     private fun getApprovedKycTypeSetList(regionCode: String): List<Set<KycType>> {
         return when (regionCode) {
             "sg" -> listOf(setOf(MY_INFO, ADDRESS_AND_PHONE_NUMBER),
-                    setOf(JUMIO, NRIC_FIN, ADDRESS_AND_PHONE_NUMBER))
+                    setOf(JUMIO, ADDRESS_AND_PHONE_NUMBER))
             else -> listOf(setOf(JUMIO))
         }
     }
