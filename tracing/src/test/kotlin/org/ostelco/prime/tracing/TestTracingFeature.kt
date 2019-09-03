@@ -3,6 +3,8 @@ package org.ostelco.prime.tracing
 import io.dropwizard.testing.junit.ResourceTestRule
 import org.junit.ClassRule
 import org.junit.Test
+import org.junit.jupiter.api.condition.EnabledOnOs
+import org.junit.jupiter.api.condition.OS
 import java.lang.Thread.sleep
 import javax.ws.rs.GET
 import javax.ws.rs.Path
@@ -13,6 +15,7 @@ import javax.ws.rs.core.Response
 class TestTracingFeature {
 
     @Test
+    @EnabledOnOs(OS.MAC)
     fun `test - tracing http resources`() {
 
         TraceSingleton.init()
