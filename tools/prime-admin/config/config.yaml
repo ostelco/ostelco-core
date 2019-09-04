@@ -2,10 +2,6 @@
 
 modules:
   - type: env
-  - type: firebase
-    config:
-      configFile: config/prime-service-account.json
-      rootPath: test
 #  - type: stripe-payment-processor
   - type: neo4j
     config:

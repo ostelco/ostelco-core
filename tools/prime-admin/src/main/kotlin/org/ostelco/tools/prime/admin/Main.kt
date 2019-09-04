@@ -15,6 +15,7 @@ fun main() {
     } finally {
         DwEnvModule.env.applicationContext.server.stop()
     }
+    println("Done")
 }
 
 fun doActions() {
@@ -28,17 +29,19 @@ fun doActions() {
 //    deleteCustomer(email = "").printLeft()
 
     // link to region
+//     approveRegionForCustomer(email = "", regionCode = "").printLeft()
 
     // add SimProfile
 //    createSubscription(
 //            email = "",
-//            regionCode ="",
+//            regionCode = "",
 //            alias = "",
 //            msisdn = "").printLeft()
 
     // remove SimProfile
 
     // set bundle balance
+//    setBalance(email = "", balance = 10 * 2.0.pow(30.0).toLong()).printLeft()
 
     // check bundle balance
 

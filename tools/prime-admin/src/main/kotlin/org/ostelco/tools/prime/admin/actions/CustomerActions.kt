@@ -141,7 +141,7 @@ fun setBalance(email: String, balance: Long) = adminStore
         .flatMap { bundleId ->
             writeTransaction {
                 update {
-                    Bundle(id = bundleId, balance = 1_000_000_000L)
+                    Bundle(id = bundleId, balance = balance)
                 }
             }
         }
