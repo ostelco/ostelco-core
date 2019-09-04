@@ -11,7 +11,7 @@ dependencies {
   implementation project(":prime")
   implementation project(":neo4j-store")
   
-  implementation "com.google.cloud.sql:postgres-socket-factory:1.0.14"
+  implementation "com.google.cloud.sql:postgres-socket-factory:1.0.15"
 
   implementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
   implementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"

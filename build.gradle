@@ -46,9 +46,9 @@ subprojects {
     dropwizardVersion = "1.3.14"
     metricsVersion = "4.1.0"
     firebaseVersion = "6.9.0"
-    googleCloudVersion = "1.88.0"
+    googleCloudVersion = "1.89.0"
     grpcVersion = "1.23.0"
-    guavaVersion = "28.0-jre"
+    guavaVersion = "28.1-jre"
     jacksonVersion = "2.9.9"
     javaxActivationVersion = "1.1.1"
     javaxActivationApiVersion = "1.2.0"
@@ -56,7 +56,7 @@ subprojects {
     // Keeping it version 1.16.1 to be consistent with grpc via PubSub client lib
     // Keeping it version 1.16.1 to be consistent with netty via Firebase lib
     jaxbVersion = "2.3.1"
-    jdbi3Version = "3.9.1"
+    jdbi3Version = "3.10.0"
     jjwtVersion = "0.10.7"
     junit5Version = "5.5.1"
     kotlinVersion = "1.3.50"
@@ -64,7 +64,7 @@ subprojects {
     mockitoVersion = "3.0.0"
     mockitoKotlinVersion = "2.1.0"
     neo4jDriverVersion="1.7.5"
-    neo4jVersion="3.5.8"
+    neo4jVersion="3.5.9"
     opencensusVersion="0.24.0"
     postgresqlVersion = "42.2.6"  // See comment in ./sim-administration/simmanager/build.gradle
     prometheusDropwizardVersion = "2.2.0"
@@ -72,7 +72,7 @@ subprojects {
     slf4jVersion="1.7.28"
     // IMPORTANT: When Stripe SDK library version is updated, check if the Stripe API version has changed.
     // If so, then update API version in Stripe Web Console for callback Webhooks.
-    stripeVersion = "11.3.0"
+    stripeVersion = "11.6.1"
     swaggerVersion = "2.0.9"
     swaggerCodegenVersion = "2.4.8"
     testcontainersVersion = "1.12.0"
