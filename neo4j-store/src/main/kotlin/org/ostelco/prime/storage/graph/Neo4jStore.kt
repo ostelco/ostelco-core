@@ -1826,12 +1826,7 @@ object Neo4jStoreSingleton : GraphStore {
                 val newKycStatus = when(existingKycStatus) {
                     // APPROVED is end state. No more state change.
                     KycStatus.APPROVED -> KycStatus.APPROVED
-                    // Only REJECTED to APPROVED is allowed state change.
-                    REJECTED -> when(kycStatus) {
-                        KycStatus.APPROVED -> KycStatus.APPROVED
-                        else -> REJECTED
-                    }
-                    // PENDING to 'any' is allowed
+                    // REJECTED and PENDING to 'any' is allowed
                     else -> kycStatus
                 }
 
