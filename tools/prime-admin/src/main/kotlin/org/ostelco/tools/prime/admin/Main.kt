@@ -12,10 +12,12 @@ fun main() {
     PrimeApplication().run("server", "config/config.yaml")
     try {
         doActions()
+        println("Done")
     } finally {
         DwEnvModule.env.applicationContext.server.stop()
+        println("Shutting down")
+        System.exit(0)
     }
-    println("Done")
 }
 
 fun doActions() {
