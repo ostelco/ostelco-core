@@ -4,10 +4,6 @@ modules:
       authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
       jerseyClient:
         timeout: 3s
-  - type: firebase
-    config:
-      configFile: config/prime-service-account.json
-      rootPath: test
   - type: neo4j
     config:
       host: 0.0.0.0
