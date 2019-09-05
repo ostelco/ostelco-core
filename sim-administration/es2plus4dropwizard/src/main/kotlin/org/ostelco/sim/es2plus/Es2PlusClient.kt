@@ -29,6 +29,8 @@ class ES2PlusClient(
         private val useHttps: Boolean = true,
         private val jerseyClient: Client? = null) {
 
+    val logger = getLogger()
+
     companion object {
         const val X_ADMIN_PROTOCOL_HEADER_VALUE = "gsma/rsp/v2.0.0"
 
@@ -41,13 +43,9 @@ class ES2PlusClient(
         fun getNowAsDatetime(): String = getDatetime(ZonedDateTime.now())
     }
 
-    val logger = getLogger()
+    private fun url(path: String) =
+        "%s://%s:%d%s".format(useHttps?"https":"http", host, port, path)
 
-    private fun url(path: String) = if (useHttps) {
-        "https://%s:%d%s".format(host, port, path)
-    } else {
-        "http://%s:%d%s".format(host, port, path)
-    }
 
     /* For test cases where content should be returned. */
     @Throws(ES2PlusClientException::class)

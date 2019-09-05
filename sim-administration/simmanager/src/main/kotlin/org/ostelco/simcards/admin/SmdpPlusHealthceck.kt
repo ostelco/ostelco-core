@@ -70,7 +70,8 @@ class SmdpPlusHealthceck(
 
                     for (profileVendor in profileVendorAdaptorList) {
                         logger.info("Processing vendor: $profileVendor")
-                        val currentConfig: ProfileVendorConfig? = profileVendorConfigList.firstOrNull { it.name == profileVendor.name }
+                        val currentConfig: ProfileVendorConfig? =
+                                profileVendorConfigList.firstOrNull { it.name == profileVendor.name }
                         if (currentConfig == null) {
                             logger.error("Could not find config for profile vendor '${profileVendor.name}' while attempting to ping remote SM-DP+ adapter")
                         }

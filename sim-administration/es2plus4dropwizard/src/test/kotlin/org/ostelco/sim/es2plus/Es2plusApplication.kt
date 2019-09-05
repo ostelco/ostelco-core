@@ -37,7 +37,7 @@ class Es2plusApplication : Application<Es2plusConfiguration>() {
         val oasConfig = SwaggerConfiguration()
                 .openAPI(oas)
                 .prettyPrint(true)
-                .resourcePackages(Stream.of("no .rmz.membershipmgt")
+                .resourcePackages(Stream.of("no.rmz.membershipmgt")
                         .collect(Collectors.toSet<String>()))
         val env = environment.jersey()
         env.register(OpenApiResource()
@@ -54,17 +54,15 @@ class Es2plusApplication : Application<Es2plusConfiguration>() {
             Es2plusApplication().run(*args)
         }
     }
-
-    // We're basing this implementation on
-    // https://www.gsma.com/newsroom/wp-content/uploads/SGP.22-v2.0.pdf
 }
 
 
-// A class that will ge syntactically correct, but otherwise meaningless responses.
+// A class that will give syntactically correct, but otherwise meaningless responses.
 
 class PlaceholderSmDpPlusService : SmDpPlusService {
     override fun getProfileStatus(iccidList: List<String>): Es2ProfileStatusResponse {
-        val statuses : List<ProfileStatus> = iccidList.map {iccid ->ProfileStatus(iccid = iccid, state = "ALLOCATED")}
+        val statuses : List<ProfileStatus> = iccidList.map {
+            iccid ->ProfileStatus(iccid = iccid, state = "ALLOCATED")}
         return Es2ProfileStatusResponse(
                 profileStatusList = statuses)
     }
@@ -86,7 +84,6 @@ class PlaceholderSmDpPlusService : SmDpPlusService {
     override fun releaseProfile(iccid: String) {
     }
 }
-
 
 class PlaceholderSmDpPlusCallbackService : SmDpPlusCallbackService {
     override fun handleDownloadProgressInfo(

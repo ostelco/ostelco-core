@@ -4,16 +4,8 @@ import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.ostelco.jsonschema.JsonSchema
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
+import org.ostelco.sim.es2plus.ES2PlusClient.Companion.getNowAsDatetime
 import java.util.*
-
-class DateProvider {
-    companion object {
-        fun getNowAsDatetime(): String  = DateTimeFormatter.ofPattern("YYYY-MM-DD'T'hh:mm:ssZ").format(ZonedDateTime.now())
-    }
-}
-
 
 ///
 ///   The fields that all requests needs to have in their headers
@@ -125,7 +117,7 @@ data class Es2ProfileStatusCommand(
 data class Es2ProfileStatusResponse(
         @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader(),
         @JsonProperty("profileStatusList") val profileStatusList: List<ProfileStatus>? = listOf(),
-        @JsonProperty("completionTimestamp") val completionTimestamp: String? = DateProvider.getNowAsDatetime() // XXX Repeat in all similar cases!!
+        @JsonProperty("completionTimestamp") val completionTimestamp: String? = getNowAsDatetime() // XXX Repeat in all similar cases!!
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -233,7 +225,7 @@ data class Es2HandleDownloadProgressInfo(
                  @JsonProperty("eid")  eid: String? = null,
                  @JsonProperty("iccid")  iccid: String,
                  @JsonProperty("profileType")  profileType: String,
-                 @JsonProperty("timestamp")  timestamp: String,
+                 @JsonProperty("timestamp")  timestamp: String = getNowAsDatetime(),
                  @JsonProperty("tac")  tac: String? = null,
                  @JsonProperty("notificationPointId")  notificationPointId: Int,
                  @JsonProperty("notificationPointStatus")  notificationPointStatus: ES2NotificationPointStatus,
