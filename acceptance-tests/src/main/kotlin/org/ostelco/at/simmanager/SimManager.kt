@@ -12,8 +12,6 @@ import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
 import kotlin.test.assertEquals
 
-// Trello card being used to manage development of this file: https://trello.com/c/48els9Gt
-
 
 fun <R : Any> R.getLogger(): Lazy<Logger> = lazy {
     LoggerFactory.getLogger(this.javaClass)
