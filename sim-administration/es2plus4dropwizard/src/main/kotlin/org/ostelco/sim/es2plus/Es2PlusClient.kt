@@ -33,11 +33,10 @@ class ES2PlusClient(
         const val X_ADMIN_PROTOCOL_HEADER_VALUE = "gsma/rsp/v2.0.0"
 
 
-        // XXX Write an unit test for this, then use it instead of the static
-        //     string (currentTimestamp) below
+        // Format zoned time as..
         //  ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[T,D,Z]{1}$
         fun getDatetime( time: ZonedDateTime) =
-                DateTimeFormatter.ofPattern("YYYY-MM-DD'T'hh:mm:ss'Z'").format(time)
+                DateTimeFormatter.ofPattern("YYYY-MM-dd'T'hh:mm:ss'Z'").format(time)
 
         fun getNowAsDatetime(): String = getDatetime(ZonedDateTime.now())
     }
@@ -275,8 +274,7 @@ class ES2PlusClient(
                 expectedStatusCode = 200)
     }
 
-
-
+    
     fun handleDownloadProgressInfo(
             eid: String? = null,
             iccid: String,
@@ -287,9 +285,6 @@ class ES2PlusClient(
             resultData: String? = null,
             imei: String? = null
     ) {
-        // val currentTimestamp = (timestamp ?: getNowAsDatetime())
-        // Faking it!
-        val currentTimestamp = "2019-09-02T23:24:25Z"
 
         postEs2ProtocolCmdNoContentReturned("/gsma/rsp2/es2plus/handleDownloadProgressInfo",
                 Es2HandleDownloadProgressInfo(
@@ -300,7 +295,7 @@ class ES2PlusClient(
                         eid = eid,
                         iccid = iccid,
                         profileType = profileType,
-                        timestamp = currentTimestamp,
+                        timestamp = getNowAsDatetime(),
                         notificationPointId = notificationPointId,
                         notificationPointStatus = notificationPointStatus,
                         resultData = resultData,
