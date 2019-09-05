@@ -31,6 +31,15 @@ class ES2PlusClient(
 
     companion object {
         const val X_ADMIN_PROTOCOL_HEADER_VALUE = "gsma/rsp/v2.0.0"
+
+
+        // XXX Write an unit test for this, then use it instead of the static
+        //     string (currentTimestamp) below
+        //  ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[T,D,Z]{1}$
+        fun getDatetime( time: ZonedDateTime) =
+                DateTimeFormatter.ofPattern("YYYY-MM-DD'T'hh:mm:ss'Z'").format(time)
+
+        fun getNowAsDatetime(): String = getDatetime(ZonedDateTime.now())
     }
 
     val logger = getLogger()
@@ -267,8 +276,6 @@ class ES2PlusClient(
     }
 
 
-    /*  ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[T,D,Z]{1}$ */
-    fun getNowAsDatetime(): String = DateTimeFormatter.ofPattern("YYYY-MM-DD'T'hh:mm:ss'Z'").format(ZonedDateTime.now())
 
     fun handleDownloadProgressInfo(
             eid: String? = null,
