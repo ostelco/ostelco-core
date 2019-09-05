@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import org.ostelco.jsonschema.JsonSchema
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import java.util.*
 
 class DateProvider {
     companion object {
@@ -22,7 +23,7 @@ class DateProvider {
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ES2RequestHeader(
         @JsonProperty("functionRequesterIdentifier") val functionRequesterIdentifier: String,
-        @JsonProperty("functionCallIdentifier") val functionCallIdentifier: String
+        @JsonProperty("functionCallIdentifier") val functionCallIdentifier: String = UUID.randomUUID().toString()
 )
 
 ///

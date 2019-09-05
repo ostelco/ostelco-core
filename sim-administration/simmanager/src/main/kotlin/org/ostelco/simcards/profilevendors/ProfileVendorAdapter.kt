@@ -84,9 +84,7 @@ data class ProfileVendorAdapter(
                               dao: SimInventoryDAO,
                               simEntry: SimEntry): Either<SimManagerError, SimEntry> {
         val header = ES2RequestHeader(
-                functionRequesterIdentifier = config.requesterIdentifier,
-                functionCallIdentifier = "downloadOrder"
-        )
+                functionRequesterIdentifier = config.requesterIdentifier)
         val body = Es2PlusDownloadOrder(
                 header = header,
                 iccid = simEntry.iccid

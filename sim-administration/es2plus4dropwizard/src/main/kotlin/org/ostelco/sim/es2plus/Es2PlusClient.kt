@@ -193,8 +193,7 @@ class ES2PlusClient(
 
         val es2ProtocolPayload = Es2PlusProfileStatus(
                 header = ES2RequestHeader(
-                        functionRequesterIdentifier = requesterId,
-                        functionCallIdentifier = "profileStatus"), // XXX Should be a serial number of sorts
+                        functionRequesterIdentifier = requesterId),
                 iccidList = wrappedIccidList)
 
         return postEs2ProtocolCmd(
@@ -232,8 +231,7 @@ class ES2PlusClient(
         val es2ProtocolPayload =
                 Es2ConfirmOrder(
                         header = ES2RequestHeader(
-                                functionRequesterIdentifier = requesterId,
-                                functionCallIdentifier = "confirmOrder"),
+                                functionRequesterIdentifier = requesterId),
                         eid = eid,
                         iccid = iccid,
                         matchingId = matchingId,
@@ -251,9 +249,7 @@ class ES2PlusClient(
         return postEs2ProtocolCmd("/gsma/rsp2/es2plus/cancelOrder",
                 es2ProtocolPayload = Es2CancelOrder(
                         header = ES2RequestHeader(
-                                functionRequesterIdentifier = requesterId,
-                                functionCallIdentifier = "cancelOrder"
-                        ),
+                                functionRequesterIdentifier = requesterId),
                         iccid = iccid,
                         eid = eid,
                         matchingId = matchingId,
@@ -266,15 +262,13 @@ class ES2PlusClient(
         return postEs2ProtocolCmd("/gsma/rsp2/es2plus/releaseProfile",
                 Es2ReleaseProfile(
                         header = ES2RequestHeader(
-                                functionRequesterIdentifier = requesterId,
-                                functionCallIdentifier = "releaseProfile"
-                        ),
+                                functionRequesterIdentifier = requesterId),
                         iccid = iccid),
                 sclass = HeaderOnlyResponse::class.java,
                 expectedStatusCode = 200)
     }
 
-    
+
     fun handleDownloadProgressInfo(
             eid: String? = null,
             iccid: String,
@@ -289,9 +283,7 @@ class ES2PlusClient(
         postEs2ProtocolCmdNoContentReturned("/gsma/rsp2/es2plus/handleDownloadProgressInfo",
                 Es2HandleDownloadProgressInfo(
                         header = ES2RequestHeader(
-                                functionRequesterIdentifier = requesterId,
-                                functionCallIdentifier = "handleDownloadProgressInfo"
-                        ),
+                                functionRequesterIdentifier = requesterId),
                         eid = eid,
                         iccid = iccid,
                         profileType = profileType,
