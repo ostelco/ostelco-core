@@ -16,6 +16,7 @@ import kotlin.test.Ignore
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
+@Ignore
 class StripePaymentProcessorTest {
 
     private val paymentProcessor = getResource<PaymentProcessor>()
