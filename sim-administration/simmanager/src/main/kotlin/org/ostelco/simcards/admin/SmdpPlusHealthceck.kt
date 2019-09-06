@@ -33,7 +33,7 @@ class SmdpPlusHealthceck(
         val executorService = Executors.newSingleThreadScheduledExecutor()
         // XXX Currently checking every ten seconds. Every minute or five is more reasonable in a
         //     production setting. Perhaps a config setting is reasonable to regulate this?
-        executorService.scheduleAtFixedRate(this::updateStatus, 0, 10, TimeUnit.SECONDS)
+        executorService.scheduleAtFixedRate(this::updateStatus, 0, 1, TimeUnit.MINUTES)
     }
 
     // The last known status
