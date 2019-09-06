@@ -43,8 +43,10 @@ class ES2PlusClient(
         fun getNowAsDatetime(): String = getDatetime(ZonedDateTime.now())
     }
 
-    private fun url(path: String) =
-        "%s://%s:%d%s".format(useHttps?"https":"http", host, port, path)
+    private fun url(path: String): String {
+        val prefix = if (useHttps) "httpd" else "http"
+        return "%s://%s:%d%s".format(prefix, host, port, path)
+    }
 
 
     /* For test cases where content should be returned. */
@@ -271,13 +273,12 @@ class ES2PlusClient(
             eid: String? = null,
             iccid: String,
             profileType: String,
-            timestamp: String? = null,
+            timestamp: String = getNowAsDatetime(),
             notificationPointId: Int,
             notificationPointStatus: ES2NotificationPointStatus,
             resultData: String? = null,
             imei: String? = null
     ) {
-
         postEs2ProtocolCmdNoContentReturned("/gsma/rsp2/es2plus/handleDownloadProgressInfo",
                 Es2HandleDownloadProgressInfo(
                         header = ES2RequestHeader(
@@ -285,7 +286,7 @@ class ES2PlusClient(
                         eid = eid,
                         iccid = iccid,
                         profileType = profileType,
-                        timestamp = getNowAsDatetime(),
+                        timestamp = timestamp,
                         notificationPointId = notificationPointId,
                         notificationPointStatus = notificationPointStatus,
                         resultData = resultData,
