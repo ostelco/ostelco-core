@@ -1,3 +1,9 @@
+##
+##  Configuration for unit tests for sm-dp+ emulator.
+##
+
+
+
 logging:
   level: INFO
 
