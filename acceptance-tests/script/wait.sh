@@ -2,20 +2,23 @@
 
 set -e
 
-echo "AT waiting ocsgw to launch on 3868..."
+# XXX This is a unrolled for-loop, it should be a for-loop,
+#     should be a function that does one thing and writes
+#     the right thing.
+#     This is a poor man's healthcheck, and the code should
+#     reflect that, not be a long list of random tests.
 
+echo "AT waiting ocsgw to launch on 3868..."
 while ! nc -z 172.16.238.3 3868; do
   sleep 0.1 # wait for 1/10 of the second before check again
 done
-echo "      ocs  answers incoming http requests"
-
+echo "      Diameter port is open on OCSGW"
 
 echo "AT waiting Prime to launch on 8080..."
-
 while ! nc -z prime 8080; do
   sleep 0.1 # wait for 1/10 of the second before check again
 done
-echo "       prime  answers incoming http requests"
+echo "       prime  answers incoming http port requests"
 
 echo "Waiting for sm-dp+ to be minimally up"
 while ! nc -z smdp-plus-emulator 8080; do
