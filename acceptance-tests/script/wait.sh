@@ -2,11 +2,31 @@
 
 set -e
 
-# XXX This is a unrolled for-loop, it should be a for-loop,
+# TODO This is a unrolled for-loop, it should be a for-loop,
 #     should be a function that does one thing and writes
 #     the right thing.
 #     This is a poor man's healthcheck, and the code should
 #     reflect that, not be a long list of random tests.
+#
+# The code below _should_ do the job, but for some reason it fails.
+# It should be debugged into submission at some point, but not
+# today.
+#
+#while IFS=, read -r name host port
+#do
+#    echo "Waiting for '$name' to accept incoming connections on host '$host',  port '$port'"
+#    echo "nc -z $host $port"
+#    while ! nc -z $host $port ; do
+#      sleep 0.1 # wait for 1/10 of the second before check again
+#    done
+#    echo "      Port ${port} is open"
+#done <<EOF
+#OCSGW, 172.16.238.3, 3868
+#prime, prime, 8080
+#SM-DP+ Emulator, sm-dp-plus-emulator, 8080
+#EOF
+
+
 
 echo "AT waiting ocsgw to launch on 3868..."
 while ! nc -z 172.16.238.3 3868; do
@@ -25,6 +45,12 @@ while ! nc -z smdp-plus-emulator 8080; do
   sleep 0.1 # wait for 1/10 of the second before check again
 done
 echo "       sm-dp+  answers incoming http requests"
+
+##
+## We want a somewhat stronger test for SM-DP+: We want to see that the
+## ES2+ protocol requests can be answered adequatly, so we send a
+## simple command to test.
+##
 
 
 echo "Waiting for sm-dp+ to be properly up (ES2+ endpoint check)"
@@ -52,9 +78,11 @@ CMD_URL="${ES2PLUS_ENDPOINT}${GET_PROFILE_STATUS_PATH}"
 CMD_PAYLOAD=$PROFILE_STATUS_CMD_PAYLOAD
 
 
-
+##
 ## Loop until the result of curling the sm-dp+ emulator is
 ## satisfactory.
+##
+
 CURL_RESULT=""
 until [[ ! -z "$CURL_RESULT" ]] ; do
   CURL_RESULT=$(curl \
@@ -65,11 +93,22 @@ until [[ ! -z "$CURL_RESULT" ]] ; do
     --data "$CMD_PAYLOAD" \
     --insecure \
     $CMD_URL)
+    echo "CURL_RESULT='${CURL_RESULT}'"
   ## XXX MISSING: Something that verifies that the result
-  ##     is legit.
+  ##     is legit, a bit stronger than a null string perhaps?
 done
 
 echo "SM-DP+ launched"
+
+
+##
+##   Ok, so now the SM-DP+ is up, it's time to populate the same
+##   profiles that are in the SM-DP+ and HLR into Prime. We'll do that
+##   by simulating an upload of a batch.  The assumption is
+##   that it's for the MNO (hss) named "Foo", from a profile vendor
+##   named "Bar".
+##
+
 
 echo "Add profiles into SM-DP+"
 # XXX Still needs a little tweaking
@@ -180,4 +219,8 @@ EOF
 
 echo " ... HLR preactivated rofiles loaded into prime"
 
+
+##
+##   Finally run acceptance tests
+##
 java -cp '/acceptance-tests.jar' org.junit.runner.JUnitCore org.ostelco.at.TestSuite
