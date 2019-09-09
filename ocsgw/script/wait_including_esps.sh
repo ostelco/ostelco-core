@@ -2,7 +2,7 @@
 
 set -e
 
-echo "OCSGW waiting Prime to launch on 8082..."
+echo "Waiting for Prime to launch on 8082..."
 
 while ! nc -z prime 8082; do
   sleep 0.1 # wait for 1/10 of the second before check again

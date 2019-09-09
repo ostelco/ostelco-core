@@ -12,11 +12,10 @@ import org.ostelco.prime.module.getResource
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import java.time.Year
 import java.util.*
-import kotlin.test.Ignore
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
-@Ignore
+ 
 class StripePaymentProcessorTest {
 
     private val paymentProcessor = getResource<PaymentProcessor>()

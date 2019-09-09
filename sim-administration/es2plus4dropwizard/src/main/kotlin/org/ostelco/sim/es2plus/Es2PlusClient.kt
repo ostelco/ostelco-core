@@ -44,7 +44,7 @@ class ES2PlusClient(
     }
 
     private fun url(path: String): String {
-        val prefix = if (useHttps) "httpd" else "http"
+        val prefix = if (useHttps) "https" else "http"
         return "%s://%s:%d%s".format(prefix, host, port, path)
     }
 

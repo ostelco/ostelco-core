@@ -15,7 +15,7 @@ echo "AT waiting Prime to launch on 8080..."
 while ! nc -z prime 8080; do
   sleep 0.1 # wait for 1/10 of the second before check again
 done
-echo "       prime+  answers incoming http requests"
+echo "       prime  answers incoming http requests"
 
 echo "Waiting for sm-dp+ to be minimally up"
 while ! nc -z smdp-plus-emulator 8080; do
@@ -24,7 +24,7 @@ done
 echo "       sm-dp+  answers incoming http requests"
 
 
-echo "Waiting for sm-dp+ to be properly up"
+echo "Waiting for sm-dp+ to be properly up (ES2+ endpoint check)"
 
 
 ES2PLUS_ENDPOINT="http://smdp-plus-emulator:8080"

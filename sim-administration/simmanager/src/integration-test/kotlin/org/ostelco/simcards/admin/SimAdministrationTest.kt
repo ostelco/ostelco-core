@@ -46,6 +46,12 @@ import javax.ws.rs.core.MediaType
 
 class SimAdministrationTest {
 
+    private val hssName = "Foo"
+    private val profileVendor = "Bar"
+    private val phoneType = "rababara"
+    private val expectedProfile = "IPHONE_PROFILE_2"
+
+
     companion object {
         private lateinit var jdbi: Jdbi
         private lateinit var client: Client
@@ -162,10 +168,6 @@ class SimAdministrationTest {
         dao.clearTables()
     }
 
-    private val hssName = "Foo"
-    private val profileVendor = "Bar"
-    private val phoneType = "rababara"
-    private val expectedProfile = "IPHONE_PROFILE_2"
 
     private fun presetTables() {
         val dao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().getDAO()
@@ -484,7 +486,7 @@ class SimAdministrationTest {
         SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().triggerMetricsGeneration()
         assertGaugeValue(100, "sims.noOfEntries.IPHONE_PROFILE_2")
         assertGaugeValue(0, "sims.noOfEntriesAvailableForImmediateUse.IPHONE_PROFILE_2")
-        assertGaugeValue(0,  "sims.noOfReleasedEntries.IPHONE_PROFILE_2")
+        assertGaugeValue(0, "sims.noOfReleasedEntries.IPHONE_PROFILE_2")
         assertGaugeValue(98, "sims.noOfUnallocatedEntries.IPHONE_PROFILE_2")
         assertGaugeValue(2, "sims.noOfReservedEntries.IPHONE_PROFILE_2")
     }

@@ -63,7 +63,7 @@ class SmdpPlusHealthceck(
                 Either.monad<SimManagerError>().binding {
                     val vendorsRaw = simInventoryDAO.getAllProfileVendors()
                     vendorsRaw.mapLeft {
-                        logger.info("Couldn't find any profile vendors: ", it)
+                        logger.info("Couldn't find any profile vendors: {}, it)
                     }
 
                     val profileVendorAdaptorList = vendorsRaw.bind()
