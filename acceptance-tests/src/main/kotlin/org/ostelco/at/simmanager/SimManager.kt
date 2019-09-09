@@ -13,10 +13,26 @@ import javax.ws.rs.client.Entity
 import kotlin.test.assertEquals
 
 
+/**
+ * Canonical way to get a logger.
+ */
 fun <R : Any> R.getLogger(): Lazy<Logger> = lazy {
     LoggerFactory.getLogger(this.javaClass)
 }
 
+/**
+ * Acceptance test for the sim manager ecosystem.  It will set up a context of
+ *     * Sim manager (running in Prime but with its own REST endpoints that he
+ *       test will run against).
+ *     * A database (postgres), used by the sim manager.
+ *     * A HLR emulator, that has an external interface that prime can
+ *       access (although in the current incantation of these tests, the HLR
+ *       is in fact touched).
+ *     * An SM-DP+ emulator that _is_ touched.  We will test both the promotion
+ *       of profiles up to "released", and also simulate a download to user equipment
+ *       that will trigger a callback to Prime, that will change the state in Prime's
+ *       sim manager module to  to "Downloaded
+ */
 class SimManager {
 
     private val logger by getLogger()
@@ -73,12 +89,11 @@ class SimManager {
         assertHealthy("postgresql")
         assertHealthy("HSS profilevendors for Hss named 'Loltel'")
         assertHealthy("HSS profilevendors for Hss named 'M1'")
-        // XXX  This fails, don't know why.  When looking with browser it seems legit.  Removing
-        // since it doesn't seem to affect tests' outcome.
+        // TODO: Figure out why this fails"
         // assertHealthy("smdp")
     }
 
-
+    // Copying SM-DP+ state model from the ES2+ directory.
 
     enum class HssState {
         NOT_ACTIVATED,
@@ -105,11 +120,7 @@ class SimManager {
         ALLOCATION_FAILED,
     }
 
-
-
-    // Copied from SimInventoryDAO, and edited to not contain jdbi.
-    // XXX Refactor: SimEntryn and dependent enums  should be put into a library that can be
-    // used both by prime and by the acceptance tests.
+    // Copied from SimInventoryDAO, and edited to not contain jdbi annotations.
     data class SimEntry(
             @JsonProperty("id") val id: Long? = null,
             @JsonProperty("batch") val batch: Long,
@@ -151,8 +162,13 @@ class SimManager {
         return entry
     }
 
+    /**
+     * The actual integration test
+     */
     @Test
     fun testFreeProfileAllocationAndSimulatedDownload() {
+
+        // Parameters we use
         val hss = "Foo"
         val firstIccid = "8901000000000000001"
         val firstMsisdn = "4790900700"
@@ -178,8 +194,7 @@ class SimManager {
         assertEquals(SmDpPlusState.RELEASED, allocatedProfile.smdpPlusState)
 
         // Then simulate an ES2+ callback by telling the SM-DP+ to do that
-        // using an API provided just for this test (or should we perhaps just do the
-        // callback directly?)
+        // using an API provided just for this test ("simulate-download-of/...").
         logger.info("Trigger ES2+ callback from sm-dp+")
         val webTarget = client.target("http://smdp-plus-emulator:8080/commands/simulate-download-of/iccid/${allocatedProfile.iccid}")
         assertEquals(200, webTarget.request().get().status)

@@ -1,3 +1,9 @@
+##
+##  sm-dp-plus.yaml  Config file for SM-DP+ emulator,
+##  should only be used during acceptance testing.
+##
+
+
 logging:
   level: INFO
 

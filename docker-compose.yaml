@@ -88,7 +88,6 @@ services:
     depends_on:
       - "ocsgw"
       - "prime"
-#      - "sim-profile-uploader"
     command: ["./wait.sh"]
     environment:
       - PRIME_SOCKET=prime:8080
@@ -132,13 +131,6 @@ services:
   ext-auth-provider:
     container_name: ext-auth-provider
     build: ext-auth-provider
-
-#   sim-profile-uploader:
-#    container_name: sim-profile-uploader
-#    build: sim-administration/uploader
-#    depends_on:
-#     - "prime"
-
 
   smdp-plus-emulator:
     container_name: smdp-plus-emulator
