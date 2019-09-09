@@ -9,7 +9,6 @@ plugins {
 dependencies {
 
     implementation project(":prime-modules")
-    // TODO move dependencies to separate library so we do not add entire sim-manager to hss-adapter
     implementation project(":sim-administration:simmanager")
     
     api "io.grpc:grpc-netty-shaded:$grpcVersion"
