@@ -33,7 +33,6 @@ func main() {
 func generatePostingCurlscript(url string, payload string) {
 	fmt.Printf("#!/bin/bash\n")
 
-	// XXX Parameterize initial state, the other alternative is NOT_ACTIVATED
 	fmt.Printf("curl  -H 'Content-Type: text/plain' -X PUT --data-binary @-  %s <<EOF\n", url)
 	fmt.Printf("%s", payload)
 	fmt.Print(("EOF\n"))
