@@ -91,10 +91,6 @@ data class ProfileVendorAdapter(
         )
         val payload = mapper.writeValueAsString(body)
 
-        // XXX Make it so that the config for acceptance, unit and integration tests are the same, otherwise
-        //     the thing wil break spectacularly. Consider adding a test to ensure that no path elements
-        //     are made part of the es2plusEndpoint.
-
         val uri = "${config.es2plusEndpoint}/gsma/rsp2/es2plus/downloadOrder"
         logger.info("URI  for downloadOrder = '$uri'")
 
