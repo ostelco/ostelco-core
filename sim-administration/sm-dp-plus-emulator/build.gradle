@@ -10,10 +10,6 @@ dependencies {
   implementation project(":sim-administration:es2plus4dropwizard")
   implementation project(":sim-administration:ostelco-dropwizard-utils")
 
-  // https://mvnrepository.com/artifact/org.conscrypt/conscrypt-openjdk
-  //  XXX Delete next line?
-  // implementation "org.conscrypt:conscrypt-openjdk:2.2.1"
-
   implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
 
