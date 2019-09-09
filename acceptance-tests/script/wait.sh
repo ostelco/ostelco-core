@@ -28,13 +28,13 @@ set -e
 
 
 
-echo "AT waiting ocsgw to launch on 3868..."
+echo "Waiting for  ocsgw to launch on 3868..."
 while ! nc -z 172.16.238.3 3868; do
   sleep 0.1 # wait for 1/10 of the second before check again
 done
 echo "      Diameter port is open on OCSGW"
 
-echo "AT waiting Prime to launch on 8080..."
+echo "Waiting Prime to launch on 8080..."
 while ! nc -z prime 8080; do
   sleep 0.1 # wait for 1/10 of the second before check again
 done
