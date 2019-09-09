@@ -186,7 +186,7 @@ class SmDpPlusServerResource(private val smDpPlus: SmDpPlusService) {
     }
 }
 
-@Path("/gsma/rsp2/es2plus/") // XXX Use ES2PLUS_PATH_PREFIX ?
+@Path("/gsma/rsp2/es2plus/")
 class SmDpPlusCallbackResource(private val smDpPlus: SmDpPlusCallbackService) {
 
     /**

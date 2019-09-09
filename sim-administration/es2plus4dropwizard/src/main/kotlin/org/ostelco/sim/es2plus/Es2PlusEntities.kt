@@ -12,6 +12,13 @@ import java.util.*
 ///   (for reasons that are unclear to me)
 ///
 
+/**
+ * ES2+ protocol header.  The functionRequesterIdentifier is an ID identifying the
+ * caller of the service.  The ID is part of the contract between the service provider
+ * and the service user.  The functionCallIdentifier is an unique ID that is used to
+ * trace the function invocation across server and client.   In this implementation
+ * it is implemented as an UUID randomUUID string.
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ES2RequestHeader(
         @JsonProperty("functionRequesterIdentifier") val functionRequesterIdentifier: String,
@@ -117,7 +124,7 @@ data class Es2ProfileStatusCommand(
 data class Es2ProfileStatusResponse(
         @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader(),
         @JsonProperty("profileStatusList") val profileStatusList: List<ProfileStatus>? = listOf(),
-        @JsonProperty("completionTimestamp") val completionTimestamp: String? = getNowAsDatetime() // XXX Repeat in all similar cases!!
+        @JsonProperty("completionTimestamp") val completionTimestamp: String? = getNowAsDatetime()
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
