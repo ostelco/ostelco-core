@@ -9,7 +9,7 @@ plugins {
 dependencies {
 
     implementation project(":prime-modules")
-    // TODO move dependencies to separate library so we do not add entire sim-amanger to hss-adapter
+    // TODO move dependencies to separate library so we do not add entire sim-manager to hss-adapter
     implementation project(":sim-administration:simmanager")
     
     api "io.grpc:grpc-netty-shaded:$grpcVersion"
@@ -37,9 +37,6 @@ dependencies {
     testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
     testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:$mockitoKotlinVersion"
 
-
-    // XXX IF this works, then it's too general. We're not using the
-    //     postgres, but we are use some of the dependencies.
     testImplementation "org.testcontainers:postgresql:$testcontainersVersion"
 }
 
