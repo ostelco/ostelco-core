@@ -1,3 +1,10 @@
+--
+--    This is the schema definition that is intended to be used in the integration tests.
+--    DO not use it in acceptance tests or in production.
+--
+
+
+
 create table sim_import_batches (id bigserial primary key,
                                  status text,
                                  endedAt bigint,
