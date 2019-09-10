@@ -108,7 +108,7 @@ data class ProfileVendorAdapter(
                     200 -> {
                         val status = mapper.readValue(it.entity.content, Es2DownloadOrderResponse::class.java)
 
-                        if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess) {
+                        if (executionWasFailure(status)) {
                             logger.error("SM-DP+ 'order-download' message to service {} for ICCID {} failed with execution status {} (call-id: {}, uri = {})",
                                     config.name,
                                     simEntry.iccid,
@@ -136,7 +136,7 @@ data class ProfileVendorAdapter(
                     }
                 }
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             logger.error("SM-DP+ 'order-download' message to service {} for ICCID {} failed with error: {}",
                     config.name,
                     simEntry.iccid,
@@ -189,28 +189,30 @@ data class ProfileVendorAdapter(
                                 eid = eid,
                                 iccid = simEntry.iccid
                         ))
+        val functionCallIdentifier = header.functionCallIdentifier
 
         return try {
             httpClient.execute(request).use {
+
+
                 when (it.statusLine.statusCode) {
                     200 -> {
                         val status = mapper.readValue(it.entity.content, Es2ConfirmOrderResponse::class.java)
 
-                        if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess) {
+                        if (executionWasFailure(status)) {
                             logger.error("SM-DP+ 'order-confirm' message to service {} for ICCID {} failed with execution status {} (call-id: {})",
                                     config.name,
                                     simEntry.iccid,
                                     status.header.functionExecutionStatus,
-                                    header.functionCallIdentifier)
+                                    functionCallIdentifier)
                             NotUpdatedError("SM-DP+ 'order-confirm' to ${config.name} failed with status: ${status.header.functionExecutionStatus}")
                                     .left()
                         } else {
-                            // XXX Is just logging good enough?
                             if (status.eid.isNullOrEmpty()) {
                                 logger.warn("No EID returned from service {} for ICCID {} for SM-DP+ 'order-confirm' message (call-id: {})",
                                         config.name,
                                         simEntry.iccid,
-                                        header.functionCallIdentifier)
+                                        functionCallIdentifier)
                             } else {
 
                                 val simEntryId = simEntry.id
@@ -227,12 +229,12 @@ data class ProfileVendorAdapter(
                                         config.name,
                                         eid,
                                         status.eid,
-                                        header.functionCallIdentifier)
+                                        functionCallIdentifier)
                             }
                             logger.info("SM-DP+ 'order-confirm' message to service {} for ICCID {} completed OK (call-id: {})",
                                     config.name,
                                     simEntry.iccid,
-                                    header.functionCallIdentifier)
+                                    functionCallIdentifier)
 
                             val simEntryId = simEntry.id
                             val statusMatchingId = status.matchingId
@@ -249,13 +251,13 @@ data class ProfileVendorAdapter(
                                 config.name,
                                 simEntry.iccid,
                                 it?.statusLine?.statusCode,
-                                header.functionCallIdentifier)
+                                functionCallIdentifier)
                         NotUpdatedError("SM-DP+ 'order-confirm' to ${config.name} failed with code: ${it.statusLine.statusCode}")
                                 .left()
                     }
                 }
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             logger.error("SM-DP+ 'order-confirm' message to service {} for ICCID {} failed with error: {}",
                     config.name,
                     simEntry.iccid,
@@ -265,6 +267,8 @@ data class ProfileVendorAdapter(
         }
     }
 
+    private fun executionWasFailure(status: Es2ConfirmOrderResponse) =
+            status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess
 
 
     /**
@@ -318,9 +322,11 @@ data class ProfileVendorAdapter(
 
         /* Pretty print version of ICCID list. */
         val iccids = iccidList.joinToString(prefix = "[", postfix = "]")
+        val functionCallIdentifier = header.functionCallIdentifier
 
         return try {
             httpClient.execute(request).use {
+
                 when (it.statusLine.statusCode) {
                     200 -> {
                         val status = mapper.readValue(it.entity.content, Es2ProfileStatusResponse::class.java)
@@ -331,7 +337,7 @@ data class ProfileVendorAdapter(
                                     config.name,
                                     iccids,
                                     status.header.functionExecutionStatus,
-                                    header.functionCallIdentifier)
+                                    functionCallIdentifier)
                             NotUpdatedError("SM-DP+ 'profile-status' to ${config.name} failed with status: ${status.header.functionExecutionStatus}")
                                     .left()
 
@@ -339,7 +345,7 @@ data class ProfileVendorAdapter(
                             logger.info("SM-DP+ 'profile-status' message to service {} for ICCID {} completed OK (call-id: {})",
                                     config.name,
                                     iccids,
-                                    header.functionCallIdentifier)
+                                    functionCallIdentifier)
                             val profileStatusList = status.profileStatusList
 
                             if (!profileStatusList.isNullOrEmpty())
@@ -354,7 +360,7 @@ data class ProfileVendorAdapter(
                                 config.name,
                                 iccids,
                                 it.statusLine.statusCode,
-                                header.functionCallIdentifier)
+                                functionCallIdentifier)
                         NotUpdatedError("SM-DP+ 'order-confirm' to ${config.name} failed with code: ${it.statusLine.statusCode}")
                                 .left()
                     }
