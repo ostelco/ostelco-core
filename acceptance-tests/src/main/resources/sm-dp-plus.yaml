@@ -1,0 +1,36 @@
+##
+##  sm-dp-plus.yaml  Config file for SM-DP+ emulator,
+##  should only be used during acceptance testing.
+##
+
+
+logging:
+  level: INFO
+
+# Workaround for ensuring correct path to dataset to be loaded into
+# the SM-DP+ emulator appl. on startup.
+# The "correct" way would have been to set the path using:
+#     ConfigOverride.config("simBatchData",
+#                 ResourceHelpers.resourceFilePath("sample-sim-batch.csv")
+# when starting the SM-DP+ emulator in the test fixture, overriding
+# the "simBatchData" config variable. Unfortunately Dropwizard will
+# then set the "simBatchData" variable for all appl. that are started,
+# causing start of the "sim-manager" appl. to fail as that appl. don't
+# know (or use) this variable.
+simBatchData: src/integration-test/resources/sample-sim-batch.csv
+
+openApi:
+  name: SM-DP+ emulator
+  description: Test fixture simulating ES2+ interactions of a SM-DP+
+  termsOfService: http://example.org
+  contactEmail: dev@redotter.sg
+  resourcePackage: org.ostelco
+
+server:
+  type: default
+  applicationConnectors:
+    - type: http
+      port: 9080
+  adminConnectors:
+    - type: http
+      port: 9081

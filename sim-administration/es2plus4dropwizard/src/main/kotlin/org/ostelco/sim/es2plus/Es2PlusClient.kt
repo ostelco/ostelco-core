@@ -4,9 +4,12 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.apache.http.HttpResponse
 import org.apache.http.client.HttpClient
-
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity
+import org.ostelco.prime.getLogger
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.util.*
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
 import javax.ws.rs.client.Client
@@ -24,11 +27,30 @@ class ES2PlusClient(
         private val host: String = "127.0.0.1",
         private val port: Int = 8443,
         private val httpClient: HttpClient? = null,
+        private val useHttps: Boolean = true,
         private val jerseyClient: Client? = null) {
+
+    val logger = getLogger()
 
     companion object {
         const val X_ADMIN_PROTOCOL_HEADER_VALUE = "gsma/rsp/v2.0.0"
+
+
+        // Format zoned time as..
+        //  ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[T,D,Z]{1}$
+        fun getDatetime( time: ZonedDateTime) =
+                DateTimeFormatter.ofPattern("YYYY-MM-dd'T'hh:mm:ss'Z'").format(time)
+
+        fun getNowAsDatetime(): String = getDatetime(ZonedDateTime.now())
+
+        fun newRandomFunctionCallIdentifier() = UUID.randomUUID().toString()
     }
+
+    private fun url(path: String): String {
+        val prefix = if (useHttps) "https" else "http"
+        return "%s://%s:%d%s".format(prefix, host, port, path)
+    }
+
 
     /* For test cases where content should be returned. */
     @Throws(ES2PlusClientException::class)
@@ -36,7 +58,7 @@ class ES2PlusClient(
             path: String,
             es2ProtocolPayload: T,
             sclass: Class<S>,
-            expectedReturnCode: Int = 200): S {
+            expectedStatusCode: Int = 200): S {
 
         /// XXX TODO:
         //       We  currently need jersey client for integration test and  httpClient for functional
@@ -49,7 +71,8 @@ class ES2PlusClient(
             val objectMapper = ObjectMapper()
             val payload = objectMapper.writeValueAsString(es2ProtocolPayload)
 
-            val req = HttpPost("https://%s:%d%s".format(host, port, path))
+            val url = url(path)
+            val req = HttpPost(url)
 
             req.setHeader("User-Agent", "gsma-rsp-lpad")
             req.setHeader("X-Admin-Protocol", X_ADMIN_PROTOCOL_HEADER_VALUE)
@@ -58,13 +81,13 @@ class ES2PlusClient(
             req.setHeader("Content-type", "application/json")
             req.entity = StringEntity(payload)
 
-            val result: HttpResponse = httpClient.execute(req) ?: throw ES2PlusClientException("Null response from http httpClient")
+            val result: HttpResponse = httpClient.execute(req)
+                    ?: throw ES2PlusClientException("Null response from http httpClient")
 
             // Validate returned response
             val statusCode = result.statusLine.statusCode
-            if (expectedReturnCode != statusCode) {
-
-                val msg = "Expected return value $expectedReturnCode, but got $statusCode.  Body was \"${result.entity.content}\""
+            if (expectedStatusCode != statusCode) {
+                val msg = "Expected return value $expectedStatusCode, but got $statusCode.  Body was \"${result.entity.content}\""
                 throw ES2PlusClientException(msg)
             }
 
@@ -84,7 +107,8 @@ class ES2PlusClient(
                 throw ES2PlusClientException("Expected header Content-Type to be '$expectedContentType' but was '$returnedContentType'")
             }
 
-            return objectMapper.readValue(result.entity.content, sclass) ?: throw ES2PlusClientException("null return value")
+            return objectMapper.readValue(result.entity.content, sclass)
+                    ?: throw ES2PlusClientException("null return value")
         } else if (jerseyClient != null) {
             val entity: Entity<T> = Entity.entity(es2ProtocolPayload, MediaType.APPLICATION_JSON)
             val result: Response = jerseyClient.target(path)
@@ -94,8 +118,8 @@ class ES2PlusClient(
                     .post(entity)
 
             // Validate returned response
-            if (expectedReturnCode != result.status) {
-                val msg = "Expected return value $expectedReturnCode, but got ${result.status}.  Body was \"${result.readEntity(String::class.java)}\""
+            if (expectedStatusCode != result.status) {
+                val msg = "Expected return value $expectedStatusCode, but got ${result.status}.  Body was \"${result.readEntity(String::class.java)}\""
                 throw ES2PlusClientException(msg)
             }
 
@@ -129,7 +153,7 @@ class ES2PlusClient(
             val objectMapper = ObjectMapper()
             val payload = objectMapper.writeValueAsString(es2ProtocolPayload)
 
-            val req = HttpPost("https://%s:%d%s".format(host, port, path))
+            val req = HttpPost(url(path))
 
             req.setHeader("User-Agent", "gsma-rsp-lpad")
             req.setHeader("X-Admin-Protocol", X_ADMIN_PROTOCOL_HEADER_VALUE)
@@ -138,7 +162,8 @@ class ES2PlusClient(
             req.setHeader("Content-type", "application/json")
             req.entity = StringEntity(payload)
 
-            val result: HttpResponse = httpClient.execute(req) ?: throw ES2PlusClientException("Null response from http httpClient")
+            val result: HttpResponse = httpClient.execute(req)
+                    ?: throw ES2PlusClientException("Null response from http httpClient")
 
             // Validate returned response
             val statusCode = result.statusLine.statusCode
@@ -167,29 +192,28 @@ class ES2PlusClient(
     fun profileStatus(
             iccidList: List<String>): Es2ProfileStatusResponse {
 
-        val wrappedIccidList = iccidList.map { IccidListEntry(iccid=it) }
+        val wrappedIccidList = iccidList.map { IccidListEntry(iccid = it) }
 
         val es2ProtocolPayload = Es2PlusProfileStatus(
                 header = ES2RequestHeader(
-                        functionRequesterIdentifier = requesterId,
-                        functionCallIdentifier = "profileStatus"),
+                        functionRequesterIdentifier = requesterId),
                 iccidList = wrappedIccidList)
 
         return postEs2ProtocolCmd(
                 "/gsma/rsp2/es2plus/getProfileStatus",
                 es2ProtocolPayload,
                 Es2ProfileStatusResponse::class.java,
-                expectedReturnCode = 200)
+                expectedStatusCode = 200)
     }
 
     fun downloadOrder(
             eid: String? = null,
             iccid: String,
-            profileType: String?=null): Es2DownloadOrderResponse {
+            profileType: String? = null): Es2DownloadOrderResponse {
         val es2ProtocolPayload = Es2PlusDownloadOrder(
                 header = ES2RequestHeader(
                         functionRequesterIdentifier = requesterId,
-                        functionCallIdentifier = "downloadOrder"),
+                        functionCallIdentifier = newRandomFunctionCallIdentifier()),
                 eid = eid,
                 iccid = iccid,
                 profileType = profileType)
@@ -198,8 +222,10 @@ class ES2PlusClient(
                 "/gsma/rsp2/es2plus/downloadOrder",
                 es2ProtocolPayload,
                 Es2DownloadOrderResponse::class.java,
-                expectedReturnCode = 200)
+                expectedStatusCode = 200)
     }
+
+
 
     fun confirmOrder(eid: String? = null,
                      iccid: String,
@@ -210,8 +236,7 @@ class ES2PlusClient(
         val es2ProtocolPayload =
                 Es2ConfirmOrder(
                         header = ES2RequestHeader(
-                                functionRequesterIdentifier = requesterId,
-                                functionCallIdentifier = "confirmOrder"),
+                                functionRequesterIdentifier = requesterId),
                         eid = eid,
                         iccid = iccid,
                         matchingId = matchingId,
@@ -221,42 +246,39 @@ class ES2PlusClient(
         return postEs2ProtocolCmd(
                 "/gsma/rsp2/es2plus/confirmOrder",
                 es2ProtocolPayload = es2ProtocolPayload,
-                expectedReturnCode = 200,
+                expectedStatusCode = 200,
                 sclass = Es2ConfirmOrderResponse::class.java)
     }
 
-    fun cancelOrder(iccid: String, finalProfileStatusIndicator: String, eid: String? = null,matchingId: String? = null): HeaderOnlyResponse {
+    fun cancelOrder(iccid: String, finalProfileStatusIndicator: String, eid: String? = null, matchingId: String? = null): HeaderOnlyResponse {
         return postEs2ProtocolCmd("/gsma/rsp2/es2plus/cancelOrder",
                 es2ProtocolPayload = Es2CancelOrder(
                         header = ES2RequestHeader(
-                                functionRequesterIdentifier = requesterId,
-                                functionCallIdentifier = "cancelOrder"
-                        ),
+                                functionRequesterIdentifier = requesterId),
                         iccid = iccid,
                         eid = eid,
                         matchingId = matchingId,
                         finalProfileStatusIndicator = finalProfileStatusIndicator),
                 sclass = HeaderOnlyResponse::class.java,
-                expectedReturnCode = 200)
+                expectedStatusCode = 200)
     }
 
     fun releaseProfile(iccid: String): HeaderOnlyResponse {
         return postEs2ProtocolCmd("/gsma/rsp2/es2plus/releaseProfile",
                 Es2ReleaseProfile(
                         header = ES2RequestHeader(
-                                functionRequesterIdentifier = requesterId,
-                                functionCallIdentifier = "releaseProfile"
-                        ),
+                                functionRequesterIdentifier = requesterId),
                         iccid = iccid),
                 sclass = HeaderOnlyResponse::class.java,
-                expectedReturnCode = 200)
+                expectedStatusCode = 200)
     }
+
 
     fun handleDownloadProgressInfo(
             eid: String? = null,
             iccid: String,
             profileType: String,
-            timestamp: String,
+            timestamp: String = getNowAsDatetime(),
             notificationPointId: Int,
             notificationPointStatus: ES2NotificationPointStatus,
             resultData: String? = null,
@@ -265,9 +287,7 @@ class ES2PlusClient(
         postEs2ProtocolCmdNoContentReturned("/gsma/rsp2/es2plus/handleDownloadProgressInfo",
                 Es2HandleDownloadProgressInfo(
                         header = ES2RequestHeader(
-                                functionRequesterIdentifier = requesterId,
-                                functionCallIdentifier = "handleDownloadProgressInfo"
-                        ),
+                                functionRequesterIdentifier = requesterId),
                         eid = eid,
                         iccid = iccid,
                         profileType = profileType,

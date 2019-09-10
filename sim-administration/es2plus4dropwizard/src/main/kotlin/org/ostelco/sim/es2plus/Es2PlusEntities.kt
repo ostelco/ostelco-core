@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.ostelco.jsonschema.JsonSchema
+import org.ostelco.sim.es2plus.ES2PlusClient.Companion.getNowAsDatetime
+import java.util.UUID
 
 
 ///
@@ -11,10 +13,17 @@ import org.ostelco.jsonschema.JsonSchema
 ///   (for reasons that are unclear to me)
 ///
 
+/**
+ * ES2+ protocol header.  The functionRequesterIdentifier is an ID identifying the
+ * caller of the service.  The ID is part of the contract between the service provider
+ * and the service user.  The functionCallIdentifier is an unique ID that is used to
+ * trace the function invocation across server and client.   In this implementation
+ * it is implemented as an UUID randomUUID string.
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ES2RequestHeader(
         @JsonProperty("functionRequesterIdentifier") val functionRequesterIdentifier: String,
-        @JsonProperty("functionCallIdentifier") val functionCallIdentifier: String
+        @JsonProperty("functionCallIdentifier") val functionCallIdentifier: String = UUID.randomUUID().toString()
 )
 
 ///
@@ -106,13 +115,17 @@ data class IccidListEntry(
         @JsonProperty("iccid") val iccid: String?
 )
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Es2ProfileStatusCommand(
+        @JsonProperty("header") val header: ES2RequestHeader,
+        @JsonProperty("iccidList") val iccidList: List<IccidListEntry> =  listOf())
 
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Es2ProfileStatusResponse(
         @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader(),
         @JsonProperty("profileStatusList") val profileStatusList: List<ProfileStatus>? = listOf(),
-        @JsonProperty("completionTimestamp") val completionTimestamp: String?
+        @JsonProperty("completionTimestamp") val completionTimestamp: String? = getNowAsDatetime()
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -220,7 +233,7 @@ data class Es2HandleDownloadProgressInfo(
                  @JsonProperty("eid")  eid: String? = null,
                  @JsonProperty("iccid")  iccid: String,
                  @JsonProperty("profileType")  profileType: String,
-                 @JsonProperty("timestamp")  timestamp: String,
+                 @JsonProperty("timestamp")  timestamp: String = getNowAsDatetime(),
                  @JsonProperty("tac")  tac: String? = null,
                  @JsonProperty("notificationPointId")  notificationPointId: Int,
                  @JsonProperty("notificationPointStatus")  notificationPointStatus: ES2NotificationPointStatus,
@@ -262,12 +275,12 @@ data class ES2StatusCodeData(
 ///    Convenience functions to generate headers
 ///
 
-fun newErrorHeader(e: SmDpPlusException): ES2ResponseHeader {
+fun newErrorHeader(exception: SmDpPlusException): ES2ResponseHeader {
     return ES2ResponseHeader(
             functionExecutionStatus =
             FunctionExecutionStatus(
                     status = FunctionExecutionStatusType.Failed,
-                    statusCodeData = e.statusCodeData))
+                    statusCodeData = exception.statusCodeData))
 }
 
 fun eS2SuccessResponseHeader() =

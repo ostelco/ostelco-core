@@ -31,13 +31,13 @@ class Es2plusApplication : Application<Es2plusConfiguration>() {
                 .title(name)
                 .description("Restful membership management.")
                 .termsOfService("http://example.com/terms")
-                .contact(Contact().email("la3lma@gmail.com"))
+                .contact(Contact().email("rmz@redotter.sg"))
 
         oas.info(info)
         val oasConfig = SwaggerConfiguration()
                 .openAPI(oas)
                 .prettyPrint(true)
-                .resourcePackages(Stream.of("no .rmz.membershipmgt")
+                .resourcePackages(Stream.of("org.ostelco.membershipmgt")
                         .collect(Collectors.toSet<String>()))
         val env = environment.jersey()
         env.register(OpenApiResource()
@@ -54,13 +54,19 @@ class Es2plusApplication : Application<Es2plusConfiguration>() {
             Es2plusApplication().run(*args)
         }
     }
-
-    // We're basing this implementation on
-    // https://www.gsma.com/newsroom/wp-content/uploads/SGP.22-v2.0.pdf
 }
 
 
+// A class that will give syntactically correct, but otherwise meaningless responses.
+
 class PlaceholderSmDpPlusService : SmDpPlusService {
+    override fun getProfileStatus(iccidList: List<String>): Es2ProfileStatusResponse {
+        val statuses : List<ProfileStatus> = iccidList.map {
+            iccid ->ProfileStatus(iccid = iccid, state = "ALLOCATED")}
+        return Es2ProfileStatusResponse(
+                profileStatusList = statuses)
+    }
+
     @Throws(SmDpPlusException::class)
     override fun downloadOrder(eid: String?, iccid: String?, profileType: String?): Es2DownloadOrderResponse {
         return Es2DownloadOrderResponse(eS2SuccessResponseHeader(), iccid="01234567890123456789")
@@ -78,7 +84,6 @@ class PlaceholderSmDpPlusService : SmDpPlusService {
     override fun releaseProfile(iccid: String) {
     }
 }
-
 
 class PlaceholderSmDpPlusCallbackService : SmDpPlusCallbackService {
     override fun handleDownloadProgressInfo(

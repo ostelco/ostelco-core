@@ -1,5 +1,6 @@
 package org.ostelco.simcards.smdpplus
 
+import com.codahale.metrics.health.HealthCheck
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.dropwizard.Application
@@ -9,28 +10,39 @@ import io.dropwizard.client.HttpClientConfiguration
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
 import org.apache.http.client.HttpClient
+import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.dropwizardutils.CertAuthConfig
 import org.ostelco.dropwizardutils.CertificateAuthorizationFilter
 import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
 import org.ostelco.dropwizardutils.OpenapiResourceAdderConfig
 import org.ostelco.dropwizardutils.RBACService
 import org.ostelco.dropwizardutils.RolesConfig
+import org.ostelco.sim.es2plus.ES2NotificationPointStatus
 import org.ostelco.sim.es2plus.ES2PlusClient
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
 import org.ostelco.sim.es2plus.Es2ConfirmOrderResponse
 import org.ostelco.sim.es2plus.Es2DownloadOrderResponse
+import org.ostelco.sim.es2plus.Es2ProfileStatusResponse
 import org.ostelco.sim.es2plus.EsTwoPlusConfig
+import org.ostelco.sim.es2plus.ProfileStatus
 import org.ostelco.sim.es2plus.SmDpPlusServerResource
 import org.ostelco.sim.es2plus.SmDpPlusService
 import org.ostelco.sim.es2plus.eS2SuccessResponseHeader
 import org.slf4j.LoggerFactory
+import java.io.File
 import java.io.FileInputStream
+import javax.ws.rs.GET
+import javax.ws.rs.Path
+import javax.ws.rs.PathParam
+import javax.ws.rs.WebApplicationException
+import javax.ws.rs.core.Response
+
 
 fun main(args: Array<String>) = SmDpPlusApplication().run(*args)
 
 /**
  * NOTE: This is not a proper SM-DP+ application, it is a test fixture
- * to be used when accpetance-testing the sim administration application.
+ * to be used when acceptance-testing the sim administration application.
  *
  * The intent of the SmDpPlusApplication is to be run in Docker Compose,
  * to serve a few simple ES2+ commands, and to do so consistently, and to
@@ -46,6 +58,8 @@ fun main(args: Array<String>) = SmDpPlusApplication().run(*args)
  */
 class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 
+    private val log = LoggerFactory.getLogger(javaClass)
+
     override fun getName(): String {
         return "SM-DP+ implementation (partial, only for testing of sim admin service)"
     }
@@ -54,48 +68,140 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
         bootstrap.objectMapper.registerModule(KotlinModule())
     }
 
-    private lateinit var httpClient: HttpClient
+    private lateinit var httpClient: CloseableHttpClient
 
-    internal lateinit var es2plusClient: ES2PlusClient
+    internal lateinit var es2PlusCLientForCallbacks: ES2PlusClient
 
     private lateinit var serverResource: SmDpPlusServerResource
 
-
     private lateinit var smdpPlusService: SmDpPlusEmulator
+
+
+    fun noOfEntries () : Int = smdpPlusService.getNoOfEntries()
+
+    fun getHttpClient() = httpClient
 
     override fun run(config: SmDpPlusAppConfiguration,
                      env: Environment) {
 
         val jerseyEnvironment = env.jersey()
+        this.httpClient = HttpClientBuilder(env).using(config.httpClientConfiguration).build(name)
 
         addOpenapiResourceToJerseyEnv(jerseyEnvironment, config.openApi)
         addEs2PlusDefaultFiltersAndInterceptors(jerseyEnvironment)
 
+        log.info("Reading configs from '${config.simBatchData}'")
+        if (!File(config.simBatchData).exists()) {
+            log.error("Input file '$config.simBatchData' does not exist, bailing out!")
+            System.exit(0)
+        } else {
+            log.info("Input file '$config.simBatchData' does exist, will try to read it!")
+        }
+
+        if (!File(config.simBatchData).canRead()) {
+            log.error("Input file '$config.simBatchData' can't be read, bailing out!")
+            System.exit(0)
+        } else {
+            log.info("Input file '$config.simBatchData' is readable, will try to read it!")
+        }
+
         val simEntriesIterator = SmDpSimEntryIterator(FileInputStream(config.simBatchData))
-        this.smdpPlusService = SmDpPlusEmulator(simEntriesIterator)
+        val smDpPlusEmulator = SmDpPlusEmulator(simEntriesIterator)
+        this.smdpPlusService = smDpPlusEmulator
 
         this.serverResource = SmDpPlusServerResource(
                 smDpPlus = smdpPlusService)
         jerseyEnvironment.register(serverResource)
-        jerseyEnvironment.register(CertificateAuthorizationFilter(RBACService(
+
+        /* jerseyEnvironment.register(CertificateAuthorizationFilter(RBACService(
                 rolesConfig = config.rolesConfig,
-                certConfig = config.certConfig)))
+                certConfig = config.certConfig))) */
 
 
+        val callbackClient = SmDpPlusCallbackClient(
+                httpClient = httpClient,
+
+                hostname = config.es2plusConfig.host,
+                portNumber = config.es2plusConfig.port,
+                requesterId = config.es2plusConfig.requesterId,
+                smdpPlus = smdpPlusService)
+
+        val commandsProcessor = CommandsProcessorResource(callbackClient)
+        jerseyEnvironment.register(commandsProcessor)
+
+        // XXX This is weird, is it even necessary?  Probably not.
         jerseyEnvironment.register(CertificateAuthorizationFilter(
                 RBACService(rolesConfig = config.rolesConfig,
                         certConfig = config.certConfig)))
 
-        this.httpClient = HttpClientBuilder(env).using(config.httpClientConfiguration).build(name)
-        this.es2plusClient = ES2PlusClient(
+        this.es2PlusCLientForCallbacks = ES2PlusClient(
                 requesterId = config.es2plusConfig.requesterId,
                 host = config.es2plusConfig.host,
                 port = config.es2plusConfig.port,
                 httpClient = httpClient)
+
+        env.healthChecks().register("coreEmulatorHealthcheck", smDpPlusEmulator.getHealthCheckInstance())
+
+        reset()
     }
 
     fun reset() {
         this.smdpPlusService.reset();
+    }
+}
+
+
+class SmDpPlusCallbackClient(
+        val httpClient: HttpClient,
+        val hostname: String,
+        val portNumber: Int,
+        val requesterId: String,
+        val smdpPlus: SmDpPlusEmulator) {
+
+    private val log = LoggerFactory.getLogger(javaClass)
+
+    val client: ES2PlusClient
+
+    init {
+        this.client = ES2PlusClient(requesterId = requesterId, httpClient = httpClient, host = hostname, port = portNumber, useHttps = false)
+    }
+
+    @Throws(WebApplicationException::class)
+    fun reportDownload(iccid: String) {
+        try {
+            val entry = smdpPlus.getEntryByIccid(iccid)
+            if (entry == null) {
+                log.error("Attempt to report download for unknown ICCID=$iccid")
+                throw WebApplicationException(Response.Status.NOT_FOUND)
+            }
+
+            client.handleDownloadProgressInfo(
+                    iccid = iccid,
+                    profileType = entry.profile,
+                    notificationPointId = 3,  //3 -> Download.  This is a magic number XXX must be fixed.
+                    notificationPointStatus = ES2NotificationPointStatus())  // XXX Also a placeholder
+        } catch (e: Throwable) {
+            log.error("Failure while reporting download ", e)
+            throw WebApplicationException("Failure while reporting download ", e)
+        }
+    }
+}
+
+/**
+ * Misc. commands that are useful to give the SM-DP+ outside of its standardized
+ * ES2+ commands.   In particular  we add a REST command to simulate an  ES9+ download
+ * of a profile.  This command will trigger an ES2+ callback into the prime entity
+ * that has been registred to receive the callbacks.
+ */
+@Path("commands")
+class CommandsProcessorResource(private val callbackClient: SmDpPlusCallbackClient) {
+
+
+    @Path("simulate-download-of/iccid/{iccid}")
+    @GET
+    fun simulateDownloadOf(@PathParam("iccid") iccid: String): String {
+        callbackClient.reportDownload(iccid = iccid)
+        return "Simulated download of iccid ${iccid} went well."
     }
 }
 
@@ -120,11 +226,37 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
 
     private val originalEntries: MutableSet<SmDpSimEntry> = mutableSetOf()
 
+    private val healthCheck: HealthCheck = SmDpPlusEmulatorHealthCheck()
+
     init {
         incomingEntries.forEach { originalEntries.add(it) }
 
-        log.info("Just read ${entries.size} SIM entries.")
+        reset()
+
+        val noOfEntries = entries.size
+
+        if (noOfEntries != 0) {
+            log.info("Just read ${noOfEntries} SIM entries.")
+        } else {
+            log.error("Just read zero SIM entries, this is useless, will abort!")
+            System.exit(0)
+        }
     }
+
+    inner class SmDpPlusEmulatorHealthCheck() : HealthCheck() {
+
+        @Throws(Exception::class)
+        override fun check(): HealthCheck.Result {
+            return if (entries.isNotEmpty()) {
+                HealthCheck.Result.healthy()
+            } else HealthCheck.Result.unhealthy("Has no entries, should have at least one.")
+        }
+    }
+
+    fun getNoOfEntries () : Int = entries.size
+
+    fun getHealthCheckInstance(): HealthCheck = this.healthCheck
+
 
     fun reset() {
         entries.clear()
@@ -151,6 +283,8 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
         entries.forEach { if (it.allocated) throw RuntimeException("Already allocated new entry $it") }
     }
 
+    fun getEntryByIccid(iccid: String): SmDpSimEntry? = entriesByIccid[iccid]
+
 
     // TODO; What about the reservation flag?
     override fun downloadOrder(eid: String?, iccid: String?, profileType: String?): Es2DownloadOrderResponse {
@@ -166,6 +300,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
 
             // Then mark the entry as allocated and return the corresponding ICCID.
             entry.allocated = true
+            entry.setCurrentState("DOWNLOADED")
 
             // Finally return the ICCID uniquely identifying the profile instance.
             return Es2DownloadOrderResponse(eS2SuccessResponseHeader(),
@@ -250,10 +385,13 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
         if (machingId != null) {
             entry.machingId = confirmationCode
         } else {
-            entry.machingId = "0123-ABC-KGBC-IAMOS-SAD0"  /// XXX This is obviously bogus code!
+            entry.machingId = "0123-ABCD-KGBC-IAMOS-SAD0"  /// XXX This is obviously bogus code!
         }
 
+        // XXX The state mechanism in this class is a pice of .... Fix it!
         entry.released = releaseFlag
+        entry.setCurrentState("RELEASED")
+
 
         if (confirmationCode != null) {
             entry.confirmationCode = confirmationCode
@@ -268,6 +406,24 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
                 eid = eidReturned!!,
                 smdsAddress = entry.smdsAddress,
                 matchingId = entry.machingId)
+    }
+
+    @Throws(org.ostelco.sim.es2plus.SmDpPlusException::class)
+    override fun getProfileStatus(iccidList: List<String>): Es2ProfileStatusResponse {
+        log.info("In getProfileStatus with iccidList = $iccidList")
+
+        val result: List<ProfileStatus> = iccidList.map { getProfileStatusForIccid(it) }
+                .filterNotNull()
+        return Es2ProfileStatusResponse(profileStatusList = result)
+    }
+
+    private fun getProfileStatusForIccid(iccid: String): ProfileStatus? {
+        val entry = entriesByIccid[iccid]
+        return if (entry != null) {
+            ProfileStatus(iccid = iccid, state = entry.state)
+        } else {
+            null
+        }
     }
 
     override fun cancelOrder(eid: String?, iccid: String?, matchingId: String?, finalProfileStatusIndicator: String?) {
@@ -307,6 +463,7 @@ data class SmDpPlusAppConfiguration(
         /**
          * Path to file containing simulated SIM data.
          */
+        @JsonProperty("simBatchData")
         val simBatchData: String = "",
 
         /**

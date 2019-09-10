@@ -38,6 +38,8 @@ import javax.ws.rs.core.MediaType
  * Will connect to the SM-DP+  and then activate the profile, so that when
  * user equpiment tries to download a profile, it will get a profile to
  * download.
+ *
+ * XXX Why on earth is the json property set to "metricName"? It makes no sense.
  */
 data class ProfileVendorAdapter(
         @JsonProperty("id") val id: Long,
@@ -78,30 +80,27 @@ data class ProfileVendorAdapter(
      * @return Updated SIM profile
      */
     private fun downloadOrder(httpClient: CloseableHttpClient,
-                      config: ProfileVendorConfig,
-                      dao: SimInventoryDAO,
-                      simEntry: SimEntry): Either<SimManagerError, SimEntry> {
+                              config: ProfileVendorConfig,
+                              dao: SimInventoryDAO,
+                              simEntry: SimEntry): Either<SimManagerError, SimEntry> {
         val header = ES2RequestHeader(
-                functionRequesterIdentifier = config.requesterIdentifier,
-                functionCallIdentifier = "downloadOrder"
-        )
+                functionRequesterIdentifier = config.requesterIdentifier)
         val body = Es2PlusDownloadOrder(
                 header = header,
                 iccid = simEntry.iccid
         )
         val payload = mapper.writeValueAsString(body)
 
+        val uri = "${config.es2plusEndpoint}/gsma/rsp2/es2plus/downloadOrder"
+        logger.info("URI  for downloadOrder = '$uri'")
+
         val request = RequestBuilder.post()
-                .setUri("${config.es2plusEndpoint}/downloadOrder")
+                .setUri(uri)
                 .setHeader("User-Agent", "gsma-rsp-lpad")
                 .setHeader("X-Admin-Protocol", "gsma/rsp/v2.0.0")
                 .setHeader("Content-Type", MediaType.APPLICATION_JSON)
                 .setEntity(StringEntity(payload))
                 .build()
-
-        logger.info("SM-DP+ 'order-download' message to service {} for ICCID {} starting.",
-                config.name,
-                simEntry.iccid)
 
         return try {
             httpClient.execute(request).use {
@@ -110,18 +109,15 @@ data class ProfileVendorAdapter(
                         val status = mapper.readValue(it.entity.content, Es2DownloadOrderResponse::class.java)
 
                         if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess) {
-                            logger.error("SM-DP+ 'order-download' message to service {} for ICCID {} failed with execution status {} (call-id: {})",
+                            logger.error("SM-DP+ 'order-download' message to service {} for ICCID {} failed with execution status {} (call-id: {}, uri = {})",
                                     config.name,
                                     simEntry.iccid,
                                     status.header.functionExecutionStatus,
-                                    header.functionCallIdentifier)
+                                    header.functionCallIdentifier,
+                                    uri)
                             NotUpdatedError("SM-DP+ 'order-download' to ${config.name} failed with status: ${status.header.functionExecutionStatus}")
                                     .left()
                         } else {
-                            logger.info("SM-DP+ 'order-download' message to service {} for ICCID {} completed OK (call-id: {})",
-                                    config.name,
-                                    simEntry.iccid,
-                                    header.functionCallIdentifier)
                             if (simEntry.id == null) {
                                 NotUpdatedError("simEntry without id.  simEntry=$simEntry").left()
                             } else {
@@ -161,10 +157,11 @@ data class ProfileVendorAdapter(
      * @return Updated SIM profile
      */
     private fun confirmOrder(httpClient: CloseableHttpClient,
-                     config: ProfileVendorConfig,
-                     dao: SimInventoryDAO,
-                     eid: String? = null,
-                     simEntry: SimEntry): Either<SimManagerError, SimEntry> {
+                             config: ProfileVendorConfig,
+                             dao: SimInventoryDAO,
+                             eid: String? = null,
+                             simEntry: SimEntry): Either<SimManagerError, SimEntry> {
+
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = config.requesterIdentifier,
                 functionCallIdentifier = UUID.randomUUID().toString()
@@ -178,7 +175,7 @@ data class ProfileVendorAdapter(
         val payload = mapper.writeValueAsString(body)
 
         val request = RequestBuilder.post()
-                .setUri("${config.es2plusEndpoint}/confirmOrder")
+                .setUri("${config.es2plusEndpoint}/gsma/rsp2/es2plus//confirmOrder")
                 .setHeader("User-Agent", "gsma-rsp-lpad")
                 .setHeader("X-Admin-Protocol", "gsma/rsp/v2.0.0")
                 .setHeader("Content-Type", MediaType.APPLICATION_JSON)
@@ -240,7 +237,7 @@ data class ProfileVendorAdapter(
                         }
                     }
                     else -> {
-                        logger.error("SM-DP+ 'order-confirm' message to service {} for ICCID {} failed with status code %d (call-id: {})",
+                        logger.error("SM-DP+ 'order-confirm' message to service {} for ICCID {} failed with status code {} (call-id: {})",
                                 config.name,
                                 simEntry.iccid,
                                 it?.statusLine?.statusCode,
@@ -276,9 +273,10 @@ data class ProfileVendorAdapter(
                         it.first().right()
                     }
 
-    /* XXX Missing:
-           1. unit tests
-           2. enabled integration test - depends on support in SM-DP+ emulator */
+
+
+    // XXXX Stop using this abomination!!!! Use the Es2PlusClient instead.
+    // This code is buggy and (obviously) untested.
 
     /**
      * Downloads the SM-DP+ 'profile status' information for a list of ICCIDs
@@ -308,7 +306,8 @@ data class ProfileVendorAdapter(
         val payload = mapper.writeValueAsString(body)
 
         val request = RequestBuilder.post()
-                .setUri("${config.es2plusEndpoint}/getProfileStatus")
+                // XXX This is a hack due to previous sloppiness and lack of testing.
+                .setUri("${config.es2plusEndpoint}/gsma/rsp2/es2plus/getProfileStatus")
                 .setHeader("User-Agent", "gsma-rsp-lpad")
                 .setHeader("X-Admin-Protocol", "gsma/rsp/v2.0.0")
                 .setHeader("Content-Type", MediaType.APPLICATION_JSON)
@@ -349,7 +348,7 @@ data class ProfileVendorAdapter(
                         }
                     }
                     else -> {
-                        logger.error("SM-DP+ 'profile-status' message to service {} for ICCID {} failed with status code %d (call-id: {})",
+                        logger.error("SM-DP+ 'profile-status' message to service {} for ICCID {} failed with status code {} (call-id: {})",
                                 config.name,
                                 iccids,
                                 it.statusLine.statusCode,
@@ -360,12 +359,27 @@ data class ProfileVendorAdapter(
                 }
             }
         } catch (e: Exception) {
-            logger.error("SM-DP+ 'profile-status' message to service {} for ICCID {} failed with error: {}",
-                    config.name,
-                    iccids,
-                    e)
+            logger.error("SM-DP+ 'profile-status' message to service ${config.name} via endpoint '${config.es2plusEndpoint}' for ICCID ${iccids} failed with error.",
+                   e)
             AdapterError("SM-DP+ 'profile-status' message to service ${config.name} failed with error: $e")
                     .left()
         }
     }
+
+    /**
+     * A dummy ICCID. May or may notreturn a valid profile from any HSS or SM-DP+, but is
+     * useful for checking of there is an SM-DP+ in the other end of the connection.
+     */
+    val invalidICCID = listOf("8901000000000000001")
+
+    /**
+     * Contact the ES2+  endpoint of the SM-DP+, and return true if the answer indicates
+     * that it's up.
+     */
+    fun ping(httpClient: CloseableHttpClient,
+             config: ProfileVendorConfig): Either<SimManagerError, List<ProfileStatus>> =
+            getProfileStatus(
+                    httpClient = httpClient,
+                    config = config,
+                    iccidList = invalidICCID)
 }

@@ -17,6 +17,7 @@ import org.jdbi.v3.core.Jdbi
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -45,6 +46,12 @@ import javax.ws.rs.core.MediaType
 
 class SimAdministrationTest {
 
+    private val hssName = "Foo"
+    private val profileVendor = "Bar"
+    private val phoneType = "rababara"
+    private val expectedProfile = "IPHONE_PROFILE_2"
+
+
     companion object {
         private lateinit var jdbi: Jdbi
         private lateinit var client: Client
@@ -60,6 +67,7 @@ class SimAdministrationTest {
         @JvmField
         @ClassRule
         val psql: KPostgresContainer = KPostgresContainer("postgres:11-alpine")
+                // XXX Beware of  the multiple init.sql files floating around!
                 .withInitScript("init.sql")
                 .withDatabaseName("sim_manager")
                 .withUsername("test")
@@ -124,10 +132,6 @@ class SimAdministrationTest {
     class KFixedHostPortGenericContainer(imageName: String) :
             FixedHostPortGenericContainer<KFixedHostPortGenericContainer>(imageName)
 
-    private val hssName = "Foo"
-    private val profileVendor = "Bar"
-    private val phoneType = "rababara"
-    private val expectedProfile = "IPHONE_PROFILE_2"
 
     /* Test endpoint. */
     private val simManagerEndpoint = "http://localhost:${SIM_MANAGER_RULE.localPort}/ostelco/sim-inventory"
@@ -163,6 +167,7 @@ class SimAdministrationTest {
 
         dao.clearTables()
     }
+
 
     private fun presetTables() {
         val dao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().getDAO()
@@ -419,6 +424,26 @@ class SimAdministrationTest {
         assertEquals(ProvisionState.RESERVED, getSimEntryByICCIDFromLoadedBatch("8901000000000000993")?.provisionState)
     }
 
+    @Test
+    fun testHealthchecks() {
+        val healtchecks = getJsonFromEndpoint(healthcheckEndpoint)
+
+        fun assertHealthy(nameOfHealthcheck: String) {
+            try {
+                assertTrue(getJsonElement(
+                        endpointValue = healtchecks,
+                        name = nameOfHealthcheck,
+                        valueName = "healthy").asBoolean)
+            } catch (t: Throwable) {
+                fail("Could not prove health of $nameOfHealthcheck")
+            }
+        }
+
+        assertHealthy("db")
+        assertHealthy("postgresql")
+        assertHealthy("smdp")
+    }
+
 
     private fun getJsonFromEndpoint(endpoint: String): JsonObject {
         var response = client.target(endpoint)
@@ -432,15 +457,6 @@ class SimAdministrationTest {
         var jobject = jelement.getAsJsonObject()
         return jobject
     }
-
-
-    @Test
-    fun testHealthchecs() {
-        val healtchecks = getJsonFromEndpoint(healthcheckEndpoint)
-        assertTrue(getJsonElement(endpointValue =  healtchecks, name = "db",  valueName = "healthy").asBoolean)
-        assertTrue(getJsonElement(endpointValue =  healtchecks, name = "postgresql",  valueName = "healthy").asBoolean)
-    }
-
 
     fun getJsonElement(
             endpointValue: JsonObject? = null,
@@ -470,7 +486,7 @@ class SimAdministrationTest {
         SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().triggerMetricsGeneration()
         assertGaugeValue(100, "sims.noOfEntries.IPHONE_PROFILE_2")
         assertGaugeValue(0, "sims.noOfEntriesAvailableForImmediateUse.IPHONE_PROFILE_2")
-        assertGaugeValue(0,  "sims.noOfReleasedEntries.IPHONE_PROFILE_2")
+        assertGaugeValue(0, "sims.noOfReleasedEntries.IPHONE_PROFILE_2")
         assertGaugeValue(98, "sims.noOfUnallocatedEntries.IPHONE_PROFILE_2")
         assertGaugeValue(2, "sims.noOfReservedEntries.IPHONE_PROFILE_2")
     }

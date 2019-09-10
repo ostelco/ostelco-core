@@ -6,6 +6,8 @@ import org.everit.json.schema.ValidationException
 import org.json.JSONException
 import org.json.JSONObject
 import org.json.JSONTokener
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -29,10 +31,21 @@ import javax.ws.rs.ext.WriterInterceptorContext
 annotation class JsonSchema(val schemaKey: String)
 
 
+/**
+ * This is a function to which the member variable of type [org.slf4j.Logger] is delegated to be instantiated.
+ * The syntax to do so is <code>private val logger by getLogger()</code>.
+ * This function will then return the [org.slf4j.Logger] for calling class.
+ */
+fun <R : Any> R.getLogger(): Lazy<Logger> = lazy {
+    LoggerFactory.getLogger(this.javaClass)
+}
+
+
 class JsonSchemaValidator {
     private val schemaRoot = "/es2schemas"
     private var schemaMap: MutableMap<String, Schema> = mutableMapOf()
 
+    private val logger by getLogger()
 
     private fun loadJsonSchemaResource(name: String): Schema {
         val inputStream = this.javaClass.getResourceAsStream("$schemaRoot/$name.json") ?: throw WebApplicationException("Unknown schema map: '$name'", Response.Status.INTERNAL_SERVER_ERROR)
@@ -41,8 +54,10 @@ class JsonSchemaValidator {
             return org.everit.json.schema.loader.SchemaLoader.load(jsonEncodedSchemaDescription)
         } catch (e: JSONException) {
             val msg = e.message
+            logger.error("Syntax error in schema description  named '$name'. Error:  $msg", e)
             throw WebApplicationException("Syntax error in schema description  named '$name'. Error:  $msg", Response.Status.INTERNAL_SERVER_ERROR)
         } catch (e: SchemaException) {
+            logger.error("Illegal Schema definition for schema: '$name'.  Error: ${e.message}", e)
             throw WebApplicationException("Illegal Schema definition for schema: '$name'.  Error: ${e.message}")
         }
     }
@@ -61,6 +76,7 @@ class JsonSchemaValidator {
                     causes = t.errorMessage
                 }
                 val msg = "Schema validation failed while validating schema named: '${schemaAnnotation.schemaKey}'.  Error:  $t.message. Causes= $causes"
+                logger.error(msg, t)
                 // XXX The web application exception seems to be swallowed.
                 throw WebApplicationException(msg, error)
             }
@@ -149,7 +165,6 @@ private class RequestServerReaderWriterInterceptor : ReaderInterceptor, WriterIn
         val contentString  = String(contentBytes, StandardCharsets.UTF_8)
 
         // Validate our now serialized input.
-        val type = ctx.entity::class.java
         validator.validateString(ctx.type, contentString, Response.Status.INTERNAL_SERVER_ERROR)
 
         // Now we  write the original entity back

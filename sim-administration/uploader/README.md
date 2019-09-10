@@ -23,8 +23,7 @@ upload it automatically.
 
 The parameters are checked for consistency, so that if there are 
 more MSISDNs than ICCIDs in the ranges given as parameters, for instance,
-then the script will terminate with an error message. Similarly if the
-luhn checksums of the ICCIDs are wrong, errors will be signalled.
+then the script will terminate with an error message.
 
 (these are reasonable things to check btw, errors have been made
 that justifies adding these checks).
@@ -53,7 +52,7 @@ and will cause error messages.)
       -profile-type gargle-blaster-zot \
       -profile-vendor idemalto \
       -upload-hostname localhost \
-      -upload-portnubmer 8080
+      -upload-portnumber 8080
 ```
 
 ##The full set of  command line options

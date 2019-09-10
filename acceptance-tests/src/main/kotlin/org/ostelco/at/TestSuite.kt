@@ -41,7 +41,8 @@ class TestSuite {
                                 org.ostelco.at.jersey.PlanTest::class.java,
                                 org.ostelco.at.jersey.GraphQlTests::class.java,
                                 org.ostelco.at.jersey.JumioKycTest::class.java,
-                                org.ostelco.at.pgw.OcsTest::class.java
+                                org.ostelco.at.pgw.OcsTest::class.java,
+                                org.ostelco.at.simmanager.SimManager::class.java
                         )
                 )
             }

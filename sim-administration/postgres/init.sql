@@ -1,10 +1,3 @@
---
---    This is the schema definition that is intended to be used in the integration tests.
---    DO not use it in acceptance tests or in production.
---
-
-
-
 create table sim_import_batches (id bigserial primary key,
                                  status text,
                                  endedAt bigint,
@@ -41,3 +34,17 @@ create table sim_vendors_permitted_hlrs (id bigserial primary key,
                                          profileVendorId bigserial,
                                          hlrId bigserial,
                                          UNIQUE (profileVendorId, hlrId));
+
+
+
+-- dao.addProfileVendorAdapter("Bar")
+INSERT INTO profile_vendor_adapters(name) VALUES ('Bar');
+
+-- dao.addHssEntry("Foo")
+INSERT INTO hlr_adapters(name) VALUES ('Foo');
+
+-- dao.permitVendorForHssByNames(profileVendor = "Bar", hssName = "Foo")
+--    val profileVendorAdapter = getProfileVendorAdapterByName(profileVendor)
+--    val hlrAdapter = getHssEntryByName(hssName)
+--    storeSimVendorForHssPermission(profileVendorAdapter.id, hlrAdapter.id)
+INSERT INTO sim_vendors_permitted_hlrs(profileVendorid, hlrId) VALUES (1, 1)

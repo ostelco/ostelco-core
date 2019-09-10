@@ -17,6 +17,9 @@ interface SmDpPlusService {
     fun cancelOrder(eid: String?, iccid: String?, matchingId: String?, finalProfileStatusIndicator: String?)
 
     @Throws(SmDpPlusException::class)
+    fun getProfileStatus(iccidList: List<String>): Es2ProfileStatusResponse
+
+    @Throws(SmDpPlusException::class)
     fun releaseProfile(iccid: String)
 }
 

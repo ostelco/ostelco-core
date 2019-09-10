@@ -43,7 +43,7 @@ func distributeServiceAccountConfigs(
 	serviceAccountJsonFilename string,
 	serviceAccountFileMD5Checksum string,
 	dirsThatNeedsServiceAccountConfigs ...string) {
-	log.Printf("Distributing service account configs\n")
+	log.Printf("Distributing service account configs ...\n")
 	if !goscript.FileExists(serviceAccountJsonFilename) {
 		log.Fatalf("ERROR: : Could not find master service-account file'%s'", serviceAccountJsonFilename)
 	}
@@ -72,6 +72,7 @@ func distributeServiceAccountConfigs(
 			_ = goscript.CopyFile(serviceAccountJsonFilename, currentFilename)
 		}
 	}
+	log.Printf("    Done\n")
 }
 
 func generateDummyStripeEndpointSecretIfNotSet() {
@@ -154,7 +155,7 @@ func parseServiceAccountFile(filename string) (GcpProjectProfile) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Println("Successfully Opened $filename")
+	fmt.Println("Successfully Opened ", filename)
 	byteValue, _ := ioutil.ReadAll(jsonFile)
 	// defer the closing of our jsonFile so that we can parse it later on
 	defer jsonFile.Close()

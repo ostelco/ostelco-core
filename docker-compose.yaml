@@ -23,6 +23,13 @@ services:
       - DATASTORE_EMULATOR_HOST=localhost:9090
       - DATASTORE_PROJECT_ID=${GCP_PROJECT_ID}
       - MANDRILL_API_KEY=
+      - LOCAL_TESTING=true
+      - DB_USER=postgres_user
+      - DB_PASSWORD=postgres_password
+      - DB_URL=postgres:5432/sim-inventory
+      # XXX This really should be https, but we'll let that
+      #     be an improvement for a later time.
+      - SMDPLUS_ES2PLUS_ENDPOINT=http://smdp-plus-emulator:8080
       - ACCEPTANCE_TESTING=true
     ports:
       - "9090:8080"
@@ -32,6 +39,7 @@ services:
       - "ext-auth-provider"
       - "datastore-emulator"
       - "pubsub-emulator"
+      - "smdp-plus-emulator"
       - "neo4j"
     command: ["/bin/bash", "./wait.sh"]
     tmpfs:
@@ -127,15 +135,18 @@ services:
   smdp-plus-emulator:
     container_name: smdp-plus-emulator
     build: sim-administration/sm-dp-plus-emulator
+    ports:
+      - "18080:8080"
+      - "18081:8081"
 
   postgres:
     container_name: postgres
-    image: postgres:9.6
-    environment:
-      POSTGRES_USER: postgres_user
-      POSTGRES_PASSWORD: postgres_password
-      POSTGRES_DB: sim-inventory
+    build:
+      context: sim-administration/postgres
+      dockerfile: Dockerfile
     tmpfs: "//var/lib/postgresql/data"
+    ports:
+      - "55432:5432"
 
 networks:
   net:

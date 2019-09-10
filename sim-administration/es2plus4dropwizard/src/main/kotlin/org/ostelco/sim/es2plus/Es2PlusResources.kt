@@ -2,6 +2,7 @@ package org.ostelco.sim.es2plus
 
 import io.dropwizard.jersey.setup.JerseyEnvironment
 import org.ostelco.jsonschema.DynamicES2ValidatorAdder
+import org.ostelco.jsonschema.getLogger
 import org.ostelco.prime.jersey.logging.Critical
 import org.ostelco.sim.es2plus.ES2PlusClient.Companion.X_ADMIN_PROTOCOL_HEADER_VALUE
 import org.ostelco.sim.es2plus.SmDpPlusServerResource.Companion.ES2PLUS_PATH_PREFIX
@@ -114,6 +115,8 @@ class SmdpExceptionMapper : ExceptionMapper<SmDpPlusException> {
 @Path(ES2PLUS_PATH_PREFIX)
 class SmDpPlusServerResource(private val smDpPlus: SmDpPlusService) {
 
+    private val logger = getLogger()
+
     companion object {
         const val ES2PLUS_PATH_PREFIX : String = "gsma/rsp2/es2plus/"
     }
@@ -153,7 +156,6 @@ class SmDpPlusServerResource(private val smDpPlus: SmDpPlusService) {
     @Path("cancelOrder")
     @POST
     fun cancelOrder(order: Es2CancelOrder): HeaderOnlyResponse {
-
         smDpPlus.cancelOrder(
                 eid = order.eid,
                 iccid = order.iccid,
@@ -168,12 +170,21 @@ class SmDpPlusServerResource(private val smDpPlus: SmDpPlusService) {
     @Path("releaseProfile")
     @POST
     fun releaseProfile(order: Es2ReleaseProfile): HeaderOnlyResponse {
-
         smDpPlus.releaseProfile(iccid = order.iccid)
         return HeaderOnlyResponse()
     }
-}
 
+    /**
+     * Return status objects for a list of ICCIds that are part of the
+     * command object.
+     */
+    @Path("getProfileStatus")
+    @POST
+    fun getProfileStatus(order: Es2ProfileStatusCommand): Es2ProfileStatusResponse {
+        logger.value.info("Logging getProfileStatusOrder with order = $order")
+        return smDpPlus.getProfileStatus(iccidList = order.iccidList.map {it.iccid}.filterNotNull())
+    }
+}
 
 @Path("/gsma/rsp2/es2plus/")
 class SmDpPlusCallbackResource(private val smDpPlus: SmDpPlusCallbackService) {
@@ -199,6 +210,7 @@ class SmDpPlusCallbackResource(private val smDpPlus: SmDpPlusCallbackService) {
                 resultData = order.resultData,
                 imei = order.imei
         )
+
         /* According to the SM-DP+ spec. the response should 204. */
         return Response.status(Response.Status.NO_CONTENT)
                 .build()

@@ -1,3 +1,10 @@
+##
+## NOTE: This is the prime config file for _PRODUCTION_ like settings.
+##       Prime's config file for acceptance tests are in test.yaml
+##
+
+
+
 modules:
   - type: jersey
     config:
@@ -159,7 +166,8 @@ modules:
         password: ${DB_PASSWORD}
         url: ${DB_URL}
         # the SQL query to run when validating a connection's liveness
-        validationQuery: "/* MyService Health Check */ SELECT 1"
+        # Must return at least one row for health to be considered healthy
+        validationQuery: "/* Prime Health Check */ SELECT 1"
       httpClient:
         timeout: 10000ms
         tls:

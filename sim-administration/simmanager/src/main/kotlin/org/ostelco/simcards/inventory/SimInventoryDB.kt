@@ -170,6 +170,9 @@ interface SimInventoryDB {
                                           WHERE  name = :name) """)
     fun addProfileVendorAdapter(name: String): Int
 
+    @SqlQuery("""SELECT * FROM profile_vendor_adapters""")
+    fun getAllProfileVendors(): List<ProfileVendorAdapter>
+
     @SqlQuery("""SELECT * FROM profile_vendor_adapters
                        WHERE name = :name""")
     fun getProfileVendorAdapterByName(name: String): ProfileVendorAdapter?

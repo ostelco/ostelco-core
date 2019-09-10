@@ -30,13 +30,14 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                 Either.monad<SimManagerError>().binding {
 
                     val simEntry = dao.getSimProfileByIccid(iccid).bind()
-
                     checkForValidHlr(hlrName, simEntry)
 
                     val profileVendorAndConfig = getProfileVendorAdapterAndConfig(simEntry).bind()
-
                     val config = profileVendorAndConfig.second
 
+                    // Return the entry found in the database, extended with a
+                    // code represernting the string that will be used by the LPA in the
+                    // UA to talk to the sim vendor's SM-DP+ over the ES9+ protocol.
                     simEntry.copy(code = "LPA:1\$${config.es9plusEndpoint}\$${simEntry.matchingId}")
 
                 }.fix()

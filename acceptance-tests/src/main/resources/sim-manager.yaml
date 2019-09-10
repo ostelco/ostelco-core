@@ -1,3 +1,9 @@
+##
+##  sim-manager.yaml to be used in acceptance tests.   Do not use for production!!
+##
+
+
+
 logging:
   level: INFO
 

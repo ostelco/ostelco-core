@@ -30,14 +30,13 @@ class EncryptedEs2PlusTest {
     @Ignore
     fun handleHappyDayScenario() {
         val client: ES2PlusClient =
-                SUPPORT.getApplication<SmDpPlusApplication>().es2plusClient
+                SUPPORT.getApplication<SmDpPlusApplication>().es2PlusCLientForCallbacks
         val eid = "12345678980123456789012345678901"
         val iccid = "8901000000000000001"
         val downloadResponse = client.downloadOrder(eid = eid, iccid = iccid, profileType = "FooTel_STD")
 
         assertEquals(FunctionExecutionStatusType.ExecutedSuccess, downloadResponse.header.functionExecutionStatus.status)
         assertEquals(iccid, downloadResponse.iccid)
-
 
         val confirmResponse =
                 client.confirmOrder(

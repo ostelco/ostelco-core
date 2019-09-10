@@ -113,12 +113,53 @@ data class SwtHssConfig(
         val apiKey: String
 ) : HssConfig(name = name)
 
+
+class ProfileVendorConfigException(msg: String) : Exception(msg)
+
+/**
+ * Configuration for profile vendors.  The name is a name alphanumeric + undrescore)
+ * the es2plus endpoint is an fqdn, with an optional portnumber.  Similarly for the es9plus
+ * endpoint.  The requester identifier is a string that is intended to identify the requester,
+ * obviously in addition to client certificate.
+ */
 data class ProfileVendorConfig(
         val name: String,
         val es2plusEndpoint: String,
         val requesterIdentifier: String,
         val es9plusEndpoint: String
-)
+) {
+
+    private val logger by getLogger()
+
+    companion object {
+        val ALPHANUMERIC = Regex("[a-zA-Z0-9_]+")
+        val ENDPOINT = Regex("https?://[\\.a-zA-Z0-9_]+(:[0-9]+)?")
+    }
+
+    init {
+        validate()
+    }
+
+    // If the instance does not contain valid fields, then cry foul, but don't break.
+    // too many things break!
+    fun validate() {
+        if (!name.matches(ALPHANUMERIC)) {
+            logger.warn(NOTIFY_OPS_MARKER, "Profile vendor name '$name' does not match regex ${ALPHANUMERIC.pattern}")
+        }
+
+        if (!es2plusEndpoint.matches(ENDPOINT)) {
+            logger.warn(NOTIFY_OPS_MARKER, "es2plusEndpoint '$es2plusEndpoint' does not match regex ${ENDPOINT.pattern}")
+        }
+
+        if (!es9plusEndpoint.matches(ENDPOINT)) {
+            logger.warn(NOTIFY_OPS_MARKER, "es9plusEndpoint '$es9plusEndpoint' does not match regex ${ENDPOINT.pattern}")
+        }
+
+        if (!requesterIdentifier.matches(ALPHANUMERIC)) {
+            logger.warn(NOTIFY_OPS_MARKER, "requesterIdentifier '$es9plusEndpoint' does not match regex ${ALPHANUMERIC.pattern}")
+        }
+    }
+}
 
 data class PhoneTypeConfig(
         val regex: String,
