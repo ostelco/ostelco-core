@@ -28,7 +28,6 @@ import org.ostelco.simcards.admin.ProfileVendorConfig
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SmDpPlusState
-import java.util.*
 import javax.ws.rs.core.MediaType
 
 /**
@@ -163,9 +162,7 @@ data class ProfileVendorAdapter(
                              simEntry: SimEntry): Either<SimManagerError, SimEntry> {
 
         val header = ES2RequestHeader(
-                functionRequesterIdentifier = config.requesterIdentifier,
-                functionCallIdentifier = UUID.randomUUID().toString()
-        )
+                functionRequesterIdentifier = config.requesterIdentifier)
         val body = Es2ConfirmOrder(
                 header = header,
                 eid = eid,
@@ -296,9 +293,7 @@ data class ProfileVendorAdapter(
         }
 
         val header = ES2RequestHeader(
-                functionRequesterIdentifier = config.requesterIdentifier,
-                functionCallIdentifier = UUID.randomUUID().toString()
-        )
+                functionRequesterIdentifier = config.requesterIdentifier)
         val body = Es2PlusProfileStatus(
                 header = header,
                 iccidList = iccidList.map { IccidListEntry(iccid = it) }

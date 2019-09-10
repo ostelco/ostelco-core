@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.ostelco.jsonschema.JsonSchema
 import org.ostelco.sim.es2plus.ES2PlusClient.Companion.getNowAsDatetime
-import java.util.UUID
 
 
 ///
@@ -23,7 +22,7 @@ import java.util.UUID
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ES2RequestHeader(
         @JsonProperty("functionRequesterIdentifier") val functionRequesterIdentifier: String,
-        @JsonProperty("functionCallIdentifier") val functionCallIdentifier: String = UUID.randomUUID().toString()
+        @JsonProperty("functionCallIdentifier") val functionCallIdentifier: String = ES2PlusClient.newRandomFunctionCallIdentifier()
 )
 
 ///
