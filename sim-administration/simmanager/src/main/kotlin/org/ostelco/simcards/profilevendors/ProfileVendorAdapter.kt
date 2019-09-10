@@ -152,6 +152,8 @@ data class ProfileVendorAdapter(
     //   * First refactor confirmOrder and downloadOrder extensively,
     //     to ensure that any true differences stand out clearly, and repeated code
     //     is kept elsewhere.
+    //   * Incredibly important, but only apparent after several rounds of initial refactoring:
+    //         => Make the control flow clear!
     //   * Then  replace both with invocations to the possibly updated
     //     ES2+ client library.
 
