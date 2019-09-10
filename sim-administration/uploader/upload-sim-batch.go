@@ -98,13 +98,20 @@ func generateCsvPayload(batch Batch) string {
 }
 
 func isICCID(s string) bool {
-	match, _ := regexp.MatchString("^\\d{18}\\d?$", s)
+	match, _ := regexp.MatchString("^\\d{18}\\d?\\d?$", s)
 	return match
 }
 
 func checkICCIDSyntax(name string, potentialIccid string) {
 	if !isICCID(potentialIccid) {
-		log.Fatalf("Not a valid %s ICCID: '%s'.  Must be 18 or 19 digits (excluding luhn checksum).", name, potentialIccid)
+		log.Fatalf("Not a valid %s ICCID: '%s'.  Must be 18 or 19 (or 20) digits (_including_ luhn checksum).", name, potentialIccid)
+	}
+
+	stringWithoutLuhnChecksum := iccidWithoutLuhnChecksum(potentialIccid)
+	controlDigit := generateControlDigit(stringWithoutLuhnChecksum)
+	checksummedCandidate := fmt.Sprintf("%s%d", stringWithoutLuhnChecksum, controlDigit)
+	if checksummedCandidate != potentialIccid {
+		log.Fatalf("Not a valid  ICCID: '%s'. Expected luhn checksom '%d'",potentialIccid, controlDigit )
 	}
 }
 
@@ -161,11 +168,7 @@ type Batch struct {
 }
 
 func iccidWithoutLuhnChecksum(s string) string {
-	if len(s) == 19 {
-		return trimSuffix(s, 1)
-	} else {
-		return s
-	}
+	return trimSuffix(s, 1)
 }
 
 func trimSuffix(s string, suffixLen int) string {
@@ -176,7 +179,7 @@ func parseCommandLine() Batch {
 	//
 	// Set up command line parsing
 	//
-	firstIccid := flag.String("first-iccid",
+	 firstIccid := flag.String("first-iccid",
 		"not  a valid iccid",
 		"An 18 or 19 digit long string.  The 19-th digit being a luhn luhnChecksum digit, if present")
 	lastIccid := flag.String("last-iccid",
@@ -241,7 +244,7 @@ func parseCommandLine() Batch {
 
 	var firstIccidInt, _ = Atoi(iccidWithoutLuhnChecksum(*firstIccid))
 	var lastIccidInt, _ = Atoi(iccidWithoutLuhnChecksum(*lastIccid))
-	var iccidlen = lastIccidInt - firstIccidInt
+	var iccidlen = lastIccidInt - firstIccidInt + 1
 
 	// Validate that lengths of sequences are equal in absolute
 	// values.
