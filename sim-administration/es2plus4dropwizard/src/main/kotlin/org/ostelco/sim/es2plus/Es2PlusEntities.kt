@@ -152,7 +152,7 @@ data class Es2ConfirmOrder(
         @JsonProperty("matchingId") val matchingId: String? = null,
         @JsonProperty("confirmationCode") val confirmationCode: String? = null,
         @JsonProperty("smdpAddress") val smdpAddress: String? = null,
-        @JsonProperty("releaseFlag") val releaseFlag: Boolean
+        @JsonProperty("releaseFlag") val releaseFlag: Boolean = true
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

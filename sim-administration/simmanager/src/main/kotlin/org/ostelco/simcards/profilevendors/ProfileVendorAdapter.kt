@@ -180,18 +180,15 @@ data class ProfileVendorAdapter(
                              eid: String? = null,
                              simEntry: SimEntry): Either<SimManagerError, SimEntry> {
 
-        val header = ES2RequestHeader(
-                functionRequesterIdentifier = config.requesterIdentifier)
 
-        val body = Es2ConfirmOrder(
-                header = header,
-                eid = eid,
-                iccid = simEntry.iccid,
-                releaseFlag = true
-        )
-
+        val header = ES2RequestHeader(functionRequesterIdentifier = config.requesterIdentifier)
         val request =
-                buildEs2plusRequest<Es2ConfirmOrder>(config, "confirmOrder", body)
+                buildEs2plusRequest<Es2ConfirmOrder>(config, "confirmOrder",
+                        Es2ConfirmOrder(
+                                header = header,
+                                eid = eid,
+                                iccid = simEntry.iccid
+                        ))
 
         return try {
             httpClient.execute(request).use {
@@ -308,22 +305,16 @@ data class ProfileVendorAdapter(
             return NotFoundError("").left()
         }
 
+
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = config.requesterIdentifier)
-        val body = Es2PlusProfileStatus(
-                header = header,
-                iccidList = iccidList.map { IccidListEntry(iccid = it) }
-        )
-        val payload = mapper.writeValueAsString(body)
 
-        val request = RequestBuilder.post()
-                // XXX This is a hack due to previous sloppiness and lack of testing.
-                .setUri("${config.es2plusEndpoint}/gsma/rsp2/es2plus/getProfileStatus")
-                .setHeader("User-Agent", "gsma-rsp-lpad")
-                .setHeader("X-Admin-Protocol", "gsma/rsp/v2.0.0")
-                .setHeader("Content-Type", MediaType.APPLICATION_JSON)
-                .setEntity(StringEntity(payload))
-                .build()
+        val request =
+                buildEs2plusRequest<Es2PlusProfileStatus>(config, "confirmOrder",
+                        Es2PlusProfileStatus(
+                                header = header,
+                                iccidList = iccidList.map { IccidListEntry(iccid = it) }
+                        ))
 
         /* Pretty print version of ICCID list. */
         val iccids = iccidList.joinToString(prefix = "[", postfix = "]")
