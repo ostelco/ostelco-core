@@ -5,7 +5,8 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.ostelco.jsonschema.JsonSchema
 import org.ostelco.sim.es2plus.ES2PlusClient.Companion.getNowAsDatetime
-import java.util.*
+import java.util.UUID
+
 
 ///
 ///   The fields that all requests needs to have in their headers
