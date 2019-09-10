@@ -234,9 +234,15 @@ func parseCommandLine() Batch {
 
 	// Convert to integers, and get lengths
 
+	log.Println("firstmsisdn =", *firstMsisdn)
+	log.Println("lastmsisdn =", *lastMsisdn)
+
 	var firstMsisdnInt, _ = Atoi(*firstMsisdn)
 	var lastMsisdnInt, _ = Atoi(*lastMsisdn)
-	var msisdnLen = lastMsisdnInt - firstMsisdnInt
+	var msisdnLen =  lastMsisdnInt - firstMsisdnInt + 1
+	if msisdnLen < 0 {
+		msisdnLen = - msisdnLen
+	}
 
 	var firstImsiInt, _ = Atoi(*firstIMSI)
 	var lastImsiInt, _ = Atoi(*lastIMSI)
