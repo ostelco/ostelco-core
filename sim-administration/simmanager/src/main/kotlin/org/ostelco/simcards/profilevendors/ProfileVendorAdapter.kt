@@ -6,6 +6,7 @@ import arrow.core.left
 import arrow.core.right
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import org.apache.http.client.methods.HttpUriRequest
 import org.apache.http.client.methods.RequestBuilder
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
@@ -38,7 +39,7 @@ import javax.ws.rs.core.MediaType
  * user equpiment tries to download a profile, it will get a profile to
  * download.
  *
- * XXX Why on earth is the json property set to "metricName"? It makes no sense.
+ * TODO:  Why on earth is the json property set to "metricName"? It makes no sense.  Fix it!
  */
 data class ProfileVendorAdapter(
         @JsonProperty("id") val id: Long,
@@ -145,6 +146,24 @@ data class ProfileVendorAdapter(
         }
     }
 
+    // TODO (this comment should be removed before merging PR)
+    //   * First refactor confirmOrder and downloadOrder extensively,
+    //     to ensure that any true differences stand out clearly, and repeated code
+    //     is kept elsewhere.
+    //   * Then  replace both with invocations to the possibly updated
+    //     ES2+ client library.
+
+    private fun <T> buildEs2plusRequest(config: ProfileVendorConfig, esplusOrderName: String, payload: T): HttpUriRequest {
+        val payloadString = mapper.writeValueAsString(payload)
+        return RequestBuilder.post()
+                .setUri("${config.es2plusEndpoint}/gsma/rsp2/es2plus/${esplusOrderName}")
+                .setHeader("User-Agent", "gsma-rsp-lpad")
+                .setHeader("X-Admin-Protocol", "gsma/rsp/v2.0.0")
+                .setHeader("Content-Type", MediaType.APPLICATION_JSON)
+                .setEntity(StringEntity(payloadString))
+                .build()
+    }
+
     /**
      * Complete the activation of a SIM profile with an external Profile Vendor
      * by sending a SM-DP+ 'confirmation' message.
@@ -163,21 +182,16 @@ data class ProfileVendorAdapter(
 
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = config.requesterIdentifier)
+
         val body = Es2ConfirmOrder(
                 header = header,
                 eid = eid,
                 iccid = simEntry.iccid,
                 releaseFlag = true
         )
-        val payload = mapper.writeValueAsString(body)
 
-        val request = RequestBuilder.post()
-                .setUri("${config.es2plusEndpoint}/gsma/rsp2/es2plus//confirmOrder")
-                .setHeader("User-Agent", "gsma-rsp-lpad")
-                .setHeader("X-Admin-Protocol", "gsma/rsp/v2.0.0")
-                .setHeader("Content-Type", MediaType.APPLICATION_JSON)
-                .setEntity(StringEntity(payload))
-                .build()
+        val request =
+                buildEs2plusRequest<Es2ConfirmOrder>(config, "confirmOrder", body)
 
         return try {
             httpClient.execute(request).use {
@@ -253,6 +267,8 @@ data class ProfileVendorAdapter(
                     .left()
         }
     }
+
+
 
     /**
      * Downloads the SM-DP+ 'profile status' information for an ICCID from
