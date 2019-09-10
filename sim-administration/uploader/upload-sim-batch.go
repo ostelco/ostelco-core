@@ -68,7 +68,6 @@ func calculateChecksum(luhnString string, double bool) int {
 
 		checksum += n
 	}
-
 	return checksum
 }
 
@@ -105,7 +104,7 @@ func isICCID(s string) bool {
 
 func checkICCIDSyntax(name string, potentialIccid string) {
 	if !isICCID(potentialIccid) {
-		log.Fatal("Not a valid %s ICCID: '%s'.  Must be 18 or 19 digits.", name, potentialIccid)
+		log.Fatalf("Not a valid %s ICCID: '%s'.  Must be 18 or 19 digits (excluding luhn checksum).", name, potentialIccid)
 	}
 }
 
@@ -116,7 +115,7 @@ func isIMSI(s string) bool {
 
 func checkIMSISyntax(name string, potentialIMSI string) {
 	if !isIMSI(potentialIMSI) {
-		log.Fatal("Not a valid %s IMSI: '%s'.  Must be 15 digits.", name, potentialIMSI)
+		log.Fatalf("Not a valid %s IMSI: '%s'.  Must be 15 digits.", name, potentialIMSI)
 	}
 }
 
@@ -127,7 +126,7 @@ func isMSISDN(s string) bool {
 
 func checkMSISDNSyntax(name string, potentialMSISDN string) {
 	if !isMSISDN(potentialMSISDN) {
-		log.Fatal("Not a valid %s MSISDN: '%s'.  Must be non-empty sequence of digits.", name, potentialMSISDN)
+		log.Fatalf("Not a valid %s MSISDN: '%s'.  Must be non-empty sequence of digits.", name, potentialMSISDN)
 	}
 }
 
@@ -238,7 +237,7 @@ func parseCommandLine() Batch {
 
 	var firstImsiInt, _ = Atoi(*firstIMSI)
 	var lastImsiInt, _ = Atoi(*lastIMSI)
-	var imsiLen = lastImsiInt - firstImsiInt
+	var imsiLen = lastImsiInt - firstImsiInt + 1
 
 	var firstIccidInt, _ = Atoi(iccidWithoutLuhnChecksum(*firstIccid))
 	var lastIccidInt, _ = Atoi(iccidWithoutLuhnChecksum(*lastIccid))
