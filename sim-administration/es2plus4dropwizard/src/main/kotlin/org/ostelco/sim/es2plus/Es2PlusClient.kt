@@ -9,6 +9,7 @@ import org.apache.http.entity.StringEntity
 import org.ostelco.prime.getLogger
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import java.util.*
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
 import javax.ws.rs.client.Client
@@ -41,6 +42,8 @@ class ES2PlusClient(
                 DateTimeFormatter.ofPattern("YYYY-MM-dd'T'hh:mm:ss'Z'").format(time)
 
         fun getNowAsDatetime(): String = getDatetime(ZonedDateTime.now())
+
+        fun newRandomFunctionCallIdentifier() = UUID.randomUUID().toString()
     }
 
     private fun url(path: String): String {
@@ -210,7 +213,7 @@ class ES2PlusClient(
         val es2ProtocolPayload = Es2PlusDownloadOrder(
                 header = ES2RequestHeader(
                         functionRequesterIdentifier = requesterId,
-                        functionCallIdentifier = "downloadOrder"),
+                        functionCallIdentifier = newRandomFunctionCallIdentifier()),
                 eid = eid,
                 iccid = iccid,
                 profileType = profileType)
@@ -221,6 +224,8 @@ class ES2PlusClient(
                 Es2DownloadOrderResponse::class.java,
                 expectedStatusCode = 200)
     }
+
+
 
     fun confirmOrder(eid: String? = null,
                      iccid: String,
