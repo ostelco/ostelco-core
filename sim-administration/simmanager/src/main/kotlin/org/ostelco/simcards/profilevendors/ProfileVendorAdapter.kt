@@ -52,6 +52,28 @@ data class ProfileVendorAdapter(
     /* For payload serializing. */
     private val mapper = jacksonObjectMapper()
 
+
+    //  This class is currently the target of an ongoing refactoring.
+    //   * First refactor confirmOrder and downloadOrder extensively,
+    //     to ensure that any true differences stand out clearly, and repeated code
+    //     is kept elsewhere.
+    //   * Incredibly important, but only apparent after several rounds of initial refactoring:
+    //         => Make the control flow clear!
+    //   * Then  replace both with invocations to the possibly updated
+    //     ES2+ client library.
+    //   * Ensure that the protocol is extensively unit tested.
+
+    private fun <T> buildEs2plusRequest(endpoint: String, esplusOrderName: String, payload: T): HttpUriRequest {
+        val payloadString = mapper.writeValueAsString(payload)
+        return RequestBuilder.post()
+                .setUri("${endpoint}/gsma/rsp2/es2plus/${esplusOrderName}")
+                .setHeader("User-Agent", "gsma-rsp-lpad")
+                .setHeader("X-Admin-Protocol", "gsma/rsp/v2.0.0")
+                .setHeader("Content-Type", MediaType.APPLICATION_JSON)
+                .setEntity(StringEntity(payloadString))
+                .build()
+    }
+
     /**
      * Requests the an external Profile Vendor to activate the
      * SIM profile.
@@ -85,30 +107,21 @@ data class ProfileVendorAdapter(
                               config: ProfileVendorConfig,
                               dao: SimInventoryDAO,
                               simEntry: SimEntry): Either<SimManagerError, SimEntry> {
+
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = config.requesterIdentifier)
-        val body = Es2PlusDownloadOrder(
-                header = header,
-                iccid = simEntry.iccid
-        )
-        val payload = mapper.writeValueAsString(body)
-
-        val uri = "${config.getEndpoint()}/gsma/rsp2/es2plus/downloadOrder"
-        logger.info("URI  for downloadOrder = '$uri'")
-
-        val request = RequestBuilder.post()
-                .setUri(uri)
-                .setHeader("User-Agent", "gsma-rsp-lpad")
-                .setHeader("X-Admin-Protocol", "gsma/rsp/v2.0.0")
-                .setHeader("Content-Type", MediaType.APPLICATION_JSON)
-                .setEntity(StringEntity(payload))
-                .build()
+        val request =
+                buildEs2plusRequest<Es2PlusDownloadOrder>(config.getEndpoint(), "downloadOrder",
+                        Es2PlusDownloadOrder(
+                                header = header,
+                                iccid = simEntry.iccid
+                        ))
 
         return try {
             httpClient.execute(request).use {
                 when (it.statusLine.statusCode) {
                     200 -> {
-                        val response  = mapper.readValue(it.entity.content, Es2DownloadOrderResponse::class.java)
+                        val response = mapper.readValue(it.entity.content, Es2DownloadOrderResponse::class.java)
 
                         if (executionWasFailure(status = response.header.functionExecutionStatus)) {
                             logger.error("SM-DP+ 'order-download' message to service {} for ICCID {} failed with execution status {} (call-id: {}, uri = {})",
@@ -148,25 +161,6 @@ data class ProfileVendorAdapter(
         }
     }
 
-    // TODO (this comment should be removed before merging PR)
-    //   * First refactor confirmOrder and downloadOrder extensively,
-    //     to ensure that any true differences stand out clearly, and repeated code
-    //     is kept elsewhere.
-    //   * Incredibly important, but only apparent after several rounds of initial refactoring:
-    //         => Make the control flow clear!
-    //   * Then  replace both with invocations to the possibly updated
-    //     ES2+ client library.
-
-    private fun <T> buildEs2plusRequest(endpoint: String, esplusOrderName: String, payload: T): HttpUriRequest {
-        val payloadString = mapper.writeValueAsString(payload)
-        return RequestBuilder.post()
-                .setUri("${endpoint}/gsma/rsp2/es2plus/${esplusOrderName}")
-                .setHeader("User-Agent", "gsma-rsp-lpad")
-                .setHeader("X-Admin-Protocol", "gsma/rsp/v2.0.0")
-                .setHeader("Content-Type", MediaType.APPLICATION_JSON)
-                .setEntity(StringEntity(payloadString))
-                .build()
-    }
 
     /**
      * Complete the activation of a SIM profile with an external Profile Vendor
@@ -294,10 +288,8 @@ data class ProfileVendorAdapter(
         }
     }
 
-
     private fun executionWasFailure(status: FunctionExecutionStatus) =
             status.status != FunctionExecutionStatusType.ExecutedSuccess
-
 
     /**
      * Downloads the SM-DP+ 'profile status' information for an ICCID from
@@ -314,10 +306,6 @@ data class ProfileVendorAdapter(
                     .flatMap {
                         it.first().right()
                     }
-
-
-// XXXX Stop using this abomination!!!! Use the Es2PlusClient instead.
-// This code is buggy and (obviously) untested.
 
     /**
      * Downloads the SM-DP+ 'profile status' information for a list of ICCIDs
@@ -367,7 +355,7 @@ data class ProfileVendorAdapter(
                                     status.header.functionExecutionStatus,
                                     functionCallIdentifier)
                             NotUpdatedError("SM-DP+ 'profile-status' to ${config.name} failed with status: ${status.header.functionExecutionStatus}",
-                                    pingOk=true)
+                                    pingOk = true)
                                     .left()
 
                         } else {
@@ -381,7 +369,7 @@ data class ProfileVendorAdapter(
                                 profileStatusList.right()
                             else
                                 NotFoundError("No information found for ICCID $iccids in SM-DP+ 'profile-status' message to service ${config.name}",
-                                        pingOk=true)
+                                        pingOk = true)
                                         .left()
                         }
                     }
@@ -398,7 +386,7 @@ data class ProfileVendorAdapter(
             }
         } catch (e: Exception) {
             logger.error("SM-DP+ 'profile-status' message to service ${config.name} via endpoint '${config.getEndpoint()}' for ICCID ${iccids} failed with error.",
-                   e)
+                    e)
             AdapterError("SM-DP+ 'profile-status' message to service ${config.name} failed with error: $e")
                     .left()
         }
