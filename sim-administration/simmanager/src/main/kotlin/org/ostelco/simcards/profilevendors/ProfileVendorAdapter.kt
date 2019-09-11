@@ -21,7 +21,7 @@ import org.ostelco.sim.es2plus.Es2ConfirmOrder
 import org.ostelco.sim.es2plus.Es2ConfirmOrderResponse
 import org.ostelco.sim.es2plus.Es2DownloadOrderResponse
 import org.ostelco.sim.es2plus.Es2PlusDownloadOrder
-import org.ostelco.sim.es2plus.Es2PlusProfileStatus
+import org.ostelco.sim.es2plus.Es2ProfileStatusCommand
 import org.ostelco.sim.es2plus.Es2ProfileStatusResponse
 import org.ostelco.sim.es2plus.FunctionExecutionStatus
 import org.ostelco.sim.es2plus.FunctionExecutionStatusType
@@ -341,8 +341,8 @@ data class ProfileVendorAdapter(
                 functionRequesterIdentifier = config.requesterIdentifier)
 
         val request =
-                buildEs2plusRequest<Es2PlusProfileStatus>(config.getEndpoint(), "confirmOrder",
-                        Es2PlusProfileStatus(
+                buildEs2plusRequest<Es2ProfileStatusCommand>(config.getEndpoint(), "getProfileStatus",
+                        Es2ProfileStatusCommand(
                                 header = header,
                                 iccidList = iccidList.map { IccidListEntry(iccid = it) }
                         ))
