@@ -41,7 +41,8 @@ import javax.ws.rs.core.MediaType
  * user equpiment tries to download a profile, it will get a profile to
  * download.
  *
- * TODO:  Why on earth is the json property set to "metricName"? It makes no sense.  Fix it!
+ * TODO:  Why on earth is the json property set to "metricName"? It makes no sense.
+ *        Fix it, but understand what it means.
  */
 data class ProfileVendorAdapter(
         @JsonProperty("id") val id: Long,
@@ -49,18 +50,19 @@ data class ProfileVendorAdapter(
 
     private val logger by getLogger()
 
-    /* For payload serializing. */
+    // For payload serializing.
     private val mapper = jacksonObjectMapper()
-
 
     //  This class is currently the target of an ongoing refactoring.
     //   * First refactor confirmOrder and downloadOrder extensively,
     //     to ensure that any true differences stand out clearly, and repeated code
     //     is kept elsewhere.
     //   * Incredibly important, but only apparent after several rounds of initial refactoring:
-    //         => Make the control flow clear!
+    //         => Make the control flow obviously clear!
     //   * Then  replace both with invocations to the possibly updated
-    //     ES2+ client library.
+    //     ES2+ client library (possibly by moving these methods into that library, or wrapping them
+    //     around ES2+ client library invocations, we'll see what seems like the best choice when the
+    //     refactoring has progressed a little more).
     //   * Ensure that the protocol is extensively unit tested.
 
     private fun <T> buildEs2plusRequest(endpoint: String, esplusOrderName: String, payload: T): HttpUriRequest {
@@ -93,7 +95,6 @@ data class ProfileVendorAdapter(
                     .flatMap {
                         confirmOrder(httpClient, config, dao, eid, it)
                     }
-
     /**
      * Initiate activation of a SIM profile with an external Profile Vendor
      * by sending a SM-DP+ 'download-order' message.
@@ -124,12 +125,11 @@ data class ProfileVendorAdapter(
                         val response = mapper.readValue(it.entity.content, Es2DownloadOrderResponse::class.java)
 
                         if (executionWasFailure(status = response.header.functionExecutionStatus)) {
-                            logger.error("SM-DP+ 'order-download' message to service {} for ICCID {} failed with execution status {} (call-id: {}, uri = {})",
+                            logger.error("SM-DP+ 'order-download' message to service {} for ICCID {} failed with execution status {} (call-id: {})",
                                     config.name,
                                     simEntry.iccid,
                                     response.header.functionExecutionStatus,
-                                    header.functionCallIdentifier,
-                                    uri)
+                                    header.functionCallIdentifier)
                             NotUpdatedError("SM-DP+ 'order-download' to ${config.name} failed with status: ${response.header.functionExecutionStatus}")
                                     .left()
                         } else {
@@ -161,7 +161,6 @@ data class ProfileVendorAdapter(
         }
     }
 
-
     /**
      * Complete the activation of a SIM profile with an external Profile Vendor
      * by sending a SM-DP+ 'confirmation' message.
@@ -191,12 +190,6 @@ data class ProfileVendorAdapter(
         val functionCallIdentifier = header.functionCallIdentifier
         val nameOfSimVendor = config.name
 
-
-        // TODO: This is is in the middle of a refactoring. We're trying to ensure that exits
-        // are signalled clearly in the execution flow.   This is currently at the _cost_ of
-        // making the code more verbose, but that is a cost we'll cut down on later, and certainly
-        // before merging to develop.
-
         val response: CloseableHttpResponse
         try {
             response = httpClient.execute(request)
@@ -220,7 +213,6 @@ data class ProfileVendorAdapter(
                 return NotUpdatedError("SM-DP+ 'order-confirm' to $nameOfSimVendor failed with code: ${response.statusLine.statusCode}")
                         .left()
             }
-
 
             val status = mapper.readValue(response.entity.content, Es2ConfirmOrderResponse::class.java)
             val functionExecutionStatus = status.header.functionExecutionStatus
@@ -324,7 +316,6 @@ data class ProfileVendorAdapter(
             return NotFoundError("").left()
         }
 
-
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = config.requesterIdentifier)
 
@@ -335,8 +326,7 @@ data class ProfileVendorAdapter(
                                 iccidList = iccidList.map { IccidListEntry(iccid = it) }
                         ))
 
-
-        /* Pretty print version of ICCID list. */
+        /// Pretty print version of ICCID list to
         val iccids = iccidList.joinToString(prefix = "[", postfix = "]")
         val functionCallIdentifier = header.functionCallIdentifier
 
