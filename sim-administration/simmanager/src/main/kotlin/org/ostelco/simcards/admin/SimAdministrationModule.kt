@@ -88,7 +88,7 @@ class SimAdministrationModule : PrimeModule {
         jerseyEnv.register(simInventoryResource)
         jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
 
-        // Register metrics as a lifecycle object
+        // Register Sim Inventory metrics as a lifecycle object
 
         this.metricsManager = SimInventoryMetricsManager(this.DAO, env.metrics())
         env.lifecycle().manage(this.metricsManager)
@@ -114,15 +114,17 @@ class SimAdministrationModule : PrimeModule {
                 hssAdapterProxy = hssAdapters,
                 profileVendors = config.profileVendors))
 
-        // TODO: Commented out as a hotfix since it continously failing, probably falsely
-        //       shuld be fixed asap to ensure that warnings are real.
-        // env.healthChecks().register("smdp",
-        //        SmdpPlusHealthceck(getDAO(), httpClient, config.profileVendors))
+
+        env.healthChecks().register("smdp",
+                SmdpPlusHealthceck(getDAO(), httpClient, config.profileVendors))
 
         // logging request and response contents
         env.servlets()
                 .addFilter("teeFilter", TeeFilter::class.java)
-                .addMappingForUrlPatterns(null, false, "/gsma/rsp2/es2plus/handleDownloadProgressInfo")
+                .addMappingForUrlPatterns(
+                        null,
+                        false,
+                        "/gsma/rsp2/es2plus/handleDownloadProgressInfo")
     }
 
 
@@ -149,9 +151,8 @@ class SimAdministrationModule : PrimeModule {
                     when (hssConfig) {
                         is SwtHssConfig -> {
 
-
-                            if (!isLowerCase(hssConfig.hssNameUsedInAPI) ) {
-                                throw RuntimeException("hassNameUsedInAPI ('${hssConfig.hssNameUsedInAPI}' is not lowercase, this is a syntax error, aborting.")
+                            if (!isLowerCase(hssConfig.hssNameUsedInAPI)) {
+                                throw RuntimeException("hssNameUsedInAPI ('${hssConfig.hssNameUsedInAPI}' is not lowercase, this is a syntax error, aborting.")
                             }
                             dispatchers.add(
                                     SimpleHssDispatcher(
@@ -183,11 +184,11 @@ class SimAdministrationModule : PrimeModule {
     }
 
     fun triggerMetricsGeneration() {
-       metricsManager.triggerMetricsGeneration()
+        metricsManager.triggerMetricsGeneration()
     }
 }
 
-fun  isLowerCase(str : String) : Boolean {
+fun isLowerCase(str: String): Boolean {
     return str.toLowerCase().equals(str)
 }
 

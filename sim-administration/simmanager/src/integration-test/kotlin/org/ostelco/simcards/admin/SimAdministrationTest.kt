@@ -441,7 +441,7 @@ class SimAdministrationTest {
 
         assertHealthy("db")
         assertHealthy("postgresql")
-        //  assertHealthy("smdp") TODO: Commented out since it fails in pre-prod, and is disabled in the app.
+        assertHealthy("smdp")
     }
 
 

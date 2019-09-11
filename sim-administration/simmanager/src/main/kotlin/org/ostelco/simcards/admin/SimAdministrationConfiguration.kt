@@ -114,41 +114,72 @@ data class SwtHssConfig(
 ) : HssConfig(name = name)
 
 
-class ProfileVendorConfigException(msg: String) : Exception(msg)
-
 /**
  * Configuration for profile vendors.  The name is a name alphanumeric + undrescore)
  * the es2plus endpoint is an fqdn, with an optional portnumber.  Similarly for the es9plus
  * endpoint.  The requester identifier is a string that is intended to identify the requester,
  * obviously in addition to client certificate.
  */
-data class ProfileVendorConfig(
+class ProfileVendorConfig(
         val name: String,
-        val es2plusEndpoint: String,
+        private val es2plusEndpoint: String,
         val requesterIdentifier: String,
         val es9plusEndpoint: String
 ) {
 
     private val logger by getLogger()
 
+    private var safeEndpoint : String = es2plusEndpoint
+
     companion object {
         val ALPHANUMERIC = Regex("[a-zA-Z0-9_]+")
-        val ENDPOINT = Regex("https?://[\\.a-zA-Z0-9_]+(:[0-9]+)?")
+        val ENDPOINT = Regex("^https?://[\\.\\-_a-zA-Z0-9_]+(:[0-9]+)?")
     }
 
     init {
+
+        // Reduce the safe endpoint to be the start of the substring matching the
+        // endpoint syntax.
+        val match = ENDPOINT.find(es2plusEndpoint)
+        if (match != null) {
+            safeEndpoint = es2plusEndpoint.substring(match.range)
+            if (safeEndpoint != es2plusEndpoint) {
+                logger.error("Trunkcating ex2plusEndpoint from '$es2plusEndpoint' to '$safeEndpoint'. Beware!")
+            }
+        } else {
+            val msg = "Illegal es2plusendpoint field in config: $es2plusEndpoint"
+            logger.error(msg)
+            throw RuntimeException(msg)
+        }
         validate()
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is ProfileVendorConfig) return false
+        if (this.name  != other.name) return false
+        if (this.getEndpoint() != other.getEndpoint()) return false
+        if (this.es9plusEndpoint != other.es9plusEndpoint) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return javaClass.hashCode()
+    }
+
+    public fun getEndpoint() = safeEndpoint
+
 
     // If the instance does not contain valid fields, then cry foul, but don't break.
     // too many things break!
     fun validate() {
+
         if (!name.matches(ALPHANUMERIC)) {
             logger.warn(NOTIFY_OPS_MARKER, "Profile vendor name '$name' does not match regex ${ALPHANUMERIC.pattern}")
         }
 
-        if (!es2plusEndpoint.matches(ENDPOINT)) {
-            logger.warn(NOTIFY_OPS_MARKER, "es2plusEndpoint '$es2plusEndpoint' does not match regex ${ENDPOINT.pattern}")
+        if (!getEndpoint().matches(ENDPOINT)) {
+            logger.warn(NOTIFY_OPS_MARKER, "es2plusEndpoint '${getEndpoint()}' does not match regex ${ENDPOINT.pattern}")
         }
 
         if (!es9plusEndpoint.matches(ENDPOINT)) {

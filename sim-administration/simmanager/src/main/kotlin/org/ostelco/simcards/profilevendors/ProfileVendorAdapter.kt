@@ -91,7 +91,7 @@ data class ProfileVendorAdapter(
         )
         val payload = mapper.writeValueAsString(body)
 
-        val uri = "${config.es2plusEndpoint}/gsma/rsp2/es2plus/downloadOrder"
+        val uri = "${config.getEndpoint()}/gsma/rsp2/es2plus/downloadOrder"
         logger.info("URI  for downloadOrder = '$uri'")
 
         val request = RequestBuilder.post()
@@ -175,7 +175,7 @@ data class ProfileVendorAdapter(
         val payload = mapper.writeValueAsString(body)
 
         val request = RequestBuilder.post()
-                .setUri("${config.es2plusEndpoint}/gsma/rsp2/es2plus//confirmOrder")
+                .setUri("${config.getEndpoint()}/gsma/rsp2/es2plus//confirmOrder")
                 .setHeader("User-Agent", "gsma-rsp-lpad")
                 .setHeader("X-Admin-Protocol", "gsma/rsp/v2.0.0")
                 .setHeader("Content-Type", MediaType.APPLICATION_JSON)
@@ -307,7 +307,7 @@ data class ProfileVendorAdapter(
 
         val request = RequestBuilder.post()
                 // XXX This is a hack due to previous sloppiness and lack of testing.
-                .setUri("${config.es2plusEndpoint}/gsma/rsp2/es2plus/getProfileStatus")
+                .setUri("${config.getEndpoint()}/gsma/rsp2/es2plus/getProfileStatus")
                 .setHeader("User-Agent", "gsma-rsp-lpad")
                 .setHeader("X-Admin-Protocol", "gsma/rsp/v2.0.0")
                 .setHeader("Content-Type", MediaType.APPLICATION_JSON)
@@ -359,7 +359,7 @@ data class ProfileVendorAdapter(
                 }
             }
         } catch (e: Exception) {
-            logger.error("SM-DP+ 'profile-status' message to service ${config.name} via endpoint '${config.es2plusEndpoint}' for ICCID ${iccids} failed with error.",
+            logger.error("SM-DP+ 'profile-status' message to service ${config.name} via endpoint '${config.getEndpoint()}' for ICCID ${iccids} failed with error.",
                    e)
             AdapterError("SM-DP+ 'profile-status' message to service ${config.name} failed with error: $e")
                     .left()
