@@ -93,7 +93,7 @@ data class ProfileVendorAdapter(
         )
         val payload = mapper.writeValueAsString(body)
 
-        val uri = "${config.es2plusEndpoint}/gsma/rsp2/es2plus/downloadOrder"
+        val uri = "${config.getEndpoint()}/gsma/rsp2/es2plus/downloadOrder"
         logger.info("URI  for downloadOrder = '$uri'")
 
         val request = RequestBuilder.post()
@@ -347,6 +347,7 @@ data class ProfileVendorAdapter(
                                 iccidList = iccidList.map { IccidListEntry(iccid = it) }
                         ))
 
+
         /* Pretty print version of ICCID list. */
         val iccids = iccidList.joinToString(prefix = "[", postfix = "]")
         val functionCallIdentifier = header.functionCallIdentifier
@@ -394,8 +395,8 @@ data class ProfileVendorAdapter(
                 }
             }
         } catch (e: Exception) {
-            logger.error("SM-DP+ 'profile-status' message to service ${config.name} via endpoint '${config.es2plusEndpoint}' for ICCID ${iccids} failed with error.",
-                    e)
+            logger.error("SM-DP+ 'profile-status' message to service ${config.name} via endpoint '${config.getEndpoint()}' for ICCID ${iccids} failed with error.",
+                   e)
             AdapterError("SM-DP+ 'profile-status' message to service ${config.name} failed with error: $e")
                     .left()
         }

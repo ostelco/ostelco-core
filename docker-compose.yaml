@@ -27,8 +27,6 @@ services:
       - DB_USER=postgres_user
       - DB_PASSWORD=postgres_password
       - DB_URL=postgres:5432/sim-inventory
-      # XXX This really should be https, but we'll let that
-      #     be an improvement for a later time.
       - SMDPLUS_ES2PLUS_ENDPOINT=http://smdp-plus-emulator:8080
       - ACCEPTANCE_TESTING=true
     ports:

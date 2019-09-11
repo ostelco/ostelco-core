@@ -73,24 +73,37 @@ class SimManager {
     @Test
     fun testHealthchecks() {
         val healthcheckEndpoint = "http://prime:8081/healthcheck"
-        val healtchecks = getJsonFromEndpoint(healthcheckEndpoint)
 
-        fun assertHealthy(nameOfHealthcheck: String) {
-            try {
-                Assert.assertTrue(getJsonElement(
-                        endpointValue = healtchecks,
-                        name = nameOfHealthcheck,
-                        valueName = "healthy").asBoolean)
-            } catch (t: Throwable) {
-                Assert.fail("Could not prove health of $nameOfHealthcheck")
-            }
+        fun assertHealthy(nameOfHealthcheck: String, retriesBeforeFailing: Int = 0) {
+            var noOfRetries = 0
+            do {
+                val healtchecks = getJsonFromEndpoint(healthcheckEndpoint)
+                try {
+                    val jsonElement = getJsonElement(
+                            endpointValue = healtchecks,
+                            name = nameOfHealthcheck,
+                            valueName = "healthy")
+                    Assert.assertTrue(jsonElement.asBoolean)
+                    return  // One way of returning (success)
+                } catch (t: Throwable) {
+                    if (noOfRetries++ < retriesBeforeFailing) {
+                        logger.error("Retrying  failing healthcheck  '$nameOfHealthcheck'")
+                        Thread.sleep(5000)
+                    } else {
+                        // Another way of returning (failure)
+                        Assert.fail("Could not prove health of $nameOfHealthcheck")
+                    }
+                }
+            } while (true)
         }
 
         assertHealthy("postgresql")
         assertHealthy("HSS profilevendors for Hss named 'Loltel'")
         assertHealthy("HSS profilevendors for Hss named 'M1'")
-        // TODO: Figure out why this fails"
-        // assertHealthy("smdp")
+
+        // The SMDP+ emulator needs a little time to get its things in order, so we
+        // give it max 15*5 seconds to figure it out before we definitely fail.
+        assertHealthy("smdp", retriesBeforeFailing = 15)
     }
 
     // Copying SM-DP+ state model from the ES2+ directory.
