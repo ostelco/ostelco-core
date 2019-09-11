@@ -188,7 +188,7 @@ data class ProfileVendorAdapter(
         val header = ES2RequestHeader(functionRequesterIdentifier = config.requesterIdentifier)
         val iccid = simEntry.iccid
         val request =
-                buildEs2plusRequest<Es2ConfirmOrder>(config.es2plusEndpoint, "confirmOrder",
+                buildEs2plusRequest<Es2ConfirmOrder>(config.getEndpoint(), "confirmOrder",
                         Es2ConfirmOrder(
                                 header = header,
                                 eid = eid,
@@ -341,7 +341,7 @@ data class ProfileVendorAdapter(
                 functionRequesterIdentifier = config.requesterIdentifier)
 
         val request =
-                buildEs2plusRequest<Es2PlusProfileStatus>(config.es2plusEndpoint, "confirmOrder",
+                buildEs2plusRequest<Es2PlusProfileStatus>(config.getEndpoint(), "confirmOrder",
                         Es2PlusProfileStatus(
                                 header = header,
                                 iccidList = iccidList.map { IccidListEntry(iccid = it) }
@@ -366,7 +366,8 @@ data class ProfileVendorAdapter(
                                     iccids,
                                     status.header.functionExecutionStatus,
                                     functionCallIdentifier)
-                            NotUpdatedError("SM-DP+ 'profile-status' to ${config.name} failed with status: ${status.header.functionExecutionStatus}")
+                            NotUpdatedError("SM-DP+ 'profile-status' to ${config.name} failed with status: ${status.header.functionExecutionStatus}",
+                                    pingOk=true)
                                     .left()
 
                         } else {
@@ -379,7 +380,8 @@ data class ProfileVendorAdapter(
                             if (!profileStatusList.isNullOrEmpty())
                                 profileStatusList.right()
                             else
-                                NotFoundError("No information found for ICCID $iccids in SM-DP+ 'profile-status' message to service ${config.name}")
+                                NotFoundError("No information found for ICCID $iccids in SM-DP+ 'profile-status' message to service ${config.name}",
+                                        pingOk=true)
                                         .left()
                         }
                     }

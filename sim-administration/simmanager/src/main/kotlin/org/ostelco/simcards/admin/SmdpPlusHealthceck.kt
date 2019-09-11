@@ -68,7 +68,7 @@ class SmdpPlusHealthceck(
 
                     val profileVendorAdaptorList = vendorsRaw.bind()
 
-                    for (profileVendor in profileVendorAdaptorList) {
+                    loopOverAllProfileVendors@ for (profileVendor in profileVendorAdaptorList) {
                         logger.info("Processing vendor: $profileVendor")
                         val currentConfig: ProfileVendorConfig? =
                                 profileVendorConfigList.firstOrNull { it.name == profileVendor.name }
@@ -82,9 +82,23 @@ class SmdpPlusHealthceck(
                                 httpClient = httpClient,
                                 config = currentConfig!!
                         )
-                        pingResult.mapLeft { error ->
-                            logger.error("Could not reach SM-DP+ via HTTP PING:", error)
+
+                        // If this was an error, but of an acceptable ("pingOk" == true) kind, meaning that
+                        // the endpoint in the other end actually gave a reasonable answer to a reasonable request,
+                        // indicating that the endpoint is answering requests, then continue to loop over next endpoint,
+                        // otherwise see if there is an error.
+                        when (pingResult) {
+                            is Either.Left -> if (pingResult.a.pingOk) {
+                                continue@loopOverAllProfileVendors
+                            } else {
+                                logger.error("Could not reach SM-DP+ via HTTP PING:", pingResult)
+                            }
+                            is Either.Right -> {
+                            }
                         }
+
+                        // If this was an error, then break according to arrow semantics,
+                        // otherwise just carry on looping over the next endpoint.
                         pingResult.bind()
                     }
                 }.fix()
