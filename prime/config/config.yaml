@@ -145,6 +145,8 @@ modules:
           apiKey: ${WG2_API_KEY}
         - name: M1
           hlrType: DUMMY
+        - name: Digi
+          hlrType: DUMMY
       profileVendors:
         - name: Idemia
           es2plusEndpoint: ${ES2PLUS_ENDPOINT}
@@ -156,6 +158,8 @@ modules:
           profile: OYA_M1_BF76
         - regex: "M1.*"
           profile: OYA_M1_STANDARD
+        - regex: "Digi.*"
+          profile: OYA_DIGI_STANDARD
         - regex: "Loltel.android"
           profile: Loltel_ANDROID_1
         - regex: "Loltel.*"
