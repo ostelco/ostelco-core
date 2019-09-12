@@ -6,7 +6,6 @@ import arrow.core.left
 import arrow.core.right
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import org.apache.http.client.methods.CloseableHttpResponse
 import org.apache.http.client.methods.HttpUriRequest
 import org.apache.http.client.methods.RequestBuilder
 import org.apache.http.entity.StringEntity
@@ -48,6 +47,9 @@ import javax.ws.rs.core.MediaType
 data class ProfileVendorAdapter(
         @JsonProperty("id") val id: Long,
         @JsonProperty("metricName") val name: String) {
+
+
+    private val logger by getLogger()
 
 
     //  This class is currently the target of an ongoing refactoring.
@@ -119,8 +121,6 @@ data class ProfileVendorAdapter(
                         .left()
             }
         }
-
-
     }
 
 
@@ -158,7 +158,6 @@ data class ProfileVendorAdapter(
                 }
     }
 
-
     /**
      * Complete the activation of a SIM profile with an external Profile Vendor
      * by sending a SM-DP+ 'confirmation' message.
@@ -175,107 +174,42 @@ data class ProfileVendorAdapter(
                              eid: String? = null,
                              simEntry: SimEntry): Either<SimManagerError, SimEntry> {
 
+        if (simEntry.id == null) {
+            return NotUpdatedError("simEntry without id.  simEntry=$simEntry").left()
+        }
 
+        // TODO: This header is a constant for this class, and could be precomputed, which
+        //       would declutter the code even more!
         val header = ES2RequestHeader(functionRequesterIdentifier = config.requesterIdentifier)
-        val iccid = simEntry.iccid
         val request =
                 buildEs2plusRequest<Es2ConfirmOrder>(config.getEndpoint(), "confirmOrder",
                         Es2ConfirmOrder(
                                 header = header,
                                 eid = eid,
-                                iccid = iccid
+                                iccid = simEntry.iccid
                         ))
-        val functionCallIdentifier = header.functionCallIdentifier
-        val nameOfSimVendor = config.name
 
-        val response: CloseableHttpResponse
-        try {
-            response = httpClient.execute(request)
-        } catch (e: Throwable) {
-            logger.error("SM-DP+ 'order-confirm' message to service {} for ICCID {} failed with error: {}",
-                    nameOfSimVendor,
-                    iccid,
-                    e)
-            return AdapterError("SM-DP+ 'order-confirm' message to service $nameOfSimVendor failed with error: $e")
-                    .left()
-        }
+        return executeRequest<Es2ConfirmOrderResponse>(
+                "confirmOrder",
+                httpClient,
+                request,
+                config.name,
+                header.functionCallIdentifier,
+                Es2ConfirmOrderResponse::class.java,
+                simEntry.iccid)
+                .flatMap { response ->
 
-        return try {
+                    if (response.matchingId.isNullOrEmpty()) {
+                        return AdapterError("simEntryId == null or empty").left()
+                    }
 
-            if (response.statusLine.statusCode != 200) {
-                logger.error("SM-DP+ 'order-confirm' message to service {} for ICCID {} failed with status code {} (call-id: {})",
-                        nameOfSimVendor,
-                        iccid,
-                        response?.statusLine?.statusCode,
-                        functionCallIdentifier)
-                return NotUpdatedError("SM-DP+ 'order-confirm' to $nameOfSimVendor failed with code: ${response.statusLine.statusCode}")
-                        .left()
-            }
+                    if (simEntry.eid != null && simEntry.eid != response.eid) {
+                        return AdapterError("simEntry.eid = '${simEntry.eid}', response.eid = '${response.eid}'").left()
+                    }
 
-            val status = mapper.readValue(response.entity.content, Es2ConfirmOrderResponse::class.java)
-            val functionExecutionStatus = status.header.functionExecutionStatus
-
-            if (executionWasFailure(functionExecutionStatus)) {
-                logger.error("SM-DP+ 'order-confirm' message to service {} for ICCID {} failed with execution status {} (call-id: {})",
-                        nameOfSimVendor,
-                        iccid,
-                        functionExecutionStatus,
-                        functionCallIdentifier)
-                return NotUpdatedError("SM-DP+ 'order-confirm' to $nameOfSimVendor failed with status: $functionExecutionStatus")
-                        .left()
-            }
-
-            if (status.eid.isNullOrEmpty()) {
-                logger.warn("No EID returned from service {} for ICCID {} for SM-DP+ 'order-confirm' message (call-id: {})",
-                        nameOfSimVendor,
-                        iccid,
-                        functionCallIdentifier)
-            } else {
-
-                val simEntryId = simEntry.id
-                val statusEid = status.eid
-
-                when {
-                    simEntryId == null -> AdapterError("simEntryId == null").left()
-                    statusEid == null -> AdapterError("statusEid == null").left()
-                    else -> dao.setEidOfSimProfile(simEntryId, statusEid)
+                    dao.setSmDpPlusStateAndMatchingId(simEntry.id, SmDpPlusState.RELEASED, response.matchingId!!)
+                    simEntry.right()
                 }
-            }
-
-            if (!eid.isNullOrEmpty() && eid != status.eid) {
-                logger.warn("EID returned from service {} does not match provided EID ({} <> {}) in SM-DP+ 'order-confirm' message (call-id: {})",
-                        nameOfSimVendor,
-                        eid,
-                        status.eid,
-                        functionCallIdentifier)
-            }
-
-            logger.info("SM-DP+ 'order-confirm' message to service {} for ICCID {} completed OK (call-id: {})",
-                    nameOfSimVendor,
-                    iccid,
-                    functionCallIdentifier)
-
-            val simEntryId = simEntry.id
-            val statusMatchingId = status.matchingId
-
-            when {
-                simEntryId == null -> AdapterError("simEntryId == null").left()
-                statusMatchingId == null -> AdapterError("statusMatchingId == null").left()
-                else -> dao.setSmDpPlusStateAndMatchingId(simEntryId, SmDpPlusState.RELEASED, statusMatchingId)
-            }
-        }
-
-        // TODO: This catch should be completely superflous, since the only things that can fail
-        //        above are things happening in this block, which (with the exception of the ddao invocations) calls nothing
-
-        catch (e: Throwable) {
-            logger.error("SM-DP+ 'order-confirm' message to service {} for ICCID {} failed with error: {}",
-                    nameOfSimVendor,
-                    iccid,
-                    e)
-            AdapterError("SM-DP+ 'order-confirm' message to service $nameOfSimVendor failed with error: $e")
-                    .left()
-        }
     }
 
 
