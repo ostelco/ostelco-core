@@ -51,10 +51,17 @@ data class ProfileVendorAdapter(
 
     private val logger by getLogger()
 
-
     //  This class is currently the target of an ongoing refactoring.
+    //   * Figure out what the "metricName" thing above is all about, is it the
+    //     metrics used to track how man profiles are left or something? Check
+    //     it out and document clearly in class comment above.
+    //   * Look into SimInventoryApi.kt, read TODO about design flaw, then figure  out
+    //     how to proceed in that direction.
     //   * See if the code can be made much clearer still by injecting HTTP client
-    //     etc. as class parameters.
+    //     etc. as class parameters.  Perhaps a two-way method is best?  First
+    //     get the data object from the database, then make another object that is used
+    //     to do the actual adaptations based on parameters both from the database, and from
+    //     the application (http clients, DAOs, etc.).
     //   * Then  replace both with invocations to the possibly updated
     //     ES2+ client library (possibly by moving these methods into that library, or wrapping them
     //     around ES2+ client library invocations, we'll see what seems like the best choice when the
@@ -63,8 +70,11 @@ data class ProfileVendorAdapter(
 
     companion object {
 
+        // For logging in the companion object
         private val logger by getLogger()
-        // For payload serializing.
+
+        // For logging serialization/deserialization of JSON serialized ES2+
+        // payloads.
         private val mapper = jacksonObjectMapper()
 
         private fun <T> buildEs2plusRequest(endpoint: String, esplusOrderName: String, payload: T): HttpUriRequest {
@@ -88,7 +98,7 @@ data class ProfileVendorAdapter(
                 remoteServiceName: String,
                 functionCallIdentifier: String,
                 valueType: Class<T>,
-                iccid: String,
+                iccids: String,
                 treatAsPing: Boolean = false): Either<SimManagerError, T> {
             return try {
                 return httpClient.execute(request).use { httpResponse ->
@@ -96,7 +106,7 @@ data class ProfileVendorAdapter(
                         200 -> {
                             val response = mapper.readValue(httpResponse.entity.content, valueType)
                             if (executionWasFailure(status = response.myHeader.functionExecutionStatus)) {
-                                var msg = "SM-DP+ '$es2CommandName' message to service $remoteServiceName for ICCID $iccid failed with execution status ${response.myHeader.functionExecutionStatus} (call-id: ${functionCallIdentifier})"
+                                var msg = "SM-DP+ '$es2CommandName' message to service $remoteServiceName for ICCID $iccids failed with execution status ${response.myHeader.functionExecutionStatus} (call-id: ${functionCallIdentifier})"
                                 logger.error(msg)
                                 NotUpdatedError(msg, pingOk = treatAsPing).left()
                             } else {
@@ -104,14 +114,14 @@ data class ProfileVendorAdapter(
                             }
                         }
                         else -> {
-                            var msg = "SM-DP+ '$es2CommandName' message to service $remoteServiceName for ICCID $iccid failed with status code ${httpResponse.statusLine.statusCode} (call-id: ${functionCallIdentifier})"
+                            var msg = "SM-DP+ '$es2CommandName' message to service $remoteServiceName for ICCID $iccids failed with status code ${httpResponse.statusLine.statusCode} (call-id: ${functionCallIdentifier})"
                             logger.error(msg)
                             NotUpdatedError(msg, pingOk = treatAsPing).left()
                         }
                     }
                 }
             } catch (e: Throwable) {  // TODO: Is this even necessary?
-                val msg = "SM-DP+ 'order-download' message to service $remoteServiceName for ICCID $iccid."
+                val msg = "SM-DP+ 'order-download' message to service $remoteServiceName for ICCID $iccids."
                 logger.error(msg, e)
                 AdapterError("${msg} failed with error: $e")
                         .left()
@@ -209,7 +219,6 @@ data class ProfileVendorAdapter(
                 }
     }
 
-
     /**
      * Downloads the SM-DP+ 'profile status' information for an ICCID from
      * a SM-DP+ service.
@@ -253,7 +262,6 @@ data class ProfileVendorAdapter(
                                 iccidList = iccidList.map { IccidListEntry(iccid = it) }
                         ))
 
-
         /// Pretty print version of ICCID list to
         val iccids = iccidList.joinToString(prefix = "[", postfix = "]")
         val functionCallIdentifier = header.functionCallIdentifier
@@ -277,7 +285,6 @@ data class ProfileVendorAdapter(
                         NotFoundError("No information found for ICCID $iccids in SM-DP+ 'profile-status' message to service ${config.name}",
                                 pingOk = true)
                                 .left()
-
                 }
     }
 
@@ -300,7 +307,6 @@ data class ProfileVendorAdapter(
                     .flatMap {
                         confirmOrder(httpClient, config, dao, eid, it)
                     }
-
 
     /**
      * A dummy ICCID. May or may notreturn a valid profile from any HSS or SM-DP+, but is

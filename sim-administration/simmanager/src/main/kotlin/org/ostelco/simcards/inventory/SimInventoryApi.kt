@@ -128,6 +128,12 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                             simEntry.right()
                     }
 
+    // TODO: Design flaw! This thing shouldn't return a pair, it should return an object that can actually
+    //       do something useful.  That will be the target of refactoring r.s.n.
+    //       The _best_ thing to do, would be to rename the entry in the database as ProfileVendor,
+    //       let the new item that is generated (replacing the pair) be called ProfileVendorAdapter,
+    //       and then remove most of the parameters for the methods of that class.  That will simplify logic
+    //       and permit removal of a sizable chunk of code, so it seems like  good refactoring to attempt.
     private fun getProfileVendorAdapterAndConfig(simEntry: SimEntry): Either<SimManagerError, Pair<ProfileVendorAdapter, ProfileVendorConfig>> =
             dao.getProfileVendorAdapterById(simEntry.profileVendorId)
                     .flatMap { profileVendorAdapter ->
