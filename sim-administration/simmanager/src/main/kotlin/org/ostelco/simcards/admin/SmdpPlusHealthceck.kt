@@ -58,6 +58,7 @@ class SmdpPlusHealthceck(
      */
     private fun checkIfSmdpPlusIsUp(): Boolean {
 
+        // TODO: Fix the control flow of this method. As it is it too complex.  Not at all obvious.
         try {
             return IO {
                 Either.monad<SimManagerError>().binding {
@@ -72,15 +73,18 @@ class SmdpPlusHealthceck(
                         logger.info("Processing vendor: $profileVendor")
                         val currentConfig: ProfileVendorConfig? =
                                 profileVendorConfigList.firstOrNull { it.name == profileVendor.name }
+
                         if (currentConfig == null) {
-                            logger.error("Could not find config for profile vendor '${profileVendor.name}' while attempting to ping remote SM-DP+ adapter")
+                            val msg = "Could not find config for profile vendor '${profileVendor.name}' while attempting to ping remote SM-DP+ adapter"
+                            logger.error(msg)
+                            throw RuntimeException(msg) // TODO: I really dont like this style of coding.
                         }
 
                         // This isn't working very well in the acceptance tests, so we need to log a little.
                         logger.info("About to ping config: $currentConfig")
                         val pingResult = profileVendor.ping(
                                 httpClient = httpClient,
-                                config = currentConfig!!
+                                config = currentConfig
                         )
 
                         // If this was an error, but of an acceptable ("pingOk" == true) kind, meaning that
@@ -92,6 +96,7 @@ class SmdpPlusHealthceck(
                                 continue@loopOverAllProfileVendors
                             } else {
                                 logger.error("Could not reach SM-DP+ via HTTP PING:", pingResult)
+                                throw RuntimeException(msg) // TODO: I really dont like this style of coding.
                             }
                             is Either.Right -> {
                             }
@@ -103,6 +108,8 @@ class SmdpPlusHealthceck(
                     }
                 }.fix()
             }.unsafeRunSync().isRight()
+
+            // TODO: Maybe it isn't necessary with the catch here, since we'e already in an arrow IO thingy that can handle that already. Check the semantics and simplify if possible.
         } catch (t: Throwable) {
             return false
         }
