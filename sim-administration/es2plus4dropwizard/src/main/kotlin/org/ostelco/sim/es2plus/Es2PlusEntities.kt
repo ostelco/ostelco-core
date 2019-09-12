@@ -77,7 +77,7 @@ data class Es2PlusDownloadOrder(
 data class Es2DownloadOrderResponse(
         @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader(),
         @JsonProperty("iccid") val iccid: String? = null
-): EsResponse(header)
+): Es2Response(header)
 
 
 ///
@@ -126,7 +126,7 @@ data class Es2ProfileStatusResponse(
         @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader(),
         @JsonProperty("profileStatusList") val profileStatusList: List<ProfileStatus>? = listOf(),
         @JsonProperty("completionTimestamp") val completionTimestamp: String? = getNowAsDatetime()
-)
+): Es2Response(myHeader = header)
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ProfileStatus(
@@ -156,7 +156,7 @@ data class Es2ConfirmOrder(
         @JsonProperty("releaseFlag") val releaseFlag: Boolean = true
 )
 
-sealed class EsResponse(val myHeader: ES2ResponseHeader)
+sealed class Es2Response(val myHeader: ES2ResponseHeader)
 
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -166,7 +166,7 @@ data class Es2ConfirmOrderResponse(
         @JsonProperty("eid") val eid: String? = null,
         @JsonProperty("matchingId") val matchingId: String? = null,
         @JsonProperty("smdpAddress") val smdsAddress: String? = null
-): EsResponse(myHeader =  header)
+): Es2Response(myHeader =  header)
 
 ///
 ///  The CancelOrder function

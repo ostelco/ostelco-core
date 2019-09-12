@@ -22,7 +22,7 @@ import org.ostelco.sim.es2plus.Es2DownloadOrderResponse
 import org.ostelco.sim.es2plus.Es2PlusDownloadOrder
 import org.ostelco.sim.es2plus.Es2ProfileStatusCommand
 import org.ostelco.sim.es2plus.Es2ProfileStatusResponse
-import org.ostelco.sim.es2plus.EsResponse
+import org.ostelco.sim.es2plus.Es2Response
 import org.ostelco.sim.es2plus.FunctionExecutionStatus
 import org.ostelco.sim.es2plus.FunctionExecutionStatusType
 import org.ostelco.sim.es2plus.IccidListEntry
@@ -86,14 +86,15 @@ data class ProfileVendorAdapter(
         private fun executionWasFailure(status: FunctionExecutionStatus) =
                 status.status != FunctionExecutionStatusType.ExecutedSuccess
 
-        fun <T : EsResponse> executeRequest(
+        fun <T : Es2Response> executeRequest(
                 es2CommandName: String,
                 httpClient: CloseableHttpClient,
                 request: HttpUriRequest,
                 remoteServiceName: String,
                 functionCallIdentifier: String,
                 valueType: Class<T>,
-                iccid: String): Either<SimManagerError, T> {
+                iccid: String,
+                treatAsPing: Boolean = false): Either<SimManagerError, T> {
             return try {
                 return httpClient.execute(request).use { httpResponse ->
                     when (httpResponse.statusLine.statusCode) {
@@ -102,7 +103,7 @@ data class ProfileVendorAdapter(
                             if (executionWasFailure(status = response.myHeader.functionExecutionStatus)) {
                                 var msg = "SM-DP+ '$es2CommandName' message to service $remoteServiceName for ICCID $iccid failed with execution status ${response.myHeader.functionExecutionStatus} (call-id: ${functionCallIdentifier})"
                                 logger.error(msg)
-                                NotUpdatedError(msg).left()
+                                NotUpdatedError(msg, pingOk = treatAsPing).left()
                             } else {
                                 response.right()
                             }
@@ -110,7 +111,7 @@ data class ProfileVendorAdapter(
                         else -> {
                             var msg = "SM-DP+ '$es2CommandName' message to service $remoteServiceName for ICCID $iccid failed with status code ${httpResponse.statusLine.statusCode} (call-id: ${functionCallIdentifier})"
                             logger.error(msg)
-                            NotUpdatedError(msg).left()
+                            NotUpdatedError(msg, pingOk = treatAsPing).left()
                         }
                     }
                 }
@@ -203,12 +204,13 @@ data class ProfileVendorAdapter(
                         return AdapterError("simEntryId == null or empty").left()
                     }
 
-                    if (simEntry.eid != null && simEntry.eid != response.eid) {
-                        return AdapterError("simEntry.eid = '${simEntry.eid}', response.eid = '${response.eid}'").left()
-                    }
+                    // TODO: Check if we even care about eid at this point.
+                    //  if (simEntry.eid != null && simEntry.eid != response.eid) {
+                    //      return AdapterError("simEntry.eid = '${simEntry.eid}', response.eid = '${response.eid}'").left()
+                    // }
 
                     dao.setSmDpPlusStateAndMatchingId(simEntry.id, SmDpPlusState.RELEASED, response.matchingId!!)
-                    simEntry.right()
+                    dao.getSimProfileById(simEntry.id) // TODO DO we really want to do this?
                 }
     }
 
@@ -256,59 +258,32 @@ data class ProfileVendorAdapter(
                                 iccidList = iccidList.map { IccidListEntry(iccid = it) }
                         ))
 
+
         /// Pretty print version of ICCID list to
         val iccids = iccidList.joinToString(prefix = "[", postfix = "]")
         val functionCallIdentifier = header.functionCallIdentifier
 
-        return try {
-            httpClient.execute(request).use {
-                when (it.statusLine.statusCode) {
-                    200 -> {
-                        val status = mapper.readValue(it.entity.content, Es2ProfileStatusResponse::class.java)
+        return executeRequest<Es2ProfileStatusResponse>(
+                "getProfileStatus",
+                httpClient,
+                request,
+                config.name,
+                header.functionCallIdentifier,
+                Es2ProfileStatusResponse::class.java,
+                iccids,
+                treatAsPing = true)
+                .flatMap { response ->
 
-                        if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess) {
+                    val profileStatusList = response.profileStatusList
 
-                            logger.error("SM-DP+ 'profile-status' message to service {} for ICCID {} failed with execution status {} (call-id: {})",
-                                    config.name,
-                                    iccids,
-                                    status.header.functionExecutionStatus,
-                                    functionCallIdentifier)
-                            NotUpdatedError("SM-DP+ 'profile-status' to ${config.name} failed with status: ${status.header.functionExecutionStatus}",
-                                    pingOk = true)
-                                    .left()
-
-                        } else {
-                            logger.info("SM-DP+ 'profile-status' message to service {} for ICCID {} completed OK (call-id: {})",
-                                    config.name,
-                                    iccids,
-                                    functionCallIdentifier)
-                            val profileStatusList = status.profileStatusList
-
-                            if (!profileStatusList.isNullOrEmpty())
-                                profileStatusList.right()
-                            else
-                                NotFoundError("No information found for ICCID $iccids in SM-DP+ 'profile-status' message to service ${config.name}",
-                                        pingOk = true)
-                                        .left()
-                        }
-                    }
-                    else -> {
-                        logger.error("SM-DP+ 'profile-status' message to service {} for ICCID {} failed with status code {} (call-id: {})",
-                                config.name,
-                                iccids,
-                                it.statusLine.statusCode,
-                                functionCallIdentifier)
-                        NotUpdatedError("SM-DP+ 'order-confirm' to ${config.name} failed with code: ${it.statusLine.statusCode}")
+                    if (!profileStatusList.isNullOrEmpty())
+                        profileStatusList.right()
+                    else
+                        NotFoundError("No information found for ICCID $iccids in SM-DP+ 'profile-status' message to service ${config.name}",
+                                pingOk = true)
                                 .left()
-                    }
+
                 }
-            }
-        } catch (e: Exception) {
-            logger.error("SM-DP+ 'profile-status' message to service ${config.name} via endpoint '${config.getEndpoint()}' for ICCID ${iccids} failed with error.",
-                    e)
-            AdapterError("SM-DP+ 'profile-status' message to service ${config.name} failed with error: $e")
-                    .left()
-        }
     }
 
     /**
