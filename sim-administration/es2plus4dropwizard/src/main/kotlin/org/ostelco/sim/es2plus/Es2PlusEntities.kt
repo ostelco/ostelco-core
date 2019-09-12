@@ -71,12 +71,14 @@ data class Es2PlusDownloadOrder(
         @JsonProperty("profileType") val profileType: String? = null
 )
 
+sealed class EsResponse(val myHeader: ES2ResponseHeader)
+
 @JsonSchema("ES2+DownloadOrder-response")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Es2DownloadOrderResponse(
         @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader(),
         @JsonProperty("iccid") val iccid: String? = null
-)
+): EsResponse(header)
 
 
 ///
