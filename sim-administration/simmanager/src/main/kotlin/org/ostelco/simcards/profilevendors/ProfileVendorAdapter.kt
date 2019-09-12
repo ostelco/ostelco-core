@@ -53,11 +53,6 @@ data class ProfileVendorAdapter(
 
 
     //  This class is currently the target of an ongoing refactoring.
-    //   * First refactor getProfileStatus, confirmOrder and downloadOrder extensively,
-    //     to ensure that any true differences stand out clearly, and repeated code
-    //     is kept elsewhere.   Make the code _very_clear.
-    //   * Incredibly important, but only apparent after several rounds of initial refactoring:
-    //         => Make the control flow obviously clear!
     //   * See if the code can be made much clearer still by injecting HTTP client
     //     etc. as class parameters.
     //   * Then  replace both with invocations to the possibly updated
