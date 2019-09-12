@@ -50,8 +50,7 @@ data class ProfileVendorAdapter(
 
     private val logger by getLogger()
 
-    // For payload serializing.
-    private val mapper = jacksonObjectMapper()
+
 
     //  This class is currently the target of an ongoing refactoring.
     //   * First refactor confirmOrder and downloadOrder extensively,
@@ -65,15 +64,20 @@ data class ProfileVendorAdapter(
     //     refactoring has progressed a little more).
     //   * Ensure that the protocol is extensively unit tested.
 
-    private fun <T> buildEs2plusRequest(endpoint: String, esplusOrderName: String, payload: T): HttpUriRequest {
-        val payloadString = mapper.writeValueAsString(payload)
-        return RequestBuilder.post()
-                .setUri("${endpoint}/gsma/rsp2/es2plus/${esplusOrderName}")
-                .setHeader("User-Agent", "gsma-rsp-lpad")
-                .setHeader("X-Admin-Protocol", "gsma/rsp/v2.0.0")
-                .setHeader("Content-Type", MediaType.APPLICATION_JSON)
-                .setEntity(StringEntity(payloadString))
-                .build()
+    companion object {
+        // For payload serializing.
+        private val mapper = jacksonObjectMapper()
+
+        private fun <T> buildEs2plusRequest(endpoint: String, esplusOrderName: String, payload: T): HttpUriRequest {
+            val payloadString = mapper.writeValueAsString(payload)
+            return RequestBuilder.post()
+                    .setUri("${endpoint}/gsma/rsp2/es2plus/${esplusOrderName}")
+                    .setHeader("User-Agent", "gsma-rsp-lpad")
+                    .setHeader("X-Admin-Protocol", "gsma/rsp/v2.0.0")
+                    .setHeader("Content-Type", MediaType.APPLICATION_JSON)
+                    .setEntity(StringEntity(payloadString))
+                    .build()
+        }
     }
 
     /**
@@ -118,20 +122,49 @@ data class ProfileVendorAdapter(
                                 iccid = simEntry.iccid
                         ))
 
+
+        // TODO: This method should replace parts of the next block, but I didn't dare do that
+        //       substitution before proving that I hadn't screwed up anything else so far.
+        fun executeRequest(request: HttpUriRequest): Either<SimManagerError, Es2DownloadOrderResponse> {
+            return try {
+                return httpClient.execute(request).use { httpResponse ->
+                    when (httpResponse.statusLine.statusCode) {
+                        200 -> {
+                            val response = mapper.readValue(httpResponse.entity.content, Es2DownloadOrderResponse::class.java)
+                            if (executionWasFailure(status = response.header.functionExecutionStatus)) {
+                                var msg = "SM-DP+ 'order-download' message to service ${config.name} for ICCID ${simEntry.iccid} failed with execution status ${response.header.functionExecutionStatus} (call-id: ${header.functionCallIdentifier})"
+                                logger.error(msg)
+                                NotUpdatedError(msg).left()
+                            } else {
+                                response.right()
+                            }
+                        }
+                        else ->  {
+                            var msg = "SM-DP+ 'order-download' message to service ${config.name} for ICCID ${simEntry.iccid} failed with status code ${httpResponse.statusLine.statusCode} (call-id: ${header.functionCallIdentifier})"
+                            logger.error(msg)
+                            NotUpdatedError(msg).left()
+                        }
+                    }
+                }
+            } catch (e: Throwable) {
+                val msg = "SM-DP+ 'order-download' message to service ${config.name} for ICCID ${simEntry.iccid}."
+                logger.error(msg, e)
+                AdapterError("${msg} failed with error: $e")
+                        .left()
+            }
+        }
+
         return try {
             httpClient.execute(request).use {
-                when (it.statusLine.statusCode) {
+                response ->
+                when (response.statusLine.statusCode) {
                     200 -> {
-                        val response = mapper.readValue(it.entity.content, Es2DownloadOrderResponse::class.java)
+                        val response = mapper.readValue(response.entity.content, Es2DownloadOrderResponse::class.java)
 
                         if (executionWasFailure(status = response.header.functionExecutionStatus)) {
-                            logger.error("SM-DP+ 'order-download' message to service {} for ICCID {} failed with execution status {} (call-id: {})",
-                                    config.name,
-                                    simEntry.iccid,
-                                    response.header.functionExecutionStatus,
-                                    header.functionCallIdentifier)
-                            NotUpdatedError("SM-DP+ 'order-download' to ${config.name} failed with status: ${response.header.functionExecutionStatus}")
-                                    .left()
+                            var msg = "SM-DP+ 'order-download' message to service ${config.name} for ICCID ${simEntry.iccid} failed with execution status ${response.header.functionExecutionStatus} (call-id: ${header.functionCallIdentifier})"
+                            logger.error(msg)
+                            NotUpdatedError(msg).left()
                         } else {
                             if (simEntry.id == null) {
                                 NotUpdatedError("simEntry without id.  simEntry=$simEntry").left()
@@ -139,24 +172,18 @@ data class ProfileVendorAdapter(
                                 dao.setSmDpPlusState(simEntry.id, SmDpPlusState.ALLOCATED)
                             }
                         }
-                    }
-                    else -> {
-                        logger.error("SM-DP+ 'order-download' message to service {} for ICCID {} failed with status code {} (call-id: {})",
-                                config.name,
-                                simEntry.iccid,
-                                it.statusLine.statusCode,
-                                header.functionCallIdentifier)
-                        NotUpdatedError("SM-DP+ 'order-download' to ${config.name} failed with code: ${it.statusLine.statusCode}")
+                    } else -> {
+                        val msg = "SM-DP+ 'order-download' message to service ${config.name} for ICCID ${simEntry.iccid} failed with status code ${response.statusLine.statusCode} (call-id: ${header.functionCallIdentifier})"
+                        logger.error(msg)
+                        NotUpdatedError(msg)
                                 .left()
                     }
                 }
             }
         } catch (e: Throwable) {
-            logger.error("SM-DP+ 'order-download' message to service {} for ICCID {} failed with error: {}",
-                    config.name,
-                    simEntry.iccid,
-                    e)
-            AdapterError("SM-DP+ 'order-download' message to service ${config.name} failed with error: $e")
+            val msg = "SM-DP+ 'order-download' message to service ${config.name} for ICCID ${simEntry.iccid}."
+            logger.error(msg, e)
+            AdapterError("${msg} failed with error: $e")
                     .left()
         }
     }
@@ -332,7 +359,6 @@ data class ProfileVendorAdapter(
 
         return try {
             httpClient.execute(request).use {
-
                 when (it.statusLine.statusCode) {
                     200 -> {
                         val status = mapper.readValue(it.entity.content, Es2ProfileStatusResponse::class.java)
