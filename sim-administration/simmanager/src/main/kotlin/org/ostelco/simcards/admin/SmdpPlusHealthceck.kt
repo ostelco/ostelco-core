@@ -96,7 +96,7 @@ class SmdpPlusHealthceck(
                                 continue@loopOverAllProfileVendors
                             } else {
                                 logger.error("Could not reach SM-DP+ via HTTP PING:", pingResult)
-                                throw RuntimeException(msg) // TODO: I really dont like this style of coding.
+                                throw RuntimeException("Could not reach SM-DP+ via HTTP PING: $pingResult") // TODO: I really dont like this style of coding.
                             }
                             is Either.Right -> {
                             }
