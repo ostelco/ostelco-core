@@ -113,6 +113,11 @@ data class ProfileVendorAdapter(
                               dao: SimInventoryDAO,
                               simEntry: SimEntry): Either<SimManagerError, SimEntry> {
 
+
+        if (simEntry.id == null) {
+            return NotUpdatedError("simEntry without id.  simEntry=$simEntry").left()
+        }
+
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = config.requesterIdentifier)
         val request =
@@ -139,7 +144,7 @@ data class ProfileVendorAdapter(
                                 response.right()
                             }
                         }
-                        else ->  {
+                        else -> {
                             var msg = "SM-DP+ 'order-download' message to service ${config.name} for ICCID ${simEntry.iccid} failed with status code ${httpResponse.statusLine.statusCode} (call-id: ${header.functionCallIdentifier})"
                             logger.error(msg)
                             NotUpdatedError(msg).left()
@@ -154,6 +159,13 @@ data class ProfileVendorAdapter(
             }
         }
 
+        return executeRequest(request)
+                .flatMap {
+                    dao.setSmDpPlusState(simEntry.id, SmDpPlusState.ALLOCATED)
+                }
+    }
+
+        /*
         return try {
             httpClient.execute(request).use {
                 response ->
@@ -185,8 +197,8 @@ data class ProfileVendorAdapter(
             logger.error(msg, e)
             AdapterError("${msg} failed with error: $e")
                     .left()
-        }
-    }
+        } */
+
 
     /**
      * Complete the activation of a SIM profile with an external Profile Vendor
