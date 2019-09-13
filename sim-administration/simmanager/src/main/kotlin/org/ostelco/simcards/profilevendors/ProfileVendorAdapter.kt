@@ -91,6 +91,8 @@ data class ProfileVendorAdapter(
         private fun executionWasFailure(status: FunctionExecutionStatus) =
                 status.status != FunctionExecutionStatusType.ExecutedSuccess
 
+
+        // TODO: Future refactoring: Move this code into the ES2PlusClient, more or less.
         fun <T : Es2Response> executeRequest(
                 es2CommandName: String,
                 httpClient: CloseableHttpClient,
@@ -209,13 +211,16 @@ data class ProfileVendorAdapter(
                         return AdapterError("simEntryId == null or empty").left()
                     }
 
-                    // TODO: Check if we even care about eid at this point.
-                    //  if (simEntry.eid != null && simEntry.eid != response.eid) {
-                    //      return AdapterError("simEntry.eid = '${simEntry.eid}', response.eid = '${response.eid}'").left()
-                    // }
+                    // TODO: Perhaps check consistency of eid values at this point.
+                    //       Not  important with current usecases, but possibly
+                    //       in the future.
 
                     dao.setSmDpPlusStateAndMatchingId(simEntry.id, SmDpPlusState.RELEASED, response.matchingId!!)
-                    dao.getSimProfileById(simEntry.id) // TODO DO we really want to do this?
+
+                    // TODO Do we really want to do this?  Do we need the
+                    //      sim entry value as a returnv value?   If we don't then
+                    //      remove the next line.
+                    dao.getSimProfileById(simEntry.id)
                 }
     }
 
@@ -279,12 +284,13 @@ data class ProfileVendorAdapter(
 
                     val profileStatusList = response.profileStatusList
 
-                    if (!profileStatusList.isNullOrEmpty())
+                    if (!profileStatusList.isNullOrEmpty()) {
                         profileStatusList.right()
-                    else
+                    } else {
                         NotFoundError("No information found for ICCID $iccids in SM-DP+ 'profile-status' message to service ${config.name}",
                                 pingOk = true)
                                 .left()
+                    }
                 }
     }
 
