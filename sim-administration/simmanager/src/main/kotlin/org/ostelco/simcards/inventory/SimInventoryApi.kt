@@ -2,10 +2,10 @@ package org.ostelco.simcards.inventory
 
 import arrow.core.Either
 import arrow.core.fix
+import arrow.core.flatMap
 import arrow.core.left
 import arrow.core.right
 import arrow.effects.IO
-import arrow.instances.either.monad.flatMap
 import arrow.instances.either.monad.monad
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.getLogger
@@ -90,9 +90,9 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                     val updatedSimEntry = dao.setProvisionState(simEntry.id, ProvisionState.PROVISIONED)
                             .bind()
 
-                    /* Add 'code' field content.
-                       Original format: LPA:<hostname>:<matching-id>
-                       New format: LPA:1$<endpoint>$<matching-id> */
+                    // TODO: Add 'code' field content.
+                    //   Original format: LPA:<hostname>:<matching-id>
+                    //   New format: LPA:1$<endpoint>$<matching-id> */
                     updatedSimEntry.copy(code = "LPA:1\$${config.es9plusEndpoint}\$${updatedSimEntry.matchingId}")
                 }.fix()
             }.unsafeRunSync()
@@ -149,6 +149,17 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                             NotFoundError("Could not find configuration for SIM profile vendor ${profileVendorAdapter.name}")
                                     .left()
                     }
+
+
+    // TODO: Refactoring target. Replace the above with the below, also extend the below to include http client
+    //       and all the other things we need.
+    private fun getProfileVendorAdapter(simEntry: SimEntry): Either<SimManagerError, ProfileVendorAdapter> =
+            getProfileVendorAdapterAndConfig(simEntry)
+                    .flatMap {
+                        val profileVendorAdapterDatum = it.first
+                        ProfileVendorAdapter(profileVendorAdapterDatum).right() // , it.second)
+                    }
+
 
     private fun getProfileType(hlrName: String, phoneType: String): Either<SimManagerError, String> = config
             .getProfileForPhoneType(phoneType)

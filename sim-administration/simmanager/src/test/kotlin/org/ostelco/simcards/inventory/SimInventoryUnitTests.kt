@@ -131,7 +131,7 @@ class SimInventoryUnitTests {
                 .thenReturn(1L)
         org.mockito.Mockito.`when`(profileVendorAdapterDatum.name)
                 .thenReturn(fakeProfileVendor)
-   
+
         /* DAO. */
         org.mockito.Mockito.`when`(dao.getSimProfileByIccid(fakeIccid1))
                 .thenReturn(fakeSimEntryWithoutMsisdn.right())
