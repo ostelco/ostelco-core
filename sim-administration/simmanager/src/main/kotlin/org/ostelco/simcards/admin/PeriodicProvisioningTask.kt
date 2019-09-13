@@ -23,6 +23,7 @@ import org.ostelco.simcards.inventory.ProvisionState
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SimProfileKeyStatistics
+import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
 import java.io.PrintWriter
 import kotlin.math.min
 
@@ -59,20 +60,23 @@ class PreallocateProfilesTask(
 
     private fun preProvisionSimProfile(hssEntry: HssEntry,
                                        simEntry: SimEntry): Either<SimManagerError, SimEntry> =
-            simInventoryDAO.getProfileVendorAdapterById(simEntry.profileVendorId)
-                    .flatMap { profileVendorAdapter ->
+            simInventoryDAO.getProfileVendorAdapterDatumById(simEntry.profileVendorId)
+                    .flatMap { profileVendorAdapterDatum ->
 
                         val profileVendorConfig: ProfileVendorConfig? = profileVendors.firstOrNull {
-                            it.name == profileVendorAdapter.name
+                            it.name == profileVendorAdapterDatum.name
                         }
+                        
+                        val profileVendorAdapter = ProfileVendorAdapter(profileVendorAdapterDatum)
 
                         when {
                             simEntry.id == null -> SystemError("simEntry.id == null for simEntry = $simEntry").left()
-                            profileVendorConfig == null -> NotFoundError("Failed to find configuration for SIM profile vendor ${profileVendorAdapter.name} " +
+                            profileVendorConfig == null -> NotFoundError("Failed to find configuration for SIM profile vendor ${profileVendorAdapterDatum.name} " +
                                     "and HLR ${hssEntry.name}")
                                     .left()
                             simEntry.hssState == HssState.NOT_ACTIVATED -> {
                                 logger.debug("Preallocating (HSS not activated) for HSS with ID/metricName ${hssEntry.id}/${hssEntry.name} simEntry with ICCID=${simEntry.iccid}")
+
 
                                 profileVendorAdapter.activate(
                                         httpClient = httpClient,

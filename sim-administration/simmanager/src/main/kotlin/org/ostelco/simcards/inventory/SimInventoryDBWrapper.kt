@@ -3,7 +3,7 @@ package org.ostelco.simcards.inventory
 import arrow.core.Either
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.hss.HssEntry
-import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
+import org.ostelco.simcards.profilevendors.ProfileVendorAdapterDatum
 
 
 interface SimInventoryDBWrapper {
@@ -20,7 +20,7 @@ interface SimInventoryDBWrapper {
 
     fun findNextReadyToUseSimProfileForHss(hssId: Long, profile: String): Either<SimManagerError, SimEntry>
 
-    fun getAllProfileVendors(): Either<SimManagerError, List<ProfileVendorAdapter>>
+    fun getAllProfileVendors(): Either<SimManagerError, List<ProfileVendorAdapterDatum>>
 
     /**
      * Sets the EID value of a SIM entry (profile).
@@ -100,11 +100,11 @@ interface SimInventoryDBWrapper {
 
     fun getHssEntryById(id: Long): Either<SimManagerError, HssEntry>
 
-    fun addProfileVendorAdapter(name: String): Either<SimManagerError, Int>
+    fun addProfileVendorDatumAdapter(name: String): Either<SimManagerError, Int>
 
-    fun getProfileVendorAdapterByName(name: String): Either<SimManagerError, ProfileVendorAdapter>
+    fun getProfileVendorAdapterDatumByName(name: String): Either<SimManagerError, ProfileVendorAdapterDatum>
 
-    fun getProfileVendorAdapterById(id: Long): Either<SimManagerError, ProfileVendorAdapter>
+    fun getProfileVendorAdapterDatumById(id: Long): Either<SimManagerError, ProfileVendorAdapterDatum>
 
     /*
      * Batch handling.

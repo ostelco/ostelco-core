@@ -11,7 +11,7 @@ import org.ostelco.prime.simmanager.NotFoundError
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.prime.simmanager.SystemError
 import org.ostelco.simcards.hss.HssEntry
-import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
+import org.ostelco.simcards.profilevendors.ProfileVendorAdapterDatum
 import org.postgresql.util.PSQLException
 
 
@@ -156,23 +156,25 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
                 db.getHssEntryById(id)
             }
 
-    override fun addProfileVendorAdapter(name: String): Either<SimManagerError, Int> =
+    override fun addProfileVendorDatumAdapter(name: String): Either<SimManagerError, Int> =
             either {
                 db.addProfileVendorAdapter(name)
             }
 
-
-    override fun getAllProfileVendors(): Either<SimManagerError, List<ProfileVendorAdapter>> =
+    override fun getAllProfileVendors(): Either<SimManagerError, List<ProfileVendorAdapterDatum>> =
+            // TODO: Bug! An empty list is a perfectly valid result, not a error, is it OK
+            //       to return that result as an error (similar arguments apply to the
+            //       methods below).
             either(NotFoundError("Found no SIM profile vendors.")) {
                 db.getAllProfileVendors()
             }
 
-    override fun getProfileVendorAdapterByName(name: String): Either<SimManagerError, ProfileVendorAdapter> =
+    override fun getProfileVendorAdapterDatumByName(name: String): Either<SimManagerError, ProfileVendorAdapterDatum> =
             either(NotFoundError("Found no SIM profile vendor with metricName $name")) {
                 db.getProfileVendorAdapterByName(name)
             }
 
-    override fun getProfileVendorAdapterById(id: Long): Either<SimManagerError, ProfileVendorAdapter> =
+    override fun getProfileVendorAdapterDatumById(id: Long): Either<SimManagerError, ProfileVendorAdapterDatum> =
             either(NotFoundError("Found no SIM profile vendor with id $id")) {
                 db.getProfileVendorAdapterById(id)
             }

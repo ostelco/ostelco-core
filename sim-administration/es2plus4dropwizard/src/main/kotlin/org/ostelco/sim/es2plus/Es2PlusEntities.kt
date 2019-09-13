@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.ostelco.jsonschema.JsonSchema
 import org.ostelco.sim.es2plus.ES2PlusClient.Companion.getNowAsDatetime
-import java.util.UUID
 
 
 ///
@@ -23,7 +22,7 @@ import java.util.UUID
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ES2RequestHeader(
         @JsonProperty("functionRequesterIdentifier") val functionRequesterIdentifier: String,
-        @JsonProperty("functionCallIdentifier") val functionCallIdentifier: String = UUID.randomUUID().toString()
+        @JsonProperty("functionCallIdentifier") val functionCallIdentifier: String = ES2PlusClient.newRandomFunctionCallIdentifier()
 )
 
 ///
@@ -72,12 +71,13 @@ data class Es2PlusDownloadOrder(
         @JsonProperty("profileType") val profileType: String? = null
 )
 
+
 @JsonSchema("ES2+DownloadOrder-response")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Es2DownloadOrderResponse(
         @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader(),
         @JsonProperty("iccid") val iccid: String? = null
-)
+): Es2Response(header)
 
 
 ///
@@ -126,7 +126,7 @@ data class Es2ProfileStatusResponse(
         @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader(),
         @JsonProperty("profileStatusList") val profileStatusList: List<ProfileStatus>? = listOf(),
         @JsonProperty("completionTimestamp") val completionTimestamp: String? = getNowAsDatetime()
-)
+): Es2Response(myHeader = header)
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ProfileStatus(
@@ -153,8 +153,11 @@ data class Es2ConfirmOrder(
         @JsonProperty("matchingId") val matchingId: String? = null,
         @JsonProperty("confirmationCode") val confirmationCode: String? = null,
         @JsonProperty("smdpAddress") val smdpAddress: String? = null,
-        @JsonProperty("releaseFlag") val releaseFlag: Boolean
+        @JsonProperty("releaseFlag") val releaseFlag: Boolean = true
 )
+
+sealed class Es2Response(val myHeader: ES2ResponseHeader)
+
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonSchema("ES2+ConfirmOrder-response")
@@ -163,7 +166,7 @@ data class Es2ConfirmOrderResponse(
         @JsonProperty("eid") val eid: String? = null,
         @JsonProperty("matchingId") val matchingId: String? = null,
         @JsonProperty("smdpAddress") val smdsAddress: String? = null
-)
+): Es2Response(myHeader =  header)
 
 ///
 ///  The CancelOrder function

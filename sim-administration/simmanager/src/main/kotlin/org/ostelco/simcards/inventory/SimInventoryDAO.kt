@@ -204,7 +204,7 @@ class SimInventoryDAO(private val db: SimInventoryDBWrapperImpl) : SimInventoryD
     fun permitVendorForHssByNames(profileVendor: String, hssName: String): Either<SimManagerError, Boolean> =
             IO {
                 Either.monad<SimManagerError>().binding {
-                    val profileVendorAdapter = getProfileVendorAdapterByName(profileVendor)
+                    val profileVendorAdapter = getProfileVendorAdapterDatumByName(profileVendor)
                             .bind()
                     val hlrAdapter = getHssEntryByName(hssName)
                             .bind()

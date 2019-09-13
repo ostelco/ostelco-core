@@ -10,7 +10,7 @@ import org.jdbi.v3.sqlobject.statement.SqlQuery
 import org.jdbi.v3.sqlobject.statement.SqlUpdate
 import org.jdbi.v3.sqlobject.transaction.Transaction
 import org.ostelco.simcards.hss.HssEntry
-import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
+import org.ostelco.simcards.profilevendors.ProfileVendorAdapterDatum
 import java.sql.ResultSet
 
 /**
@@ -171,15 +171,15 @@ interface SimInventoryDB {
     fun addProfileVendorAdapter(name: String): Int
 
     @SqlQuery("""SELECT * FROM profile_vendor_adapters""")
-    fun getAllProfileVendors(): List<ProfileVendorAdapter>
+    fun getAllProfileVendors(): List<ProfileVendorAdapterDatum>
 
     @SqlQuery("""SELECT * FROM profile_vendor_adapters
                        WHERE name = :name""")
-    fun getProfileVendorAdapterByName(name: String): ProfileVendorAdapter?
+    fun getProfileVendorAdapterByName(name: String): ProfileVendorAdapterDatum?
 
     @SqlQuery("""SELECT * FROM profile_vendor_adapters
                       WHERE id = :id""")
-    fun getProfileVendorAdapterById(id: Long): ProfileVendorAdapter?
+    fun getProfileVendorAdapterById(id: Long): ProfileVendorAdapterDatum?
 
     /**
      * Batch handling.

@@ -68,7 +68,6 @@ func calculateChecksum(luhnString string, double bool) int {
 
 		checksum += n
 	}
-
 	return checksum
 }
 
@@ -99,13 +98,20 @@ func generateCsvPayload(batch Batch) string {
 }
 
 func isICCID(s string) bool {
-	match, _ := regexp.MatchString("^\\d{18}\\d?$", s)
+	match, _ := regexp.MatchString("^\\d{18}\\d?\\d?$", s)
 	return match
 }
 
 func checkICCIDSyntax(name string, potentialIccid string) {
 	if !isICCID(potentialIccid) {
-		log.Fatal("Not a valid %s ICCID: '%s'.  Must be 18 or 19 digits.", name, potentialIccid)
+		log.Fatalf("Not a valid %s ICCID: '%s'.  Must be 18 or 19 (or 20) digits (_including_ luhn checksum).", name, potentialIccid)
+	}
+
+	stringWithoutLuhnChecksum := iccidWithoutLuhnChecksum(potentialIccid)
+	controlDigit := generateControlDigit(stringWithoutLuhnChecksum)
+	checksummedCandidate := fmt.Sprintf("%s%d", stringWithoutLuhnChecksum, controlDigit)
+	if checksummedCandidate != potentialIccid {
+		log.Fatalf("Not a valid  ICCID: '%s'. Expected luhn checksom '%d'",potentialIccid, controlDigit )
 	}
 }
 
@@ -116,7 +122,7 @@ func isIMSI(s string) bool {
 
 func checkIMSISyntax(name string, potentialIMSI string) {
 	if !isIMSI(potentialIMSI) {
-		log.Fatal("Not a valid %s IMSI: '%s'.  Must be 15 digits.", name, potentialIMSI)
+		log.Fatalf("Not a valid %s IMSI: '%s'.  Must be 15 digits.", name, potentialIMSI)
 	}
 }
 
@@ -127,7 +133,7 @@ func isMSISDN(s string) bool {
 
 func checkMSISDNSyntax(name string, potentialMSISDN string) {
 	if !isMSISDN(potentialMSISDN) {
-		log.Fatal("Not a valid %s MSISDN: '%s'.  Must be non-empty sequence of digits.", name, potentialMSISDN)
+		log.Fatalf("Not a valid %s MSISDN: '%s'.  Must be non-empty sequence of digits.", name, potentialMSISDN)
 	}
 }
 
@@ -162,11 +168,7 @@ type Batch struct {
 }
 
 func iccidWithoutLuhnChecksum(s string) string {
-	if len(s) == 19 {
-		return trimSuffix(s, 1)
-	} else {
-		return s
-	}
+	return trimSuffix(s, 1)
 }
 
 func trimSuffix(s string, suffixLen int) string {
@@ -177,7 +179,7 @@ func parseCommandLine() Batch {
 	//
 	// Set up command line parsing
 	//
-	firstIccid := flag.String("first-iccid",
+	 firstIccid := flag.String("first-iccid",
 		"not  a valid iccid",
 		"An 18 or 19 digit long string.  The 19-th digit being a luhn luhnChecksum digit, if present")
 	lastIccid := flag.String("last-iccid",
@@ -232,17 +234,23 @@ func parseCommandLine() Batch {
 
 	// Convert to integers, and get lengths
 
+	log.Println("firstmsisdn =", *firstMsisdn)
+	log.Println("lastmsisdn =", *lastMsisdn)
+
 	var firstMsisdnInt, _ = Atoi(*firstMsisdn)
 	var lastMsisdnInt, _ = Atoi(*lastMsisdn)
-	var msisdnLen = lastMsisdnInt - firstMsisdnInt
+	var msisdnLen =  lastMsisdnInt - firstMsisdnInt + 1
+	if msisdnLen < 0 {
+		msisdnLen = - msisdnLen
+	}
 
 	var firstImsiInt, _ = Atoi(*firstIMSI)
 	var lastImsiInt, _ = Atoi(*lastIMSI)
-	var imsiLen = lastImsiInt - firstImsiInt
+	var imsiLen = lastImsiInt - firstImsiInt + 1
 
 	var firstIccidInt, _ = Atoi(iccidWithoutLuhnChecksum(*firstIccid))
 	var lastIccidInt, _ = Atoi(iccidWithoutLuhnChecksum(*lastIccid))
-	var iccidlen = lastIccidInt - firstIccidInt
+	var iccidlen = lastIccidInt - firstIccidInt + 1
 
 	// Validate that lengths of sequences are equal in absolute
 	// values.
