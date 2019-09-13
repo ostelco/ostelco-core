@@ -20,7 +20,7 @@ import org.ostelco.simcards.admin.ProfileVendorConfig
 import org.ostelco.simcards.admin.SimAdministrationConfiguration
 import org.ostelco.simcards.admin.SwtHssConfig
 import org.ostelco.simcards.hss.HssEntry
-import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
+import org.ostelco.simcards.profilevendors.ProfileVendorAdapterDatum
 import java.io.InputStream
 import java.util.*
 import javax.ws.rs.client.Entity
@@ -36,7 +36,7 @@ class SimInventoryUnitTests {
 
         private val dao = mock(SimInventoryDAO::class.java)
         private val hssEntry = mock(HssEntry::class.java)
-        private val profileVendorAdapter = mock(ProfileVendorAdapter::class.java)
+        private val profileVendorAdapter = mock(ProfileVendorAdapterDatum::class.java)
         private val httpClient = mock(CloseableHttpClient::class.java)
 
         @JvmField

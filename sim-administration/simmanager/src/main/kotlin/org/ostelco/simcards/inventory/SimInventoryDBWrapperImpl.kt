@@ -11,7 +11,7 @@ import org.ostelco.prime.simmanager.NotFoundError
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.prime.simmanager.SystemError
 import org.ostelco.simcards.hss.HssEntry
-import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
+import org.ostelco.simcards.profilevendors.ProfileVendorAdapterDatum
 import org.postgresql.util.PSQLException
 
 
@@ -161,7 +161,7 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
                 db.addProfileVendorAdapter(name)
             }
 
-    override fun getAllProfileVendors(): Either<SimManagerError, List<ProfileVendorAdapter>> =
+    override fun getAllProfileVendors(): Either<SimManagerError, List<ProfileVendorAdapterDatum>> =
             // TODO: Bug! An empty list is a perfectly valid result, not a error, is it OK
             //       to return that result as an error (similar arguments apply to the
             //       methods below).
@@ -169,12 +169,12 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
                 db.getAllProfileVendors()
             }
 
-    override fun getProfileVendorAdapterByName(name: String): Either<SimManagerError, ProfileVendorAdapter> =
+    override fun getProfileVendorAdapterByName(name: String): Either<SimManagerError, ProfileVendorAdapterDatum> =
             either(NotFoundError("Found no SIM profile vendor with metricName $name")) {
                 db.getProfileVendorAdapterByName(name)
             }
 
-    override fun getProfileVendorAdapterById(id: Long): Either<SimManagerError, ProfileVendorAdapter> =
+    override fun getProfileVendorAdapterById(id: Long): Either<SimManagerError, ProfileVendorAdapterDatum> =
             either(NotFoundError("Found no SIM profile vendor with id $id")) {
                 db.getProfileVendorAdapterById(id)
             }

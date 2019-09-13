@@ -15,7 +15,7 @@ import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.sim.es2plus.ProfileStatus
 import org.ostelco.simcards.admin.ProfileVendorConfig
 import org.ostelco.simcards.admin.SimAdministrationConfiguration
-import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
+import org.ostelco.simcards.profilevendors.ProfileVendorAdapterDatum
 import java.io.InputStream
 
 
@@ -134,7 +134,7 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
     //       let the new item that is generated (replacing the pair) be called ProfileVendorAdapter,
     //       and then remove most of the parameters for the methods of that class.  That will simplify logic
     //       and permit removal of a sizable chunk of code, so it seems like  good refactoring to attempt.
-    private fun getProfileVendorAdapterAndConfig(simEntry: SimEntry): Either<SimManagerError, Pair<ProfileVendorAdapter, ProfileVendorConfig>> =
+    private fun getProfileVendorAdapterAndConfig(simEntry: SimEntry): Either<SimManagerError, Pair<ProfileVendorAdapterDatum, ProfileVendorConfig>> =
             dao.getProfileVendorAdapterById(simEntry.profileVendorId)
                     .flatMap { profileVendorAdapter ->
                         val config: ProfileVendorConfig? = config.profileVendors.firstOrNull {
