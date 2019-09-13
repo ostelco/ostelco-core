@@ -100,11 +100,11 @@ interface SimInventoryDBWrapper {
 
     fun getHssEntryById(id: Long): Either<SimManagerError, HssEntry>
 
-    fun addProfileVendorAdapter(name: String): Either<SimManagerError, Int>
+    fun addProfileVendorDatumAdapter(name: String): Either<SimManagerError, Int>
 
-    fun getProfileVendorAdapterByName(name: String): Either<SimManagerError, ProfileVendorAdapterDatum>
+    fun getProfileVendorAdapterDatumByName(name: String): Either<SimManagerError, ProfileVendorAdapterDatum>
 
-    fun getProfileVendorAdapterById(id: Long): Either<SimManagerError, ProfileVendorAdapterDatum>
+    fun getProfileVendorAdapterDatumById(id: Long): Either<SimManagerError, ProfileVendorAdapterDatum>
 
     /*
      * Batch handling.

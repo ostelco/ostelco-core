@@ -156,7 +156,7 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
                 db.getHssEntryById(id)
             }
 
-    override fun addProfileVendorAdapter(name: String): Either<SimManagerError, Int> =
+    override fun addProfileVendorDatumAdapter(name: String): Either<SimManagerError, Int> =
             either {
                 db.addProfileVendorAdapter(name)
             }
@@ -169,12 +169,12 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
                 db.getAllProfileVendors()
             }
 
-    override fun getProfileVendorAdapterByName(name: String): Either<SimManagerError, ProfileVendorAdapterDatum> =
+    override fun getProfileVendorAdapterDatumByName(name: String): Either<SimManagerError, ProfileVendorAdapterDatum> =
             either(NotFoundError("Found no SIM profile vendor with metricName $name")) {
                 db.getProfileVendorAdapterByName(name)
             }
 
-    override fun getProfileVendorAdapterById(id: Long): Either<SimManagerError, ProfileVendorAdapterDatum> =
+    override fun getProfileVendorAdapterDatumById(id: Long): Either<SimManagerError, ProfileVendorAdapterDatum> =
             either(NotFoundError("Found no SIM profile vendor with id $id")) {
                 db.getProfileVendorAdapterById(id)
             }

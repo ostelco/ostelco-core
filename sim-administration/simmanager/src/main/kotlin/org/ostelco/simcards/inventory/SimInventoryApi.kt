@@ -15,6 +15,7 @@ import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.sim.es2plus.ProfileStatus
 import org.ostelco.simcards.admin.ProfileVendorConfig
 import org.ostelco.simcards.admin.SimAdministrationConfiguration
+import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
 import org.ostelco.simcards.profilevendors.ProfileVendorAdapterDatum
 import java.io.InputStream
 
@@ -60,7 +61,9 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                     .flatMap { simEntry ->
                         getProfileVendorAdapterAndConfig(simEntry)
                                 .flatMap {
-                                    it.first.getProfileStatus(httpClient, it.second, iccid)
+                                    val profileVendorAdapterDatum = it.first
+                                    val provileVendorCondfig = it.second
+                                    ProfileVendorAdapter(profileVendorAdapterDatum).getProfileStatus(httpClient, provileVendorCondfig, iccid)
                                 }
                     }
 
@@ -100,7 +103,7 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                     initialHssState: HssState): Either<SimManagerError, SimImportBatch> =
             IO {
                 Either.monad<SimManagerError>().binding {
-                    val profileVendorAdapter = dao.getProfileVendorAdapterByName(simVendor)
+                    val profileVendorAdapter = dao.getProfileVendorAdapterDatumByName(simVendor)
                             .bind()
                     val hlrAdapter = dao.getHssEntryByName(hlrName)
                             .bind()
@@ -135,7 +138,7 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
     //       and then remove most of the parameters for the methods of that class.  That will simplify logic
     //       and permit removal of a sizable chunk of code, so it seems like  good refactoring to attempt.
     private fun getProfileVendorAdapterAndConfig(simEntry: SimEntry): Either<SimManagerError, Pair<ProfileVendorAdapterDatum, ProfileVendorConfig>> =
-            dao.getProfileVendorAdapterById(simEntry.profileVendorId)
+            dao.getProfileVendorAdapterDatumById(simEntry.profileVendorId)
                     .flatMap { profileVendorAdapter ->
                         val config: ProfileVendorConfig? = config.profileVendors.firstOrNull {
                             it.name == profileVendorAdapter.name

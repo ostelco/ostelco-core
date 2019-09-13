@@ -9,6 +9,7 @@ import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.inventory.SimInventoryDAO
+import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -69,20 +70,22 @@ class SmdpPlusHealthceck(
 
                     val profileVendorAdaptorList = vendorsRaw.bind()
 
-                    loopOverAllProfileVendors@ for (profileVendor in profileVendorAdaptorList) {
-                        logger.info("Processing vendor: $profileVendor")
+                    loopOverAllProfileVendors@ for (vendorAdapterDatum in profileVendorAdaptorList) {
+                        logger.info("Processing vendor: $vendorAdapterDatum")
                         val currentConfig: ProfileVendorConfig? =
-                                profileVendorConfigList.firstOrNull { it.name == profileVendor.name }
+                                profileVendorConfigList.firstOrNull { it.name == vendorAdapterDatum.name }
 
                         if (currentConfig == null) {
-                            val msg = "Could not find config for profile vendor '${profileVendor.name}' while attempting to ping remote SM-DP+ adapter"
+                            val msg = "Could not find config for profile vendor '${vendorAdapterDatum.name}' while attempting to ping remote SM-DP+ adapter"
                             logger.error(msg)
                             throw RuntimeException(msg) // TODO: I really dont like this style of coding.
                         }
 
+                        val vendorAdapter = ProfileVendorAdapter(vendorAdapterDatum)
+
                         // This isn't working very well in the acceptance tests, so we need to log a little.
                         logger.info("About to ping config: $currentConfig")
-                        val pingResult = profileVendor.ping(
+                        val pingResult = vendorAdapter.ping(
                                 httpClient = httpClient,
                                 config = currentConfig
                         )

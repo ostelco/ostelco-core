@@ -172,7 +172,7 @@ class SimAdministrationTest {
     private fun presetTables() {
         val dao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().getDAO()
 
-        dao.addProfileVendorAdapter(profileVendor)
+        dao.addProfileVendorDatumAdapter(profileVendor)
         dao.addHssEntry(hssName)
         dao.permitVendorForHssByNames(profileVendor = profileVendor, hssName = hssName)
     }

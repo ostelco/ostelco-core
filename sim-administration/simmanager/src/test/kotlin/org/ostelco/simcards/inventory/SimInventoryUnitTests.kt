@@ -36,7 +36,7 @@ class SimInventoryUnitTests {
 
         private val dao = mock(SimInventoryDAO::class.java)
         private val hssEntry = mock(HssEntry::class.java)
-        private val profileVendorAdapter = mock(ProfileVendorAdapterDatum::class.java)
+        private val profileVendorAdapterDatum = mock(ProfileVendorAdapterDatum::class.java)
         private val httpClient = mock(CloseableHttpClient::class.java)
 
         @JvmField
@@ -95,7 +95,7 @@ class SimInventoryUnitTests {
     fun setUp() {
         reset(dao)
         reset(hssEntry)
-        reset(profileVendorAdapter)
+        reset(profileVendorAdapterDatum)
 
         /* HssConfig */
         org.mockito.Mockito.`when`(hssConfig.name)
@@ -127,14 +127,11 @@ class SimInventoryUnitTests {
 
 
         /* Profile vendor profilevendors. */
-        org.mockito.Mockito.`when`(profileVendorAdapter.id)
+        org.mockito.Mockito.`when`(profileVendorAdapterDatum.id)
                 .thenReturn(1L)
-        org.mockito.Mockito.`when`(profileVendorAdapter.name)
+        org.mockito.Mockito.`when`(profileVendorAdapterDatum.name)
                 .thenReturn(fakeProfileVendor)
-        org.mockito.Mockito.`when`(profileVendorAdapter.activate(httpClient, profileVendorConfig, dao, null, fakeSimEntryWithoutMsisdn))
-                .thenReturn(fakeSimEntryWithoutMsisdn.copy(
-                        smdpPlusState = SmDpPlusState.RELEASED).right())
-
+   
         /* DAO. */
         org.mockito.Mockito.`when`(dao.getSimProfileByIccid(fakeIccid1))
                 .thenReturn(fakeSimEntryWithoutMsisdn.right())
@@ -169,11 +166,11 @@ class SimInventoryUnitTests {
         org.mockito.Mockito.`when`(dao.getHssEntryByName(fakeHlr))
                 .thenReturn(Either.Right(hssEntry))
 
-        org.mockito.Mockito.`when`(dao.getProfileVendorAdapterByName(fakeProfileVendor))
-                .thenReturn(profileVendorAdapter.right())
+        org.mockito.Mockito.`when`(dao.getProfileVendorAdapterDatumByName(fakeProfileVendor))
+                .thenReturn(profileVendorAdapterDatum.right())
 
-        org.mockito.Mockito.`when`(dao.getProfileVendorAdapterById(1L))
-                .thenReturn(profileVendorAdapter.right())
+        org.mockito.Mockito.`when`(dao.getProfileVendorAdapterDatumById(1L))
+                .thenReturn(profileVendorAdapterDatum.right())
 
         org.mockito.Mockito.`when`(dao.getHssEntryByName(fakeHlr))
                 .thenReturn(Either.Right(hssEntry))
@@ -209,7 +206,7 @@ class SimInventoryUnitTests {
 
         val simEntry = response.readEntity(SimEntry::class.java)
         verify(dao).getSimProfileByIccid(fakeIccid1)
-        verify(dao).getProfileVendorAdapterById(fakeSimEntryWithoutMsisdn.profileVendorId)
+        verify(dao).getProfileVendorAdapterDatumById(fakeSimEntryWithoutMsisdn.profileVendorId)
         assertNotNull(simEntry)
         assertEquals(fakeSimEntryWithoutMsisdn, simEntry)
     }
