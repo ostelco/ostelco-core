@@ -161,8 +161,10 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
                 db.addProfileVendorAdapter(name)
             }
 
-
     override fun getAllProfileVendors(): Either<SimManagerError, List<ProfileVendorAdapter>> =
+            // TODO: Bug! An empty list is a perfectly valid result, not a error, is it OK
+            //       to return that result as an error (similar arguments apply to the
+            //       methods below).
             either(NotFoundError("Found no SIM profile vendors.")) {
                 db.getAllProfileVendors()
             }
