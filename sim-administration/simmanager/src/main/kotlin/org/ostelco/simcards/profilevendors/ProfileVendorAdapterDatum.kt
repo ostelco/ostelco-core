@@ -209,6 +209,8 @@ data class ProfileVendorAdapter(val datum: ProfileVendorAdapterDatum) {
                 simEntry.iccid)
                 .flatMap { response ->
 
+                    // TODO: The error message below is less than informative. Please amend
+                    //       Also logging something at this point may be useful!
                     if (response.matchingId.isNullOrEmpty()) {
                         return AdapterError("simEntryId == null or empty").left()
                     }
