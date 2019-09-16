@@ -152,14 +152,12 @@ data class ProfileVendorAdapter(
     /**
      * Initiate activation of a SIM profile with an external Profile Vendor
      * by sending a SM-DP+ 'download-order' message.
-     * @param httpClient  HTTP client
      * @param profileVendorConfig SIM vendor specific configuration
      * @param dao  DB interface
      * @param simEntry  SIM profile to activate
      * @return Updated SIM profile
      */
-    private fun downloadOrder(httpClient: CloseableHttpClient,
-                              dao: SimInventoryDAO,
+    private fun downloadOrder(dao: SimInventoryDAO,
                               simEntry: SimEntry): Either<SimManagerError, SimEntry> {
 
 
@@ -185,15 +183,13 @@ data class ProfileVendorAdapter(
     /**
      * Complete the activation of a SIM profile with an external Profile Vendor
      * by sending a SM-DP+ 'confirmation' message.
-     * @param httpClient  HTTP client
      * @param profileVendorConfig SIM vendor specific configuration
      * @param dao  DB interface
      * @param eid  ESIM id
      * @param simEntry  SIM profile to activate
      * @return Updated SIM profile
      */
-    private fun confirmOrder(httpClient: CloseableHttpClient,
-                             dao: SimInventoryDAO,
+    private fun confirmOrder(dao: SimInventoryDAO,
                              eid: String? = null,
                              simEntry: SimEntry): Either<SimManagerError, SimEntry> {
 
@@ -249,9 +245,8 @@ data class ProfileVendorAdapter(
      * @param iccid  ICCID
      * @return SM-DP+ 'profile status' for ICCID
      */
-    fun getProfileStatus(httpClient: CloseableHttpClient,
-                         iccid: String): Either<SimManagerError, ProfileStatus> =
-            getProfileStatus(httpClient, profileVendorConfig, listOf(iccid))
+    fun getProfileStatus(iccid: String): Either<SimManagerError, ProfileStatus> =
+            getProfileStatus(listOf(iccid))
                     .flatMap {
                         it.first().right()
                     }
@@ -264,20 +259,18 @@ data class ProfileVendorAdapter(
      * @param iccidList  list with ICCID
      * @return  A list with SM-DP+ 'profile status' information
      */
-    private fun getProfileStatus(httpClient: CloseableHttpClient,
-                                 config: ProfileVendorConfig,
-                                 iccidList: List<String>): Either<SimManagerError, List<ProfileStatus>> {
+    private fun getProfileStatus(iccidList: List<String>): Either<SimManagerError, List<ProfileStatus>> {
         if (iccidList.isNullOrEmpty()) {
             logger.error("One or more ICCID values required in SM-DP+ 'profile-status' message to service {}",
-                    config.name)
+                    profileVendorConfig.name)  // TODO: Put profilVendorConfig.name into a local variable.
             return NotFoundError("").left()
         }
 
         val header = ES2RequestHeader(
-                functionRequesterIdentifier = config.requesterIdentifier)
+                functionRequesterIdentifier = profileVendorConfig.requesterIdentifier)
 
         val request =
-                buildEs2plusRequest<Es2ProfileStatusCommand>(config.getEndpoint(), "getProfileStatus",
+                buildEs2plusRequest<Es2ProfileStatusCommand>(profileVendorConfig.getEndpoint(), "getProfileStatus",
                         Es2ProfileStatusCommand(
                                 header = header,
                                 iccidList = iccidList.map { IccidListEntry(iccid = it) }
@@ -291,7 +284,7 @@ data class ProfileVendorAdapter(
                 "getProfileStatus",
                 httpClient,
                 request,
-                config.name,
+                profileVendorConfig.name,
                 header.functionCallIdentifier,
                 Es2ProfileStatusResponse::class.java,
                 iccids,
@@ -303,7 +296,7 @@ data class ProfileVendorAdapter(
                     if (!profileStatusList.isNullOrEmpty()) {
                         profileStatusList.right()
                     } else {
-                        NotFoundError("No information found for ICCID $iccids in SM-DP+ 'profile-status' message to service ${config.name}",
+                        NotFoundError("No information found for ICCID $iccids in SM-DP+ 'profile-status' message to service ${profileVendorConfig.name}",
                                 pingOk = true)
                                 .left()
                     }
@@ -313,7 +306,6 @@ data class ProfileVendorAdapter(
     /**
      * Requests the an external Profile Vendor to activate the
      * SIM profile.
-     * @param httpClient  HTTP client
      * @param dao  DB interface
      * @param eid  ESIM id
      * @param simEntry  SIM profile to activate
@@ -323,9 +315,9 @@ data class ProfileVendorAdapter(
                  dao: SimInventoryDAO,
                  eid: String? = null,
                  simEntry: SimEntry): Either<SimManagerError, SimEntry> =
-            downloadOrder(httpClient, dao, simEntry)
+            downloadOrder(dao, simEntry)
                     .flatMap {
-                        confirmOrder(httpClient, dao, eid, it)
+                        confirmOrder(dao, eid, it)
                     }
 
     /**
@@ -338,9 +330,6 @@ data class ProfileVendorAdapter(
      * Contact the ES2+  endpoint of the SM-DP+, and return true if the answer indicates
      * that it's up.
      */
-    fun ping(httpClient: CloseableHttpClient): Either<SimManagerError, List<ProfileStatus>> =
-            getProfileStatus(
-                    httpClient = httpClient,
-                    config = profileVendorConfig,
-                    iccidList = invalidICCID)
+    fun ping(): Either<SimManagerError, List<ProfileStatus>> =
+            getProfileStatus(iccidList = invalidICCID)
 }

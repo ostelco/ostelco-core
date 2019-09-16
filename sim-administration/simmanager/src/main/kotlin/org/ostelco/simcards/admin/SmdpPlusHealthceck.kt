@@ -85,9 +85,7 @@ class SmdpPlusHealthceck(
 
                         // This isn't working very well in the acceptance tests, so we need to log a little.
                         logger.info("About to ping config: $currentConfig")
-                        val pingResult = vendorAdapter.ping(
-                                httpClient = httpClient
-                        )
+                        val pingResult = vendorAdapter.ping()
 
                         // If this was an error, but of an acceptable ("pingOk" == true) kind, meaning that
                         // the endpoint in the other end actually gave a reasonable answer to a reasonable request,

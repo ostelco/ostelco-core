@@ -60,13 +60,12 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
     // TODO: Rewrite this function to not use the "getProfileVendorAdapterAndConfig" but instead simply use
     //       getProfileVendorAdapter
     fun getSimProfileStatus(hlrName: String, iccid: String): Either<SimManagerError, ProfileStatus> =
-
             // TODO: This looks odd, can it be elvised into something more compact?
             findSimProfileByIccid(hlrName, iccid)
                     .flatMap { simEntry ->
                         getProfileVendorAdapter(simEntry)
                                 .flatMap {
-                                    it.getProfileStatus(httpClient = httpClient, iccid= iccid)
+                                    it.getProfileStatus(iccid= iccid)
                                 }
                     }
 
@@ -140,6 +139,7 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
     //       let the new item that is generated (replacing the pair) be called ProfileVendorAdapter,
     //       and then remove most of the parameters for the methods of that class.  That will simplify logic
     //       and permit removal of a sizable chunk of code, so it seems like  good refactoring to attempt.
+    @Deprecated(message="Replace with getProfileVendorAdapter or something only giving the config, or parts of the config")
     private fun getProfileVendorAdapterDatumAndConfig(simEntry: SimEntry): Either<SimManagerError, Pair<ProfileVendorAdapterDatum, ProfileVendorConfig>> =
             dao.getProfileVendorAdapterDatumById(simEntry.profileVendorId)
                     .flatMap { profileVendorAdapterDatum ->
