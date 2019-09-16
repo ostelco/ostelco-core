@@ -111,7 +111,8 @@ data class ProfileVendorAdapter(val datum: ProfileVendorAdapterDatum) {
                 // message, then the situation should _not_ be reported as an error on the log, since
                 // that would trigger ops attention to something that is a completely normal situation.
                 fun logAndReturnNotUpdatedError(statusMsg: String): Either<NotUpdatedError, T> {
-                    val msg =  "SM-DP+ '$es2CommandName' message to service $remoteServiceName for ICCID $iccids failed with $statusMsg (call-id: ${functionCallIdentifier})"
+                    val msg =  "SM-DP+ '$es2CommandName' message to service $remoteServiceName "
+                    + "for ICCID $iccids failed with $statusMsg (call-id: ${functionCallIdentifier})"
                     if (!treatAsPing) {
                         logger.error(msg)
                     }
@@ -123,7 +124,7 @@ data class ProfileVendorAdapter(val datum: ProfileVendorAdapterDatum) {
                         200 -> {
                             val response = mapper.readValue(httpResponse.entity.content, valueType)
                             if (executionWasFailure(status = response.myHeader.functionExecutionStatus)) {
-                                logAndReturnNotUpdatedError(" execution status ${response.myHeader.functionExecutionStatus}" )
+                                logAndReturnNotUpdatedError("execution status ${response.myHeader.functionExecutionStatus}" )
                             } else {
                                 response.right()
                             }
