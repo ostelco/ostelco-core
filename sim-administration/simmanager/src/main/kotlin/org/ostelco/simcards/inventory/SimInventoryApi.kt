@@ -21,7 +21,7 @@ import java.io.InputStream
 
 
 class SimInventoryApi(private val httpClient: CloseableHttpClient,
-                      private val config: SimAdministrationConfiguration,
+                      private val simAdminConfig: SimAdministrationConfiguration,
                       private val dao: SimInventoryDAO) {
 
     private val logger by getLogger()
@@ -33,7 +33,7 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                     val simEntry = dao.getSimProfileByIccid(iccid).bind()
                     checkForValidHlr(hlrName, simEntry)
 
-                    val profileVendorAndConfig = getProfileVendorAdapterAndConfig(simEntry).bind()
+                    val profileVendorAndConfig = getProfileVendorAdapterDatumAndConfig(simEntry).bind()
                     val config = profileVendorAndConfig.second
 
                     // Return the entry found in the database, extended with a
@@ -56,14 +56,17 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                         checkForValidHlr(hlrName, simEntry)
                     }
 
+
+    // TODO: Rewrite this function to not use the "getProfileVendorAdapterAndConfig" but instead simply use
+    //       getProfileVendorAdapter
     fun getSimProfileStatus(hlrName: String, iccid: String): Either<SimManagerError, ProfileStatus> =
             findSimProfileByIccid(hlrName, iccid)
                     .flatMap { simEntry ->
-                        getProfileVendorAdapterAndConfig(simEntry)
+                        getProfileVendorAdapterDatumAndConfig(simEntry)
                                 .flatMap {
                                     val profileVendorAdapterDatum = it.first
-                                    val provileVendorCondfig = it.second
-                                    ProfileVendorAdapter(profileVendorAdapterDatum).getProfileStatus(httpClient, provileVendorCondfig, iccid)
+                                    val profileVendorConfig = it.second
+                                    ProfileVendorAdapter(profileVendorAdapterDatum, profileVendorConfig).getProfileStatus(httpClient, profileVendorConfig, iccid)
                                 }
                     }
 
@@ -78,7 +81,7 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                             .bind()
                     val simEntry = dao.findNextReadyToUseSimProfileForHss(hlrAdapter.id, profile)
                             .bind()
-                    val profileVendorAndConfig = getProfileVendorAdapterAndConfig(simEntry)
+                    val profileVendorAndConfig = getProfileVendorAdapterDatumAndConfig(simEntry)
                             .bind()
 
                     val config = profileVendorAndConfig.second
@@ -137,16 +140,16 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
     //       let the new item that is generated (replacing the pair) be called ProfileVendorAdapter,
     //       and then remove most of the parameters for the methods of that class.  That will simplify logic
     //       and permit removal of a sizable chunk of code, so it seems like  good refactoring to attempt.
-    private fun getProfileVendorAdapterAndConfig(simEntry: SimEntry): Either<SimManagerError, Pair<ProfileVendorAdapterDatum, ProfileVendorConfig>> =
+    private fun getProfileVendorAdapterDatumAndConfig(simEntry: SimEntry): Either<SimManagerError, Pair<ProfileVendorAdapterDatum, ProfileVendorConfig>> =
             dao.getProfileVendorAdapterDatumById(simEntry.profileVendorId)
-                    .flatMap { profileVendorAdapter ->
-                        val config: ProfileVendorConfig? = config.profileVendors.firstOrNull {
-                            it.name == profileVendorAdapter.name
+                    .flatMap { profileVendorAdapterDatum ->
+                        val config: ProfileVendorConfig? = simAdminConfig.profileVendors.firstOrNull {
+                            it.name == profileVendorAdapterDatum.name
                         }
                         if (config != null)
-                            Pair(profileVendorAdapter, config).right()
+                            Pair(profileVendorAdapterDatum, config).right()
                         else
-                            NotFoundError("Could not find configuration for SIM profile vendor ${profileVendorAdapter.name}")
+                            NotFoundError("Could not find configuration for SIM profile vendor ${profileVendorAdapterDatum.name}")
                                     .left()
                     }
 
@@ -154,14 +157,20 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
     // TODO: Refactoring target. Replace the above with the below, also extend the below to include http client
     //       and all the other things we need.
     private fun getProfileVendorAdapter(simEntry: SimEntry): Either<SimManagerError, ProfileVendorAdapter> =
-            getProfileVendorAdapterAndConfig(simEntry)
-                    .flatMap {
-                        val profileVendorAdapterDatum = it.first
-                        ProfileVendorAdapter(profileVendorAdapterDatum).right() // , it.second)
+            dao.getProfileVendorAdapterDatumById(simEntry.profileVendorId)
+                    .flatMap { profileVendorAdapterDatum ->
+                        val profileConfig: ProfileVendorConfig? = simAdminConfig.profileVendors.firstOrNull {
+                            it.name == profileVendorAdapterDatum.name
+                        }
+                        if (profileConfig != null) {
+                            ProfileVendorAdapter(profileVendorAdapterDatum, profileConfig).right()
+                        } else
+                            NotFoundError("Could not find configuration for SIM profile vendor ${profileVendorAdapterDatum.name}")
+                                    .left()
                     }
 
 
-    private fun getProfileType(hlrName: String, phoneType: String): Either<SimManagerError, String> = config
+    private fun getProfileType(hlrName: String, phoneType: String): Either<SimManagerError, String> = simAdminConfig
             .getProfileForPhoneType(phoneType)
             ?.right()
             ?: NotFoundError("Could not find configuration for phone type='$phoneType', hlrName='$hlrName'").left()
