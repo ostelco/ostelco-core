@@ -410,6 +410,25 @@ paths:
           description: "The email of the user"
           required: true
           type: string
+  "/customer/{email}":
+    delete:
+      description: "Remove the customer from the backend."
+      produces:
+        - application/json
+      operationId: "removeCustomer"
+      responses:
+        200:
+          description: "Removed the customer."
+        404:
+          description: "No customer found for this email."
+      security:
+        - auth0_jwt: []
+      parameters:
+        - name: email
+          in: path
+          description: "The contact email of the customer"
+          required: true
+          type: string
 
 definitions:
   Pong:

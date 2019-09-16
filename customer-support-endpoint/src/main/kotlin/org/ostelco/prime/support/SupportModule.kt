@@ -3,13 +3,7 @@ package org.ostelco.prime.support
 import com.fasterxml.jackson.annotation.JsonTypeName
 import io.dropwizard.setup.Environment
 import org.ostelco.prime.module.PrimeModule
-import org.ostelco.prime.support.resources.AuditLogResource
-import org.ostelco.prime.support.resources.BundlesResource
-import org.ostelco.prime.support.resources.ContextResource
-import org.ostelco.prime.support.resources.NotifyResource
-import org.ostelco.prime.support.resources.ProfilesResource
-import org.ostelco.prime.support.resources.PurchaseResource
-import org.ostelco.prime.support.resources.RefundResource
+import org.ostelco.prime.support.resources.*
 
 @JsonTypeName("support")
 class SupportModule : PrimeModule {
@@ -23,5 +17,6 @@ class SupportModule : PrimeModule {
         jerseySever.register(NotifyResource())
         jerseySever.register(ContextResource())
         jerseySever.register(AuditLogResource())
+        jerseySever.register(CustomerResource())
     }
 }
