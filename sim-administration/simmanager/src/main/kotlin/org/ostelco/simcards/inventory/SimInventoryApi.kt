@@ -163,7 +163,7 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                             it.name == profileVendorAdapterDatum.name
                         }
                         if (profileConfig != null) {
-                            ProfileVendorAdapter(profileVendorAdapterDatum, profileConfig, httpClient).right()
+                            ProfileVendorAdapter(profileVendorAdapterDatum, profileConfig, httpClient, dao).right()
                         } else
                             NotFoundError("Could not find configuration for SIM profile vendor ${profileVendorAdapterDatum.name}")
                                     .left()

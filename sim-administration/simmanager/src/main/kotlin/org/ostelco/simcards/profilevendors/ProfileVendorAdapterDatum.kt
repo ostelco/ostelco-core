@@ -54,7 +54,8 @@ data class ProfileVendorAdapterDatum(
 data class ProfileVendorAdapter(
         val datum: ProfileVendorAdapterDatum,
         val profileVendorConfig: ProfileVendorConfig,
-        val httpClient: CloseableHttpClient) {
+        val httpClient: CloseableHttpClient,
+        val dao: SimInventoryDAO) {
 
     private val logger by getLogger()
 
@@ -116,7 +117,7 @@ data class ProfileVendorAdapter(
                 // message, then the situation should _not_ be reported as an error on the log, since
                 // that would trigger ops attention to something that is a completely normal situation.
                 fun logAndReturnNotUpdatedError(statusMsg: String): Either<NotUpdatedError, T> {
-                    val msg =  "SM-DP+ '$es2CommandName' message to service $remoteServiceName "
+                    val msg = "SM-DP+ '$es2CommandName' message to service $remoteServiceName "
                             .plus("for ICCID $iccids failed with $statusMsg (call-id: ${functionCallIdentifier})")
                     if (!treatAsPing) {
                         logger.error(msg)
@@ -129,7 +130,7 @@ data class ProfileVendorAdapter(
                         200 -> {
                             val response = mapper.readValue(httpResponse.entity.content, valueType)
                             if (executionWasFailure(status = response.myHeader.functionExecutionStatus)) {
-                                logAndReturnNotUpdatedError("execution status ${response.myHeader.functionExecutionStatus}" )
+                                logAndReturnNotUpdatedError("execution status ${response.myHeader.functionExecutionStatus}")
                             } else {
                                 response.right()
                             }
@@ -157,8 +158,7 @@ data class ProfileVendorAdapter(
      * @param simEntry  SIM profile to activate
      * @return Updated SIM profile
      */
-    private fun downloadOrder(dao: SimInventoryDAO,
-                              simEntry: SimEntry): Either<SimManagerError, SimEntry> {
+    private fun downloadOrder(simEntry: SimEntry): Either<SimManagerError, SimEntry> {
 
 
         if (simEntry.id == null) {
@@ -189,8 +189,7 @@ data class ProfileVendorAdapter(
      * @param simEntry  SIM profile to activate
      * @return Updated SIM profile
      */
-    private fun confirmOrder(dao: SimInventoryDAO,
-                             eid: String? = null,
+    private fun confirmOrder(eid: String? = null,
                              simEntry: SimEntry): Either<SimManagerError, SimEntry> {
 
         if (simEntry.id == null) {
@@ -311,13 +310,11 @@ data class ProfileVendorAdapter(
      * @param simEntry  SIM profile to activate
      * @return Updated SIM profile
      */
-    fun activate(httpClient: CloseableHttpClient,
-                 dao: SimInventoryDAO,
-                 eid: String? = null,
+    fun activate(eid: String? = null,
                  simEntry: SimEntry): Either<SimManagerError, SimEntry> =
-            downloadOrder(dao, simEntry)
+            downloadOrder(simEntry)
                     .flatMap {
-                        confirmOrder(dao, eid, it)
+                        confirmOrder(eid, it)
                     }
 
     /**

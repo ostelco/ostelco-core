@@ -72,7 +72,7 @@ class PreallocateProfilesTask(
                         if (profileVendorConfig == null) {
                             AdapterError("profileVendorCondig null for hss $hssEntry, that's very bad.").left()
                         } else {
-                            val profileVendorAdapter = ProfileVendorAdapter(profileVendorAdapterDatum, profileVendorConfig, httpClient)
+                            val profileVendorAdapter = ProfileVendorAdapter(profileVendorAdapterDatum, profileVendorConfig, httpClient, simInventoryDAO)
 
                             when {
                                 simEntry.id == null -> SystemError("simEntry.id == null for simEntry = $simEntry").left()
@@ -83,10 +83,7 @@ class PreallocateProfilesTask(
                                     logger.debug("Preallocating (HSS not activated) for HSS with ID/metricName ${hssEntry.id}/${hssEntry.name} simEntry with ICCID=${simEntry.iccid}")
 
 
-                                    profileVendorAdapter.activate(
-                                            httpClient = httpClient,
-                                            dao = simInventoryDAO,
-                                            simEntry = simEntry)
+                                    profileVendorAdapter.activate(simEntry = simEntry)
                                             .flatMap {
                                                 hssAdapterProxy.activate(simEntry)
                                             }
@@ -97,10 +94,7 @@ class PreallocateProfilesTask(
                                 }
                                 else -> {
                                     logger.debug("Preallocating (HSS preactivated) for HSS with ID/metricName ${hssEntry.id}/${hssEntry.name} simEntry with ICCID=${simEntry.iccid}")
-                                    profileVendorAdapter.activate(
-                                            httpClient = httpClient,
-                                            dao = simInventoryDAO,
-                                            simEntry = simEntry)
+                                    profileVendorAdapter.activate(simEntry = simEntry)
                                 }
                             }
                         }
