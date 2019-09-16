@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Col, Row, Card, CardBody, CardTitle, Button } from 'reactstrap';
 
+import { subscriberActions } from '../../actions/subscriber.actions';
 import Subscription from './Subscription';
 import WarningModal from '../Shared/WarningModal';
 
@@ -27,8 +28,8 @@ class Profile extends React.Component {
   }
 
   handleConfirmModal = () => {
+    this.props.deleteUser();
     this.handleCloseModal();
-    // TODO call the method to remove user
   }
 
   render() {
@@ -91,6 +92,7 @@ Profile.propTypes = {
   subscriptions: PropTypes.shape({
     items: PropTypes.array,
   }),
+  deleteUser:PropTypes.func.isRequired
 };
 
 function mapStateToProps(state) {
@@ -101,4 +103,7 @@ function mapStateToProps(state) {
     subscriptions
   };
 }
-export default connect(mapStateToProps)(Profile);
+const mapDispatchToProps = {
+  deleteUser: subscriberActions.deleteUser
+}
+export default connect(mapStateToProps, mapDispatchToProps)(Profile);

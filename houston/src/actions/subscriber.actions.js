@@ -33,10 +33,16 @@ const AUDIT_LOGS_REQUEST = 'AUDIT_LOGS_REQUEST';
 const AUDIT_LOGS_SUCCESS = 'AUDIT_LOGS_SUCCESS';
 const AUDIT_LOGS_FAILURE = 'AUDIT_LOGS_FAILURE';
 
+const DELETE_USER_REQUEST = 'DELETE_USER_REQUEST';
+const DELETE_USER_SUCCESS = 'DELETE_USER_SUCCESS';
+const DELETE_USER_FAILURE = 'DELETE_USER_FAILURE';
+
 // Used by global reducer.
 export const subscriberConstants = {
   SUBSCRIBER_BY_EMAIL_FAILURE,
   SUBSCRIPTIONS_FAILURE,
+  DELETE_USER_SUCCESS,
+  DELETE_USER_FAILURE,
 };
 
 export const actions = createActions(
@@ -60,7 +66,10 @@ export const actions = createActions(
   REFUND_PAYMENT_FAILURE,
   AUDIT_LOGS_REQUEST,
   AUDIT_LOGS_SUCCESS,
-  AUDIT_LOGS_FAILURE
+  AUDIT_LOGS_FAILURE,
+  DELETE_USER_REQUEST,
+  DELETE_USER_SUCCESS,
+  DELETE_USER_FAILURE
 );
 
 const fetchSubscriberById = (id) => ({
@@ -141,6 +150,18 @@ const fetchAuditLogsByEmail = (email) => ({
   }
 });
 
+const deleteUserByEmail = (email) => ({
+  [CALL_API]: {
+    actions: [
+      actions.deleteUserRequest,
+      actions.deleteUserSuccess,
+      actions.deleteUserFailure],
+    endpoint: `customer/${email}`,
+    allowEmptyResponse: true,
+    method: 'DELETE'
+  }
+});
+
 // TODO: API based implementaion. Reference: https://github.com/reduxjs/redux/issues/1676
 const getSubscriberAndBundlesByEmail = (email) => (dispatch, getState) => {
   localStorage.setItem('searchedEmail', email)
@@ -186,8 +207,23 @@ const refundPurchase = (purchaseRecordId, reason) => (dispatch, getState) => {
       .catch(handleError);
   }
 };
+const deleteUser = () => (dispatch, getState) => {
 
+  const handleError = (error) => {
+    console.log('Error reported.', error.message);
+    let message = "Failed to delete user (" +error.message+")"
+    dispatch(alertActions.alertError({message}));
+  };
+
+  // Get the email from the fetched user
+  const subscriberEmail = encodeEmail(_.get(getState(), 'subscriber.contactEmail'));
+  if (subscriberEmail) {
+    return dispatch(deleteUserByEmail(subscriberEmail))
+      .catch(handleError);
+  }
+};
 export const subscriberActions = {
   getSubscriberAndBundlesByEmail,
-  refundPurchase
+  refundPurchase,
+  deleteUser
 };
