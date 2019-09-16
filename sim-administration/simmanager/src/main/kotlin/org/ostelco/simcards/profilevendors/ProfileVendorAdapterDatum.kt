@@ -105,22 +105,31 @@ data class ProfileVendorAdapter(val datum: ProfileVendorAdapterDatum) {
                 iccids: String,
                 treatAsPing: Boolean = false): Either<SimManagerError, T> {
             return try {
+
+                // When an error situation is encountered that should still be interpreted as a "correct" ping
+                // meaning that the ES2+ stack is responding with something, even if it is a (valid) error
+                // message, then the situation should _not_ be reported as an error on the log, since
+                // that would trigger ops attention to something that is a completely normal situation.
+                fun logAndReturnNotUpdatedError(statusMsg: String): Either<NotUpdatedError, T> {
+                    val msg =  "SM-DP+ '$es2CommandName' message to service $remoteServiceName for ICCID $iccids failed with $statusMsg (call-id: ${functionCallIdentifier})"
+                    if (!treatAsPing) {
+                        logger.error(msg)
+                    }
+                    return NotUpdatedError(msg, pingOk = treatAsPing).left()
+                }
+
                 return httpClient.execute(request).use { httpResponse ->
                     when (httpResponse.statusLine.statusCode) {
                         200 -> {
                             val response = mapper.readValue(httpResponse.entity.content, valueType)
                             if (executionWasFailure(status = response.myHeader.functionExecutionStatus)) {
-                                var msg = "SM-DP+ '$es2CommandName' message to service $remoteServiceName for ICCID $iccids failed with execution status ${response.myHeader.functionExecutionStatus} (call-id: ${functionCallIdentifier})"
-                                logger.error(msg)
-                                NotUpdatedError(msg, pingOk = treatAsPing).left()
+                                logAndReturnNotUpdatedError(" execution status ${response.myHeader.functionExecutionStatus}" )
                             } else {
                                 response.right()
                             }
                         }
                         else -> {
-                            var msg = "SM-DP+ '$es2CommandName' message to service $remoteServiceName for ICCID $iccids failed with status code ${httpResponse.statusLine.statusCode} (call-id: ${functionCallIdentifier})"
-                            logger.error(msg)
-                            NotUpdatedError(msg, pingOk = treatAsPing).left()
+                            logAndReturnNotUpdatedError("status code ${httpResponse.statusLine.statusCode}")
                         }
                     }
                 }
