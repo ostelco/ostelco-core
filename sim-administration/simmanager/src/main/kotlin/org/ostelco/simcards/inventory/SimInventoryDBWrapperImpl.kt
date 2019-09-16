@@ -176,7 +176,7 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
 
     override fun getProfileVendorAdapterDatumById(id: Long): Either<SimManagerError, ProfileVendorAdapterDatum> =
             either(NotFoundError("Found no SIM profile vendor with id $id")) {
-                db.getProfileVendorAdapterById(id)
+                db.getProfileVendorAdapterDatumById(id)
             }
 
     /*
