@@ -81,13 +81,12 @@ class SmdpPlusHealthceck(
                             throw RuntimeException(msg) // TODO: I really dont like this style of coding.
                         }
 
-                        val vendorAdapter = ProfileVendorAdapter(vendorAdapterDatum, currentConfig)
+                        val vendorAdapter = ProfileVendorAdapter(vendorAdapterDatum, currentConfig, httpClient)
 
                         // This isn't working very well in the acceptance tests, so we need to log a little.
                         logger.info("About to ping config: $currentConfig")
                         val pingResult = vendorAdapter.ping(
-                                httpClient = httpClient,
-                                config = currentConfig
+                                httpClient = httpClient
                         )
 
                         // If this was an error, but of an acceptable ("pingOk" == true) kind, meaning that

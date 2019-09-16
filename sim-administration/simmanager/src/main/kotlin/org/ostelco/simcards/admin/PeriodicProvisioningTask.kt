@@ -72,7 +72,7 @@ class PreallocateProfilesTask(
                         if (profileVendorConfig == null) {
                             AdapterError("profileVendorCondig null for hss $hssEntry, that's very bad.").left()
                         } else {
-                            val profileVendorAdapter = ProfileVendorAdapter(profileVendorAdapterDatum, profileVendorConfig)
+                            val profileVendorAdapter = ProfileVendorAdapter(profileVendorAdapterDatum, profileVendorConfig, httpClient)
 
                             when {
                                 simEntry.id == null -> SystemError("simEntry.id == null for simEntry = $simEntry").left()
@@ -85,7 +85,6 @@ class PreallocateProfilesTask(
 
                                     profileVendorAdapter.activate(
                                             httpClient = httpClient,
-                                            config = profileVendorConfig,
                                             dao = simInventoryDAO,
                                             simEntry = simEntry)
                                             .flatMap {
@@ -100,7 +99,6 @@ class PreallocateProfilesTask(
                                     logger.debug("Preallocating (HSS preactivated) for HSS with ID/metricName ${hssEntry.id}/${hssEntry.name} simEntry with ICCID=${simEntry.iccid}")
                                     profileVendorAdapter.activate(
                                             httpClient = httpClient,
-                                            config = profileVendorConfig,
                                             dao = simInventoryDAO,
                                             simEntry = simEntry)
                                 }

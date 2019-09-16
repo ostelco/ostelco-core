@@ -53,7 +53,8 @@ data class ProfileVendorAdapterDatum(
 
 data class ProfileVendorAdapter(
         val datum: ProfileVendorAdapterDatum,
-        val profileVendorConfig: ProfileVendorConfig) {
+        val profileVendorConfig: ProfileVendorConfig,
+        val httpClient: CloseableHttpClient) {
 
     private val logger by getLogger()
 
@@ -152,13 +153,12 @@ data class ProfileVendorAdapter(
      * Initiate activation of a SIM profile with an external Profile Vendor
      * by sending a SM-DP+ 'download-order' message.
      * @param httpClient  HTTP client
-     * @param config SIM vendor specific configuration
+     * @param profileVendorConfig SIM vendor specific configuration
      * @param dao  DB interface
      * @param simEntry  SIM profile to activate
      * @return Updated SIM profile
      */
     private fun downloadOrder(httpClient: CloseableHttpClient,
-                              config: ProfileVendorConfig,
                               dao: SimInventoryDAO,
                               simEntry: SimEntry): Either<SimManagerError, SimEntry> {
 
@@ -168,15 +168,15 @@ data class ProfileVendorAdapter(
         }
 
         val header = ES2RequestHeader(
-                functionRequesterIdentifier = config.requesterIdentifier)
+                functionRequesterIdentifier = profileVendorConfig.requesterIdentifier)
         val request =
-                buildEs2plusRequest<Es2PlusDownloadOrder>(config.getEndpoint(), "downloadOrder",
+                buildEs2plusRequest<Es2PlusDownloadOrder>(profileVendorConfig.getEndpoint(), "downloadOrder",
                         Es2PlusDownloadOrder(
                                 header = header,
                                 iccid = simEntry.iccid
                         ))
 
-        return executeRequest<Es2DownloadOrderResponse>("order-download", httpClient, request, config.name, header.functionCallIdentifier, Es2DownloadOrderResponse::class.java, simEntry.iccid)
+        return executeRequest<Es2DownloadOrderResponse>("order-download", httpClient, request, profileVendorConfig.name, header.functionCallIdentifier, Es2DownloadOrderResponse::class.java, simEntry.iccid)
                 .flatMap {
                     dao.setSmDpPlusState(simEntry.id, SmDpPlusState.ALLOCATED)
                 }
@@ -186,14 +186,13 @@ data class ProfileVendorAdapter(
      * Complete the activation of a SIM profile with an external Profile Vendor
      * by sending a SM-DP+ 'confirmation' message.
      * @param httpClient  HTTP client
-     * @param config SIM vendor specific configuration
+     * @param profileVendorConfig SIM vendor specific configuration
      * @param dao  DB interface
      * @param eid  ESIM id
      * @param simEntry  SIM profile to activate
      * @return Updated SIM profile
      */
     private fun confirmOrder(httpClient: CloseableHttpClient,
-                             config: ProfileVendorConfig,
                              dao: SimInventoryDAO,
                              eid: String? = null,
                              simEntry: SimEntry): Either<SimManagerError, SimEntry> {
@@ -204,9 +203,9 @@ data class ProfileVendorAdapter(
 
         // TODO: This header is a constant for this class, and could be precomputed, which
         //       would declutter the code even more!
-        val header = ES2RequestHeader(functionRequesterIdentifier = config.requesterIdentifier)
+        val header = ES2RequestHeader(functionRequesterIdentifier = profileVendorConfig.requesterIdentifier)
         val request =
-                buildEs2plusRequest<Es2ConfirmOrder>(config.getEndpoint(), "confirmOrder",
+                buildEs2plusRequest<Es2ConfirmOrder>(profileVendorConfig.getEndpoint(), "confirmOrder",
                         Es2ConfirmOrder(
                                 header = header,
                                 eid = eid,
@@ -217,7 +216,7 @@ data class ProfileVendorAdapter(
                 "confirmOrder",
                 httpClient,
                 request,
-                config.name,
+                profileVendorConfig.name,
                 header.functionCallIdentifier,
                 Es2ConfirmOrderResponse::class.java,
                 simEntry.iccid)
@@ -246,14 +245,13 @@ data class ProfileVendorAdapter(
      * Downloads the SM-DP+ 'profile status' information for an ICCID from
      * a SM-DP+ service.
      * @param httpClient  HTTP client
-     * @param config  SIM vendor specific configuration
+     * @param profileVendorConfig  SIM vendor specific configuration
      * @param iccid  ICCID
      * @return SM-DP+ 'profile status' for ICCID
      */
     fun getProfileStatus(httpClient: CloseableHttpClient,
-                         config: ProfileVendorConfig = profileVendorConfig,
                          iccid: String): Either<SimManagerError, ProfileStatus> =
-            getProfileStatus(httpClient, config, listOf(iccid))
+            getProfileStatus(httpClient, profileVendorConfig, listOf(iccid))
                     .flatMap {
                         it.first().right()
                     }
@@ -316,20 +314,18 @@ data class ProfileVendorAdapter(
      * Requests the an external Profile Vendor to activate the
      * SIM profile.
      * @param httpClient  HTTP client
-     * @param config SIM vendor specific configuration
      * @param dao  DB interface
      * @param eid  ESIM id
      * @param simEntry  SIM profile to activate
      * @return Updated SIM profile
      */
     fun activate(httpClient: CloseableHttpClient,
-                 config: ProfileVendorConfig,
                  dao: SimInventoryDAO,
                  eid: String? = null,
                  simEntry: SimEntry): Either<SimManagerError, SimEntry> =
-            downloadOrder(httpClient, config, dao, simEntry)
+            downloadOrder(httpClient, dao, simEntry)
                     .flatMap {
-                        confirmOrder(httpClient, config, dao, eid, it)
+                        confirmOrder(httpClient, dao, eid, it)
                     }
 
     /**
@@ -342,10 +338,9 @@ data class ProfileVendorAdapter(
      * Contact the ES2+  endpoint of the SM-DP+, and return true if the answer indicates
      * that it's up.
      */
-    fun ping(httpClient: CloseableHttpClient,
-             config: ProfileVendorConfig): Either<SimManagerError, List<ProfileStatus>> =
+    fun ping(httpClient: CloseableHttpClient): Either<SimManagerError, List<ProfileStatus>> =
             getProfileStatus(
                     httpClient = httpClient,
-                    config = config,
+                    config = profileVendorConfig,
                     iccidList = invalidICCID)
 }
