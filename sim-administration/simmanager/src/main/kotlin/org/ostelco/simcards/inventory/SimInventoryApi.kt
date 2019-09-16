@@ -60,13 +60,13 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
     // TODO: Rewrite this function to not use the "getProfileVendorAdapterAndConfig" but instead simply use
     //       getProfileVendorAdapter
     fun getSimProfileStatus(hlrName: String, iccid: String): Either<SimManagerError, ProfileStatus> =
+
+            // TODO: This looks odd, can it be elvised into something more compact?
             findSimProfileByIccid(hlrName, iccid)
                     .flatMap { simEntry ->
-                        getProfileVendorAdapterDatumAndConfig(simEntry)
+                        getProfileVendorAdapter(simEntry)
                                 .flatMap {
-                                    val profileVendorAdapterDatum = it.first
-                                    val profileVendorConfig = it.second
-                                    ProfileVendorAdapter(profileVendorAdapterDatum, profileVendorConfig).getProfileStatus(httpClient, profileVendorConfig, iccid)
+                                    it.getProfileStatus(httpClient = httpClient, iccid= iccid)
                                 }
                     }
 

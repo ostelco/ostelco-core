@@ -51,7 +51,9 @@ data class ProfileVendorAdapterDatum(
 // TODO: Eventually most of the config data should be present in the database, not in the
 //       config data structure.
 
-data class ProfileVendorAdapter(val datum: ProfileVendorAdapterDatum, val config: ProfileVendorConfig) {
+data class ProfileVendorAdapter(
+        val datum: ProfileVendorAdapterDatum,
+        val profileVendorConfig: ProfileVendorConfig) {
 
     private val logger by getLogger()
 
@@ -97,7 +99,7 @@ data class ProfileVendorAdapter(val datum: ProfileVendorAdapterDatum, val config
 
 
         // TODO: Future refactoring: Move this code into the ES2PlusClient, more or less.
-        fun <T : Es2Response> executeRequest(
+        private fun <T : Es2Response> executeRequest(
                 es2CommandName: String,
                 httpClient: CloseableHttpClient,
                 request: HttpUriRequest,
@@ -249,7 +251,7 @@ data class ProfileVendorAdapter(val datum: ProfileVendorAdapterDatum, val config
      * @return SM-DP+ 'profile status' for ICCID
      */
     fun getProfileStatus(httpClient: CloseableHttpClient,
-                         config: ProfileVendorConfig,
+                         config: ProfileVendorConfig = profileVendorConfig,
                          iccid: String): Either<SimManagerError, ProfileStatus> =
             getProfileStatus(httpClient, config, listOf(iccid))
                     .flatMap {

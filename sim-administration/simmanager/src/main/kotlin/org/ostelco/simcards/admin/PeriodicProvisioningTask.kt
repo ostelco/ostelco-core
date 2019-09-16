@@ -12,6 +12,7 @@ import io.dropwizard.servlets.tasks.Task
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
+import org.ostelco.prime.simmanager.AdapterError
 import org.ostelco.prime.simmanager.DatabaseError
 import org.ostelco.prime.simmanager.NotFoundError
 import org.ostelco.prime.simmanager.SimManagerError
@@ -58,6 +59,7 @@ class PreallocateProfilesTask(
                 }
     }
 
+    // TODO: This method must be refactored. It is _way_ too complex.
     private fun preProvisionSimProfile(hssEntry: HssEntry,
                                        simEntry: SimEntry): Either<SimManagerError, SimEntry> =
             simInventoryDAO.getProfileVendorAdapterDatumById(simEntry.profileVendorId)
@@ -66,38 +68,42 @@ class PreallocateProfilesTask(
                         val profileVendorConfig: ProfileVendorConfig? = profileVendors.firstOrNull {
                             it.name == profileVendorAdapterDatum.name
                         }
-                        
-                        val profileVendorAdapter = ProfileVendorAdapter(profileVendorAdapterDatum)
 
-                        when {
-                            simEntry.id == null -> SystemError("simEntry.id == null for simEntry = $simEntry").left()
-                            profileVendorConfig == null -> NotFoundError("Failed to find configuration for SIM profile vendor ${profileVendorAdapterDatum.name} " +
-                                    "and HLR ${hssEntry.name}")
-                                    .left()
-                            simEntry.hssState == HssState.NOT_ACTIVATED -> {
-                                logger.debug("Preallocating (HSS not activated) for HSS with ID/metricName ${hssEntry.id}/${hssEntry.name} simEntry with ICCID=${simEntry.iccid}")
+                        if (profileVendorConfig == null) {
+                            AdapterError("profileVendorCondig null for hss $hssEntry, that's very bad.").left()
+                        } else {
+                            val profileVendorAdapter = ProfileVendorAdapter(profileVendorAdapterDatum, profileVendorConfig)
+
+                            when {
+                                simEntry.id == null -> SystemError("simEntry.id == null for simEntry = $simEntry").left()
+                                profileVendorConfig == null -> NotFoundError("Failed to find configuration for SIM profile vendor ${profileVendorAdapterDatum.name} " +
+                                        "and HLR ${hssEntry.name}")
+                                        .left()
+                                simEntry.hssState == HssState.NOT_ACTIVATED -> {
+                                    logger.debug("Preallocating (HSS not activated) for HSS with ID/metricName ${hssEntry.id}/${hssEntry.name} simEntry with ICCID=${simEntry.iccid}")
 
 
-                                profileVendorAdapter.activate(
-                                        httpClient = httpClient,
-                                        config = profileVendorConfig,
-                                        dao = simInventoryDAO,
-                                        simEntry = simEntry)
-                                        .flatMap {
-                                            hssAdapterProxy.activate(simEntry)
-                                        }
-                                        .flatMap {
-                                            simInventoryDAO.setHssState(simEntry.id, HssState.ACTIVATED)
-                                        }
+                                    profileVendorAdapter.activate(
+                                            httpClient = httpClient,
+                                            config = profileVendorConfig,
+                                            dao = simInventoryDAO,
+                                            simEntry = simEntry)
+                                            .flatMap {
+                                                hssAdapterProxy.activate(simEntry)
+                                            }
+                                            .flatMap {
+                                                simInventoryDAO.setHssState(simEntry.id, HssState.ACTIVATED)
+                                            }
 
-                            }
-                            else -> {
-                                logger.debug("Preallocating (HSS preactivated) for HSS with ID/metricName ${hssEntry.id}/${hssEntry.name} simEntry with ICCID=${simEntry.iccid}")
-                                profileVendorAdapter.activate(
-                                        httpClient = httpClient,
-                                        config = profileVendorConfig,
-                                        dao = simInventoryDAO,
-                                        simEntry = simEntry)
+                                }
+                                else -> {
+                                    logger.debug("Preallocating (HSS preactivated) for HSS with ID/metricName ${hssEntry.id}/${hssEntry.name} simEntry with ICCID=${simEntry.iccid}")
+                                    profileVendorAdapter.activate(
+                                            httpClient = httpClient,
+                                            config = profileVendorConfig,
+                                            dao = simInventoryDAO,
+                                            simEntry = simEntry)
+                                }
                             }
                         }
                     }
