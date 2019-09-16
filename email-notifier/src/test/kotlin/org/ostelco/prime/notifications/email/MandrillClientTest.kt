@@ -31,7 +31,7 @@ data class TestConfig(val modules: List<PrimeModule>): Configuration()
 
 class MandrillClientTest {
 
-    @EnabledIfEnvironmentVariable(named = "MANDRILL_API_KEY", matches = "*")
+    @EnabledIfEnvironmentVariable(named = "MANDRILL_API_KEY", matches = ".*")
     @Test
     fun `send test email via Mandrill`() {
 

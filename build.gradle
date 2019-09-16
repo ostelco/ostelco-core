@@ -2,7 +2,7 @@
 plugins {
   id "java"
   id "project-report"
-  id "com.github.ben-manes.versions" version "0.24.0"
+  id "com.github.ben-manes.versions" version "0.25.0"
   id "jacoco"
   id "org.jetbrains.kotlin.jvm" version "1.3.50" apply false
   id "com.google.protobuf" version "0.8.10" apply false
@@ -45,8 +45,8 @@ subprojects {
     dockerComposeJunitRuleVersion = "1.3.0"
     dropwizardVersion = "1.3.14"
     metricsVersion = "4.1.0"
-    firebaseVersion = "6.9.0"
-    googleCloudVersion = "1.89.0"
+    firebaseVersion = "6.10.0"
+    googleCloudVersion = "1.90.0"
     grpcVersion = "1.23.0"
     guavaVersion = "28.1-jre"
     jacksonVersion = "2.9.9"
@@ -58,24 +58,24 @@ subprojects {
     jaxbVersion = "2.3.1"
     jdbi3Version = "3.10.0"
     jjwtVersion = "0.10.7"
-    junit5Version = "5.5.1"
+    junit5Version = "5.5.2"
     kotlinVersion = "1.3.50"
-    kotlinXCoroutinesVersion = "1.3.0"
+    kotlinXCoroutinesVersion = "1.3.1"
     mockitoVersion = "3.0.0"
-    mockitoKotlinVersion = "2.1.0"
+    mockitoKotlinVersion = "2.2.0"
     neo4jDriverVersion="1.7.5"
     neo4jVersion="3.5.9"
     opencensusVersion="0.24.0"
-    postgresqlVersion = "42.2.6"  // See comment in ./sim-administration/simmanager/build.gradle
+    postgresqlVersion = "42.2.8"  // See comment in ./sim-administration/simmanager/build.gradle
     prometheusDropwizardVersion = "2.2.0"
     protocVersion="3.9.1"
     slf4jVersion="1.7.28"
     // IMPORTANT: When Stripe SDK library version is updated, check if the Stripe API version has changed.
     // If so, then update API version in Stripe Web Console for callback Webhooks.
-    stripeVersion = "11.6.1"
+    stripeVersion = "12.0.0"
     swaggerVersion = "2.0.9"
     swaggerCodegenVersion = "2.4.8"
-    testcontainersVersion = "1.12.0"
+    testcontainersVersion = "1.12.1"
     tinkVersion = "1.2.2"
     zxingVersion = "3.4.0"
   }
