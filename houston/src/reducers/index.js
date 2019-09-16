@@ -39,6 +39,12 @@ function checkForAuthenticationFailures(errorObj) {
   }
 }
 
+function getAuthOnlyState(state) {
+  const auth = _.get(state, "authentication");
+  return {
+    authentication: auth
+  };
+}
 const rootReducer = (state, action) => {
   if (action.type === authConstants.LOGOUT) {
     state = {};
@@ -50,6 +56,9 @@ const rootReducer = (state, action) => {
     case notifyConstants.NOTIFY_FAILURE:
       checkForAuthenticationFailures(_.get(action, 'payload.errorObj'));
       break;
+    case subscriberConstants.DELETE_USER_SUCCESS:
+        state = getAuthOnlyState(state);
+        break;
     default:
       break;
   }
