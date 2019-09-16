@@ -48,8 +48,10 @@ data class ProfileVendorAdapterDatum(
         @JsonProperty("id") val id: Long,
         @JsonProperty("metricName") val name: String)
 
+// TODO: Eventually most of the config data should be present in the database, not in the
+//       config data structure.
 
-data class ProfileVendorAdapter(val datum: ProfileVendorAdapterDatum) {
+data class ProfileVendorAdapter(val datum: ProfileVendorAdapterDatum, val config: ProfileVendorConfig) {
 
     private val logger by getLogger()
 
@@ -112,7 +114,7 @@ data class ProfileVendorAdapter(val datum: ProfileVendorAdapterDatum) {
                 // that would trigger ops attention to something that is a completely normal situation.
                 fun logAndReturnNotUpdatedError(statusMsg: String): Either<NotUpdatedError, T> {
                     val msg =  "SM-DP+ '$es2CommandName' message to service $remoteServiceName "
-                    + "for ICCID $iccids failed with $statusMsg (call-id: ${functionCallIdentifier})"
+                            .plus("for ICCID $iccids failed with $statusMsg (call-id: ${functionCallIdentifier})")
                     if (!treatAsPing) {
                         logger.error(msg)
                     }
