@@ -94,8 +94,7 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                     updatedSimEntry.copy(code = "LPA:1\$${config.es9plusEndpoint}\$${updatedSimEntry.matchingId}")
                 }.fix()
             }.unsafeRunSync()
-
-
+    
 
     fun importBatch(hlrName: String,
                     simVendor: String,
