@@ -16,7 +16,6 @@ import org.ostelco.sim.es2plus.ProfileStatus
 import org.ostelco.simcards.admin.ProfileVendorConfig
 import org.ostelco.simcards.admin.SimAdministrationConfiguration
 import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
-import org.ostelco.simcards.profilevendors.ProfileVendorAdapterDatum
 import java.io.InputStream
 
 
@@ -33,8 +32,7 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                     val simEntry = dao.getSimProfileByIccid(iccid).bind()
                     checkForValidHlr(hlrName, simEntry)
 
-                    val profileVendorAndConfig = getProfileVendorAdapterDatumAndConfig(simEntry).bind()
-                    val config = profileVendorAndConfig.second
+                    val config = getProfileVendorConfig(simEntry).bind()
 
                     // Return the entry found in the database, extended with a
                     // code represernting the string that will be used by the LPA in the
@@ -80,10 +78,8 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                             .bind()
                     val simEntry = dao.findNextReadyToUseSimProfileForHss(hlrAdapter.id, profile)
                             .bind()
-                    val profileVendorAndConfig = getProfileVendorAdapterDatumAndConfig(simEntry)
+                    val config = getProfileVendorConfig(simEntry)
                             .bind()
-
-                    val config = profileVendorAndConfig.second
 
                     if (simEntry.id == null) {
                         DatabaseError("simEntry has no id (simEntry=$simEntry)").left().bind()
@@ -98,6 +94,8 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                     updatedSimEntry.copy(code = "LPA:1\$${config.es9plusEndpoint}\$${updatedSimEntry.matchingId}")
                 }.fix()
             }.unsafeRunSync()
+
+
 
     fun importBatch(hlrName: String,
                     simVendor: String,
@@ -133,42 +131,27 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                             simEntry.right()
                     }
 
-    // TODO: Design flaw! This thing shouldn't return a pair, it should return an object that can actually
-    //       do something useful.  That will be the target of refactoring r.s.n.
-    //       The _best_ thing to do, would be to rename the entry in the database as ProfileVendor,
-    //       let the new item that is generated (replacing the pair) be called ProfileVendorAdapter,
-    //       and then remove most of the parameters for the methods of that class.  That will simplify logic
-    //       and permit removal of a sizable chunk of code, so it seems like  good refactoring to attempt.
-    @Deprecated(message = "Replace with getProfileVendorAdapter or something only giving the config, or parts of the config")
-    private fun getProfileVendorAdapterDatumAndConfig(simEntry: SimEntry): Either<SimManagerError, Pair<ProfileVendorAdapterDatum, ProfileVendorConfig>> =
+    private fun getProfileVendorConfig(simEntry: SimEntry): Either<SimManagerError, ProfileVendorConfig> =
             dao.getProfileVendorAdapterDatumById(simEntry.profileVendorId)
                     .flatMap { profileVendorAdapterDatum ->
                         val config: ProfileVendorConfig? = simAdminConfig.profileVendors.firstOrNull {
                             it.name == profileVendorAdapterDatum.name
                         }
                         if (config != null)
-                            Pair(profileVendorAdapterDatum, config).right()
+                            config.right()
                         else
                             NotFoundError("Could not find configuration for SIM profile vendor ${profileVendorAdapterDatum.name}")
                                     .left()
                     }
 
 
-    // TODO: Refactoring target. Replace the above with the below, also extend the below to include http client
-    //       and all the other things we need.
     private fun getProfileVendorAdapter(simEntry: SimEntry): Either<SimManagerError, ProfileVendorAdapter> =
             dao.getProfileVendorAdapterDatumById(simEntry.profileVendorId)
                     .flatMap { profileVendorAdapterDatum ->
-                        val profileConfig: ProfileVendorConfig? = simAdminConfig.profileVendors.firstOrNull {
-                            it.name == profileVendorAdapterDatum.name
-                        }
-                        if (profileConfig != null) {
+                        getProfileVendorConfig(simEntry).flatMap { profileConfig ->
                             ProfileVendorAdapter(profileVendorAdapterDatum, profileConfig, httpClient, dao).right()
-                        } else
-                            NotFoundError("Could not find configuration for SIM profile vendor ${profileVendorAdapterDatum.name}")
-                                    .left()
+                        }
                     }
-
 
     private fun getProfileType(hlrName: String, phoneType: String): Either<SimManagerError, String> = simAdminConfig
             .getProfileForPhoneType(phoneType)
