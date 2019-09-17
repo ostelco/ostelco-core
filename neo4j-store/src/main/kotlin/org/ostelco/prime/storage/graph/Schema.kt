@@ -555,7 +555,7 @@ object Graph {
 
     suspend fun <R> writeSuspended(query: String, transaction: Transaction, transform: (CompletionStage<StatementResultCursor>) -> R) {
         LOG.trace("write:[\n$query\n]")
-        withContext(Dispatchers.Default) {
+        withContext(Dispatchers.IO) {
             trace.childSpan("neo4j.writeAsync") {
                 transaction.runAsync(query)
             }

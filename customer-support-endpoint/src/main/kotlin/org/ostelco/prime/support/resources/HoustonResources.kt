@@ -507,3 +507,45 @@ class AuditLogResource: HoustonResource() {
                         .responseBuilder()
             }.build()
 }
+
+/**
+ * Resource used to manipulate customer record.
+ */
+@Path("/customer")
+class CustomerResource {
+
+    private val logger by getLogger()
+    private val storage by lazy { getResource<AdminDataSource>() }
+
+    /**
+     * Remove customer from Prime.
+     */
+    @DELETE
+    @Path("{email}")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun removeCustomer(@Auth token: AccessTokenPrincipal?,
+              @NotNull
+              @PathParam("email")
+              email: String): Response =
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                logger.info("${token.name} Removing the customer for $email")
+                removeCustomer(contactEmail = email)
+                        .responseBuilder(Response.Status.NO_CONTENT)
+            }.build()
+
+    // TODO: Reuse the one from SubscriberDAO
+    private fun removeCustomer(contactEmail: String): Either<ApiError, Unit> {
+        return try {
+            storage.getIdentityForContactEmail(contactEmail = contactEmail).flatMap { identity: Identity ->
+                storage.removeCustomer(identity)
+            }.mapLeft {
+                NotFoundError("Failed to remove customer.", ApiErrorCode.FAILED_TO_REMOVE_CUSTOMER, it)
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to fetch profile for customer with contactEmail - $contactEmail", e)
+            Either.left(NotFoundError("Failed to remove customer", ApiErrorCode.FAILED_TO_REMOVE_CUSTOMER))
+        }
+    }
+}

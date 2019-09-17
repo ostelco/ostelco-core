@@ -3,6 +3,10 @@ import PropTypes from 'prop-types';
 import { Button, Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap';
 
 const WarningModal = (props) => {
+  var primaryColor = "primary"
+  if (props.dangerStyle) {
+    primaryColor = "danger"
+  }
   return (
     <Modal isOpen={props.show} toggle={props.handleClose}>
       <ModalHeader toggle={props.handleClose}>{props.heading}</ModalHeader>
@@ -12,7 +16,7 @@ const WarningModal = (props) => {
         </p>
       </ModalBody>
       <ModalFooter>
-        <Button color="primary" onClick={props.handleConfirm}>Yes</Button>{' '}
+        <Button outline color={primaryColor} onClick={props.handleConfirm}>Yes</Button>{' '}
         <Button color="light" onClick={props.handleClose}>Cancel</Button>
       </ModalFooter>
     </Modal>
@@ -21,6 +25,7 @@ const WarningModal = (props) => {
 
 WarningModal.propTypes = {
   show: PropTypes.bool.isRequired,
+  dangerStyle: PropTypes.bool,
   heading: PropTypes.string.isRequired,
   warningText: PropTypes.string.isRequired,
   handleConfirm: PropTypes.func.isRequired,
