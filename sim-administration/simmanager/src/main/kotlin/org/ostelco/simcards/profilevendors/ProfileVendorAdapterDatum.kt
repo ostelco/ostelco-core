@@ -24,24 +24,23 @@ import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SmDpPlusState
 import java.net.URL
 
+
+// TODO:  Why on earth is the json property set to "metricName"? It makes no sense.
+//        Fix it, but understand what it means.
+data class ProfileVendorAdapterDatum(
+        @JsonProperty("id") val id: Long,
+        @JsonProperty("metricName") val name: String)
+
+
 /**
  * An profile vendors that can connect to SIM profile vendors and activate
  * the requested SIM profile.
  *
  * Will connect to the SM-DP+  and then activate the profile, so that when
  * user equpiment tries to download a profile, it will get a profile to
- * download.
- *
- * TODO:  Why on earth is the json property set to "metricName"? It makes no sense.
- *        Fix it, but understand what it means.
+ * download.  Will also update persistent storage to reflect the values
+ * sent to and received from ES2+
  */
-data class ProfileVendorAdapterDatum(
-        @JsonProperty("id") val id: Long,
-        @JsonProperty("metricName") val name: String)
-
-// TODO: Eventually most of the config data should be present in the database, not in the
-//       config data structure.
-
 data class ProfileVendorAdapter(
         val datum: ProfileVendorAdapterDatum,
         val profileVendorConfig: ProfileVendorConfig,
@@ -57,23 +56,12 @@ data class ProfileVendorAdapter(
     //     it out and document clearly in class comment above.
     //   * Look into SimInventoryApi.kt, read TODO about design flaw, then figure  out
     //     how to proceed in that direction.
-    //   * See if the code can be made much clearer still by injecting HTTP client
-    //     etc. as class parameters.  Perhaps a two-way method is best?  First
-    //     get the data object from the database, then make another object that is used
-    //     to do the actual adaptations based on parameters both from the database, and from
-    //     the application (http clients, DAOs, etc.).
-    //   * Then  replace both with invocations to the possibly updated
-    //     ES2+ client library (possibly by moving these methods into that library, or wrapping them
-    //     around ES2+ client library invocations, we'll see what seems like the best choice when the
-    //     refactoring has progressed a little more).
-    //   * Ensure that the protocol is extensively unit tested.
 
     companion object {
 
         // For logging in the companion object
         private val logger by getLogger()
     }
-
 
     init {
 
@@ -99,37 +87,38 @@ data class ProfileVendorAdapter(
     ///  does.
     ///
 
+    private fun <T> clientInvocation(f: () -> T): Either<SimManagerError, T> {
+        return try {
+            f().right()
+        } catch (t: Throwable) {
+            SystemError("Could not execute ES2+ order: '$t'").left()
+        }
+    }
+
     private fun confirmOrderA(eid: String? = null,
                               iccid: String,
                               matchingId: String? = null,
                               confirmationCode: String? = null,
                               smdpAddress: String? = null,
-                              releaseFlag: Boolean): Either<SimManagerError, Es2ConfirmOrderResponse> {
-
-        return try {
-            client.confirmOrder(
-                    iccid = iccid,
-                    eid = eid,
-                    confirmationCode = confirmationCode,
-                    smdpAddress = smdpAddress,
-                    releaseFlag = releaseFlag).right()
-        } catch (t: Throwable) {
-            SystemError("Could not execute ES2+ confirmOrder: '$t'").left()
-        }
-    }
+                              releaseFlag: Boolean): Either<SimManagerError, Es2ConfirmOrderResponse> =
+            clientInvocation {
+                client.confirmOrder(
+                        iccid = iccid,
+                        eid = eid,
+                        confirmationCode = confirmationCode,
+                        smdpAddress = smdpAddress,
+                        releaseFlag = releaseFlag)
+            }
 
     private fun downloadOrderA(eid: String? = null,
                                iccid: String,
-                               profileType: String? = null): Either<SimManagerError, Es2DownloadOrderResponse> {
-        return try {
-            client.downloadOrder(
-                    iccid = iccid,
-                    eid = eid,
-                    profileType = profileType).right()
-        } catch (t: Throwable) {
-            SystemError("Could not execute ES2+ downloadOrder: '$t'").left()
-        }
-    }
+                               profileType: String? = null): Either<SimManagerError, Es2DownloadOrderResponse> =
+            clientInvocation {
+                client.downloadOrder(
+                        iccid = iccid,
+                        eid = eid,
+                        profileType = profileType)
+            }
 
     private fun getProfileStatusA(iccidList: List<String>, expectSuccess: Boolean): Either<SimManagerError, List<ProfileStatus>> {
 
@@ -140,25 +129,21 @@ data class ProfileVendorAdapter(
             return NotFoundError(msg, pingOk = true).left()
         }
 
-
         fun executionWasFailure(status: FunctionExecutionStatus) =
                 status.status != FunctionExecutionStatusType.ExecutedSuccess
 
-        return try {
-            val response = client.profileStatus(iccidList = iccidList)
-            if (executionWasFailure(status = response.myHeader.functionExecutionStatus)) {
-                logAndReturnNotFoundError("execution status =${response.myHeader.functionExecutionStatus}")
-            } else if (response.profileStatusList == null) {
-                logAndReturnNotFoundError("Couldn't find any response for query $iccidList")
-            } else {
-                val result = response.profileStatusList!! // TODO: Why is this necessary (see if-branch above)
-                return result.right()
-            }
-        } catch (t: Throwable) {
-            SystemError("Could not execute ES2+ getProfile: '$t'").left()
-        }
+        return clientInvocation { client.profileStatus(iccidList = iccidList) }
+                .flatMap { response ->
+                    if (executionWasFailure(status = response.myHeader.functionExecutionStatus)) {
+                        logAndReturnNotFoundError("execution status =${response.myHeader.functionExecutionStatus}")
+                    } else if (response.profileStatusList == null) {
+                        logAndReturnNotFoundError("Couldn't find any response for query $iccidList")
+                    } else {
+                        val result = response.profileStatusList!! // TODO: Why is this necessary (see if-branch above)
+                        return result.right()
+                    }
+                }
     }
-
 
     /**
      * Initiate activation of a SIM profile with an external Profile Vendor
@@ -176,8 +161,6 @@ data class ProfileVendorAdapter(
                     dao.setSmDpPlusState(simEntry.id, SmDpPlusState.ALLOCATED)
                 }
     }
-
-
 
     /**
      * Complete the activation of a SIM profile with an external Profile Vendor
@@ -205,9 +188,10 @@ data class ProfileVendorAdapter(
                         return AdapterError("simEntryId == null or empty").left()
                     }
 
-                    // TODO: Perhaps check consistency of eid values at this point.
-                    //       Not  important with current usecases, but possibly
-                    //       in the future.
+                    // TODO: This and the next methods should result in
+                    // failures if they return error values, but they probably don't
+                    //  Check out what the ideomatic way of doing this is, also apply that
+                    // finding to  the activate method below.
 
                     dao.setSmDpPlusStateAndMatchingId(simEntry.id, SmDpPlusState.RELEASED, response.matchingId!!)
 
@@ -272,11 +256,9 @@ data class ProfileVendorAdapter(
                         confirmOrder(eid, it)
                     }
 
-
     ///
     ///  Pinging the SMDP+ to see if it's there.
     ///
-
 
     /**
      * A dummy ICCID. May or may notreturn a valid profile from any HSS or SM-DP+, but is
