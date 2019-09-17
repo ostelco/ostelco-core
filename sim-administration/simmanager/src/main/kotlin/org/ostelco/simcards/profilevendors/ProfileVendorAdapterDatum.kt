@@ -15,6 +15,7 @@ import org.ostelco.prime.simmanager.AdapterError
 import org.ostelco.prime.simmanager.NotFoundError
 import org.ostelco.prime.simmanager.NotUpdatedError
 import org.ostelco.prime.simmanager.SimManagerError
+import org.ostelco.sim.es2plus.ES2PlusClient
 import org.ostelco.sim.es2plus.ES2RequestHeader
 import org.ostelco.sim.es2plus.Es2ConfirmOrder
 import org.ostelco.sim.es2plus.Es2ConfirmOrderResponse
@@ -31,6 +32,7 @@ import org.ostelco.simcards.admin.ProfileVendorConfig
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SmDpPlusState
+import java.net.URL
 import javax.ws.rs.core.MediaType
 
 /**
@@ -57,6 +59,7 @@ data class ProfileVendorAdapter(
         val httpClient: CloseableHttpClient,
         val dao: SimInventoryDAO) {
 
+    private var client: ES2PlusClient
     private val logger by getLogger()
 
     //  This class is currently the target of an ongoing refactoring.
@@ -150,6 +153,23 @@ data class ProfileVendorAdapter(
     }
 
 
+    init {
+
+        // Setting up ther ES2Plus client
+        val url = URL(profileVendorConfig.getEndpoint())
+        val hostname = url.host
+        val port = url.port
+        val protocol = url.protocol
+        val useHttps = (protocol == "https")
+        val requesterId = profileVendorConfig.requesterIdentifier
+        this.client = ES2PlusClient(
+                host = hostname,
+                port = port,
+                httpClient = httpClient,
+                requesterId =  requesterId,
+                useHttps = useHttps)
+    }
+
     /**
      * Initiate activation of a SIM profile with an external Profile Vendor
      * by sending a SM-DP+ 'download-order' message.
@@ -159,7 +179,6 @@ data class ProfileVendorAdapter(
      * @return Updated SIM profile
      */
     private fun downloadOrder(simEntry: SimEntry): Either<SimManagerError, SimEntry> {
-
 
         if (simEntry.id == null) {
             return NotUpdatedError("simEntry without id.  simEntry=$simEntry").left()
