@@ -35,7 +35,7 @@ class ES2PlusClient(
     //       wrapped in the appropriate protocol logic.   This will get rid of the silly ==null tests
     //       that riddle this class.
 
-    
+
     val logger = getLogger()
 
     companion object {
@@ -229,6 +229,8 @@ class ES2PlusClient(
                 Es2DownloadOrderResponse::class.java,
                 expectedStatusCode = 200)
     }
+
+
 
     fun confirmOrder(eid: String? = null,
                      iccid: String,

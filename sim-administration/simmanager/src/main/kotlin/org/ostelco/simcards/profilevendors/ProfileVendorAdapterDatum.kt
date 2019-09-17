@@ -15,9 +15,9 @@ import org.ostelco.prime.simmanager.AdapterError
 import org.ostelco.prime.simmanager.NotFoundError
 import org.ostelco.prime.simmanager.NotUpdatedError
 import org.ostelco.prime.simmanager.SimManagerError
+import org.ostelco.prime.simmanager.SystemError
 import org.ostelco.sim.es2plus.ES2PlusClient
 import org.ostelco.sim.es2plus.ES2RequestHeader
-import org.ostelco.sim.es2plus.Es2ConfirmOrder
 import org.ostelco.sim.es2plus.Es2ConfirmOrderResponse
 import org.ostelco.sim.es2plus.Es2DownloadOrderResponse
 import org.ostelco.sim.es2plus.Es2PlusDownloadOrder
@@ -199,6 +199,23 @@ data class ProfileVendorAdapter(
                 }
     }
 
+
+    // TODO: Consider moving this in to the client, to make it arrow compliant, but only do that after
+    //       sufficient testing has proven this code to be working correctly
+    fun confirmOrderA(eid: String? = null,
+                      iccid: String,
+                      matchingId: String? = null,
+                      confirmationCode: String? = null,
+                      smdpAddress: String? = null,
+                      releaseFlag: Boolean): Either<SimManagerError, Es2ConfirmOrderResponse> {
+
+        return try {
+            client.confirmOrder(iccid = iccid, eid = eid, confirmationCode = confirmationCode, smdpAddress = smdpAddress, releaseFlag = releaseFlag).right()
+        } catch (t: Throwable) {
+            SystemError("Could not execute ES2+ confirmOrder: '$t'").left()
+        }
+    }
+
     /**
      * Complete the activation of a SIM profile with an external Profile Vendor
      * by sending a SM-DP+ 'confirmation' message.
@@ -209,31 +226,14 @@ data class ProfileVendorAdapter(
      * @return Updated SIM profile
      */
     private fun confirmOrder(eid: String? = null,
-                             simEntry: SimEntry): Either<SimManagerError, SimEntry> {
+                             simEntry: SimEntry,
+                             releaseFlag: Boolean = true): Either<SimManagerError, SimEntry> {
 
         if (simEntry.id == null) {
             return NotUpdatedError("simEntry without id.  simEntry=$simEntry").left()
         }
 
-        // TODO: This header is a constant for this class, and could be precomputed, which
-        //       would declutter the code even more!
-        val header = ES2RequestHeader(functionRequesterIdentifier = profileVendorConfig.requesterIdentifier)
-        val request =
-                buildEs2plusRequest<Es2ConfirmOrder>(profileVendorConfig.getEndpoint(), "confirmOrder",
-                        Es2ConfirmOrder(
-                                header = header,
-                                eid = eid,
-                                iccid = simEntry.iccid
-                        ))
-
-        return executeRequest<Es2ConfirmOrderResponse>(
-                "confirmOrder",
-                httpClient,
-                request,
-                profileVendorConfig.name,
-                header.functionCallIdentifier,
-                Es2ConfirmOrderResponse::class.java,
-                simEntry.iccid)
+        return confirmOrderA(iccid = simEntry.iccid, eid = eid, releaseFlag = releaseFlag)
                 .flatMap { response ->
 
                     // TODO: The error message below is less than informative. Please amend
