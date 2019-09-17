@@ -65,7 +65,7 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                     .flatMap { simEntry ->
                         getProfileVendorAdapter(simEntry)
                                 .flatMap {
-                                    it.getProfileStatus(iccid= iccid)
+                                    it.getProfileStatus(iccid = iccid)
                                 }
                     }
 

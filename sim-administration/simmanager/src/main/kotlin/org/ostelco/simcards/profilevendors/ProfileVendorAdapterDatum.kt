@@ -21,12 +21,9 @@ import org.ostelco.sim.es2plus.ES2RequestHeader
 import org.ostelco.sim.es2plus.Es2ConfirmOrderResponse
 import org.ostelco.sim.es2plus.Es2DownloadOrderResponse
 import org.ostelco.sim.es2plus.Es2PlusDownloadOrder
-import org.ostelco.sim.es2plus.Es2ProfileStatusCommand
-import org.ostelco.sim.es2plus.Es2ProfileStatusResponse
 import org.ostelco.sim.es2plus.Es2Response
 import org.ostelco.sim.es2plus.FunctionExecutionStatus
 import org.ostelco.sim.es2plus.FunctionExecutionStatusType
-import org.ostelco.sim.es2plus.IccidListEntry
 import org.ostelco.sim.es2plus.ProfileStatus
 import org.ostelco.simcards.admin.ProfileVendorConfig
 import org.ostelco.simcards.inventory.SimEntry
@@ -166,7 +163,7 @@ data class ProfileVendorAdapter(
                 host = hostname,
                 port = port,
                 httpClient = httpClient,
-                requesterId =  requesterId,
+                requesterId = requesterId,
                 useHttps = useHttps)
     }
 
@@ -210,9 +207,38 @@ data class ProfileVendorAdapter(
                       releaseFlag: Boolean): Either<SimManagerError, Es2ConfirmOrderResponse> {
 
         return try {
-            client.confirmOrder(iccid = iccid, eid = eid, confirmationCode = confirmationCode, smdpAddress = smdpAddress, releaseFlag = releaseFlag).right()
+            client.confirmOrder(
+                    iccid = iccid,
+                    eid = eid,
+                    confirmationCode = confirmationCode,
+                    smdpAddress = smdpAddress,
+                    releaseFlag = releaseFlag).right()
         } catch (t: Throwable) {
             SystemError("Could not execute ES2+ confirmOrder: '$t'").left()
+        }
+    }
+
+    fun getProfileStatusA(iccidList: List<String>, expectSuccess: Boolean): Either<SimManagerError, List<ProfileStatus>> {
+
+        fun logAndReturnNotFoundError(msg: String): Either<SimManagerError, List<ProfileStatus>> {
+            if (!expectSuccess) {
+                Companion.logger.error(msg)
+            }
+            return NotFoundError(msg, pingOk = true).left()
+        }
+
+        return try {
+            val response = client.profileStatus(iccidList = iccidList)
+            if (executionWasFailure(status = response.myHeader.functionExecutionStatus)) {
+                logAndReturnNotFoundError("execution status =${response.myHeader.functionExecutionStatus}")
+            } else if (response.profileStatusList == null) {
+                logAndReturnNotFoundError("Couldn't find any response for query $iccidList")
+            } else {
+                val result = response.profileStatusList!! // TODO: Why is this necessary (see if-branch above)
+                return result.right()
+            }
+        } catch (t: Throwable) {
+            SystemError("Could not execute ES2+ getProfile: '$t'").left()
         }
     }
 
@@ -263,8 +289,8 @@ data class ProfileVendorAdapter(
      * @param iccid  ICCID
      * @return SM-DP+ 'profile status' for ICCID
      */
-    fun getProfileStatus(iccid: String): Either<SimManagerError, ProfileStatus> =
-            getProfileStatus(listOf(iccid))
+    fun getProfileStatus(iccid: String, expectSuccess: Boolean = true): Either<SimManagerError, ProfileStatus> =
+            getProfileStatus(listOf(iccid), expectSuccess = expectSuccess)
                     .flatMap {
                         it.first().right()
                     }
@@ -277,48 +303,16 @@ data class ProfileVendorAdapter(
      * @param iccidList  list with ICCID
      * @return  A list with SM-DP+ 'profile status' information
      */
-    private fun getProfileStatus(iccidList: List<String>): Either<SimManagerError, List<ProfileStatus>> {
+    private fun getProfileStatus(
+            iccidList: List<String>,
+            expectSuccess: Boolean = true): Either<SimManagerError, List<ProfileStatus>> {
         if (iccidList.isNullOrEmpty()) {
             logger.error("One or more ICCID values required in SM-DP+ 'profile-status' message to service {}",
-                    profileVendorConfig.name)  // TODO: Put profilVendorConfig.name into a local variable.
+                    profileVendorConfig.name)
             return NotFoundError("").left()
         }
 
-        val header = ES2RequestHeader(
-                functionRequesterIdentifier = profileVendorConfig.requesterIdentifier)
-
-        val request =
-                buildEs2plusRequest<Es2ProfileStatusCommand>(profileVendorConfig.getEndpoint(), "getProfileStatus",
-                        Es2ProfileStatusCommand(
-                                header = header,
-                                iccidList = iccidList.map { IccidListEntry(iccid = it) }
-                        ))
-
-        /// Pretty print version of ICCID list to
-        val iccids = iccidList.joinToString(prefix = "[", postfix = "]")
-        val functionCallIdentifier = header.functionCallIdentifier
-
-        return executeRequest<Es2ProfileStatusResponse>(
-                "getProfileStatus",
-                httpClient,
-                request,
-                profileVendorConfig.name,
-                header.functionCallIdentifier,
-                Es2ProfileStatusResponse::class.java,
-                iccids,
-                treatAsPing = true)
-                .flatMap { response ->
-
-                    val profileStatusList = response.profileStatusList
-
-                    if (!profileStatusList.isNullOrEmpty()) {
-                        profileStatusList.right()
-                    } else {
-                        NotFoundError("No information found for ICCID $iccids in SM-DP+ 'profile-status' message to service ${profileVendorConfig.name}",
-                                pingOk = true)
-                                .left()
-                    }
-                }
+        return getProfileStatusA(iccidList, expectSuccess = expectSuccess)
     }
 
     /**
@@ -347,5 +341,5 @@ data class ProfileVendorAdapter(
      * that it's up.
      */
     fun ping(): Either<SimManagerError, List<ProfileStatus>> =
-            getProfileStatus(iccidList = invalidICCID)
+            getProfileStatus(iccidList = invalidICCID, expectSuccess = false)
 }
