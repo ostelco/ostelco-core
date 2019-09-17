@@ -55,10 +55,8 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                     }
 
 
-    // TODO: Rewrite this function to not use the "getProfileVendorAdapterAndConfig" but instead simply use
-    //       getProfileVendorAdapter, also get rid of the wretched nested flatmaps. They are an abomination!
     fun getSimProfileStatus(hlrName: String, iccid: String): Either<SimManagerError, ProfileStatus> =
-            // TODO: This looks odd, can it be elvised into something more compact?
+            // TODO: This looks odd, can it be transformeds into something more compact?
             findSimProfileByIccid(hlrName, iccid)
                     .flatMap { simEntry ->
                         getProfileVendorAdapter(simEntry)
