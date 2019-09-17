@@ -5,10 +5,6 @@ import arrow.core.flatMap
 import arrow.core.left
 import arrow.core.right
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import org.apache.http.client.methods.HttpUriRequest
-import org.apache.http.client.methods.RequestBuilder
-import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.simmanager.AdapterError
@@ -17,11 +13,8 @@ import org.ostelco.prime.simmanager.NotUpdatedError
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.prime.simmanager.SystemError
 import org.ostelco.sim.es2plus.ES2PlusClient
-import org.ostelco.sim.es2plus.ES2RequestHeader
 import org.ostelco.sim.es2plus.Es2ConfirmOrderResponse
 import org.ostelco.sim.es2plus.Es2DownloadOrderResponse
-import org.ostelco.sim.es2plus.Es2PlusDownloadOrder
-import org.ostelco.sim.es2plus.Es2Response
 import org.ostelco.sim.es2plus.FunctionExecutionStatus
 import org.ostelco.sim.es2plus.FunctionExecutionStatusType
 import org.ostelco.sim.es2plus.ProfileStatus
@@ -30,7 +23,6 @@ import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SmDpPlusState
 import java.net.URL
-import javax.ws.rs.core.MediaType
 
 /**
  * An profile vendors that can connect to SIM profile vendors and activate
@@ -177,11 +169,9 @@ data class ProfileVendorAdapter(
      * @return Updated SIM profile
      */
     private fun downloadOrder(simEntry: SimEntry): Either<SimManagerError, SimEntry> {
-
-        if (simEntry.id == null) {
-            return NotUpdatedError("simEntry without id.  simEntry=$simEntry").left()
-        }
-        downloadOrderA(iccid = simEntry.iccid)
+        return if (simEntry.id == null) {
+            NotUpdatedError("simEntry without id.  simEntry=$simEntry").left()
+        } else downloadOrderA(iccid = simEntry.iccid)
                 .flatMap {
                     dao.setSmDpPlusState(simEntry.id, SmDpPlusState.ALLOCATED)
                 }
@@ -262,6 +252,11 @@ data class ProfileVendorAdapter(
         }
     }
 
+
+    ///
+    ///  Activating a sim card.
+    ///
+
     /**
      * Requests the an external Profile Vendor to activate the
      * SIM profile.
@@ -276,6 +271,12 @@ data class ProfileVendorAdapter(
                     .flatMap {
                         confirmOrder(eid, it)
                     }
+
+
+    ///
+    ///  Pinging the SMDP+ to see if it's there.
+    ///
+
 
     /**
      * A dummy ICCID. May or may notreturn a valid profile from any HSS or SM-DP+, but is
