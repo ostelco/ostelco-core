@@ -80,73 +80,6 @@ data class ProfileVendorAdapter(
 
         // For logging in the companion object
         private val logger by getLogger()
-
-        // For logging serialization/deserialization of JSON serialized ES2+
-        // payloads.
-        private val mapper = jacksonObjectMapper()
-
-        private fun <T> buildEs2plusRequest(endpoint: String, esplusOrderName: String, payload: T): HttpUriRequest {
-            val payloadString = mapper.writeValueAsString(payload)
-            return RequestBuilder.post()
-                    .setUri("${endpoint}/gsma/rsp2/es2plus/${esplusOrderName}")
-                    .setHeader("User-Agent", "gsma-rsp-lpad")
-                    .setHeader("X-Admin-Protocol", "gsma/rsp/v2.0.0")
-                    .setHeader("Content-Type", MediaType.APPLICATION_JSON)
-                    .setEntity(StringEntity(payloadString))
-                    .build()
-        }
-
-        private fun executionWasFailure(status: FunctionExecutionStatus) =
-                status.status != FunctionExecutionStatusType.ExecutedSuccess
-
-
-        // TODO: Future refactoring: Move this code into the ES2PlusClient, more or less.
-        private fun <T : Es2Response> executeRequest(
-                es2CommandName: String,
-                httpClient: CloseableHttpClient,
-                request: HttpUriRequest,
-                remoteServiceName: String,
-                functionCallIdentifier: String,
-                valueType: Class<T>,
-                iccids: String,
-                treatAsPing: Boolean = false): Either<SimManagerError, T> {
-            return try {
-
-                // When an error situation is encountered that should still be interpreted as a "correct" ping
-                // meaning that the ES2+ stack is responding with something, even if it is a (valid) error
-                // message, then the situation should _not_ be reported as an error on the log, since
-                // that would trigger ops attention to something that is a completely normal situation.
-                fun logAndReturnNotUpdatedError(statusMsg: String): Either<NotUpdatedError, T> {
-                    val msg = "SM-DP+ '$es2CommandName' message to service $remoteServiceName "
-                            .plus("for ICCID $iccids failed with $statusMsg (call-id: ${functionCallIdentifier})")
-                    if (!treatAsPing) {
-                        logger.error(msg)
-                    }
-                    return NotUpdatedError(msg, pingOk = treatAsPing).left()
-                }
-
-                return httpClient.execute(request).use { httpResponse ->
-                    when (httpResponse.statusLine.statusCode) {
-                        200 -> {
-                            val response = mapper.readValue(httpResponse.entity.content, valueType)
-                            if (executionWasFailure(status = response.myHeader.functionExecutionStatus)) {
-                                logAndReturnNotUpdatedError("execution status ${response.myHeader.functionExecutionStatus}")
-                            } else {
-                                response.right()
-                            }
-                        }
-                        else -> {
-                            logAndReturnNotUpdatedError("status code ${httpResponse.statusLine.statusCode}")
-                        }
-                    }
-                }
-            } catch (e: Throwable) {  // TODO: Is this even necessary?
-                val msg = "SM-DP+ 'order-download' message to service $remoteServiceName for ICCID $iccids."
-                logger.error(msg, e)
-                AdapterError("${msg} failed with error: $e")
-                        .left()
-            }
-        }
     }
 
 
@@ -167,44 +100,19 @@ data class ProfileVendorAdapter(
                 useHttps = useHttps)
     }
 
-    /**
-     * Initiate activation of a SIM profile with an external Profile Vendor
-     * by sending a SM-DP+ 'download-order' message.
-     * @param profileVendorConfig SIM vendor specific configuration
-     * @param dao  DB interface
-     * @param simEntry  SIM profile to activate
-     * @return Updated SIM profile
-     */
-    private fun downloadOrder(simEntry: SimEntry): Either<SimManagerError, SimEntry> {
 
-        if (simEntry.id == null) {
-            return NotUpdatedError("simEntry without id.  simEntry=$simEntry").left()
-        }
+    ///
+    ///  Adapter player adating the ES2PlusClient to  both Arrow, and
+    ///  somewhat more elaborate error checking than the basic client
+    ///  does.
+    ///
 
-        val header = ES2RequestHeader(
-                functionRequesterIdentifier = profileVendorConfig.requesterIdentifier)
-        val request =
-                buildEs2plusRequest<Es2PlusDownloadOrder>(profileVendorConfig.getEndpoint(), "downloadOrder",
-                        Es2PlusDownloadOrder(
-                                header = header,
-                                iccid = simEntry.iccid
-                        ))
-
-        return executeRequest<Es2DownloadOrderResponse>("order-download", httpClient, request, profileVendorConfig.name, header.functionCallIdentifier, Es2DownloadOrderResponse::class.java, simEntry.iccid)
-                .flatMap {
-                    dao.setSmDpPlusState(simEntry.id, SmDpPlusState.ALLOCATED)
-                }
-    }
-
-
-    // TODO: Consider moving this in to the client, to make it arrow compliant, but only do that after
-    //       sufficient testing has proven this code to be working correctly
-    fun confirmOrderA(eid: String? = null,
-                      iccid: String,
-                      matchingId: String? = null,
-                      confirmationCode: String? = null,
-                      smdpAddress: String? = null,
-                      releaseFlag: Boolean): Either<SimManagerError, Es2ConfirmOrderResponse> {
+    private fun confirmOrderA(eid: String? = null,
+                              iccid: String,
+                              matchingId: String? = null,
+                              confirmationCode: String? = null,
+                              smdpAddress: String? = null,
+                              releaseFlag: Boolean): Either<SimManagerError, Es2ConfirmOrderResponse> {
 
         return try {
             client.confirmOrder(
@@ -218,7 +126,20 @@ data class ProfileVendorAdapter(
         }
     }
 
-    fun getProfileStatusA(iccidList: List<String>, expectSuccess: Boolean): Either<SimManagerError, List<ProfileStatus>> {
+    private fun downloadOrderA(eid: String? = null,
+                               iccid: String,
+                               profileType: String? = null): Either<SimManagerError, Es2DownloadOrderResponse> {
+        return try {
+            client.downloadOrder(
+                    iccid = iccid,
+                    eid = eid,
+                    profileType = profileType).right()
+        } catch (t: Throwable) {
+            SystemError("Could not execute ES2+ downloadOrder: '$t'").left()
+        }
+    }
+
+    private fun getProfileStatusA(iccidList: List<String>, expectSuccess: Boolean): Either<SimManagerError, List<ProfileStatus>> {
 
         fun logAndReturnNotFoundError(msg: String): Either<SimManagerError, List<ProfileStatus>> {
             if (!expectSuccess) {
@@ -226,6 +147,10 @@ data class ProfileVendorAdapter(
             }
             return NotFoundError(msg, pingOk = true).left()
         }
+
+
+        fun executionWasFailure(status: FunctionExecutionStatus) =
+                status.status != FunctionExecutionStatusType.ExecutedSuccess
 
         return try {
             val response = client.profileStatus(iccidList = iccidList)
@@ -241,6 +166,28 @@ data class ProfileVendorAdapter(
             SystemError("Could not execute ES2+ getProfile: '$t'").left()
         }
     }
+
+
+    /**
+     * Initiate activation of a SIM profile with an external Profile Vendor
+     * by sending a SM-DP+ 'download-order' message.
+     * @param profileVendorConfig SIM vendor specific configuration
+     * @param dao  DB interface
+     * @param simEntry  SIM profile to activate
+     * @return Updated SIM profile
+     */
+    private fun downloadOrder(simEntry: SimEntry): Either<SimManagerError, SimEntry> {
+
+        if (simEntry.id == null) {
+            return NotUpdatedError("simEntry without id.  simEntry=$simEntry").left()
+        }
+        downloadOrderA(iccid = simEntry.iccid)
+                .flatMap {
+                    dao.setSmDpPlusState(simEntry.id, SmDpPlusState.ALLOCATED)
+                }
+    }
+
+
 
     /**
      * Complete the activation of a SIM profile with an external Profile Vendor
@@ -307,12 +254,12 @@ data class ProfileVendorAdapter(
             iccidList: List<String>,
             expectSuccess: Boolean = true): Either<SimManagerError, List<ProfileStatus>> {
         if (iccidList.isNullOrEmpty()) {
-            logger.error("One or more ICCID values required in SM-DP+ 'profile-status' message to service {}",
-                    profileVendorConfig.name)
-            return NotFoundError("").left()
+            val msg = "One or more ICCID values required in SM-DP+ 'profile-status' message to service  ${profileVendorConfig.name}"
+            logger.error(msg)
+            return NotFoundError(msg).left()
+        } else {
+            return getProfileStatusA(iccidList, expectSuccess = expectSuccess)
         }
-
-        return getProfileStatusA(iccidList, expectSuccess = expectSuccess)
     }
 
     /**
