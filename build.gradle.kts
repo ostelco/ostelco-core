@@ -89,6 +89,7 @@ subprojects {
   }
 }
 
+// TODO vihang port this from groovy to kts
 //tasks.withType<DependencyUpdates> {
 //  resolutionStrategy = Action {
 //    componentSelection { rules ->
