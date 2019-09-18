@@ -51,14 +51,13 @@ object PurchaseInfoPublisher :
     private fun convertToJson(purchaseRecordInfo: PurchaseRecordInfo): ByteString =
             ByteString.copyFromUtf8(gson.toJson(purchaseRecordInfo))
 
-
-    fun publish(purchaseRecord: PurchaseRecord, customerId: String, status: String) {
+    fun publish(purchaseRecord: PurchaseRecord, customerAnalyticsId: String, status: String) {
 
         val pubsubMessage = PubsubMessage.newBuilder()
-                .setData(convertToJson(PurchaseRecordInfo(purchaseRecord, customerId, status)))
+                .setData(convertToJson(PurchaseRecordInfo(purchaseRecord, customerAnalyticsId, status)))
                 .build()
 
-        //schedule a message to be published, messages are automatically batched
+        // schedule a message to be published, messages are automatically batched
         val future = publishPubSubMessage(pubsubMessage)
 
         // add an asynchronous callback to handle success / failure
@@ -70,7 +69,7 @@ object PurchaseInfoPublisher :
                     logger.warn("Status code: {}", throwable.statusCode.code)
                     logger.warn("Retrying: {}", throwable.isRetryable)
                 }
-                logger.warn("Error publishing purchase record for customerId: {}", customerId)
+                logger.warn("Error publishing purchase record for customerAnalyticsId: {}", customerAnalyticsId)
             }
 
             override fun onSuccess(messageId: String) {
