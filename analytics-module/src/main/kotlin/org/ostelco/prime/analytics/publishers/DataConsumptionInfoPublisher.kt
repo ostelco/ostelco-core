@@ -3,6 +3,8 @@ package org.ostelco.prime.analytics.publishers
 import com.google.api.core.ApiFutureCallback
 import com.google.api.core.ApiFutures
 import com.google.api.gax.rpc.ApiException
+import com.google.gson.Gson
+import com.google.protobuf.ByteString
 import com.google.protobuf.util.Timestamps
 import com.google.pubsub.v1.PubsubMessage
 import org.ostelco.analytics.api.DataTrafficInfo
@@ -17,6 +19,7 @@ object DataConsumptionInfoPublisher :
         PubSubPublisher by DelegatePubSubPublisher(topicId = ConfigRegistry.config.dataTrafficTopicId) {
 
     private val logger by getLogger()
+    private val gson = Gson()
 
     fun publish(subscriptionAnalyticsId: String, usedBucketBytes: Long, bundleBytes: Long, apn: String?, mccMnc: String?) {
 
@@ -59,5 +62,9 @@ object DataConsumptionInfoPublisher :
                 logger.debug("Published message $messageId")
             }
         }, singleThreadScheduledExecutor)
+    }
+
+    private fun toJson(dataTrafficInfo: DataTrafficInfo): ByteString {
+        return ByteString.copyFromUtf8(gson.toJson(dataTrafficInfo))
     }
 }
