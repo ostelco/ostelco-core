@@ -179,7 +179,7 @@ interface SimInventoryDB {
 
     @SqlQuery("""SELECT * FROM profile_vendor_adapters
                       WHERE id = :id""")
-    fun getProfileVendorAdapterById(id: Long): ProfileVendorAdapterDatum?
+    fun getProfileVendorAdapterDatumById(id: Long): ProfileVendorAdapterDatum?
 
     /**
      * Batch handling.
