@@ -1,4 +1,5 @@
 
+import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.net.URI
 
@@ -89,18 +90,31 @@ subprojects {
   }
 }
 
-// TODO vihang port this from groovy to kts
-//tasks.withType<DependencyUpdates> {
-//  resolutionStrategy = Action {
-//    componentSelection { rules ->
-//      rules.all { ComponentSelection selection ->
-//        val rejected:Boolean = ["alpha", "beta", "rc", "cr", "m", "redhat"].any { qualifier ->
-//          selection.candidate.version ==~ /(?i).*[.-]${qualifier}[.\d-]*/
-//        }
-//        if (rejected) {
-//          selection.reject("Release candidate")
-//        }
-//      }
-//    }
-//  }
-//}
+fun isNonStable(version: String): Boolean {
+  val regex = "^[0-9,.v-]+$".toRegex()
+  val isStable = regex.matches(version)
+  return isStable.not()
+}
+
+tasks.withType<DependencyUpdatesTask> {
+  // Example 1: reject all non stable versions
+  rejectVersionIf {
+    isNonStable(candidate.version)
+  }
+
+  // Example 2: disallow release candidates as upgradable versions from stable versions
+  rejectVersionIf {
+    isNonStable(candidate.version) && !isNonStable(currentVersion)
+  }
+
+  // Example 3: using the full syntax
+  resolutionStrategy {
+    componentSelection {
+      all {
+        if (isNonStable(candidate.version) && !isNonStable(currentVersion)) {
+          reject("Release candidate")
+        }
+      }
+    }
+  }
+}
