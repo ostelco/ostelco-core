@@ -14,8 +14,8 @@ dependencies {
   val jaxbVersion:String by rootProject.extra
   val javaxActivationVersion:String by rootProject.extra
 
-  api("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
-  api("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
+  api(kotlin("stdlib-jdk8"))
+  api(kotlin("reflect"))
   api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinXCoroutinesVersion")
 
   api("io.dropwizard:dropwizard-auth:$dropwizardVersion")
@@ -38,8 +38,8 @@ dependencies {
   runtimeOnly("javax.xml.bind:jaxb-api:$jaxbVersion")
   runtimeOnly("javax.activation:activation:$javaxActivationVersion")
 
-  testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
-  testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
+  testImplementation(kotlin("test"))
+  testImplementation(kotlin("test-junit"))
 }
 
 apply(from = "../gradle/jacoco.gradle")

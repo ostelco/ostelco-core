@@ -14,7 +14,7 @@ dependencies {
   val beamVersion:String by rootProject.extra
   val junit5Version:String by rootProject.extra
 
-  implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
+  implementation(kotlin("stdlib-jdk8"))
 
   implementation(project(":analytics-grpc-api"))
 

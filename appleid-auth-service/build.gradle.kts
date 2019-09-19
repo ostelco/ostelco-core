@@ -21,7 +21,7 @@ dependencies {
   runtimeOnly("io.jsonwebtoken:jjwt-jackson:$jjwtVersion")
 
   testImplementation("io.dropwizard:dropwizard-testing:$dropwizardVersion")
-  testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
+  testImplementation(kotlin("test-junit"))
   testImplementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
 }
 

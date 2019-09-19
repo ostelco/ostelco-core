@@ -43,8 +43,8 @@ dependencies {
   api("io.arrow-kt:arrow-instances-core:$arrowVersion")
   api("io.arrow-kt:arrow-effects:$arrowVersion")
 
-  implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
-  implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
+  implementation(kotlin("reflect"))
+  implementation(kotlin("stdlib-jdk8"))
 
   implementation("io.dropwizard:dropwizard-core:$dropwizardVersion")
   implementation("io.dropwizard:dropwizard-client:$dropwizardVersion")

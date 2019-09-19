@@ -59,7 +59,7 @@ dependencies {
   implementation("io.dropwizard:dropwizard-client:$dropwizardVersion")
   implementation("io.dropwizard:dropwizard-jdbi3:$dropwizardVersion")
   implementation("io.dropwizard.metrics:metrics-core:$metricsVersion")
-  implementation ("com.google.guava:guava:$guavaVersion") {
+  implementation("com.google.guava:guava:$guavaVersion") {
     isForce = true
   }
 

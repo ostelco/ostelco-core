@@ -8,8 +8,8 @@ dependencies {
   val kotlinVersion:String by rootProject.extra
   val slf4jVersion:String by rootProject.extra
 
-  implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
-  implementation ("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion") {
+  implementation(kotlin("stdlib-jdk8"))
+  implementation(kotlin("reflect").toString()) {
     exclude(group = "org.jetbrains.kotlin", module = "kotlin-reflect")
   }
   api("org.mobicents.diameter:jdiameter-api:1.7.1-123") {
@@ -27,7 +27,7 @@ dependencies {
   }
   implementation("org.slf4j:log4j-over-slf4j:$slf4jVersion")
 
-  testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
+  testImplementation(kotlin("test-junit"))
   testRuntimeOnly("org.hamcrest:hamcrest-all:1.3")
   testImplementation("org.mockito:mockito-all:1.10.19")
 }

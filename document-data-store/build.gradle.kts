@@ -10,8 +10,8 @@ dependencies {
   implementation(project(":prime-modules"))
   implementation(project(":data-store"))
 
-  testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
-  testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
+  testImplementation(kotlin("test"))
+  testImplementation(kotlin("test-junit"))
 }
 
 apply(from = "../gradle/jacoco.gradle")

@@ -16,8 +16,8 @@ dependencies {
   val jjwtVersion:String by rootProject.extra
   val jacksonVersion:String by rootProject.extra
 
-  implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
-  implementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion") {
+  implementation(kotlin("stdlib-jdk8"))
+  implementation(kotlin("test").toString()) {
     exclude(module = "kotlin-stdlib-common")
   }
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinXCoroutinesVersion")
@@ -38,8 +38,8 @@ dependencies {
   implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
   implementation("org.zalando.phrs:jersey-media-json-gson:0.1")
 
-  implementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
-  implementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
+  implementation(kotlin("test"))
+  implementation(kotlin("test-junit"))
 
   implementation("io.dropwizard:dropwizard-testing:$dropwizardVersion")
 }

@@ -15,11 +15,11 @@ dependencies {
   val jaxbVersion:String by rootProject.extra
   val javaxActivationVersion:String by rootProject.extra
 
-  implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
+  implementation(kotlin("stdlib-jdk8"))
   implementation("io.dropwizard:dropwizard-core:$dropwizardVersion")
 
   implementation(project(":firebase-extensions"))
-  implementation ("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion") {
+  implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion") {
     exclude(group = "org.jetbrains.kotlin", module = "kotlin-reflect")
   }
 
@@ -27,7 +27,7 @@ dependencies {
   runtimeOnly("javax.activation:activation:$javaxActivationVersion")
   
   testImplementation("io.dropwizard:dropwizard-testing:$dropwizardVersion")
-  testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
+  testImplementation(kotlin("test-junit"))
   testRuntimeOnly("org.hamcrest:hamcrest-all:1.3")
 }
 

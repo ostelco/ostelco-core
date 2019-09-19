@@ -18,8 +18,8 @@ dependencies {
   implementation("com.google.cloud:google-cloud-pubsub:$googleCloudVersion")
   implementation("com.google.cloud:google-cloud-datastore:$googleCloudVersion")
 
-  testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
-  testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
+  testImplementation(kotlin("test"))
+  testImplementation(kotlin("test-junit"))
 }
 
 sourceSets.create("integration") {
