@@ -110,6 +110,9 @@ class OcsTest {
         }.first().balance
     }
 
+    /**
+     * Test that the OCS will correctly handle CCR with Requested-Service-Units for multiple Rating-Groups
+     */
 
     @Test
     fun multiRatingGroupsInit() {
@@ -357,6 +360,9 @@ class OcsTest {
         }
     }
 
+    /**
+     * Test that a users gets correctly denied when the balance on the OCS is used up
+     */
 
     @Test
     fun creditControlRequestInitTerminateNoCredit() {
@@ -484,6 +490,10 @@ class OcsTest {
     }
 
 
+    /**
+     * Test that the OCS will deny service for users not in the system
+     */
+
     @Test
     fun creditControlRequestInitUnknownUser() {
 
@@ -511,6 +521,10 @@ class OcsTest {
             assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
         }
     }
+
+    /**
+     * Test CCR with Requested-Service-Units for a Rating-Group only ( no Service-Identifier set )
+     */
 
     @Test
     fun creditControlRequestInitNoServiceId() {
@@ -688,6 +702,11 @@ class OcsTest {
 
     }
 
+    /**
+     * Test that the default bucket size is used by the OCS when the CCR only contain
+     * Requested-Service-Unit without specified value.
+     */
+
     @Test
     fun creditControlRequestInitUpdateAndTerminateNoRequestedServiceUnit() {
 
@@ -724,6 +743,9 @@ class OcsTest {
     }
 
 
+    /**
+     * Test that the OCS will handle CCR-U that does not contain any Requested-Service-Units only Used-Service-Units
+     */
 
     @Test
     fun simpleCreditControlRequestInitUpdateNoRSU() {
