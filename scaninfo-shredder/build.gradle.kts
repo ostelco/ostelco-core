@@ -28,7 +28,7 @@ dependencies {
 
   implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
 
-  implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
+  implementation(kotlin("stdlib-jdk8"))
   implementation("com.google.cloud:google-cloud-datastore:$googleCloudVersion")
 
   implementation("io.arrow-kt:arrow-core:$arrowVersion")
@@ -40,8 +40,8 @@ dependencies {
 
   testImplementation("io.dropwizard:dropwizard-testing:$dropwizardVersion")
   testImplementation("org.mockito:mockito-core:$mockitoVersion")
-  testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
-  testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
+  testImplementation(kotlin("test"))
+  testImplementation(kotlin("test-junit"))
 
 }
 

@@ -11,7 +11,7 @@ dependencies {
   val kotlinVersion:String by rootProject.extra
   val neo4jDriverVersion:String by rootProject.extra
 
-  implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
+  implementation(kotlin("stdlib-jdk8"))
 
   implementation(project(":prime-modules"))
   implementation("org.neo4j.driver:neo4j-java-driver:$neo4jDriverVersion")
