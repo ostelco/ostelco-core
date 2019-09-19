@@ -21,6 +21,15 @@ object DataConsumptionInfoPublisher :
     private val logger by getLogger()
     private val gson = Gson()
 
+    /**
+     * Publishes a new data consumption record to Cloud Pubsub
+     *
+     * @param subscriptionAnalyticsId UUID for the subscription consuming data (equivalent to MSISDN)
+     * @param usedBucketBytes bytes bucket that was used prior to this event being sent
+     * @param bundleBytes bytes left in the current bundle
+     * @param apn access point name
+     * @param mccMnc country/operator code pair
+     */
     fun publish(subscriptionAnalyticsId: String, usedBucketBytes: Long, bundleBytes: Long, apn: String?, mccMnc: String?) {
 
         if (usedBucketBytes == 0L) {

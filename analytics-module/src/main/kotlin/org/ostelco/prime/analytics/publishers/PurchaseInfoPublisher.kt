@@ -51,6 +51,13 @@ object PurchaseInfoPublisher :
     private fun convertToJson(purchaseRecordInfo: PurchaseRecordInfo): ByteString =
             ByteString.copyFromUtf8(gson.toJson(purchaseRecordInfo))
 
+    /**
+     * Publishes a new purchase record to Cloud Pubsub
+     *
+     * @param purchaseRecord contains identifiers, product information, and additional properties
+     * @param customerAnalyticsId UUID for the customer (equivalent to customer ID)
+     * @param status "success" if the purchase was completed or "refunded" if the purchase got refunded
+     */
     fun publish(purchaseRecord: PurchaseRecord, customerAnalyticsId: String, status: String) {
 
         val pubsubMessage = PubsubMessage.newBuilder()
