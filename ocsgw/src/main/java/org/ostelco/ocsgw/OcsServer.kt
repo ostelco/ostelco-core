@@ -16,12 +16,15 @@ import org.ostelco.diameter.getLogger
 import org.ostelco.diameter.model.ReAuthRequestType
 import org.ostelco.diameter.model.SessionContext
 import org.ostelco.ocsgw.datasource.DataSource
+import org.ostelco.ocsgw.datasource.DataSourceType
 import org.ostelco.ocsgw.datasource.DataSourceType.Local
 import org.ostelco.ocsgw.datasource.DataSourceType.Proxy
 import org.ostelco.ocsgw.datasource.DataSourceType.PubSub
 import org.ostelco.ocsgw.datasource.DataSourceType.gRPC
+import org.ostelco.ocsgw.datasource.DataSourceType.Multi
 import org.ostelco.ocsgw.datasource.SecondaryDataSourceType
 import org.ostelco.ocsgw.datasource.local.LocalDataSource
+import org.ostelco.ocsgw.datasource.multi.MultiDataSource
 import org.ostelco.ocsgw.datasource.protobuf.GrpcDataSource
 import org.ostelco.ocsgw.datasource.protobuf.ProtobufDataSource
 import org.ostelco.ocsgw.datasource.protobuf.PubSubDataSource
@@ -126,15 +129,28 @@ object OcsServer {
 
         this.defaultRequestedServiceUnit = appConfig.defaultRequestedServiceUnit
 
-        val protobufDataSource = ProtobufDataSource()
+        source = setupDataSource(appConfig)
+        source?.init()
+    }
 
-        source = when (appConfig.dataStoreType) {
+    private fun setupDataSource(appConfig: AppConfig) : DataSource {
+        val protobufDataSource = ProtobufDataSource()
+        val source = when (appConfig.dataStoreType) {
             Proxy -> {
                 logger.info("Using ProxyDataSource")
                 val secondary = when (appConfig.secondaryDataStoreType) {
-                    SecondaryDataSourceType.PubSub -> getPubSubDataSource(protobufDataSource, appConfig)
-                    SecondaryDataSourceType.gRPC -> getGrpcDataSource(protobufDataSource, appConfig)
-                    else -> getPubSubDataSource(protobufDataSource, appConfig)
+                    SecondaryDataSourceType.PubSub -> {
+                        logger.info("SecondaryDataStore set to PubSub")
+                        getPubSubDataSource(protobufDataSource, appConfig)
+                    }
+                    SecondaryDataSourceType.gRPC -> {
+                        logger.info("SecondaryDataStore set to gRPC")
+                        getGrpcDataSource(protobufDataSource, appConfig)
+                    }
+                    else -> {
+                        logger.info("Default SecondaryDataSource PubSub")
+                        getPubSubDataSource(protobufDataSource, appConfig)
+                    }
                 }
                 secondary.init()
                 ProxyDataSource(secondary)
@@ -151,12 +167,19 @@ object OcsServer {
                 logger.info("Using GrpcDataSource")
                 getGrpcDataSource(protobufDataSource, appConfig)
             }
+            Multi -> {
+                logger.info("Using MultiDataSource")
+                val initDataSource = LocalDataSource()
+                val updateDataSource = LocalDataSource()
+                val terminateDataSource = LocalDataSource()
+                MultiDataSource(initDataSource, updateDataSource, terminateDataSource)
+            }
             else -> {
                 logger.warn("Unknown DataStoreType {}", appConfig.dataStoreType)
                 LocalDataSource()
             }
         }
-        source?.init()
+        return source;
     }
 
     private fun getGrpcDataSource(
