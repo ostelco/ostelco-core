@@ -52,6 +52,7 @@ class PreallocateProfilesTask(
 
     @Throws(Exception::class)
     override fun execute(parameters: ImmutableMultimap<String, String>, output: PrintWriter) {
+        // TODO: Rewrite to deliver a report of what happened, also if things went well.
         preAllocateSimProfiles()
                 .mapLeft { simManagerError ->
                     logger.error(simManagerError.description)
@@ -107,19 +108,14 @@ class PreallocateProfilesTask(
                         }
 
 
-    // TODO: Refactor this and other methods in this file so that indentation is no more than three levels of
-    //       parenthesis (with a few  as possible exceptions).
     private fun batchPreprovisionSimProfiles(hssEntry: HssEntry,
                                              simProfileName: String,
                                              profileStats: SimProfileKeyStatistics): Either<SimManagerError, Any> {
 
-        logger.debug("batchPreprovisionSimProfiles hssEntry='$hssEntry', simProfileName='$simProfileName', profileStats='$profileStats.'")
+        logger.debug("preprovisioning hssEntry='$hssEntry', simProfileName='$simProfileName', profileStats='$profileStats.'")
 
         val noOfProfilesToActuallyAllocate =
                 min(maxNoOfProfileToAllocate.toLong(), profileStats.noOfUnallocatedEntries)
-
-        logger.debug("preprovisioning for profileName='$simProfileName', HSS with ID/metricName ${hssEntry.id}/${hssEntry.name}. noOfProfilesToActuallyAllocate= $noOfProfilesToActuallyAllocate")
-
 
         if (noOfProfilesToActuallyAllocate == 0L) {
             logger.error("Could not find any profiles to allocate for hssname = '{}', profilename = '{}', profileStats = '{}'",
@@ -128,35 +124,38 @@ class PreallocateProfilesTask(
                     profileStats)
         } else
             for (i in 1..noOfProfilesToActuallyAllocate) {
-
                 logger.debug("preprovisioning for profileName='$simProfileName', HSS with ID/metricName ${hssEntry.id}/${hssEntry.name}. Iteration index = $i")
-                simInventoryDAO.findNextNonProvisionedSimProfileForHss(hssId = hssEntry.id, profile = simProfileName)
-                        .flatMap { simEntry ->
-                            logger.debug("preprovisioning for profileName='$simProfileName', HSS with ID/metricName ${hssEntry.id}/${hssEntry.name} simEntry with ICCID=${simEntry.iccid}, id = ${simEntry.id}")
-                            if (simEntry.id == null) {
-                                DatabaseError("This should never happen, since everything that is read from a database should have an ID")
-                                        .left()
-                            } else {
-                                preProvisionSimProfile(hssEntry, simEntry)
-                                        .mapLeft {
-                                            logger.error("Preallocation of SIM ICCID {} failed with error: {}}",
-                                                    simEntry.iccid, it.description)
-                                            simInventoryDAO.setProvisionState(simEntry.id, ProvisionState.ALLOCATION_FAILED)
-                                        }
-
-                            }
-                        }
+                val focus = simInventoryDAO.findNextNonProvisionedSimProfileForHss(hssId = hssEntry.id, profile = simProfileName)
+                focus.mapLeft { error -> return error.left() }
+                focus.flatMap { simEntry -> preProvisionSimProfile(simEntry, simProfileName, hssEntry).right() }
             }
 
-        // TODO: Replace the text "ok" with a report of what was actually done by the provisioning
-        //       task.
-        return "ok".right()
+        // TODO: Replace the text "Unit" with a report of what was actually done by the provisioning
+        //       task (eventually this will be the report collected by a report builder that has yet to be constructed)
+        return Unit.right()
     }
-    
+
+    private fun preProvisionSimProfile(simEntry: SimEntry, simProfileName: String, hssEntry: HssEntry): Either<SimManagerError, Any> {
+        logger.debug("preprovisioning for profileName='$simProfileName', HSS with ID/metricName ${hssEntry.id}/${hssEntry.name} simEntry with ICCID=${simEntry.iccid}, id = ${simEntry.id}")
+        return if (simEntry.id == null) {
+            DatabaseError("This should never happen, since everything that is read from a database should have an ID")
+                    .left()
+        } else {
+            preProvisionSimProfile(hssEntry, simEntry)
+                    .mapLeft { simManagerError ->
+                        logger.error("Preallocation of SIM ICCID {} failed with error: {}}",
+                                simEntry.iccid, simManagerError.description)
+                        simInventoryDAO.setProvisionState(simEntry.id, ProvisionState.ALLOCATION_FAILED)
+                        simManagerError
+                    }
+        }
+    }
+
 
     fun preAllocateSimProfiles(): Either<SimManagerError, Unit> =
             simInventoryDAO.getHssEntries().flatMap { entries ->
-                entries.forEach { preAllocateSimProfilesForHss(it) // TODO: .mapLeft { return it} ??
+                entries.forEach {
+                    preAllocateSimProfilesForHss(it)
                 }.right()
             }
 
