@@ -567,7 +567,7 @@ class OcsTest {
 
 
     /**
-     * This test that CCR-I with no requested Service-Units
+     * This test CCR-I without any Requested-Service-Units
      */
 
     @Test
