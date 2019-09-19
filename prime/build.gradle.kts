@@ -9,7 +9,7 @@ plugins {
 }
 
 // Update version in [script/start.sh] too.
-version = "1.61.1"
+version = "1.61.2"
 
 dependencies {
 
