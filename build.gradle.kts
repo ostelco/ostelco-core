@@ -6,11 +6,11 @@ import java.net.URI
 plugins {
   java
   id("project-report")
-  id("com.github.ben-manes.versions") version("0.25.0")
+  id("com.github.ben-manes.versions") version "0.25.0"
   jacoco
-  kotlin("jvm") version("1.3.50") apply(false)
-  id("com.google.protobuf") version("0.8.10") apply (false)
-  id("com.github.johnrengelman.shadow") version("5.1.0") apply(false)
+  kotlin("jvm") version "1.3.50" apply false
+  id("com.google.protobuf") version "0.8.10" apply false
+  id("com.github.johnrengelman.shadow") version "5.1.0" apply false
 }
 
 allprojects {
