@@ -15,7 +15,7 @@ dependencies {
   val jaxbVersion:String by rootProject.extra
   val javaxActivationVersion:String by rootProject.extra
 
-  implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
+  implementation(kotlin("stdlib-jdk8"))
 
   // This is not a prime-module. Just needed access to getLogger and Dropwizard KotlinModule.
   implementation(project(":prime-modules"))

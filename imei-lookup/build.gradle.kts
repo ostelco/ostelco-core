@@ -12,8 +12,8 @@ dependencies {
 
   testImplementation("io.dropwizard:dropwizard-testing:$dropwizardVersion")
 
-  testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
-  testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
+  testImplementation(kotlin("test"))
+  testImplementation(kotlin("test-junit"))
 }
 
 apply(from = "../gradle/jacoco.gradle")
