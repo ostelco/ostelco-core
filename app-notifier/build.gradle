@@ -1,9 +1,0 @@
-plugins {
-  id "org.jetbrains.kotlin.jvm"
-  id "java-library"
-}
-
-dependencies {
-  implementation project(":prime-modules")
-  implementation project(":firebase-extensions")
-}

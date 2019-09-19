@@ -19,7 +19,7 @@ sourceSets {
 }
 
 // Update version in [script/start.sh] too.
-version = "1.61.0"
+version = "1.61.1"
 
 dependencies {
   // interface module between prime and prime-modules
