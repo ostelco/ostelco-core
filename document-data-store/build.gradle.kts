@@ -4,9 +4,6 @@ plugins {
 }
 
 dependencies {
-
-  val kotlinVersion:String by rootProject.extra
-
   implementation(project(":prime-modules"))
   implementation(project(":data-store"))
 

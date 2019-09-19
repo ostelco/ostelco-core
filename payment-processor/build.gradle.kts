@@ -1,3 +1,5 @@
+import org.ostelco.prime.gradle.Version
+
 plugins {
   kotlin("jvm")
   `java-library`
@@ -5,18 +7,13 @@ plugins {
 }
 
 dependencies {
-
-  val stripeVersion:String by rootProject.extra
-  val googleCloudVersion:String by rootProject.extra
-  val kotlinVersion:String by rootProject.extra
-
   implementation(project(":prime-modules"))
   implementation(project(":data-store"))
 
-  implementation("com.stripe:stripe-java:$stripeVersion")
+  implementation("com.stripe:stripe-java:${Version.stripe}")
 
-  implementation("com.google.cloud:google-cloud-pubsub:$googleCloudVersion")
-  implementation("com.google.cloud:google-cloud-datastore:$googleCloudVersion")
+  implementation("com.google.cloud:google-cloud-pubsub:${Version.googleCloud}")
+  implementation("com.google.cloud:google-cloud-datastore:${Version.googleCloud}")
 
   testImplementation(kotlin("test"))
   testImplementation(kotlin("test-junit"))

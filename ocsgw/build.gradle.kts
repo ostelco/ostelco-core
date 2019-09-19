@@ -1,5 +1,6 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+import org.ostelco.prime.gradle.Version
 
 plugins {
   kotlin("jvm")
@@ -8,13 +9,6 @@ plugins {
 }
 
 dependencies {
-  val kotlinVersion:String by rootProject.extra
-  val googleCloudVersion:String by rootProject.extra
-  val jaxbVersion:String by rootProject.extra
-  val javaxActivationVersion:String by rootProject.extra
-  val jacksonVersion:String by rootProject.extra
-  val junit5Version:String by rootProject.extra
-
   implementation(kotlin("stdlib-jdk8"))
 
   implementation(project(":ocs-grpc-api"))
@@ -23,14 +17,14 @@ dependencies {
   implementation(project(":diameter-stack"))
   implementation(project(":diameter-ha"))
 
-  implementation("com.google.cloud:google-cloud-pubsub:$googleCloudVersion")
-  implementation("com.google.cloud:google-cloud-core-grpc:$googleCloudVersion")
-  implementation("com.google.cloud:google-cloud-storage:$googleCloudVersion")
+  implementation("com.google.cloud:google-cloud-pubsub:${Version.googleCloud}")
+  implementation("com.google.cloud:google-cloud-core-grpc:${Version.googleCloud}")
+  implementation("com.google.cloud:google-cloud-storage:${Version.googleCloud}")
 
-  implementation("javax.xml.bind:jaxb-api:$jaxbVersion")
-  runtimeOnly("javax.activation:activation:$javaxActivationVersion")
+  implementation("javax.xml.bind:jaxb-api:${Version.jaxb}")
+  runtimeOnly("javax.activation:activation:${Version.javaxActivation}")
 
-  implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
+  implementation("com.fasterxml.jackson.core:jackson-databind:${Version.jackson}")
   implementation("ch.qos.logback:logback-classic:1.2.3")
   implementation("ch.qos.logback.contrib:logback-json-classic:0.1.5")
   implementation("ch.qos.logback.contrib:logback-jackson:0.1.5")
@@ -38,11 +32,11 @@ dependencies {
   compile("com.google.cloud:google-cloud-logging-logback:0.97.0-alpha")
 
   testImplementation(project(":diameter-test"))
-  testImplementation("org.junit.jupiter:junit-jupiter-api:$junit5Version")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junit5Version")
+  testImplementation("org.junit.jupiter:junit-jupiter-api:${Version.junit5}")
+  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${Version.junit5}")
 
   testImplementation("junit:junit:4.12")
-  testRuntimeOnly("org.junit.vintage:junit-vintage-engine:$junit5Version")
+  testRuntimeOnly("org.junit.vintage:junit-vintage-engine:${Version.junit5}")
 }
 
 application {
