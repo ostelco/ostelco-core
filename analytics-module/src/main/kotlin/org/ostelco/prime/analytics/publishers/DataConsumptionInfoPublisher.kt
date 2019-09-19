@@ -5,11 +5,10 @@ import com.google.api.core.ApiFutures
 import com.google.api.gax.rpc.ApiException
 import com.google.gson.Gson
 import com.google.protobuf.ByteString
-import com.google.protobuf.util.Timestamps
 import com.google.pubsub.v1.PubsubMessage
-import org.ostelco.analytics.api.DataTrafficInfo
 import org.ostelco.prime.analytics.ConfigRegistry
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.model.DataTrafficInfo
 import java.time.Instant
 
 /**
@@ -36,16 +35,14 @@ object DataConsumptionInfoPublisher :
             return
         }
 
-        val now = Instant.now().toEpochMilli()
-
-        val dataTrafficInfo = DataTrafficInfo.newBuilder()
-                .setSubscriptionAnalyticsId(subscriptionAnalyticsId)
-                .setUsedBucketBytes(usedBucketBytes)
-                .setBundleBytes(bundleBytes)
-                .setTimestamp(Timestamps.fromMillis(now))
-                .setApn(apn)
-                .setMccMnc(mccMnc)
-                .build()
+        val dataTrafficInfo = DataTrafficInfo(
+                timestamp = Instant.now().toEpochMilli(),
+                subscriptionAnalyticsId = subscriptionAnalyticsId,
+                usedBucketBytes = usedBucketBytes,
+                bundleBytes = bundleBytes,
+                apn = apn,
+                mccMnc = mccMnc
+        )
 
         val pubsubMessage = PubsubMessage.newBuilder()
                 .setData(toJson(dataTrafficInfo))

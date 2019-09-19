@@ -8,10 +8,7 @@ import org.ostelco.prime.model.PurchaseRecord
 
 class AnalyticsServiceImpl : AnalyticsService {
 
-    private val logger by getLogger()
-
     override fun reportTrafficInfo(subscriptionAnalyticsId: String, usedBucketBytes: Long, bundleBytes: Long, apn: String?, mccMnc: String?) {
-        logger.info("reportTrafficInfo : subscriptionAnalyticsId {} usedBucketBytes {} bundleBytes {} apn {} mccMnc {}", subscriptionAnalyticsId, usedBucketBytes, bundleBytes, apn, mccMnc)
         DataConsumptionInfoPublisher.publish(subscriptionAnalyticsId, usedBucketBytes, bundleBytes, apn, mccMnc)
     }
 

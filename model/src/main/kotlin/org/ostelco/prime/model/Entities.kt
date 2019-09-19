@@ -371,7 +371,17 @@ enum class SimProfileStatus {
 
 data class Context(
         val customer: Customer,
-        val regions: Collection<RegionDetails> = emptyList())
+        val regions: Collection<RegionDetails> = emptyList()
+)
+
+data class DataTrafficInfo(
+        val subscriptionAnalyticsId: String,
+        val usedBucketBytes: Long,
+        val bundleBytes: Long,
+        val timestamp: Long,
+        val apn: String?,
+        val mccMnc: String?
+)
 
 data class CustomerActivity(
         val timestamp: Long,
