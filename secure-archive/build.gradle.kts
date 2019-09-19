@@ -20,8 +20,8 @@ dependencies {
   implementation("com.google.cloud:google-cloud-storage:$googleCloudVersion")
   implementation("com.google.crypto.tink:tink:$tinkVersion")
 
-  testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
-  testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
+  testImplementation(kotlin("test"))
+  testImplementation(kotlin("test-junit"))
 }
 
 apply(from = "../gradle/jacoco.gradle")

@@ -14,7 +14,7 @@ dependencies {
   val jaxbVersion:String by rootProject.extra
   val javaxActivationVersion:String by rootProject.extra
 
-  implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
+  implementation(kotlin("stdlib-jdk8"))
 
   implementation("io.dropwizard:dropwizard-core:$dropwizardVersion")
 
@@ -26,8 +26,8 @@ dependencies {
   runtimeOnly("javax.activation:activation:$javaxActivationVersion")
 
   testImplementation("io.dropwizard:dropwizard-testing:$dropwizardVersion")
-  testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
-  testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
+  testImplementation(kotlin("test"))
+  testImplementation(kotlin("test-junit"))
 }
 
 application {
