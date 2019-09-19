@@ -1,12 +1,9 @@
 package org.ostelco.simcards.admin
 
 import arrow.core.Either
-import arrow.core.fix
 import arrow.core.flatMap
 import arrow.core.left
 import arrow.core.right
-import arrow.effects.IO
-import arrow.instances.either.monad.monad
 import com.google.common.collect.ImmutableMultimap
 import io.dropwizard.servlets.tasks.Task
 import org.apache.http.impl.client.CloseableHttpClient
@@ -15,6 +12,7 @@ import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.simmanager.AdapterError
 import org.ostelco.prime.simmanager.DatabaseError
 import org.ostelco.prime.simmanager.SimManagerError
+import org.ostelco.prime.simmanager.SystemError
 import org.ostelco.simcards.hss.HssEntry
 import org.ostelco.simcards.hss.SimManagerToHssDispatcherAdapter
 import org.ostelco.simcards.inventory.HssState
@@ -109,6 +107,8 @@ class PreallocateProfilesTask(
                         }
 
 
+    // TODO: Refactor this and other methods in this file so that indentation is no more than three levels of
+    //       parenthesis (with a few  as possible exceptions).
     private fun batchPreprovisionSimProfiles(hssEntry: HssEntry,
                                              simProfileName: String,
                                              profileStats: SimProfileKeyStatistics): Either<SimManagerError, Any> {
@@ -147,45 +147,47 @@ class PreallocateProfilesTask(
                             }
                         }
             }
+
+        // TODO: Replace the text "ok" with a report of what was actually done by the provisioning
+        //       task.
         return "ok".right()
     }
+    
 
-    /**
-     * Made public to be testable.   Perform
-     * allocation of profiles so that if possible, there will be tasks available for
-     * provisioning.
-     */
     fun preAllocateSimProfiles(): Either<SimManagerError, Unit> =
-            IO {
-                logger.debug("Start of prealloacation")
+            simInventoryDAO.getHssEntries().flatMap { entries ->
+                entries.forEach { preAllocateSimProfilesForHss(it) // TODO: .mapLeft { return it} ??
+                }.right()
+            }
 
-                Either.monad<SimManagerError>().binding {
-                    val hssEntries: Collection<HssEntry> = simInventoryDAO.getHssEntries()
-                            .bind()
-                    hssEntries.forEach { hssEntry ->
-                        logger.debug("Start of prealloacation for HSS with ID/metricName ${hssEntry.id}/${hssEntry.name}")
-                        val simProfileNames: Collection<String> = simInventoryDAO.getProfileNamesForHssById(hssEntry.id)
-                                .bind()
-                        for (simProfileName in simProfileNames) {
-                            logger.debug("Start of prealloacation for HSS with ID/metricName ${hssEntry.id}/${hssEntry.name}, sim profile named '$simProfileName'")
+    private fun preAllocateSimProfilesForHss(hssEntry: HssEntry): Either<SimManagerError, Unit> {
+        logger.run { debug("Start of prealloacation for HSS with ID/metricName ${hssEntry.id}/${hssEntry.name}") }
+        return simInventoryDAO.getProfileNamesForHssById(hssEntry.id).flatMap { simProfileNames ->
+            simProfileNames.forEach {
+                preAllocateSimProfileForHss(hssEntry, it)
+            }.right()
+        }
+    }
 
-                            val profileStats = simInventoryDAO.getProfileStats(hssEntry.id, simProfileName)
-                                    .bind()
-
-                            if (profileStats.noOfUnallocatedEntries == 0L) {
-                                logger.error("No  more unallocated  profiles of type $simProfileName for HSS with ID/metricName ${hssEntry.id}/${hssEntry.name}")
-                            } else {
-                                logger.debug("Profiles ready for use: ${hssEntry.id}/${hssEntry.name}/$simProfileName = ${profileStats.noOfEntriesAvailableForImmediateUse}")
-                                if (profileStats.noOfEntriesAvailableForImmediateUse < lowWaterMark) {
-                                    logger.info("Preallocating new SIM batch with HLR {} and with profile {}",
-                                            hssEntry.name, simProfileName)
-
-                                    batchPreprovisionSimProfiles(hssEntry = hssEntry, simProfileName = simProfileName, profileStats = profileStats)
-                                }
-                            }
-                        }
-                    }
-                }.fix()
-            }.unsafeRunSync()
+    private fun preAllocateSimProfileForHss(hssEntry: HssEntry, simProfileName: String): Either<SimManagerError, Unit> {
+        val thisProfilesNameForLogging = "profiles  where  ID/metricName/simProfileName=${hssEntry.id}/${hssEntry.name}/$simProfileName"
+        logger.debug("Start of prealloacation for $thisProfilesNameForLogging")
+        return simInventoryDAO.getProfileStats(hssEntry.id, simProfileName).flatMap { profileStats ->
+            if (profileStats.noOfUnallocatedEntries == 0L) {
+                val msg = "No  more unallocated  $thisProfilesNameForLogging"
+                logger.error(msg)
+                return SystemError(msg).left()
+            } else {
+                logger.debug("Ready for use: $thisProfilesNameForLogging = ${profileStats.noOfEntriesAvailableForImmediateUse}")
+                if (profileStats.noOfEntriesAvailableForImmediateUse < lowWaterMark) {
+                    logger.info("Preallocating new SIM batch for $thisProfilesNameForLogging",
+                            hssEntry.name, simProfileName)
+                    batchPreprovisionSimProfiles(hssEntry = hssEntry, simProfileName = simProfileName, profileStats = profileStats)
+                }
+                // To satisfy  Arrow we must all unite, right?, ....
+                Unit.right()
+            }
+        }
+    }
 }
 
