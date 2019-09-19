@@ -100,7 +100,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
         if (!loadUnitTest && !loadAcceptanceTest) {
             CoroutineScope(Dispatchers.Default).launch {
                 AnalyticsReporter.report(
-                        msisdnAnalyticsId = consumptionResult.msisdnAnalyticsId,
+                        subscriptionAnalyticsId = consumptionResult.msisdnAnalyticsId,
                         request = request,
                         bundleBytes = consumptionResult.balance)
             }

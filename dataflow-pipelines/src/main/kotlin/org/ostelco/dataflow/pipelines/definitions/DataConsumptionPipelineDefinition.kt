@@ -36,7 +36,7 @@ object DataConsumptionPipelineDefinition : PipelineDefinition {
 
         // Filter events with empty buckets
         val filterEmptyBucketEvents = Filter.by(SerializableFunction { dataTrafficInfo: DataTrafficInfo ->
-            dataTrafficInfo.bucketBytes > 0
+            dataTrafficInfo.usedBucketBytes > 0
         })
 
         //
@@ -89,13 +89,13 @@ val consumptionPerMsisdn = object : PTransform<PCollection<DataTrafficInfo>, PCo
             val hoursSinceEpoch: Long = it.timestamp.seconds / 3600
             KV.of(
                     AggregatedDataTrafficInfo.newBuilder()
-                            .setMsisdn(it.msisdn)
+                            .setMsisdn(it.subscriptionAnalyticsId)
                             .setTimestamp(Timestamps.fromSeconds(hoursSinceEpoch * 3600))
                             .setDataBytes(0)
                             .setApn(it.apn)
                             .setMccMnc(it.mccMnc)
                             .build(),
-                    it.bucketBytes)
+                    it.usedBucketBytes)
         }
 
         val reduceToSumOfBucketBytes = Combine.groupedValues<AggregatedDataTrafficInfo, Long, Long>(Sum.ofLongs())

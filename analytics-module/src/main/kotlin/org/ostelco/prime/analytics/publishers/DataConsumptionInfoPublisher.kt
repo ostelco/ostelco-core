@@ -3,6 +3,8 @@ package org.ostelco.prime.analytics.publishers
 import com.google.api.core.ApiFutureCallback
 import com.google.api.core.ApiFutures
 import com.google.api.gax.rpc.ApiException
+import com.google.gson.Gson
+import com.google.protobuf.ByteString
 import com.google.protobuf.util.Timestamps
 import com.google.pubsub.v1.PubsubMessage
 import org.ostelco.analytics.api.DataTrafficInfo
@@ -17,8 +19,18 @@ object DataConsumptionInfoPublisher :
         PubSubPublisher by DelegatePubSubPublisher(topicId = ConfigRegistry.config.dataTrafficTopicId) {
 
     private val logger by getLogger()
+    private val gson = Gson()
 
-    fun publish(msisdnAnalyticsId: String, usedBucketBytes: Long, bundleBytes: Long, apn: String?, mccMnc: String?) {
+    /**
+     * Publishes a new data consumption record to Cloud Pubsub
+     *
+     * @param subscriptionAnalyticsId UUID for the subscription consuming data (equivalent to MSISDN)
+     * @param usedBucketBytes bytes bucket that was used prior to this event being sent
+     * @param bundleBytes bytes left in the current bundle
+     * @param apn access point name
+     * @param mccMnc country/operator code pair
+     */
+    fun publish(subscriptionAnalyticsId: String, usedBucketBytes: Long, bundleBytes: Long, apn: String?, mccMnc: String?) {
 
         if (usedBucketBytes == 0L) {
             return
@@ -26,21 +38,20 @@ object DataConsumptionInfoPublisher :
 
         val now = Instant.now().toEpochMilli()
 
-        val data = DataTrafficInfo.newBuilder()
-                .setMsisdn(msisdnAnalyticsId)
-                .setBucketBytes(usedBucketBytes)
+        val dataTrafficInfo = DataTrafficInfo.newBuilder()
+                .setSubscriptionAnalyticsId(subscriptionAnalyticsId)
+                .setUsedBucketBytes(usedBucketBytes)
                 .setBundleBytes(bundleBytes)
                 .setTimestamp(Timestamps.fromMillis(now))
                 .setApn(apn)
                 .setMccMnc(mccMnc)
                 .build()
-                .toByteString()
 
         val pubsubMessage = PubsubMessage.newBuilder()
-                .setData(data)
+                .setData(toJson(dataTrafficInfo))
                 .build()
 
-        //schedule a message to be published, messages are automatically batched
+        // schedule a message to be published, messages are automatically batched
         val future = publishPubSubMessage(pubsubMessage)
 
         // add an asynchronous callback to handle success / failure
@@ -52,7 +63,7 @@ object DataConsumptionInfoPublisher :
                     logger.warn("Status code: {}", throwable.statusCode.code)
                     logger.warn("Retrying: {}", throwable.isRetryable)
                 }
-                logger.warn("Error publishing message for msisdnAnalyticsId: {}", msisdnAnalyticsId)
+                logger.warn("Error publishing message for subscriptionAnalyticsId: {}", subscriptionAnalyticsId)
             }
 
             override fun onSuccess(messageId: String) {
@@ -60,5 +71,9 @@ object DataConsumptionInfoPublisher :
                 logger.debug("Published message $messageId")
             }
         }, singleThreadScheduledExecutor)
+    }
+
+    private fun toJson(dataTrafficInfo: DataTrafficInfo): ByteString {
+        return ByteString.copyFromUtf8(gson.toJson(dataTrafficInfo))
     }
 }
