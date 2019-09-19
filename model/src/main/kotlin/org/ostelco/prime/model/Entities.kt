@@ -337,13 +337,13 @@ data class PurchaseRecord(
 }
 
 data class PurchaseRecordInfo(override val id: String,
-                              val subscriberId: String,
+                              val customerAnalyticsId: String,
                               val product: Product,
                               val timestamp: Long,
                               val status: String) : HasId {
-    constructor(purchaseRecord: PurchaseRecord, subscriberId: String, status: String) : this(
+    constructor(purchaseRecord: PurchaseRecord, customerAnalyticsId: String, status: String) : this(
             purchaseRecord.id,
-            subscriberId,
+            customerAnalyticsId,
             purchaseRecord.product,
             purchaseRecord.timestamp,
             status)
