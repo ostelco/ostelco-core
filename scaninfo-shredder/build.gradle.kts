@@ -1,4 +1,5 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.ostelco.prime.gradle.Version
 
 plugins {
   kotlin("jvm")
@@ -9,37 +10,28 @@ plugins {
 version = "1.0.0"
 
 dependencies {
-
-  val dropwizardVersion:String by rootProject.extra
-  val kotlinXCoroutinesVersion:String by rootProject.extra
-  val jacksonVersion:String by rootProject.extra
-  val kotlinVersion:String by rootProject.extra
-  val googleCloudVersion:String by rootProject.extra
-  val arrowVersion:String by rootProject.extra
-  val mockitoVersion:String by rootProject.extra
-
   api(project(":model"))
   
   implementation(project(":data-store"))
 
-  implementation("io.dropwizard:dropwizard-core:$dropwizardVersion")
-  implementation("io.dropwizard:dropwizard-client:$dropwizardVersion")
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinXCoroutinesVersion")
+  implementation("io.dropwizard:dropwizard-core:${Version.dropwizard}")
+  implementation("io.dropwizard:dropwizard-client:${Version.dropwizard}")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Version.kotlinXCoroutines}")
 
-  implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
+  implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${Version.jackson}")
 
   implementation(kotlin("stdlib-jdk8"))
-  implementation("com.google.cloud:google-cloud-datastore:$googleCloudVersion")
+  implementation("com.google.cloud:google-cloud-datastore:${Version.googleCloudDataStore}")
 
-  implementation("io.arrow-kt:arrow-core:$arrowVersion")
-  implementation("io.arrow-kt:arrow-typeclasses:$arrowVersion")
-  implementation("io.arrow-kt:arrow-instances-core:$arrowVersion")
-  implementation("io.arrow-kt:arrow-effects:$arrowVersion")
+  implementation("io.arrow-kt:arrow-core:${Version.arrow}")
+  implementation("io.arrow-kt:arrow-typeclasses:${Version.arrow}")
+  implementation("io.arrow-kt:arrow-instances-core:${Version.arrow}")
+  implementation("io.arrow-kt:arrow-effects:${Version.arrow}")
   
-  runtimeOnly("io.dropwizard:dropwizard-json-logging:$dropwizardVersion")
+  runtimeOnly("io.dropwizard:dropwizard-json-logging:${Version.dropwizard}")
 
-  testImplementation("io.dropwizard:dropwizard-testing:$dropwizardVersion")
-  testImplementation("org.mockito:mockito-core:$mockitoVersion")
+  testImplementation("io.dropwizard:dropwizard-testing:${Version.dropwizard}")
+  testImplementation("org.mockito:mockito-core:${Version.mockito}")
   testImplementation(kotlin("test"))
   testImplementation(kotlin("test-junit"))
 

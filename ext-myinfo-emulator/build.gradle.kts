@@ -1,4 +1,5 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.ostelco.prime.gradle.Version
 
 plugins {
   kotlin("jvm")
@@ -7,29 +8,21 @@ plugins {
 }
 
 dependencies {
-
-  val kotlinVersion:String by rootProject.extra
-  val dropwizardVersion:String by rootProject.extra
-  val jjwtVersion:String by rootProject.extra
-  val cxfVersion:String by rootProject.extra
-  val jaxbVersion:String by rootProject.extra
-  val javaxActivationVersion:String by rootProject.extra
-
   implementation(kotlin("stdlib-jdk8"))
 
   // This is not a prime-module. Just needed access to getLogger and Dropwizard KotlinModule.
   implementation(project(":prime-modules"))
 
-  implementation("io.dropwizard:dropwizard-core:$dropwizardVersion")
+  implementation("io.dropwizard:dropwizard-core:${Version.dropwizard}")
 
-  implementation("io.jsonwebtoken:jjwt-api:$jjwtVersion")
-  implementation("io.jsonwebtoken:jjwt-impl:$jjwtVersion")
-  runtimeOnly("io.jsonwebtoken:jjwt-jackson:$jjwtVersion")
+  implementation("io.jsonwebtoken:jjwt-api:${Version.jjwt}")
+  implementation("io.jsonwebtoken:jjwt-impl:${Version.jjwt}")
+  runtimeOnly("io.jsonwebtoken:jjwt-jackson:${Version.jjwt}")
 
-  implementation("org.apache.cxf:cxf-rt-rs-security-jose:$cxfVersion")
+  implementation("org.apache.cxf:cxf-rt-rs-security-jose:${Version.cxf}")
 
-  runtimeOnly("javax.xml.bind:jaxb-api:$jaxbVersion")
-  runtimeOnly("javax.activation:activation:$javaxActivationVersion")
+  runtimeOnly("javax.xml.bind:jaxb-api:${Version.jaxb}")
+  runtimeOnly("javax.activation:activation:${Version.javaxActivation}")
 }
 
 application {

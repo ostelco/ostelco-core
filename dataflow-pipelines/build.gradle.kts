@@ -1,5 +1,6 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+import org.ostelco.prime.gradle.Version
 
 plugins {
   kotlin("jvm")
@@ -8,28 +9,22 @@ plugins {
 }
 
 dependencies {
-
-  val kotlinVersion:String by rootProject.extra
-  val googleCloudVersion:String by rootProject.extra
-  val beamVersion:String by rootProject.extra
-  val junit5Version:String by rootProject.extra
-
   implementation(kotlin("stdlib-jdk8"))
 
   implementation(project(":analytics-grpc-api"))
 
-  implementation("com.google.cloud:google-cloud-pubsub:$googleCloudVersion")
+  implementation("com.google.cloud:google-cloud-pubsub:${Version.googleCloudPubSub}")
 
-  implementation("org.apache.beam:beam-sdks-java-core:$beamVersion")
-  implementation("org.apache.beam:beam-runners-google-cloud-dataflow-java:$beamVersion")
+  implementation("org.apache.beam:beam-sdks-java-core:${Version.beam}")
+  implementation("org.apache.beam:beam-runners-google-cloud-dataflow-java:${Version.beam}")
 
   implementation("ch.qos.logback:logback-classic:1.2.3")
 
   testRuntimeOnly("org.hamcrest:hamcrest-all:1.3")
-  testRuntimeOnly("org.apache.beam:beam-runners-direct-java:$beamVersion")
+  testRuntimeOnly("org.apache.beam:beam-runners-direct-java:${Version.beam}")
 
-  testImplementation("org.junit.jupiter:junit-jupiter-api:$junit5Version")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junit5Version")
+  testImplementation("org.junit.jupiter:junit-jupiter-api:${Version.junit5}")
+  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${Version.junit5}")
 }
 
 application {
