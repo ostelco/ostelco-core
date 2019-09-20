@@ -1,18 +1,10 @@
 package org.ostelco.prime.analytics.publishers
 
-import com.google.api.core.ApiFutureCallback
-import com.google.api.core.ApiFutures
-import com.google.api.gax.rpc.ApiException
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonArray
-import com.google.gson.JsonObject
-import com.google.gson.JsonSerializer
+import com.google.gson.*
 import com.google.gson.reflect.TypeToken
 import com.google.protobuf.ByteString
 import com.google.pubsub.v1.PubsubMessage
 import org.ostelco.prime.analytics.ConfigRegistry
-import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.PurchaseRecordInfo
 
@@ -22,8 +14,6 @@ import org.ostelco.prime.model.PurchaseRecordInfo
  */
 object PurchaseInfoPublisher :
         PubSubPublisher by DelegatePubSubPublisher(topicId = ConfigRegistry.config.purchaseInfoTopicId) {
-
-    private val logger by getLogger()
 
     private var gson: Gson = createGson()
 
@@ -65,24 +55,6 @@ object PurchaseInfoPublisher :
                 .build()
 
         // schedule a message to be published, messages are automatically batched
-        val future = publishPubSubMessage(pubsubMessage)
-
-        // add an asynchronous callback to handle success / failure
-        ApiFutures.addCallback(future, object : ApiFutureCallback<String> {
-
-            override fun onFailure(throwable: Throwable) {
-                if (throwable is ApiException) {
-                    // details on the API exception
-                    logger.warn("Status code: {}", throwable.statusCode.code)
-                    logger.warn("Retrying: {}", throwable.isRetryable)
-                }
-                logger.warn("Error publishing purchase record for customerAnalyticsId: {}", customerAnalyticsId)
-            }
-
-            override fun onSuccess(messageId: String) {
-                // Once published, returns server-assigned message ids (unique within the topic)
-                logger.debug(messageId)
-            }
-        }, singleThreadScheduledExecutor)
+        publishPubSubMessage(pubsubMessage)
     }
 }

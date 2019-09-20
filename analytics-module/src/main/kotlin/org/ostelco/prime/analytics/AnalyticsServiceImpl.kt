@@ -3,7 +3,6 @@ package org.ostelco.prime.analytics
 import org.ostelco.prime.analytics.metrics.CustomMetricsRegistry
 import org.ostelco.prime.analytics.publishers.DataConsumptionInfoPublisher
 import org.ostelco.prime.analytics.publishers.PurchaseInfoPublisher
-import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.PurchaseRecord
 
 class AnalyticsServiceImpl : AnalyticsService {
