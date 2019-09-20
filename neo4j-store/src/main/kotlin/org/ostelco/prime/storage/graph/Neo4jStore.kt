@@ -542,6 +542,21 @@ object Neo4jStoreSingleton : GraphStore {
             }
         }
     }
+//
+//    fun subscribeToSimProfileStatusUpdates() {
+//        simManager.getSimProfileStatusUpdates { iccId, status ->
+//            readTransaction {
+//                IO {
+//                    Either.monad<StoreError>().binding {
+//                        val subscriptions = get(Subscription under (SimProfile withId iccId)).bind()
+//                        subscriptions.forEach { subscription ->
+//                            analyticsReporter.
+//                        }
+//                    }.fix()
+//                }.unsafeRunSync()
+//            }
+//        }
+//    }
 
     private val emailNotifier by lazy { getResource<EmailNotifier>() }
 

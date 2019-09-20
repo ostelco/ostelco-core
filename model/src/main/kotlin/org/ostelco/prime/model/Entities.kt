@@ -397,6 +397,10 @@ data class SimProvisioning(
         val regionCode: String,
         val timestamp: Long
 )
+
+data class SubscriptionStatusUpdate(
+        val subscriptionAnalyticsId: String,
+        val status: SimProfileStatus,
         val timestamp: Long
 )
 
