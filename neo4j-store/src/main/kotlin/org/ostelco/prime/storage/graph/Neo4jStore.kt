@@ -580,6 +580,15 @@ object Neo4jStoreSingleton : GraphStore {
                 fact { (SimProfile withId simProfile.id) isFor (Region withCode regionCode.toLowerCase()) }.bind()
                 simEntry.msisdnList.forEach { msisdn ->
                     create { Subscription(msisdn = msisdn) }.bind()
+                    val subscription = get(Subscription withMsisdn msisdn).bind()
+
+                    // Report the new provisioning to analytics
+                    analyticsReporter.reportSimProvisioning(
+                            subscriptionAnalyticsId = subscription.analyticsId,
+                            customerAnalyticsId = customer.analyticsId,
+                            regionCode = regionCode.toLowerCase()
+                    )
+
                     bundles.forEach { bundle ->
                         fact { (Subscription withMsisdn msisdn) consumesFrom (Bundle withId bundle.id) using SubscriptionToBundle() }.bind()
                     }

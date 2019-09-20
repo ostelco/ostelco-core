@@ -386,15 +386,17 @@ data class DataTrafficInfo(
 /**
  * Represents the relationship between a subscription and a customer in a specific region
  *
- * @property subscription subscription for the SIM peering
- * @property customer customer the subscription is linked to
- * @property region region for the peering
+ * @property subscriptionAnalyticsId subscription for the SIM peering
+ * @property customerAnalyticsId customer the subscription is linked to
+ * @property regionCode region for the peering
  * @property timestamp timestamp of the peering event
  */
-data class SimPeering(
-        val subscription: Subscription,
-        val customer: Customer,
-        val region: Region,
+data class SimProvisioning(
+        val subscriptionAnalyticsId: String,
+        val customerAnalyticsId: String,
+        val regionCode: String,
+        val timestamp: Long
+)
         val timestamp: Long
 )
 
