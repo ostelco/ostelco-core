@@ -70,8 +70,8 @@ class ConsumptionPerMsisdnTest {
             mccMnc: String): DataTrafficInfo =
 
             DataTrafficInfo.newBuilder()
-                    .setMsisdn(msisdn)
-                    .setBucketBytes(bucketBytes)
+                    .setSubscriptionAnalyticsId(msisdn)
+                    .setUsedBucketBytes(bucketBytes)
                     .setBundleBytes(bundleBytes)
                     .setTimestamp(Timestamps.fromMillis(Instant.now().millis))
                     .setApn(apn)

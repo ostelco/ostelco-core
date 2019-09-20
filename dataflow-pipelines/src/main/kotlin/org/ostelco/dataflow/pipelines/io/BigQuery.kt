@@ -8,7 +8,6 @@ import com.google.protobuf.util.Timestamps
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO
 import org.ostelco.analytics.api.AggregatedDataTrafficInfo
 import org.ostelco.analytics.api.DataTrafficInfo
-import org.ostelco.dataflow.pipelines.ConsumptionPipelineOptions
 import org.ostelco.dataflow.pipelines.dsl.ParDoFn
 import org.ostelco.dataflow.pipelines.io.Table.DAILY_CONSUMPTION
 import org.ostelco.dataflow.pipelines.io.Table.HOURLY_CONSUMPTION
@@ -45,8 +44,8 @@ private object TableSchemas {
         return when (table) {
             RAW_CONSUMPTION -> {
                 val fields = ArrayList<TableFieldSchema>()
-                fields.add(TableFieldSchema().setName("msisdn").setType("STRING"))
-                fields.add(TableFieldSchema().setName("bucketBytes").setType("INTEGER"))
+                fields.add(TableFieldSchema().setName("subscriptionAnalyticsId").setType("STRING"))
+                fields.add(TableFieldSchema().setName("usedBucketBytes").setType("INTEGER"))
                 fields.add(TableFieldSchema().setName("bundleBytes").setType("INTEGER"))
                 fields.add(TableFieldSchema().setName("timestamp").setType("TIMESTAMP"))
                 fields.add(TableFieldSchema().setName("apn").setType("STRING"))
@@ -71,8 +70,8 @@ private object TableSchemas {
 //
 val convertToRawTableRows = ParDoFn.transform<DataTrafficInfo, TableRow> {
     TableRow()
-            .set("msisdn", it.msisdn)
-            .set("bucketBytes", it.bucketBytes)
+            .set("subscriptionAnalyticsId", it.subscriptionAnalyticsId)
+            .set("usedBucketBytes", it.usedBucketBytes)
             .set("bundleBytes", it.bundleBytes)
             .set("timestamp", protobufTimestampToZonedDateTime(it.timestamp))
             .set("apn", it.apn)
@@ -111,6 +110,3 @@ object BigQueryIOUtils {
                 .withWriteDisposition(BigQueryIO.Write.WriteDisposition.WRITE_APPEND)
     }
 }
-
-
-
