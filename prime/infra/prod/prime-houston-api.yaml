@@ -10,28 +10,6 @@ x-google-endpoints:
 schemes:
   - "https"
 paths:
-  "/ping":
-    get:
-      description: "Get current timestamp. Used to check liveliness of service."
-      produces:
-        - application/json
-      operationId: "ping"
-      responses:
-        200:
-          description: "Get current timestamp."
-          schema:
-            $ref: '#/definitions/Pong'
-  "/uuid":
-    get:
-      description: "Get a random uuid. Used to check liveliness of service."
-      produces:
-        - application/json
-      operationId: "uuid"
-      responses:
-        200:
-          description: "Get random UUID."
-          schema:
-            $ref: '#/definitions/Uuid'
   "/support/profiles/{id}":
     get:
       description: "Get profile for the given email-id or msisdn (url encoded)."
