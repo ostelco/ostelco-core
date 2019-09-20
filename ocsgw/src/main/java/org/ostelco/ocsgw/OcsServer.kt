@@ -22,7 +22,6 @@ import org.ostelco.ocsgw.datasource.DataSourceType.Proxy
 import org.ostelco.ocsgw.datasource.DataSourceType.PubSub
 import org.ostelco.ocsgw.datasource.DataSourceType.gRPC
 import org.ostelco.ocsgw.datasource.DataSourceType.Multi
-import org.ostelco.ocsgw.datasource.SecondaryDataSourceType
 import org.ostelco.ocsgw.datasource.local.LocalDataSource
 import org.ostelco.ocsgw.datasource.multi.MultiDataSource
 import org.ostelco.ocsgw.datasource.protobuf.GrpcDataSource
@@ -129,31 +128,16 @@ object OcsServer {
 
         this.defaultRequestedServiceUnit = appConfig.defaultRequestedServiceUnit
 
-        source = setupDataSource(appConfig)
+        source = setupDataSource(appConfig.dataStoreType, appConfig)
         source?.init()
     }
 
-    private fun setupDataSource(appConfig: AppConfig) : DataSource {
+    private fun setupDataSource(dataSourceType: DataSourceType, appConfig: AppConfig) : DataSource {
         val protobufDataSource = ProtobufDataSource()
-        val source = when (appConfig.dataStoreType) {
+        return when (dataSourceType) {
             Proxy -> {
                 logger.info("Using ProxyDataSource")
-                val secondary = when (appConfig.secondaryDataStoreType) {
-                    SecondaryDataSourceType.PubSub -> {
-                        logger.info("SecondaryDataStore set to PubSub")
-                        getPubSubDataSource(protobufDataSource, appConfig)
-                    }
-                    SecondaryDataSourceType.gRPC -> {
-                        logger.info("SecondaryDataStore set to gRPC")
-                        getGrpcDataSource(protobufDataSource, appConfig)
-                    }
-                    else -> {
-                        logger.info("Default SecondaryDataSource PubSub")
-                        getPubSubDataSource(protobufDataSource, appConfig)
-                    }
-                }
-                secondary.init()
-                ProxyDataSource(secondary)
+                setupProxyDataSource(protobufDataSource, appConfig)
             }
             Local -> {
                 logger.info("Using LocalDataSource")
@@ -169,17 +153,35 @@ object OcsServer {
             }
             Multi -> {
                 logger.info("Using MultiDataSource")
-                val initDataSource = LocalDataSource()
-                val updateDataSource = LocalDataSource()
-                val terminateDataSource = LocalDataSource()
-                MultiDataSource(initDataSource, updateDataSource, terminateDataSource)
-            }
-            else -> {
-                logger.warn("Unknown DataStoreType {}", appConfig.dataStoreType)
-                LocalDataSource()
+                setupMultiDataSource(appConfig)
             }
         }
-        return source;
+    }
+
+    private fun setupProxyDataSource(protobufDataSource: ProtobufDataSource, appConfig: AppConfig) : DataSource {
+        val secondary = when (appConfig.secondaryDataSourceType) {
+            PubSub -> {
+                logger.info("SecondaryDataStore set to PubSub")
+                getPubSubDataSource(protobufDataSource, appConfig)
+            }
+            gRPC -> {
+                logger.info("SecondaryDataStore set to gRPC")
+                getGrpcDataSource(protobufDataSource, appConfig)
+            }
+            else -> {
+                logger.info("Default SecondaryDataSource PubSub")
+                getPubSubDataSource(protobufDataSource, appConfig)
+            }
+        }
+        secondary.init()
+        return ProxyDataSource(secondary)
+    }
+
+    private fun setupMultiDataSource(appConfig: AppConfig) : DataSource {
+        val initDataSource = setupDataSource(appConfig.getMultiInitDataSourceType(), appConfig)
+        val updateDataSource = setupDataSource(appConfig.getMultiUpdateDataSourceType(), appConfig)
+        val terminateDataSource = setupDataSource(appConfig.getMultiTerminateDataSourceType(), appConfig)
+        return MultiDataSource(initDataSource, updateDataSource, terminateDataSource)
     }
 
     private fun getGrpcDataSource(

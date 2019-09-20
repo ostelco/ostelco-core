@@ -7,8 +7,3 @@ enum class DataSourceType {
     Proxy,
     Multi
 }
-
-enum class SecondaryDataSourceType {
-    gRPC,
-    PubSub
-}

@@ -104,7 +104,7 @@ class PubSubClient(
                     logger.error("Status code: {}", throwable.statusCode.code)
                     logger.error("Retrying: {}", throwable.isRetryable)
                 }
-                logger.error("Error sending CCR Request to PubSub")
+                logger.error("Error sending message on PubSub topic ${publisher.topicName}")
             }
 
             override fun onSuccess(messageId: String) {
