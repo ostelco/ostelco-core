@@ -123,7 +123,7 @@ data class ProfileVendorAdapter(
     private fun getProfileStatusA(iccidList: List<String>, expectSuccess: Boolean): Either<SimManagerError, List<ProfileStatus>> {
 
         fun logAndReturnNotFoundError(msg: String): Either<SimManagerError, List<ProfileStatus>> {
-            if (!expectSuccess) {
+            if (expectSuccess) {
                 Companion.logger.error(msg)
             }
             return NotFoundError(msg, pingOk = true).left()
