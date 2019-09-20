@@ -383,6 +383,21 @@ data class DataTrafficInfo(
         val mccMnc: String?
 )
 
+/**
+ * Represents the relationship between a subscription and a customer in a specific region
+ *
+ * @property subscription subscription for the SIM peering
+ * @property customer customer the subscription is linked to
+ * @property region region for the peering
+ * @property timestamp timestamp of the peering event
+ */
+data class SimPeering(
+        val subscription: Subscription,
+        val customer: Customer,
+        val region: Region,
+        val timestamp: Long
+)
+
 data class CustomerActivity(
         val timestamp: Long,
         val severity: Severity,

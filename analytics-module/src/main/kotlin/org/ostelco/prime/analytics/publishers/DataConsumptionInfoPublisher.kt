@@ -12,7 +12,7 @@ import org.ostelco.prime.model.DataTrafficInfo
 import java.time.Instant
 
 /**
- * This class publishes the data consumption information events to the Google Cloud Pub/Sub.
+ * This holds logic for publishing the data consumption information events to Google Cloud Pub/Sub.
  */
 object DataConsumptionInfoPublisher :
         PubSubPublisher by DelegatePubSubPublisher(topicId = ConfigRegistry.config.dataTrafficTopicId) {
