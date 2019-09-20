@@ -1,4 +1,5 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+import org.ostelco.prime.gradle.Version
 
 plugins {
   kotlin("jvm")
@@ -6,28 +7,22 @@ plugins {
 }
 
 dependencies {
-
-  val jjwtVersion:String by rootProject.extra
-  val cxfVersion:String by rootProject.extra
-  val dropwizardVersion:String by rootProject.extra
-  val junit5Version:String by rootProject.extra
-
   implementation(project(":prime-modules"))
 
-  implementation("io.jsonwebtoken:jjwt-api:$jjwtVersion")
-  implementation("io.jsonwebtoken:jjwt-impl:$jjwtVersion")
-  runtimeOnly("io.jsonwebtoken:jjwt-jackson:$jjwtVersion")
+  implementation("io.jsonwebtoken:jjwt-api:${Version.jjwt}")
+  implementation("io.jsonwebtoken:jjwt-impl:${Version.jjwt}")
+  runtimeOnly("io.jsonwebtoken:jjwt-jackson:${Version.jjwt}")
 
-  implementation("org.apache.cxf:cxf-rt-rs-security-jose:$cxfVersion")
+  implementation("org.apache.cxf:cxf-rt-rs-security-jose:${Version.cxf}")
 
-  implementation("io.dropwizard:dropwizard-client:$dropwizardVersion")
+  implementation("io.dropwizard:dropwizard-client:${Version.dropwizard}")
 
 
-  testImplementation("io.dropwizard:dropwizard-testing:$dropwizardVersion")
+  testImplementation("io.dropwizard:dropwizard-testing:${Version.dropwizard}")
   testImplementation(project(":ext-myinfo-emulator"))
 
-  testImplementation("org.junit.jupiter:junit-jupiter-api:$junit5Version")
-  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junit5Version")
+  testImplementation("org.junit.jupiter:junit-jupiter-api:${Version.junit5}")
+  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${Version.junit5}")
 }
 
 tasks.test {
