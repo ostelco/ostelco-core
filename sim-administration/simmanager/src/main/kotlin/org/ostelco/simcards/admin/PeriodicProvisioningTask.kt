@@ -162,7 +162,7 @@ class PreallocateProfilesTask(
         logger.run { debug("Start of prealloacation for HSS with ID/metricName ${hssEntry.id}/${hssEntry.name}") }
         return simInventoryDAO.getProfileNamesForHssById(hssEntry.id).flatMap { simProfileNames ->
             simProfileNames.forEach {
-                preAllocateSimProfileForHss(hssEntry, it)  
+                preAllocateSimProfileForHss(hssEntry, it)
             }.right()
         }
     }
