@@ -8,7 +8,7 @@ plugins {
 dependencies {
   implementation(project(":prime-modules"))
 
-  implementation("com.google.cloud:google-cloud-pubsub:${Version.googleCloud}")
+  implementation("com.google.cloud:google-cloud-pubsub:${Version.googleCloudPubSub}")
 
   testImplementation("com.palantir.docker.compose:docker-compose-rule-junit4:${Version.dockerComposeJunitRule}")
 

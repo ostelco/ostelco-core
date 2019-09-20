@@ -21,7 +21,7 @@ dependencies {
   implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${Version.jackson}")
 
   implementation(kotlin("stdlib-jdk8"))
-  implementation("com.google.cloud:google-cloud-datastore:${Version.googleCloud}")
+  implementation("com.google.cloud:google-cloud-datastore:${Version.googleCloudDataStore}")
 
   implementation("io.arrow-kt:arrow-core:${Version.arrow}")
   implementation("io.arrow-kt:arrow-typeclasses:${Version.arrow}")

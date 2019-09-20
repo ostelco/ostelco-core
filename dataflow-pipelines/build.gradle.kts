@@ -13,7 +13,7 @@ dependencies {
 
   implementation(project(":analytics-grpc-api"))
 
-  implementation("com.google.cloud:google-cloud-pubsub:${Version.googleCloud}")
+  implementation("com.google.cloud:google-cloud-pubsub:${Version.googleCloudPubSub}")
 
   implementation("org.apache.beam:beam-sdks-java-core:${Version.beam}")
   implementation("org.apache.beam:beam-runners-google-cloud-dataflow-java:${Version.beam}")

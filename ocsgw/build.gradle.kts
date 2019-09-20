@@ -17,19 +17,19 @@ dependencies {
   implementation(project(":diameter-stack"))
   implementation(project(":diameter-ha"))
 
-  implementation("com.google.cloud:google-cloud-pubsub:${Version.googleCloud}")
+  implementation("com.google.cloud:google-cloud-pubsub:${Version.googleCloudPubSub}")
   implementation("com.google.cloud:google-cloud-core-grpc:${Version.googleCloud}")
-  implementation("com.google.cloud:google-cloud-storage:${Version.googleCloud}")
+  implementation("com.google.cloud:google-cloud-storage:${Version.googleCloudStorage}")
 
   implementation("javax.xml.bind:jaxb-api:${Version.jaxb}")
   runtimeOnly("javax.activation:activation:${Version.javaxActivation}")
 
-  implementation("com.fasterxml.jackson.core:jackson-databind:${Version.jackson}")
+  implementation("com.fasterxml.jackson.core:jackson-databind:${Version.jacksonDatabind}")
   implementation("ch.qos.logback:logback-classic:1.2.3")
   implementation("ch.qos.logback.contrib:logback-json-classic:0.1.5")
   implementation("ch.qos.logback.contrib:logback-jackson:0.1.5")
 
-  compile("com.google.cloud:google-cloud-logging-logback:0.97.0-alpha")
+  compile("com.google.cloud:google-cloud-logging-logback:${Version.googleCloudLogging}")
 
   testImplementation(project(":diameter-test"))
   testImplementation("org.junit.jupiter:junit-jupiter-api:${Version.junit5}")

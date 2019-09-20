@@ -11,7 +11,7 @@ dependencies {
   implementation("io.dropwizard:dropwizard-logging:${Version.dropwizard}")
 
   implementation("com.fasterxml.jackson.core:jackson-annotations:${Version.jackson}")
-  implementation("com.fasterxml.jackson.core:jackson-databind:${Version.jackson}")
+  implementation("com.fasterxml.jackson.core:jackson-databind:${Version.jacksonDatabind}")
 }
 
 apply(from = "../gradle/jacoco.gradle")

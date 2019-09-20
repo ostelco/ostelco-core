@@ -16,7 +16,7 @@ dependencies {
   // api(kotlin("scripting-compiler"))
 
   implementation(project(":prime-modules"))
-  implementation("com.fasterxml.jackson.core:jackson-databind:${Version.jackson}")
+  implementation("com.fasterxml.jackson.core:jackson-databind:${Version.jacksonDatabind}")
 
   testImplementation(kotlin("test"))
   testImplementation(kotlin("test-junit"))

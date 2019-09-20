@@ -12,8 +12,8 @@ dependencies {
 
   implementation("com.stripe:stripe-java:${Version.stripe}")
 
-  implementation("com.google.cloud:google-cloud-pubsub:${Version.googleCloud}")
-  implementation("com.google.cloud:google-cloud-datastore:${Version.googleCloud}")
+  implementation("com.google.cloud:google-cloud-pubsub:${Version.googleCloudPubSub}")
+  implementation("com.google.cloud:google-cloud-datastore:${Version.googleCloudDataStore}")
 
   testImplementation(kotlin("test"))
   testImplementation(kotlin("test-junit"))

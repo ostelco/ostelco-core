@@ -9,11 +9,11 @@ dependencies {
   implementation(project(":prime-modules"))
   implementation(project(":data-store"))
   
-  implementation("com.fasterxml.jackson.core:jackson-databind:${Version.jackson}")
+  implementation("com.fasterxml.jackson.core:jackson-databind:${Version.jacksonDatabind}")
 
   implementation("io.dropwizard:dropwizard-client:${Version.dropwizard}")
-  implementation("com.google.cloud:google-cloud-datastore:${Version.googleCloud}")
-  implementation("com.google.cloud:google-cloud-storage:${Version.googleCloud}")
+  implementation("com.google.cloud:google-cloud-datastore:${Version.googleCloudDataStore}")
+  implementation("com.google.cloud:google-cloud-storage:${Version.googleCloudStorage}")
   implementation("com.google.crypto.tink:tink:${Version.tink}")
 
   testImplementation("com.palantir.docker.compose:docker-compose-rule-junit4:${Version.dockerComposeJunitRule}")

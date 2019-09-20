@@ -11,8 +11,8 @@ dependencies {
   api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Version.kotlinXCoroutines}")
 
   api("io.dropwizard:dropwizard-auth:${Version.dropwizard}")
-  implementation("com.google.cloud:google-cloud-pubsub:${Version.googleCloud}")
-  implementation("com.google.cloud:google-cloud-datastore:${Version.googleCloud}")
+  implementation("com.google.cloud:google-cloud-pubsub:${Version.googleCloudPubSub}")
+  implementation("com.google.cloud:google-cloud-datastore:${Version.googleCloudDataStore}")
 
   api("com.fasterxml.jackson.module:jackson-module-kotlin:${Version.jackson}")
 

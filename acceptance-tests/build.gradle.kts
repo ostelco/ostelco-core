@@ -20,7 +20,7 @@ dependencies {
   implementation(project(":diameter-test"))
   implementation(project(":ocs-grpc-api"))
 
-  implementation("com.google.cloud:google-cloud-pubsub:${Version.googleCloud}")
+  implementation("com.google.cloud:google-cloud-pubsub:${Version.googleCloudPubSub}")
 
   implementation("com.stripe:stripe-java:${Version.stripe}")
 

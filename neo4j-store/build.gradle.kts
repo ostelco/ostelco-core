@@ -8,7 +8,7 @@ plugins {
 dependencies {
   implementation(project(":prime-modules"))
   api(project(":kts-engine"))
-  implementation("com.fasterxml.jackson.core:jackson-databind:${Version.jackson}")
+  implementation("com.fasterxml.jackson.core:jackson-databind:${Version.jacksonDatabind}")
 
   implementation("org.neo4j:neo4j-graphdb-api:${Version.neo4j}")
   implementation("org.neo4j.driver:neo4j-java-driver:${Version.neo4jDriver}")

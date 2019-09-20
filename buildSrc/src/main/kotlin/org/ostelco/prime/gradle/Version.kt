@@ -2,7 +2,10 @@ package org.ostelco.prime.gradle
 
 object Version {
   const val assertJ = "3.13.2"
+
   const val arrow = "0.8.2"
+  const val arrowTypeClasses = "0.9.0"
+
   const val beam = "2.15.0"
   const val csv = "1.7"
   const val cxf = "3.3.3"
@@ -10,17 +13,24 @@ object Version {
   const val dropwizard = "1.3.14"
   const val metrics = "4.1.0"
   const val firebase = "6.10.0"
-  const val googleCloud = "1.90.0"
+
+  const val googleCloud = "1.91.0"
+  const val googleCloudDataStore = "1.92.0"
+  const val googleCloudLogging = "0.110.0-alpha"
+  const val googleCloudPubSub = "1.92.0"
+  const val googleCloudStorage = "1.92.0"
+
   const val grpc = "1.23.0"
   const val guava = "28.1-jre"
   const val jackson = "2.9.9"
+  const val jacksonDatabind = "2.9.9.3"
   const val javaxActivation = "1.1.1"
   const val javaxActivationApi = "1.2.0"
   const val javaxAnnotation = "1.3.2"
   // Keeping it version 1.16.1 to be consistent with grpc via PubSub client lib
   // Keeping it version 1.16.1 to be consistent with netty via Firebase lib
   const val jaxb = "2.3.1"
-  const val jdbi3 = "3.10.0"
+  const val jdbi3 = "3.10.1"
   const val jjwt = "0.10.7"
   const val junit5 = "5.5.2"
   const val kotlin = "1.3.50"
@@ -32,7 +42,7 @@ object Version {
   const val opencensus = "0.24.0"
   const val postgresql = "42.2.8"  // See comment in ./sim-administration/simmanager/build.gradle
   const val prometheusDropwizard = "2.2.0"
-  const val protoc = "3.9.1"
+  const val protoc = "3.10.0"
   const val slf4j = "1.7.28"
   // IMPORTANT: When Stripe SDK library version is updated, check if the Stripe API version has changed.
   // If so, then update API version in Stripe Web Console for callback Webhooks.

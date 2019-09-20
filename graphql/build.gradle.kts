@@ -8,7 +8,7 @@ plugins {
 dependencies {
   implementation(project(":prime-modules"))
 
-  implementation("com.graphql-java:graphql-java:12.0")
+  implementation("com.graphql-java:graphql-java:13.0")
 
   testImplementation("io.dropwizard:dropwizard-testing:${Version.dropwizard}")
   testImplementation("org.mockito:mockito-core:${Version.mockito}")
