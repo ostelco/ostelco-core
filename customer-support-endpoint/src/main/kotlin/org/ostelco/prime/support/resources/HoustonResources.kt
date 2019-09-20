@@ -43,7 +43,7 @@ import javax.ws.rs.core.Response
 /**
  * Resource used to handle the profile related REST calls.
  */
-@Path("/profiles")
+@Path("/support/profiles")
 class ProfilesResource {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
@@ -231,7 +231,7 @@ class ProfilesResource {
 /**
  * Resource used to handle bundles related REST calls.
  */
-@Path("/bundles")
+@Path("/support/bundles")
 class BundlesResource {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
@@ -272,7 +272,7 @@ class BundlesResource {
 /**
  * Resource used to handle purchase related REST calls.
  */
-@Path("/purchases")
+@Path("/support/purchases")
 class PurchaseResource {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
@@ -313,7 +313,7 @@ class PurchaseResource {
 /**
  * Resource used to handle refund related REST calls.
  */
-@Path("/refund")
+@Path("/support/refund")
 class RefundResource {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
@@ -366,7 +366,7 @@ class RefundResource {
 /**
  * Resource used to handle context REST call.
  */
-@Path("/context")
+@Path("/support/context")
 class ContextResource {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
@@ -434,7 +434,7 @@ open class HoustonResource {
 /**
  * Resource used to handle notification related REST calls.
  */
-@Path("/notify")
+@Path("/support/notify")
 class NotifyResource: HoustonResource() {
     private val logger by getLogger()
 
@@ -475,7 +475,7 @@ class NotifyResource: HoustonResource() {
 /**
  * Resource used to handle audit log related REST calls.
  */
-@Path("/auditLog")
+@Path("/support/auditLog")
 class AuditLogResource: HoustonResource() {
 
     private val logger by getLogger()
@@ -511,7 +511,7 @@ class AuditLogResource: HoustonResource() {
 /**
  * Resource used to manipulate customer record.
  */
-@Path("/customer")
+@Path("/support/customer")
 class CustomerResource {
 
     private val logger by getLogger()
