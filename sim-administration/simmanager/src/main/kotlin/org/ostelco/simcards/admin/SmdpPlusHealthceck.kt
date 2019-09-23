@@ -102,19 +102,19 @@ class SmdpPlusHealthceck(
         return profileVendorAdaptorList.find { !pingSimVendor(it) } == null
     }
 
-
     private fun pingSimVendor(vendorAdapterDatum: ProfileVendorAdapterDatum): Boolean {
         val currentConfig: ProfileVendorConfig? =
                 getConfigForVendorWithName(vendorAdapterDatum.name)
 
+        // If we can't find the config, then we signal an error and return.
         if (currentConfig == null) {
             val msg = "Could not find config for profile vendor '${vendorAdapterDatum.name}' while attempting to ping remote SM-DP+ adapter"
             logger.error(msg)
             return false
         }
 
+        // Do the ping
         val vendorAdapter = ProfileVendorAdapter(vendorAdapterDatum, currentConfig, httpClient, simInventoryDAO)
-
         val pingResult = vendorAdapter.ping()
 
         // If this was an error, but of an acceptable ("pingOk" == true) kind, meaning that
