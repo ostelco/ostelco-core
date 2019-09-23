@@ -1,9 +1,13 @@
 package org.ostelco.simcards.admin
 
 import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
 import com.codahale.metrics.health.HealthCheck
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.simmanager.NotFoundError
+import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
 import org.ostelco.simcards.profilevendors.ProfileVendorAdapterDatum
@@ -55,13 +59,32 @@ class SmdpPlusHealthceck(
      * Contact the available SM-DP+ instances, return true if they are all available, otherwise false.
      */
     private fun checkIfSmdpPlusIsUp(): Boolean {
-        // Just being paranoid.
         try {
             return naiveCheckIfSmdpPlusIsUp()
         } catch (t: Throwable) {
+            logger.error("Something weird happened while checking for SMDP+-es being up.", t)
             return false
         }
     }
+
+
+    private fun getProfileVendorAdapterForVendor(pvd: ProfileVendorAdapterDatum): Either<SimManagerError, ProfileVendorAdapter> {
+        val currentConfig: ProfileVendorConfig? =
+                getConfigForVendorWithName(pvd.name)
+
+        if (currentConfig == null) {
+            val msg = "Could not find config for profile vendor '${pvd.name}' while attempting to ping remote SM-DP+ adapter"
+            logger.error(msg)
+            return NotFoundError(msg).left()
+        }
+
+        return ProfileVendorAdapter(pvd, currentConfig, httpClient, simInventoryDAO).right()
+    }
+
+
+    private fun getConfigForVendorWithName(vendorName: String) =
+            profileVendorConfigList.firstOrNull { it.name == vendorName }
+
 
     private fun naiveCheckIfSmdpPlusIsUp(): Boolean {
 
@@ -76,13 +99,13 @@ class SmdpPlusHealthceck(
         // Loop over all the vendors, if any of  them returns false, then
         // that indicates failure, so we search for the first failure,  and if
         // no failures were found, then we can assume success.
-        return profileVendorAdaptorList.find { ! pingSimVendor(it) } == null
+        return profileVendorAdaptorList.find { !pingSimVendor(it) } == null
     }
 
 
     private fun pingSimVendor(vendorAdapterDatum: ProfileVendorAdapterDatum): Boolean {
         val currentConfig: ProfileVendorConfig? =
-                profileVendorConfigList.firstOrNull { it.name == vendorAdapterDatum.name }
+                getConfigForVendorWithName(vendorAdapterDatum.name)
 
         if (currentConfig == null) {
             val msg = "Could not find config for profile vendor '${vendorAdapterDatum.name}' while attempting to ping remote SM-DP+ adapter"
@@ -106,7 +129,7 @@ class SmdpPlusHealthceck(
                 return false
             }
             is Either.Right -> {
-                return  true
+                return true
             }
         }
     }
