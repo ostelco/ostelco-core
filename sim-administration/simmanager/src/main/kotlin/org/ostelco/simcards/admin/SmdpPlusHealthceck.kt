@@ -1,11 +1,16 @@
 package org.ostelco.simcards.admin
 
 import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
 import com.codahale.metrics.health.HealthCheck
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.simmanager.NotFoundError
+import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
+import org.ostelco.simcards.profilevendors.ProfileVendorAdapterDatum
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -62,6 +67,20 @@ class SmdpPlusHealthceck(
         }
     }
 
+
+    private fun getProfileVendorAdapterForVendor(pvd: ProfileVendorAdapterDatum): Either<SimManagerError, ProfileVendorAdapter> {
+        val currentConfig: ProfileVendorConfig? =
+                getConfigForVendorWithName(pvd.name)
+
+        if (currentConfig == null) {
+            val msg = "Could not find config for profile vendor '${pvd.name}' while attempting to ping remote SM-DP+ adapter"
+            logger.error(msg)
+            return NotFoundError(msg).left()
+        }
+
+        return ProfileVendorAdapter(pvd, currentConfig, httpClient, simInventoryDAO).right()
+    }
+
     private fun checkIfSmdpPlusIsUpNaively(): Boolean {
         val profileVendorAdaptorList = simInventoryDAO.getAllProfileVendors().fold({
             logger.info("Couldn't find any profile vendors: {}", it)
@@ -69,19 +88,9 @@ class SmdpPlusHealthceck(
         }, { it })
 
         loopOverAllProfileVendors@ for (vendorAdapterDatum in profileVendorAdaptorList) {
-            logger.info("Processing vendor: $vendorAdapterDatum")
-            val currentConfig: ProfileVendorConfig? =
-                    getConfigForVendorWithName(vendorAdapterDatum.name)
-
-            if (currentConfig == null) {
-                val msg = "Could not find config for profile vendor '${vendorAdapterDatum.name}' while attempting to ping remote SM-DP+ adapter"
-                logger.error(msg)
-                return false
-            }
-
-            val vendorAdapter =
-                    ProfileVendorAdapter(vendorAdapterDatum, currentConfig, httpClient, simInventoryDAO)
-
+            var vendorAdapter = getProfileVendorAdapterForVendor(vendorAdapterDatum).map(
+                    {return false}, {foo -> foo})
+            
             // If this was an error, but of an acceptable ("pingOk" == true) kind, meaning that
             // the endpoint in the other end actually gave a reasonable answer to a reasonable request,
             // indicating that the endpoint is answering requests, then continue to loop over next endpoint,
