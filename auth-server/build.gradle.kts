@@ -36,8 +36,8 @@ tasks.withType<ShadowJar> {
 }
 
 sourceSets.create("integration") {
-  java.srcDirs("src/integration-tests/kotlin")
-  resources.srcDirs("src/integration-tests/resources")
+  java.srcDirs("src/integration-test/kotlin")
+  resources.srcDirs("src/integration-test/resources")
   compileClasspath += sourceSets.main.get().output + sourceSets.test.get().output
   runtimeClasspath += sourceSets.main.get().output + sourceSets.test.get().output
 }
@@ -63,6 +63,6 @@ apply(from = "../gradle/jacoco.gradle")
 
 idea {
   module {
-    testSourceDirs.add(File("src/integration-tests/kotlin"))
+    testSourceDirs = testSourceDirs + file("src/integration-test/kotlin")
   }
 }
