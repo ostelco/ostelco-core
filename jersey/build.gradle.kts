@@ -1,20 +1,18 @@
+import org.ostelco.prime.gradle.Version
+
 plugins {
   kotlin("jvm")
   `java-library`
 }
 
 dependencies {
-
-  val dropwizardVersion:String by rootProject.extra
-  val jjwtVersion:String by rootProject.extra
-
   implementation(project(":prime-modules"))
-  implementation("io.dropwizard:dropwizard-client:$dropwizardVersion")
+  implementation("io.dropwizard:dropwizard-client:${Version.dropwizard}")
 
-  testImplementation("io.dropwizard:dropwizard-testing:$dropwizardVersion")
-  testImplementation("io.jsonwebtoken:jjwt-api:$jjwtVersion")
-  testRuntimeOnly("io.jsonwebtoken:jjwt-impl:$jjwtVersion")
-  testRuntimeOnly("io.jsonwebtoken:jjwt-jackson:$jjwtVersion")
+  testImplementation("io.dropwizard:dropwizard-testing:${Version.dropwizard}")
+  testImplementation("io.jsonwebtoken:jjwt-api:${Version.jjwt}")
+  testRuntimeOnly("io.jsonwebtoken:jjwt-impl:${Version.jjwt}")
+  testRuntimeOnly("io.jsonwebtoken:jjwt-jackson:${Version.jjwt}")
 }
 
 apply(from = "../gradle/jacoco.gradle")

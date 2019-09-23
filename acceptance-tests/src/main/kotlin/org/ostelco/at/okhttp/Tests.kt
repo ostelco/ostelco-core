@@ -640,7 +640,7 @@ class SingaporeKycTest {
             assertEquals(
                     "http://ext-myinfo-emulator:8080/v3/authorise" +
                             "?client_id=STG2-MYINFO-SELF-TEST" +
-                            "&attributes=name,sex,dob,residentialstatus,nationality,mobileno,email,mailadd" +
+                            "&attributes=name,dob,mailadd,regadd,passexpirydate,uinfin" +
                             "&redirect_uri=http://localhost:3001/callback",
                     myInfoConfig.url)
 

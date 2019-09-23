@@ -1,4 +1,5 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.ostelco.prime.gradle.Version
 
 plugins {
   kotlin("jvm")
@@ -7,25 +8,18 @@ plugins {
 }
 
 dependencies {
-
-  val kotlinVersion:String by rootProject.extra
-  val dropwizardVersion:String by rootProject.extra
-  val jjwtVersion:String by rootProject.extra
-  val jaxbVersion:String by rootProject.extra
-  val javaxActivationVersion:String by rootProject.extra
-
   implementation(kotlin("stdlib-jdk8"))
 
-  implementation("io.dropwizard:dropwizard-core:$dropwizardVersion")
+  implementation("io.dropwizard:dropwizard-core:${Version.dropwizard}")
 
-  implementation("io.jsonwebtoken:jjwt-api:$jjwtVersion")
-  runtimeOnly("io.jsonwebtoken:jjwt-impl:$jjwtVersion")
-  runtimeOnly("io.jsonwebtoken:jjwt-jackson:$jjwtVersion")
+  implementation("io.jsonwebtoken:jjwt-api:${Version.jjwt}")
+  runtimeOnly("io.jsonwebtoken:jjwt-impl:${Version.jjwt}")
+  runtimeOnly("io.jsonwebtoken:jjwt-jackson:${Version.jjwt}")
 
-  runtimeOnly("javax.xml.bind:jaxb-api:$jaxbVersion")
-  runtimeOnly("javax.activation:activation:$javaxActivationVersion")
+  runtimeOnly("javax.xml.bind:jaxb-api:${Version.jaxb}")
+  runtimeOnly("javax.activation:activation:${Version.javaxActivation}")
 
-  testImplementation("io.dropwizard:dropwizard-testing:$dropwizardVersion")
+  testImplementation("io.dropwizard:dropwizard-testing:${Version.dropwizard}")
   testImplementation(kotlin("test"))
   testImplementation(kotlin("test-junit"))
 }

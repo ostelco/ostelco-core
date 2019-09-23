@@ -4,6 +4,7 @@ import com.google.protobuf.gradle.ofSourceSet
 import com.google.protobuf.gradle.plugins
 import com.google.protobuf.gradle.protobuf
 import com.google.protobuf.gradle.protoc
+import org.ostelco.prime.gradle.Version
 
 plugins {
   `java-library`
@@ -11,27 +12,23 @@ plugins {
   idea
 }
 
-val grpcVersion:String by rootProject.extra
-val protocVersion:String by rootProject.extra
-val javaxAnnotationVersion:String by rootProject.extra
-
 dependencies {
-  api("io.grpc:grpc-netty-shaded:$grpcVersion")
-  api("io.grpc:grpc-protobuf:$grpcVersion")
-  api("io.grpc:grpc-stub:$grpcVersion")
-  api("io.grpc:grpc-core:$grpcVersion")
-  implementation("com.google.protobuf:protobuf-java:$protocVersion")
-  implementation("com.google.protobuf:protobuf-java-util:$protocVersion")
-  implementation("javax.annotation:javax.annotation-api:$javaxAnnotationVersion")
+  api("io.grpc:grpc-netty-shaded:${Version.grpc}")
+  api("io.grpc:grpc-protobuf:${Version.grpc}")
+  api("io.grpc:grpc-stub:${Version.grpc}")
+  api("io.grpc:grpc-core:${Version.grpc}")
+  implementation("com.google.protobuf:protobuf-java:${Version.protoc}")
+  implementation("com.google.protobuf:protobuf-java-util:${Version.protoc}")
+  implementation("javax.annotation:javax.annotation-api:${Version.javaxAnnotation}")
 }
 
 var protobufGeneratedFilesBaseDir: String = ""
 
 protobuf {
-  protoc { artifact = "com.google.protobuf:protoc:$protocVersion" }
+  protoc { artifact = "com.google.protobuf:protoc:${Version.protoc}" }
   plugins {
     id("grpc") {
-      artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion"
+      artifact = "io.grpc:protoc-gen-grpc-java:${Version.grpc}"
     }
   }
   generateProtoTasks {

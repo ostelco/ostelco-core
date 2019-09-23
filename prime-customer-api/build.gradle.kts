@@ -1,4 +1,5 @@
 import org.hidetake.gradle.swagger.generator.GenerateSwaggerCode
+import org.ostelco.prime.gradle.Version
 
 plugins {
   `java-library`
@@ -24,13 +25,9 @@ generateSwaggerCode?.also { generatedCode ->
 }
 
 dependencies {
+  swaggerCodegen("io.swagger:swagger-codegen-cli:${Version.swaggerCodegen}")
 
-  val swaggerCodegenVersion:String by rootProject.extra
-  val javaxAnnotationVersion:String by rootProject.extra
-
-  swaggerCodegen("io.swagger:swagger-codegen-cli:$swaggerCodegenVersion")
-
-  implementation("javax.annotation:javax.annotation-api:$javaxAnnotationVersion")
+  implementation("javax.annotation:javax.annotation-api:${Version.javaxAnnotation}")
 
   // taken from build/swagger-code-java-client/build.gradle
   implementation("io.swagger:swagger-annotations:1.5.23")
