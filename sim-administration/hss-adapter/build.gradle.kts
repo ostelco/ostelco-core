@@ -48,8 +48,8 @@ dependencies {
 }
 
 sourceSets.create("integration") {
-  java.srcDirs("src/integration-tests/kotlin")
-  resources.srcDirs("src/integration-tests/resources")
+  java.srcDirs("src/integration-test/kotlin")
+  resources.srcDirs("src/integration-test/resources")
   compileClasspath += sourceSets.main.get().output + sourceSets.test.get().output
   runtimeClasspath += sourceSets.main.get().output + sourceSets.test.get().output
 }
@@ -106,6 +106,7 @@ idea {
   module {
     sourceDirs.addAll(files("${protobufGeneratedFilesBaseDir}/main/java"))
     sourceDirs.addAll(files("${protobufGeneratedFilesBaseDir}/main/grpc"))
+    testSourceDirs = testSourceDirs + file("src/integration-test/kotlin")
   }
 }
 
