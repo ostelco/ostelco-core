@@ -33,7 +33,7 @@ class Neo4jModule : PrimeModule {
             RunnableKotlinScript(ClasspathResourceTextReader("/AcceptanceTestSetup.kts").readText()).eval<Any?>()
         }
 
-//        Neo4jStoreSingleton.subscribeToSimProfileStatusUpdates()
+        Neo4jStoreSingleton.subscribeToSimProfileStatusUpdates()
     }
 }
 
