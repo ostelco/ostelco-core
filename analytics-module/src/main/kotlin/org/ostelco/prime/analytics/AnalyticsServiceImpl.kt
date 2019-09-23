@@ -4,8 +4,9 @@ import org.ostelco.prime.analytics.metrics.CustomMetricsRegistry
 import org.ostelco.prime.analytics.publishers.DataConsumptionInfoPublisher
 import org.ostelco.prime.analytics.publishers.PurchaseInfoPublisher
 import org.ostelco.prime.analytics.publishers.SimProvisioningPublisher
+import org.ostelco.prime.analytics.publishers.SubscriptionStatusUpdatePublisher
 import org.ostelco.prime.model.PurchaseRecord
-import org.ostelco.prime.model.SimProvisioning
+import org.ostelco.prime.model.SimProfileStatus
 
 class AnalyticsServiceImpl : AnalyticsService {
 
@@ -23,5 +24,9 @@ class AnalyticsServiceImpl : AnalyticsService {
 
     override fun reportSimProvisioning(subscriptionAnalyticsId: String, customerAnalyticsId: String, regionCode: String) {
         SimProvisioningPublisher.publish(subscriptionAnalyticsId, customerAnalyticsId, regionCode)
+    }
+
+    override fun reportSimStatusUpdate(subscriptionAnalyticsId: String, status: SimProfileStatus) {
+        SubscriptionStatusUpdatePublisher.publish(subscriptionAnalyticsId, status)
     }
 }

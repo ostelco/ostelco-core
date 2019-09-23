@@ -11,7 +11,7 @@ import java.time.Instant
  * This holds logic for sending SIM provisioning events to Cloud Pub/Sub.
  */
 object SimProvisioningPublisher :
-        PubSubPublisher by DelegatePubSubPublisher(topicId = ConfigRegistry.config.purchaseInfoTopicId) {
+        PubSubPublisher by DelegatePubSubPublisher(topicId = ConfigRegistry.config.simProvisioningTopicId) {
 
     private val gson = Gson()
 
