@@ -1,15 +1,12 @@
 package org.ostelco.simcards.admin
 
 import arrow.core.Either
-import arrow.core.fix
-import arrow.effects.IO
-import arrow.instances.either.monad.monad
 import com.codahale.metrics.health.HealthCheck
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.getLogger
-import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
+import org.ostelco.simcards.profilevendors.ProfileVendorAdapterDatum
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -67,53 +64,50 @@ class SmdpPlusHealthceck(
     }
 
     private fun naiveCheckIfSmdpPlusIsUp(): Boolean {
-        return IO {
-            Either.monad<SimManagerError>().binding {
-                val vendorsRaw = simInventoryDAO.getAllProfileVendors()
-                vendorsRaw.mapLeft {
+
+        // Find the list of profile vendors. If no list can be found, then
+        // return from the function with value "false" indicating failure.
+        val profileVendorAdaptorList =
+                simInventoryDAO.getAllProfileVendors().fold(ifLeft = {
                     logger.info("Couldn't find any profile vendors: {}", it)
-                }
+                    return false
+                }, ifRight = { it })
 
-                val profileVendorAdaptorList = vendorsRaw.bind()
+        // Loop over all the vendors, if any of  them returns false, then
+        // that indicates failure, so we search for the first failure,  and if
+        // no failures were found, then we can assume success.
+        return profileVendorAdaptorList.find { ! pingSimVendor(it) } == null
+    }
 
-                loopOverAllProfileVendors@ for (vendorAdapterDatum in profileVendorAdaptorList) {
-                    logger.info("Processing vendor: $vendorAdapterDatum")
-                    val currentConfig: ProfileVendorConfig? =
-                            profileVendorConfigList.firstOrNull { it.name == vendorAdapterDatum.name }
 
-                    if (currentConfig == null) {
-                        val msg = "Could not find config for profile vendor '${vendorAdapterDatum.name}' while attempting to ping remote SM-DP+ adapter"
-                        logger.error(msg)
-                        throw RuntimeException(msg) // TODO: I really dont like this style of coding.
-                    }
+    private fun pingSimVendor(vendorAdapterDatum: ProfileVendorAdapterDatum): Boolean {
+        val currentConfig: ProfileVendorConfig? =
+                profileVendorConfigList.firstOrNull { it.name == vendorAdapterDatum.name }
 
-                    val vendorAdapter = ProfileVendorAdapter(vendorAdapterDatum, currentConfig, httpClient, simInventoryDAO)
+        if (currentConfig == null) {
+            val msg = "Could not find config for profile vendor '${vendorAdapterDatum.name}' while attempting to ping remote SM-DP+ adapter"
+            logger.error(msg)
+            return false
+        }
 
-                    // This isn't working very well in the acceptance tests, so we need to log a little.
-                    logger.info("About to ping config: $currentConfig")
-                    val pingResult = vendorAdapter.ping()
+        val vendorAdapter = ProfileVendorAdapter(vendorAdapterDatum, currentConfig, httpClient, simInventoryDAO)
 
-                    // If this was an error, but of an acceptable ("pingOk" == true) kind, meaning that
-                    // the endpoint in the other end actually gave a reasonable answer to a reasonable request,
-                    // indicating that the endpoint is answering requests, then continue to loop over next endpoint,
-                    // otherwise see if there is an error.
-                    when (pingResult) {
-                        is Either.Left -> if (pingResult.a.pingOk) {
-                            continue@loopOverAllProfileVendors
-                        } else {
-                            logger.error("Could not reach SM-DP+ via HTTP PING:", pingResult)
-                            throw RuntimeException("Could not reach SM-DP+ via HTTP PING: $pingResult") // TODO: I really dont like this style of coding.
-                        }
-                        is Either.Right -> {
-                        }
-                    }
+        val pingResult = vendorAdapter.ping()
 
-                    // If this was an error, then break according to arrow semantics,
-                    // otherwise just carry on looping over the next endpoint.
-                    pingResult.bind()
-                }
-            }.fix()
-        }.unsafeRunSync().isRight()
+        // If this was an error, but of an acceptable ("pingOk" == true) kind, meaning that
+        // the endpoint in the other end actually gave a reasonable answer to a reasonable request,
+        // indicating that the endpoint is answering requests, then continue to loop over next endpoint,
+        // otherwise see if there is an error.
+        when (pingResult) {
+            is Either.Left -> if (pingResult.a.pingOk) {
+                return true
+            } else {
+                logger.error("Could not reach SM-DP+ via HTTP PING:", pingResult)
+                return false
+            }
+            is Either.Right -> {
+                return  true
+            }
+        }
     }
 }
-
