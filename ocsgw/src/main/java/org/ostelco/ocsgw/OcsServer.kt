@@ -178,10 +178,29 @@ object OcsServer {
     }
 
     private fun setupMultiDataSource(appConfig: AppConfig) : DataSource {
-        val initDataSource = setupDataSource(appConfig.getMultiInitDataSourceType(), appConfig)
-        val updateDataSource = setupDataSource(appConfig.getMultiUpdateDataSourceType(), appConfig)
-        val terminateDataSource = setupDataSource(appConfig.getMultiTerminateDataSourceType(), appConfig)
+        logger.info("Setting up InitDataSource")
+        val initDataSource = setupDataSource(appConfig.multiInitDataSourceType, appConfig)
+        logger.info("Setting up UpdateDataSource")
+        val updateDataSource = setupUnitDataSource(appConfig, initDataSource)
+        logger.info("Setting up TerminateDataSource")
+        val terminateDataSource : DataSource
+        terminateDataSource = setupTerminateDataSource(appConfig, initDataSource, updateDataSource)
         return MultiDataSource(initDataSource, updateDataSource, terminateDataSource)
+    }
+
+    private fun setupUnitDataSource(appConfig: AppConfig, initDataSource: DataSource) : DataSource {
+        return when {
+            appConfig.multiInitDataSourceType == appConfig.multiUpdateDataSourceType -> initDataSource
+            else -> setupDataSource(appConfig.multiUpdateDataSourceType, appConfig)
+        }
+    }
+
+    private fun setupTerminateDataSource(appConfig: AppConfig, initDataSource: DataSource, updateDataSource: DataSource): DataSource {
+        return when {
+            appConfig.multiInitDataSourceType == appConfig.multiUpdateDataSourceType -> initDataSource
+            appConfig.multiUpdateDataSourceType == appConfig.multiTerminateDataSourceType -> updateDataSource
+            else -> setupDataSource(appConfig.multiTerminateDataSourceType, appConfig)
+        }
     }
 
     private fun getGrpcDataSource(
