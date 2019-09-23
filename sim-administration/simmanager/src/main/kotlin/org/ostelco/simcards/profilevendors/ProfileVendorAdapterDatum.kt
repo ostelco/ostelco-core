@@ -181,11 +181,7 @@ data class ProfileVendorAdapter(
             return NotUpdatedError("simEntry without id.  simEntry=$simEntry").left()
         }
 
-        // TODO: Rewrite confirmOrderA to take a final argument, a lambda that is
-        //       written in a Mondad style, so that all errors are caught &
-        //       sendt on in a proper monadic manner.  That could keep the clutter
-        //       out of  the code, and avoid indecent levels of nesting of
-        //       flatmaps.
+        
         return confirmOrderA(iccid = simEntry.iccid, eid = eid, releaseFlag = releaseFlag)
                 .flatMap { response ->
 

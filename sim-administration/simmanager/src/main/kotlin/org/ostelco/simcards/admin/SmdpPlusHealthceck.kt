@@ -90,7 +90,7 @@ class SmdpPlusHealthceck(
         loopOverAllProfileVendors@ for (vendorAdapterDatum in profileVendorAdaptorList) {
             var vendorAdapter = getProfileVendorAdapterForVendor(vendorAdapterDatum).map(
                     {return false}, {foo -> foo})
-            
+
             // If this was an error, but of an acceptable ("pingOk" == true) kind, meaning that
             // the endpoint in the other end actually gave a reasonable answer to a reasonable request,
             // indicating that the endpoint is answering requests, then continue to loop over next endpoint,
