@@ -731,7 +731,7 @@ class PurchaseTest {
 
             val encodedEmail = URLEncoder.encode(email, StandardCharsets.UTF_8)
             val refundedProduct = put<ProductInfo> {
-                path = "/refund/$encodedEmail"
+                path = "/support/refund/$encodedEmail"
                 this.email = email
                 queryParams = mapOf(
                         "purchaseRecordId" to purchaseRecords.last().id,
@@ -1226,7 +1226,7 @@ class JumioKycTest {
 
             val encodedEmail = URLEncoder.encode(email, StandardCharsets.UTF_8)
             val scanInformationList = get<Collection<ScanInformation>> {
-                path = "/profiles/$encodedEmail/scans"
+                path = "/support/profiles/$encodedEmail/scans"
                 this.email = email
             }
             assertEquals(1, scanInformationList.size, message = "More scans than expected")
@@ -1326,7 +1326,7 @@ class JumioKycTest {
 
             val encodedEmail = URLEncoder.encode(email, StandardCharsets.UTF_8)
             val scanInformationList = get<Collection<ScanInformation>> {
-                path = "/profiles/$encodedEmail/scans"
+                path = "/support/profiles/$encodedEmail/scans"
                 this.email = email
             }
             assertEquals(2, scanInformationList.size, message = "More scans than expected")
@@ -1437,7 +1437,7 @@ class SingaporeKycTest {
             assertEquals(
                     "http://ext-myinfo-emulator:8080/v3/authorise" +
                             "?client_id=STG2-MYINFO-SELF-TEST" +
-                            "&attributes=name,sex,dob,residentialstatus,nationality,mobileno,email,mailadd" +
+                            "&attributes=name,dob,mailadd,regadd,passexpirydate,uinfin" +
                             "&redirect_uri=http://localhost:3001/callback",
                     myInfoConfig.url)
 

@@ -32,8 +32,8 @@ export function getAuthConfig() {
 }
 
 export function getAPIRoot() {
-  const DEV_API_ROOT = 'https://houston-api.dev.oya.world/';
-  const PROD_API_ROOT = 'https://houston-api.oya.world/';
+  const DEV_API_ROOT = 'https://houston-api.dev.oya.world/support/';
+  const PROD_API_ROOT = 'https://houston-api.oya.world/support/';
 
   if (process.env.REACT_APP_DEPLOYMENT_ENV === "development" ||
     process.env.NODE_ENV === "development") {

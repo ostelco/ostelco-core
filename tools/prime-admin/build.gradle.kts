@@ -7,9 +7,6 @@ plugins {
 }
 
 dependencies {
-
-  val kotlinVersion:String by rootProject.extra
-
   implementation(kotlin("stdlib-jdk8"))
 
   implementation(project(":prime"))

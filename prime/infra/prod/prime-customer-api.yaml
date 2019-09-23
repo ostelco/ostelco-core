@@ -1127,13 +1127,6 @@ definitions:
       - activationCode
       - status
 securityDefinitions:
-  auth0_jwt:
-    authorizationUrl: ""
-    flow: "implicit"
-    type: "oauth2"
-    x-google-issuer: "https://auth-dev.oya.world/"
-    x-google-jwks_uri: "https://auth-dev.oya.world/.well-known/jwks.json"
-    x-google-audiences: "http://google_api"
   firebase:
     authorizationUrl: ""
     flow: "implicit"
