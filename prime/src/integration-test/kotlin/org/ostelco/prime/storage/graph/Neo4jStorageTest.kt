@@ -109,7 +109,7 @@ class Neo4jStorageTest {
         @ClassRule
         @JvmField
         var docker: DockerComposeRule = DockerComposeRule.builder()
-                .file("src/integration-tests/resources/docker-compose.yaml")
+                .file("src/integration-test/resources/docker-compose.yaml")
                 .waitingForService("neo4j", HealthChecks.toHaveAllPortsOpen())
                 .waitingForService("neo4j",
                         HealthChecks.toRespond2xxOverHttp(7474) { port ->
