@@ -8,24 +8,6 @@ option java_package = "org.ostelco.analytics.api";
 import "google/protobuf/timestamp.proto";
 
 // This is used only to report to Analytics engine by Prime via Google Cloud Pub/Sub.
-
-message DataTrafficInfo {
-    string subscriptionAnalyticsId = 1;
-    uint64 usedBucketBytes = 2;
-    uint64 bundleBytes = 3;
-    google.protobuf.Timestamp timestamp = 4;
-    string apn = 5;
-    string mccMnc = 6;
-}
-
-message AggregatedDataTrafficInfo {
-    string msisdn = 1;
-    uint64 dataBytes = 2;
-    google.protobuf.Timestamp timestamp = 3;
-    string apn = 4;
-    string mccMnc = 5;
-}
-
 message User {
     string msisdn = 1;
     string apn = 2;

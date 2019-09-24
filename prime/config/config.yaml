@@ -73,9 +73,11 @@ modules:
   - type: analytics
     config:
       projectId: ${GCP_PROJECT_ID}
-      dataTrafficTopicId: ${DATA_TRAFFIC_TOPIC}
-      purchaseInfoTopicId: ${PURCHASE_INFO_TOPIC}
-      activeUsersTopicId: ${ACTIVE_USERS_TOPIC}
+      dataTrafficTopicId: data-traffic
+      purchaseInfoTopicId: purchase-info
+      activeUsersTopicId: active-users
+      simProvisioningTopicId: sim-provisioning
+      subscriptionStatusUpdateTopicId: subscription-status-update
   - type: ocs
     config:
       lowBalanceThreshold: 100000000

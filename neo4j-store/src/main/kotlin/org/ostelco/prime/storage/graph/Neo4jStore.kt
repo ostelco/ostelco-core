@@ -543,6 +543,21 @@ object Neo4jStoreSingleton : GraphStore {
         }
     }
 
+    fun subscribeToSimProfileStatusUpdates() {
+        simManager.getSimProfileStatusUpdates { iccId, status ->
+            readTransaction {
+                IO {
+                    Either.monad<StoreError>().binding {
+                        val subscriptions = get(Subscription under (SimProfile withId iccId)).bind()
+                        subscriptions.forEach { subscription ->
+                            analyticsReporter.reportSimStatusUpdate(subscription.analyticsId, status)
+                        }
+                    }.fix()
+                }.unsafeRunSync()
+            }
+        }
+    }
+
     private val emailNotifier by lazy { getResource<EmailNotifier>() }
 
     private fun validateBundleList(bundles: List<Bundle>, customerId: String): Either<StoreError, Unit> =
@@ -580,6 +595,15 @@ object Neo4jStoreSingleton : GraphStore {
                 fact { (SimProfile withId simProfile.id) isFor (Region withCode regionCode.toLowerCase()) }.bind()
                 simEntry.msisdnList.forEach { msisdn ->
                     create { Subscription(msisdn = msisdn) }.bind()
+                    val subscription = get(Subscription withMsisdn msisdn).bind()
+
+                    // Report the new provisioning to analytics
+                    analyticsReporter.reportSimProvisioning(
+                            subscriptionAnalyticsId = subscription.analyticsId,
+                            customerAnalyticsId = customer.analyticsId,
+                            regionCode = regionCode.toLowerCase()
+                    )
+
                     bundles.forEach { bundle ->
                         fact { (Subscription withMsisdn msisdn) consumesFrom (Bundle withId bundle.id) using SubscriptionToBundle() }.bind()
                     }
