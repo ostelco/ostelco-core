@@ -270,12 +270,12 @@ data class ProfileVendorAdapter(
      * A dummy ICCID. May or may notreturn a valid profile from any HSS or SM-DP+, but is
      * useful for checking of there is an SM-DP+ in the other end of the connection.
      */
-    val invalidICCID = listOf("8901000000000000001")
+    val listContainingOnlyInvalidIccid = listOf("8901000000000000001")
 
     /**
      * Contact the ES2+  endpoint of the SM-DP+, and return true if the answer indicates
      * that it's up.
      */
     fun ping(): Either<SimManagerError, List<ProfileStatus>> =
-            getProfileStatus(iccidList = invalidICCID, expectSuccess = false)
+            getProfileStatus(iccidList = listContainingOnlyInvalidIccid, expectSuccess = false)
 }
