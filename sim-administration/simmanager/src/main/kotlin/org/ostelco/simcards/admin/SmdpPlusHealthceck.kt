@@ -125,8 +125,11 @@ class SmdpPlusHealthceck(
             is Either.Left -> if (pingResult.a.pingOk) {
                 return true
             } else {
-                logger.error("Could not reach SM-DP+ via HTTP PING:", pingResult)
-                return false
+                pingResult.mapLeft {
+                    error ->
+                    logger.error("Could not reach SM-DP+ via HTTP PING: '${error.description}'.  '$error'")
+                    return false
+                }
             }
             is Either.Right -> {
                 return true
