@@ -138,11 +138,13 @@ data class ProfileVendorAdapter(
                 .flatMap { response ->
                     if (executionWasFailure(status = response.myHeader.functionExecutionStatus)) {
                         logAndReturnNotFoundError("execution getProfileStatusA.   iccidList='$iccidList', status=${response.myHeader.functionExecutionStatus}")
-                    } else if (response.profileStatusList == null) {
-                        logAndReturnNotFoundError("Couldn't find any response for query iccidlist='$iccidList'")
                     } else {
-                        val result = response.profileStatusList!! // TODO: Why is this necessary (see if-branch above)
-                        return result.right()
+                        val result = response.profileStatusList
+                        if (result == null) {
+                            logAndReturnNotFoundError("Couldn't find any response for query iccidlist='$iccidList'")
+                        } else {
+                            return result.right()
+                        }
                     }
                 }
     }
@@ -181,7 +183,7 @@ data class ProfileVendorAdapter(
             return NotUpdatedError("simEntry without id.  simEntry=$simEntry").left()
         }
 
-        
+
         return confirmOrderA(iccid = simEntry.iccid, eid = eid, releaseFlag = releaseFlag)
                 .flatMap { response ->
 
@@ -220,6 +222,7 @@ data class ProfileVendorAdapter(
                     .flatMap {
                         it.first().right()
                     }
+
     /**
      * Downloads the SM-DP+ 'profile status' information for a list of ICCIDs
      * from a SM-DP+ service.
