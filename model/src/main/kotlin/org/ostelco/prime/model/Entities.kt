@@ -371,7 +371,38 @@ enum class SimProfileStatus {
 
 data class Context(
         val customer: Customer,
-        val regions: Collection<RegionDetails> = emptyList())
+        val regions: Collection<RegionDetails> = emptyList()
+)
+
+data class DataTrafficInfo(
+        val subscriptionAnalyticsId: String,
+        val usedBucketBytes: Long,
+        val bundleBytes: Long,
+        val timestamp: Long,
+        val apn: String?,
+        val mccMnc: String?
+)
+
+/**
+ * Represents the relationship between a subscription and a customer in a specific region
+ *
+ * @property subscriptionAnalyticsId subscription for the SIM peering
+ * @property customerAnalyticsId customer the subscription is linked to
+ * @property regionCode region for the peering
+ * @property timestamp timestamp of the peering event
+ */
+data class SimProvisioning(
+        val subscriptionAnalyticsId: String,
+        val customerAnalyticsId: String,
+        val regionCode: String,
+        val timestamp: Long
+)
+
+data class SubscriptionStatusUpdate(
+        val subscriptionAnalyticsId: String,
+        val status: SimProfileStatus,
+        val timestamp: Long
+)
 
 data class CustomerActivity(
         val timestamp: Long,

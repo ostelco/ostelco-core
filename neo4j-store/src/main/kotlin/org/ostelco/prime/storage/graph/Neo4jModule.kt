@@ -32,6 +32,8 @@ class Neo4jModule : PrimeModule {
         if (System.getenv("ACCEPTANCE_TESTING") == "true") {
             RunnableKotlinScript(ClasspathResourceTextReader("/AcceptanceTestSetup.kts").readText()).eval<Any?>()
         }
+
+        Neo4jStoreSingleton.subscribeToSimProfileStatusUpdates()
     }
 }
 

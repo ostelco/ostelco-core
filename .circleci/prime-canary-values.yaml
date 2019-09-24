@@ -32,9 +32,6 @@ prime:
     SLACK_CHANNEL: prime-alerts
     SLACK_ENV: Production
     SLACK_DEPLOYMENT: Canary
-    DATA_TRAFFIC_TOPIC: data-traffic
-    PURCHASE_INFO_TOPIC: purchase-info
-    ACTIVE_USERS_TOPIC: active-users
     STRIPE_EVENT_TOPIC: stripe-event
     STRIPE_EVENT_STORE_SUBSCRIPTION: stripe-event-store-sub
     STRIPE_EVENT_REPORT_SUBSCRIPTION: stripe-event-report-sub

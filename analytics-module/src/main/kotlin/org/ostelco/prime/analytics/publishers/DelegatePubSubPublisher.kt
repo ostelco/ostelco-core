@@ -1,14 +1,17 @@
 package org.ostelco.prime.analytics.publishers
 
-import com.google.api.core.ApiFuture
+import com.google.api.core.ApiFutureCallback
+import com.google.api.core.ApiFutures
 import com.google.api.gax.core.NoCredentialsProvider
 import com.google.api.gax.grpc.GrpcTransportChannel
+import com.google.api.gax.rpc.ApiException
 import com.google.api.gax.rpc.FixedTransportChannelProvider
 import com.google.cloud.pubsub.v1.Publisher
 import com.google.pubsub.v1.ProjectTopicName
 import com.google.pubsub.v1.PubsubMessage
 import io.grpc.ManagedChannelBuilder
 import org.ostelco.prime.analytics.ConfigRegistry
+import org.ostelco.prime.getLogger
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 
@@ -17,6 +20,7 @@ class DelegatePubSubPublisher(
         private val projectId: String = ConfigRegistry.config.projectId) : PubSubPublisher {
 
     private lateinit var publisher: Publisher
+    private val logger by getLogger()
 
     override lateinit var singleThreadScheduledExecutor: ScheduledExecutorService
 
@@ -45,5 +49,25 @@ class DelegatePubSubPublisher(
         singleThreadScheduledExecutor.shutdown()
     }
 
-    override fun publishPubSubMessage(pubsubMessage: PubsubMessage): ApiFuture<String> = publisher.publish(pubsubMessage)
+    override fun publishPubSubMessage(pubsubMessage: PubsubMessage) {
+        val future = publisher.publish(pubsubMessage)
+
+        // add an asynchronous callback to handle success / failure
+        ApiFutures.addCallback(future, object : ApiFutureCallback<String> {
+
+            override fun onFailure(throwable: Throwable) {
+                if (throwable is ApiException) {
+                    // details on the API exception
+                    logger.warn("Status code: {}", throwable.statusCode.code)
+                    logger.warn("Retrying: {}", throwable.isRetryable)
+                }
+                logger.warn("Error publishing message in topic: $topicId")
+            }
+
+            override fun onSuccess(messageId: String) {
+                // Once published, returns server-assigned message ids (unique within the topic)
+                logger.debug("Published message $messageId")
+            }
+        }, DataConsumptionInfoPublisher.singleThreadScheduledExecutor)
+    }
 }
