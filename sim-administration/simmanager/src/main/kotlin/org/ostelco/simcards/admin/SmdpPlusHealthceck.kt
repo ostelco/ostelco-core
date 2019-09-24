@@ -121,18 +121,17 @@ class SmdpPlusHealthceck(
         // the endpoint in the other end actually gave a reasonable answer to a reasonable request,
         // indicating that the endpoint is answering requests, then continue to loop over next endpoint,
         // otherwise see if there is an error.
-        when (pingResult) {
+        return when (pingResult) {
             is Either.Left -> if (pingResult.a.pingOk) {
-                return true
+                true
             } else {
-                pingResult.mapLeft {
-                    error ->
+                pingResult.mapLeft { error ->
                     logger.error("Could not reach SM-DP+ via HTTP PING: '${error.description}'.  '$error'")
-                    return false
                 }
+                false
             }
             is Either.Right -> {
-                return true
+                true
             }
         }
     }
