@@ -63,7 +63,7 @@ modules:
       activeUsersTopicId: active-users
       simProvisioningTopicId: sim-provisioning
       subscriptionStatusUpdateTopicId: subscription-status-update
-      refundsTopicId: refunds
+      refundsTopicId: analytics-refunds
   - type: ocs
     config:
       lowBalanceThreshold: 0
