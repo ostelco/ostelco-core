@@ -42,7 +42,7 @@ configurations.named("integrationImplementation") {
 
 tasks.build.get().dependsOn(integration)
 
-apply(from = "../gradle/jacoco.gradle")
+apply(from = "../gradle/jacoco.gradle.kts")
 
 idea {
   module {

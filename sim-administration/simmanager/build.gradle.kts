@@ -125,7 +125,7 @@ protobuf {
   protobufGeneratedFilesBaseDir = generatedFilesBaseDir
 }
 
-apply(from = "../../gradle/jacoco.gradle")
+apply(from = "../../gradle/jacoco.gradle.kts")
 
 idea {
   module {
