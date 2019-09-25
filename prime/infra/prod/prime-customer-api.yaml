@@ -375,11 +375,6 @@ paths:
           description: "Customer's Address"
           required: true
           type: string
-        - name: phoneNumber
-          in: query
-          description: "Customer's phone number"
-          required: true
-          type: string
       responses:
         204:
           description: "Successfully updated customer's details."
@@ -893,12 +888,12 @@ definitions:
           JUMIO: PENDING
           MY_INFO: APPROVED
           NRIC_FIN: REJECTED
-          ADDRESS_AND_PHONE_NUMBER: PENDING
+          ADDRESS: PENDING
       simProfiles:
         $ref: '#/definitions/SimProfileList'
   KycType:
     type: string
-    enum: [ JUMIO, MY_INFO, NRIC_FIN, ADDRESS_AND_PHONE_NUMBER ]
+    enum: [ JUMIO, MY_INFO, NRIC_FIN, ADDRESS ]
   KycStatus:
     type: string
     enum: [ PENDING, REJECTED, APPROVED ]

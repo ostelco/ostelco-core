@@ -1486,7 +1486,7 @@ class SingaporeKycTest {
                         .kycStatusMap(mutableMapOf(
                                 KycType.JUMIO.name to KycStatus.PENDING,
                                 KycType.MY_INFO.name to KycStatus.APPROVED,
-                                KycType.ADDRESS_AND_PHONE_NUMBER.name to KycStatus.PENDING,
+                                KycType.ADDRESS.name to KycStatus.PENDING,
                                 KycType.NRIC_FIN.name to KycStatus.PENDING))
                         .simProfiles(SimProfileList())
 
@@ -1537,7 +1537,7 @@ class SingaporeKycTest {
                         .kycStatusMap(mutableMapOf(
                                 KycType.JUMIO.name to KycStatus.PENDING,
                                 KycType.MY_INFO.name to KycStatus.APPROVED,
-                                KycType.ADDRESS_AND_PHONE_NUMBER.name to KycStatus.PENDING,
+                                KycType.ADDRESS.name to KycStatus.PENDING,
                                 KycType.NRIC_FIN.name to KycStatus.PENDING))
                         .simProfiles(SimProfileList())
 
@@ -1585,7 +1585,7 @@ class SingaporeKycTest {
                                 KycType.MY_INFO.name to KycStatus.PENDING,
                                 KycType.NRIC_FIN.name to KycStatus.APPROVED,
                                 KycType.JUMIO.name to KycStatus.PENDING,
-                                KycType.ADDRESS_AND_PHONE_NUMBER.name to KycStatus.PENDING))
+                                KycType.ADDRESS.name to KycStatus.PENDING))
                         .simProfiles(SimProfileList())
 
                 assertEquals(regionDetails, regionDetailsList.single(), "RegionDetails do not match")
@@ -1635,7 +1635,7 @@ class SingaporeKycTest {
                                 KycType.MY_INFO.name to KycStatus.PENDING,
                                 KycType.NRIC_FIN.name to KycStatus.APPROVED,
                                 KycType.JUMIO.name to KycStatus.APPROVED,
-                                KycType.ADDRESS_AND_PHONE_NUMBER.name to KycStatus.PENDING))
+                                KycType.ADDRESS.name to KycStatus.PENDING))
                         .simProfiles(SimProfileList())
 
                 assertEquals(regionDetails, regionDetailsList.single(), "RegionDetails do not match")
@@ -1644,7 +1644,7 @@ class SingaporeKycTest {
             put<String>(expectedResultCode = 204) {
                 path = "/regions/sg/kyc/profile"
                 this.email = email
-                queryParams = mapOf("address" to "Singapore", "phoneNumber" to "1234")
+                queryParams = mapOf("address" to "Singapore")
             }
 
             run {
@@ -1661,7 +1661,7 @@ class SingaporeKycTest {
                         .kycStatusMap(mutableMapOf(
                                 KycType.JUMIO.name to KycStatus.APPROVED,
                                 KycType.MY_INFO.name to KycStatus.PENDING,
-                                KycType.ADDRESS_AND_PHONE_NUMBER.name to KycStatus.APPROVED,
+                                KycType.ADDRESS.name to KycStatus.APPROVED,
                                 KycType.NRIC_FIN.name to KycStatus.APPROVED))
                         .simProfiles(SimProfileList())
 
@@ -1733,7 +1733,7 @@ class SingaporeKycTest {
                                 KycType.MY_INFO.name to KycStatus.PENDING,
                                 KycType.NRIC_FIN.name to KycStatus.PENDING,
                                 KycType.JUMIO.name to KycStatus.APPROVED,
-                                KycType.ADDRESS_AND_PHONE_NUMBER.name to KycStatus.PENDING))
+                                KycType.ADDRESS.name to KycStatus.PENDING))
                         .simProfiles(SimProfileList())
 
                 assertEquals(regionDetails, regionDetailsList.single(), "RegionDetails do not match")
@@ -1742,7 +1742,7 @@ class SingaporeKycTest {
             put<String>(expectedResultCode = 204) {
                 path = "/regions/sg/kyc/profile"
                 this.email = email
-                queryParams = mapOf("address" to "Singapore", "phoneNumber" to "1234")
+                queryParams = mapOf("address" to "Singapore")
             }
 
             run {
@@ -1759,7 +1759,7 @@ class SingaporeKycTest {
                         .kycStatusMap(mutableMapOf(
                                 KycType.JUMIO.name to KycStatus.APPROVED,
                                 KycType.MY_INFO.name to KycStatus.PENDING,
-                                KycType.ADDRESS_AND_PHONE_NUMBER.name to KycStatus.APPROVED,
+                                KycType.ADDRESS.name to KycStatus.APPROVED,
                                 KycType.NRIC_FIN.name to KycStatus.PENDING))
                         .simProfiles(SimProfileList())
 

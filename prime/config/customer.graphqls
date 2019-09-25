@@ -48,7 +48,7 @@ type KycStatusMap {
   JUMIO: KycStatus
   MY_INFO: KycStatus
   NRIC_FIN: KycStatus
-  ADDRESS_AND_PHONE_NUMBER: KycStatus
+  ADDRESS: KycStatus
 }
 
 enum KycStatus {

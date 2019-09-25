@@ -47,7 +47,7 @@ fun enableRegion(email: String, region: String = "no") {
             put<String>(expectedResultCode = 204) {
                 path = "/regions/sg/kyc/profile"
                 this.email = email
-                queryParams = mapOf("address" to "Singapore", "phoneNumber" to "1234")
+                queryParams = mapOf("address" to "Singapore")
             }
         }
         else -> performJumioKyc(email = email, region = region)
