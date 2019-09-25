@@ -3,7 +3,6 @@ package org.ostelco.prime.analytics.events
 import org.ostelco.prime.model.SimProfileStatus
 import java.math.BigDecimal
 import java.time.Instant
-import java.util.*
 
 sealed class Event(val timestamp: Instant = Instant.now()) {
     fun toJsonByteString() = CommonPubSubJsonSerializer.toJsonByteString(this)
