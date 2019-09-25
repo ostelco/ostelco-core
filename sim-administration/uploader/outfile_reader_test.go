@@ -49,6 +49,8 @@ func ReadOutputFile(filename string) (OutputFileRecord, error) {
 
 	state := ParserState{
 		currentState: INITIAL,
+		inputVariables:  make(map[string]string),
+		headerDescription: make(map[string]string),
 	}
 
 
