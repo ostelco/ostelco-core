@@ -68,7 +68,7 @@ enum class KycType {
     JUMIO,
     MY_INFO,
     NRIC_FIN,
-    ADDRESS_AND_PHONE_NUMBER
+    ADDRESS
 }
 
 enum class KycStatus {

@@ -682,7 +682,7 @@ class SingaporeKycTest {
                         .kycStatusMap(mutableMapOf(
                                 KycType.JUMIO.name to KycStatus.PENDING,
                                 KycType.MY_INFO.name to KycStatus.APPROVED,
-                                KycType.ADDRESS_AND_PHONE_NUMBER.name to KycStatus.PENDING,
+                                KycType.ADDRESS.name to KycStatus.PENDING,
                                 KycType.NRIC_FIN.name to KycStatus.PENDING))
                         .simProfiles(SimProfileList())
 
@@ -726,7 +726,7 @@ class SingaporeKycTest {
                         .kycStatusMap(mutableMapOf(
                                 KycType.JUMIO.name to KycStatus.PENDING,
                                 KycType.MY_INFO.name to KycStatus.APPROVED,
-                                KycType.ADDRESS_AND_PHONE_NUMBER.name to KycStatus.PENDING,
+                                KycType.ADDRESS.name to KycStatus.PENDING,
                                 KycType.NRIC_FIN.name to KycStatus.PENDING))
                         .simProfiles(SimProfileList())
 
@@ -767,7 +767,7 @@ class SingaporeKycTest {
                                 KycType.MY_INFO.name to KycStatus.PENDING,
                                 KycType.NRIC_FIN.name to KycStatus.APPROVED,
                                 KycType.JUMIO.name to KycStatus.PENDING,
-                                KycType.ADDRESS_AND_PHONE_NUMBER.name to KycStatus.PENDING))
+                                KycType.ADDRESS.name to KycStatus.PENDING))
                         .simProfiles(SimProfileList())
 
                 assertEquals(regionDetails, regionDetailsList.single(), "RegionDetails do not match")
@@ -811,13 +811,13 @@ class SingaporeKycTest {
                                 KycType.MY_INFO.name to KycStatus.PENDING,
                                 KycType.NRIC_FIN.name to KycStatus.APPROVED,
                                 KycType.JUMIO.name to KycStatus.APPROVED,
-                                KycType.ADDRESS_AND_PHONE_NUMBER.name to KycStatus.PENDING))
+                                KycType.ADDRESS.name to KycStatus.PENDING))
                         .simProfiles(SimProfileList())
 
                 assertEquals(regionDetails, regionDetailsList.single(), "RegionDetails do not match")
             }
 
-            client.updateDetails("Singapore", "1234")
+            client.updateDetails("Singapore")
 
             run {
                 val regionDetailsList = client.allRegions
@@ -830,7 +830,7 @@ class SingaporeKycTest {
                         .kycStatusMap(mutableMapOf(
                                 KycType.JUMIO.name to KycStatus.APPROVED,
                                 KycType.MY_INFO.name to KycStatus.PENDING,
-                                KycType.ADDRESS_AND_PHONE_NUMBER.name to KycStatus.APPROVED,
+                                KycType.ADDRESS.name to KycStatus.APPROVED,
                                 KycType.NRIC_FIN.name to KycStatus.APPROVED))
                         .simProfiles(SimProfileList())
 
@@ -895,13 +895,13 @@ class SingaporeKycTest {
                                 KycType.MY_INFO.name to KycStatus.PENDING,
                                 KycType.NRIC_FIN.name to KycStatus.PENDING,
                                 KycType.JUMIO.name to KycStatus.APPROVED,
-                                KycType.ADDRESS_AND_PHONE_NUMBER.name to KycStatus.PENDING))
+                                KycType.ADDRESS.name to KycStatus.PENDING))
                         .simProfiles(SimProfileList())
 
                 assertEquals(regionDetails, regionDetailsList.single(), "RegionDetails do not match")
             }
 
-            client.updateDetails("Singapore", "1234")
+            client.updateDetails("Singapore")
 
             run {
                 val regionDetailsList = client.allRegions
@@ -914,7 +914,7 @@ class SingaporeKycTest {
                         .kycStatusMap(mutableMapOf(
                                 KycType.JUMIO.name to KycStatus.APPROVED,
                                 KycType.MY_INFO.name to KycStatus.PENDING,
-                                KycType.ADDRESS_AND_PHONE_NUMBER.name to KycStatus.APPROVED,
+                                KycType.ADDRESS.name to KycStatus.APPROVED,
                                 KycType.NRIC_FIN.name to KycStatus.PENDING))
                         .simProfiles(SimProfileList())
 
