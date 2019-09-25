@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"strings"
 	"testing"
 )
 
@@ -19,10 +20,13 @@ const (
 	HEADER_DESCRIPTION = "header_description"
 	INPUT_VARIABLES    = "input_variables"
 	OUTPUT_VARIABLES   = "output_variables"
+	UNKNOWN_HEADER     = "unknown"
 )
 
 type ParserState struct {
-	CurrentState string
+	currentState string
+	inputVariables     map[string]string
+	headerDescription  map[string]string
 }
 
 func ReadOutputFile(filename string) (OutputFileRecord, error) {
@@ -44,8 +48,9 @@ func ReadOutputFile(filename string) (OutputFileRecord, error) {
 	defer file.Close()
 
 	state := ParserState{
-		CurrentState: INITIAL,
+		currentState: INITIAL,
 	}
+
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -56,13 +61,43 @@ func ReadOutputFile(filename string) (OutputFileRecord, error) {
 		} else if isSectionHeader(line) {
 			log.Print("Section header recognized")
 			nextMode := modeFromSectionHeader(line)
-			transitionMode(state, nextMode)
+			fmt.Println("Pre-transition ", state.currentState)
+			transitionMode(&state, nextMode)
+			fmt.Println("Post-transition ", state.currentState)
 			continue
 		}
 
-		fmt.Println(line)
+		fmt.Println("Hello ", state.currentState)
+		if state.currentState == HEADER_DESCRIPTION {
+			log.Print("foo", line)
+			var splitString = strings.Split(line, ":")
+			if len(splitString) != 2 {
+				log.Fatalf("Unparsable input variable string: '%s'\n", line)
+			}
 
-		// Then select parsing actions according to mode.
+			key := strings.TrimSpace(splitString[0])
+			value := strings.TrimSpace(splitString[1])
+
+
+			log.Print("key =", key, ", value =", value)
+
+			state.headerDescription[key] = value
+		} else if state.currentState == INPUT_VARIABLES  {
+			if line == "var_In:" {
+				continue
+			}
+			var splitString = strings.Split(line, ":")
+			if len(splitString) != 2 {
+				log.Fatalf("Unparsable input variable string: '%s'\n", line)
+			}
+			key := strings.TrimSpace(splitString[0])
+			value := strings.TrimSpace(splitString[1])
+			state.inputVariables[key] = value
+		} else if state.currentState == OUTPUT_VARIABLES  {
+			log.Print("baz", line)
+		} else if state.currentState == UNKNOWN_HEADER {
+			log.Print("gazonk", line)
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -76,13 +111,23 @@ func ReadOutputFile(filename string) (OutputFileRecord, error) {
 	return result, nil
 }
 
-func transitionMode(state ParserState, targetState string) {
-	log.Printf("Transitioning from state '%s' to '%s'", state.CurrentState, targetState)
-	state.CurrentState = targetState
+func transitionMode(state *ParserState, targetState string) {
+	log.Printf("Transitioning from state '%s' to '%s'", state.currentState, targetState)
+	state.currentState = targetState
 }
 
 func modeFromSectionHeader(s string) string {
-	return INITIAL // TODO: Fix
+	sectionName := s[1:len(s)]
+	fmt.Printf("section name '%s'\n", sectionName)
+	if (sectionName == "HEADER DESCRIPTION") {
+		return HEADER_DESCRIPTION
+	} else if (sectionName == "INPUT VARIABLES") {
+		return INPUT_VARIABLES
+	} else if (sectionName == "OUTPUT VARIABLES") {
+		return OUTPUT_VARIABLES
+	} else {
+		return UNKNOWN_HEADER
+	}
 }
 
 func isSectionHeader(s string) bool {
