@@ -24,9 +24,9 @@ const (
 )
 
 type ParserState struct {
-	currentState string
-	inputVariables     map[string]string
-	headerDescription  map[string]string
+	currentState      string
+	inputVariables    map[string]string
+	headerDescription map[string]string
 }
 
 func ReadOutputFile(filename string) (OutputFileRecord, error) {
@@ -48,11 +48,10 @@ func ReadOutputFile(filename string) (OutputFileRecord, error) {
 	defer file.Close()
 
 	state := ParserState{
-		currentState: INITIAL,
-		inputVariables:  make(map[string]string),
+		currentState:      INITIAL,
+		inputVariables:    make(map[string]string),
 		headerDescription: make(map[string]string),
 	}
-
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -69,9 +68,7 @@ func ReadOutputFile(filename string) (OutputFileRecord, error) {
 			continue
 		}
 
-		fmt.Println("Hello ", state.currentState)
 		if state.currentState == HEADER_DESCRIPTION {
-			log.Print("foo", line)
 			var splitString = strings.Split(line, ":")
 			if len(splitString) != 2 {
 				log.Fatalf("Unparsable input variable string: '%s'\n", line)
@@ -80,11 +77,10 @@ func ReadOutputFile(filename string) (OutputFileRecord, error) {
 			key := strings.TrimSpace(splitString[0])
 			value := strings.TrimSpace(splitString[1])
 
-
 			log.Print("key =", key, ", value =", value)
 
 			state.headerDescription[key] = value
-		} else if state.currentState == INPUT_VARIABLES  {
+		} else if state.currentState == INPUT_VARIABLES {
 			if line == "var_In:" {
 				continue
 			}
@@ -95,7 +91,11 @@ func ReadOutputFile(filename string) (OutputFileRecord, error) {
 			key := strings.TrimSpace(splitString[0])
 			value := strings.TrimSpace(splitString[1])
 			state.inputVariables[key] = value
-		} else if state.currentState == OUTPUT_VARIABLES  {
+		} else if state.currentState == OUTPUT_VARIABLES {
+			// First read the var_Out header with a slash-separated list of actual
+			// fields.  Then after that, read all the fields and put them in a struct.
+			// Let's just hope they will all fit into memory (and unless the number of sim cards
+			// is really _really_ huge, it will).
 			log.Print("baz", line)
 		} else if state.currentState == UNKNOWN_HEADER {
 			log.Print("gazonk", line)
@@ -121,11 +121,11 @@ func transitionMode(state *ParserState, targetState string) {
 func modeFromSectionHeader(s string) string {
 	sectionName := s[1:len(s)]
 	fmt.Printf("section name '%s'\n", sectionName)
-	if (sectionName == "HEADER DESCRIPTION") {
+	if sectionName == "HEADER DESCRIPTION" {
 		return HEADER_DESCRIPTION
-	} else if (sectionName == "INPUT VARIABLES") {
+	} else if sectionName == "INPUT VARIABLES" {
 		return INPUT_VARIABLES
-	} else if (sectionName == "OUTPUT VARIABLES") {
+	} else if sectionName == "OUTPUT VARIABLES" {
 		return OUTPUT_VARIABLES
 	} else {
 		return UNKNOWN_HEADER
