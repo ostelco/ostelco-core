@@ -111,17 +111,13 @@ class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(regionCo
     fun saveProfile(@Auth token: AccessTokenPrincipal?,
                     @NotNull
                     @QueryParam("address")
-                    address: String,
-                    @NotNull
-                    @QueryParam("phoneNumber")
-                    phoneNumber: String): Response =
+                    address: String): Response =
             if (token == null) {
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
-                dao.saveAddressAndPhoneNumber(
+                dao.saveAddress(
                         identity = token.identity,
-                        address = address,
-                        phoneNumber = phoneNumber)
+                        address = address)
                         .responseBuilder(Response.Status.NO_CONTENT)
             }.build()
 }

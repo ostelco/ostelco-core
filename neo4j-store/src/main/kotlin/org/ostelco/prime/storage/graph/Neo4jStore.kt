@@ -47,7 +47,7 @@ import org.ostelco.prime.model.HasId
 import org.ostelco.prime.model.KycStatus
 import org.ostelco.prime.model.KycStatus.REJECTED
 import org.ostelco.prime.model.KycType
-import org.ostelco.prime.model.KycType.ADDRESS_AND_PHONE_NUMBER
+import org.ostelco.prime.model.KycType.ADDRESS
 import org.ostelco.prime.model.KycType.JUMIO
 import org.ostelco.prime.model.KycType.MY_INFO
 import org.ostelco.prime.model.KycType.NRIC_FIN
@@ -1771,37 +1771,35 @@ object Neo4jStoreSingleton : GraphStore {
     //
     // eKYC - Address and Phone number
     //
-    override fun saveAddressAndPhoneNumber(
+    override fun saveAddress(
             identity: org.ostelco.prime.model.Identity,
-            address: String,
-            phoneNumber: String): Either<StoreError, Unit> {
+            address: String): Either<StoreError, Unit> {
 
         return IO {
             Either.monad<StoreError>().binding {
 
                 val customerId = getCustomer(identity = identity).bind().id
 
-                // set ADDRESS_AND_PHONE_NUMBER KYC Status to Pending
+                // set // apply(from = "../../gradle/jacoco.gradle") KYC Status to Pending
                 setKycStatus(
                         customerId = customerId,
                         regionCode = "sg",
-                        kycType = ADDRESS_AND_PHONE_NUMBER,
+                        kycType = ADDRESS,
                         kycStatus = KycStatus.PENDING).bind()
 
                 secureArchiveService.archiveEncrypted(
                         customerId = customerId,
-                        fileName = "addressAndPhoneNumber",
+                        fileName = "address",
                         regionCodes = listOf("sg"),
                         dataMap = mapOf(
-                                "address" to address.toByteArray(),
-                                "phoneNumber" to phoneNumber.toByteArray())
+                                "address" to address.toByteArray())
                 ).bind()
 
-                // set ADDRESS_AND_PHONE_NUMBER KYC Status to Approved
+                // set // apply(from = "../../gradle/jacoco.gradle") KYC Status to Approved
                 setKycStatus(
                         customerId = customerId,
                         regionCode = "sg",
-                        kycType = ADDRESS_AND_PHONE_NUMBER).bind()
+                        kycType = ADDRESS).bind()
             }.fix()
         }.unsafeRunSync()
     }
@@ -1900,15 +1898,15 @@ object Neo4jStoreSingleton : GraphStore {
 
     private fun getKycStatusMapForRegion(regionCode: String): Map<KycType, KycStatus> {
         return when (regionCode) {
-            "sg" -> setOf(JUMIO, MY_INFO, NRIC_FIN, ADDRESS_AND_PHONE_NUMBER)
+            "sg" -> setOf(JUMIO, MY_INFO, NRIC_FIN, ADDRESS)
             else -> setOf(JUMIO)
         }.map { it to KycStatus.PENDING }.toMap()
     }
 
     private fun getApprovedKycTypeSetList(regionCode: String): List<Set<KycType>> {
         return when (regionCode) {
-            "sg" -> listOf(setOf(MY_INFO, ADDRESS_AND_PHONE_NUMBER),
-                    setOf(JUMIO, ADDRESS_AND_PHONE_NUMBER))
+            "sg" -> listOf(setOf(MY_INFO, ADDRESS),
+                    setOf(JUMIO, ADDRESS))
             else -> listOf(setOf(JUMIO))
         }
     }
