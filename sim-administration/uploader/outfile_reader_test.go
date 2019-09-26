@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"gotest.tools/assert"
 	"log"
 	"os"
@@ -15,6 +14,7 @@ type OutputFileRecord struct {
 	Filename          string
 	inputVariables    map[string]string
 	headerDescription map[string]string
+	entries           []SimEntry
 }
 
 const (
@@ -25,10 +25,17 @@ const (
 	UNKNOWN_HEADER     = "unknown"
 )
 
+type SimEntry struct {
+	iccid string
+	imsi  string
+	ki    string
+}
+
 type ParserState struct {
 	currentState      string
 	inputVariables    map[string]string
 	headerDescription map[string]string
+	entries           []SimEntry
 }
 
 func parseLineIntoKeyValueMap(line string, theMap map[string]string) {
@@ -38,8 +45,6 @@ func parseLineIntoKeyValueMap(line string, theMap map[string]string) {
 	}
 	key := strings.TrimSpace(splitString[0])
 	value := strings.TrimSpace(splitString[1])
-
-	log.Print("key =", key, ", value =", value)
 	theMap[key] = value
 }
 
@@ -70,18 +75,19 @@ func ReadOutputFile(filename string) (OutputFileRecord, error) {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
+
+		// Is this a line we should read quickly then
+		// move on to the next...?
 		if isComment(line) {
-			log.Print("comment recognized")
 			continue
 		} else if isSectionHeader(line) {
-			log.Print("Section header recognized")
 			nextMode := modeFromSectionHeader(line)
-			fmt.Println("Pre-transition ", state.currentState)
 			transitionMode(&state, nextMode)
-			fmt.Println("Post-transition ", state.currentState)
 			continue
 		}
 
+		// ... or should we look closer at it and parse it
+		// looking for real content?
 		if state.currentState == HEADER_DESCRIPTION {
 			parseLineIntoKeyValueMap(line, state.headerDescription)
 		} else if state.currentState == INPUT_VARIABLES {
@@ -90,13 +96,27 @@ func ReadOutputFile(filename string) (OutputFileRecord, error) {
 			}
 			parseLineIntoKeyValueMap(line, state.inputVariables)
 		} else if state.currentState == OUTPUT_VARIABLES {
-			// First read the var_Out header with a slash-separated list of actual
-			// fields.  Then after that, read all the fields and put them in a struct.
-			// Let's just hope they will all fit into memory (and unless the number of sim cards
-			// is really _really_ huge, it will).
-			log.Print("baz", line)
+			if line == "var_Out: ICCID/IMSI/KI" {
+				continue
+			}
+
+			// We won't handle all variations, only the most common one
+			// if more fancy variations are necessary (with pin codes etc), then
+			// we'll add them as needed.
+			if strings.HasPrefix(line, "var_Out: ") {
+				log.Fatalf("Unknown output format, only know how to handle ICCID/IMSI/KI, but was '%s'\n", line)
+			}
+
+			line = strings.TrimSpace(line)
+			if line == "" {
+				continue
+			}
+			iccid, imsi, ki := parseOutputLine(line)
+			entry := SimEntry{iccid: iccid, imsi: imsi, ki: ki}
+			state.entries = append(state.entries, entry)
+
 		} else if state.currentState == UNKNOWN_HEADER {
-			log.Print("gazonk", line)
+			continue
 		}
 	}
 
@@ -108,19 +128,23 @@ func ReadOutputFile(filename string) (OutputFileRecord, error) {
 		Filename:          filename,
 		inputVariables:    state.inputVariables,
 		headerDescription: state.headerDescription,
+		entries:           state.entries,
 	}
 
 	return result, nil
 }
 
+func parseOutputLine(s string) (string, string, string) {
+	parsedString := strings.Split(s, " ")
+	return parsedString[0], parsedString[1], parsedString[2]
+}
+
 func transitionMode(state *ParserState, targetState string) {
-	log.Printf("Transitioning from state '%s' to '%s'", state.currentState, targetState)
 	state.currentState = targetState
 }
 
 func modeFromSectionHeader(s string) string {
 	sectionName := s[1:len(s)]
-	fmt.Printf("section name '%s'\n", sectionName)
 	if sectionName == "HEADER DESCRIPTION" {
 		return HEADER_DESCRIPTION
 	} else if sectionName == "INPUT VARIABLES" {
