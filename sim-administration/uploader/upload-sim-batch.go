@@ -5,7 +5,7 @@
 //     prime to generate sequences and checksums, but that will require a major
 //     extension of a program that is soon going into production, so I'm keeping this
 //     complexity external for now. However, the existance of this program should be
-//     considered technical debt, and the debt can be paid back e.g. by 
+//     considered technical debt, and the debt can be paid back e.g. by
 //     internalizing the logic into prime.
 
 package main
@@ -102,16 +102,16 @@ func isICCID(s string) bool {
 	return match
 }
 
-func checkICCIDSyntax(name string, potentialIccid string) {
+func CheckICCIDSyntax(name string, potentialIccid string) {
 	if !isICCID(potentialIccid) {
 		log.Fatalf("Not a valid %s ICCID: '%s'.  Must be 18 or 19 (or 20) digits (_including_ luhn checksum).", name, potentialIccid)
 	}
 
-	stringWithoutLuhnChecksum := iccidWithoutLuhnChecksum(potentialIccid)
+	stringWithoutLuhnChecksum := IccidWithoutLuhnChecksum(potentialIccid)
 	controlDigit := generateControlDigit(stringWithoutLuhnChecksum)
 	checksummedCandidate := fmt.Sprintf("%s%d", stringWithoutLuhnChecksum, controlDigit)
 	if checksummedCandidate != potentialIccid {
-		log.Fatalf("Not a valid  ICCID: '%s'. Expected luhn checksom '%d'",potentialIccid, controlDigit )
+		log.Fatalf("Not a valid  ICCID: '%s'. Expected luhn checksom '%d'", potentialIccid, controlDigit)
 	}
 }
 
@@ -167,7 +167,7 @@ type Batch struct {
 	imsiIncrement   int
 }
 
-func iccidWithoutLuhnChecksum(s string) string {
+func IccidWithoutLuhnChecksum(s string) string {
 	return trimSuffix(s, 1)
 }
 
@@ -179,11 +179,11 @@ func parseCommandLine() Batch {
 	//
 	// Set up command line parsing
 	//
-	 firstIccid := flag.String("first-iccid",
-		"not  a valid iccid",
+	firstIccid := flag.String("first-rawIccid",
+		"not  a valid rawIccid",
 		"An 18 or 19 digit long string.  The 19-th digit being a luhn luhnChecksum digit, if present")
-	lastIccid := flag.String("last-iccid",
-		"not  a valid iccid",
+	lastIccid := flag.String("last-rawIccid",
+		"not  a valid rawIccid",
 		"An 18 or 19 digit long string.  The 19-th digit being a luhn luhnChecksum digit, if present")
 	firstIMSI := flag.String("first-imsi", "Not a valid IMSI", "First IMSI in batch")
 	lastIMSI := flag.String("last-imsi", "Not a valid IMSI", "Last IMSI in batch")
@@ -222,8 +222,8 @@ func parseCommandLine() Batch {
 	// semantic sanity.
 	//
 
-	checkICCIDSyntax("first-iccid", *firstIccid)
-	checkICCIDSyntax("last-iccid", *lastIccid)
+	CheckICCIDSyntax("first-rawIccid", *firstIccid)
+	CheckICCIDSyntax("last-rawIccid", *lastIccid)
 	checkIMSISyntax("last-imsi", *lastIMSI)
 	checkIMSISyntax("first-imsi", *firstIMSI)
 	checkMSISDNSyntax("last-msisdn", *lastMsisdn)
@@ -239,17 +239,17 @@ func parseCommandLine() Batch {
 
 	var firstMsisdnInt, _ = Atoi(*firstMsisdn)
 	var lastMsisdnInt, _ = Atoi(*lastMsisdn)
-	var msisdnLen =  lastMsisdnInt - firstMsisdnInt + 1
+	var msisdnLen = lastMsisdnInt - firstMsisdnInt + 1
 	if msisdnLen < 0 {
-		msisdnLen = - msisdnLen
+		msisdnLen = -msisdnLen
 	}
 
 	var firstImsiInt, _ = Atoi(*firstIMSI)
 	var lastImsiInt, _ = Atoi(*lastIMSI)
 	var imsiLen = lastImsiInt - firstImsiInt + 1
 
-	var firstIccidInt, _ = Atoi(iccidWithoutLuhnChecksum(*firstIccid))
-	var lastIccidInt, _ = Atoi(iccidWithoutLuhnChecksum(*lastIccid))
+	var firstIccidInt, _ = Atoi(IccidWithoutLuhnChecksum(*firstIccid))
+	var lastIccidInt, _ = Atoi(IccidWithoutLuhnChecksum(*lastIccid))
 	var iccidlen = lastIccidInt - firstIccidInt + 1
 
 	// Validate that lengths of sequences are equal in absolute

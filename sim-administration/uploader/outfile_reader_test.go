@@ -26,9 +26,11 @@ const (
 )
 
 type SimEntry struct {
-	iccid string
-	imsi  string
-	ki    string
+	rawIccid             string
+	iccidWithChecksum    string
+	iccidWithoutChecksum string
+	imsi                 string
+	ki                   string
 }
 
 type ParserState struct {
@@ -46,6 +48,10 @@ func parseLineIntoKeyValueMap(line string, theMap map[string]string) {
 	key := strings.TrimSpace(splitString[0])
 	value := strings.TrimSpace(splitString[1])
 	theMap[key] = value
+}
+
+func trimSuffix(s string, suffixLen int) string {
+	return s[:len(s)-suffixLen]
 }
 
 func ReadOutputFile(filename string) (OutputFileRecord, error) {
@@ -111,8 +117,21 @@ func ReadOutputFile(filename string) (OutputFileRecord, error) {
 			if line == "" {
 				continue
 			}
-			iccid, imsi, ki := parseOutputLine(line)
-			entry := SimEntry{iccid: iccid, imsi: imsi, ki: ki}
+			rawIccid, imsi, ki := parseOutputLine(line)
+
+			iccidWithChecksum := rawIccid
+			if strings.HasSuffix(rawIccid, "F") {
+				iccidWithChecksum := trimSuffix(rawIccid)
+			}
+
+			var iccidWithoutChecksum = trimSuffix(iccidWithChecksum, 1)
+			CheckICCIDSyntax(iccidWithChecksum)
+			entry := SimEntry{
+				rawIccid:             rawIccid,
+				iccidWithChecksum:    iccidWithChecksum,
+				iccidWithoutChecksum: iccidWithoutChecksum,
+				imsi:                 imsi,
+				ki:                   ki}
 			state.entries = append(state.entries, entry)
 
 		} else if state.currentState == UNKNOWN_HEADER {
@@ -182,16 +201,21 @@ func testReadOutputFile(t *testing.T) {
 	record, _ := ReadOutputFile(sample_output_file_name)
 	assert.Equal(t, sample_output_file_name, record.Filename)
 
-	// Check all the header variables
+	// Check that all the header variables are there
 	assert.Equal(t, record.headerDescription["Customer"], "Footel")
 	assert.Equal(t, record.headerDescription["ProfileType"], "BAR_FOOTEL_STD")
 	assert.Equal(t, record.headerDescription["Order Date"], "2019092901")
 	assert.Equal(t, record.headerDescription["Batch No"], "2019092901")
 	assert.Equal(t, record.headerDescription["Quantity"], "3")
 
-	// Check all the input variables
+	// Check all the input variables are there
 	assert.Equal(t, record.inputVariables["ICCID"], "8947000000000012141")
 	assert.Equal(t, record.inputVariables["IMSI"], "242017100011213")
+
+	// Check that the output entry set looks legit.
+	assert.Equal(t, 3, len(record.entries))
+
+	// Now check sanity/internal consistency of parameters
 }
 
 //
