@@ -2,8 +2,6 @@ package org.ostelco.prime.analytics.publishers
 
 import org.ostelco.prime.analytics.ConfigRegistry
 import org.ostelco.prime.analytics.events.PurchaseEvent
-import org.ostelco.prime.getLogger
-
 
 /**
  * This class publishes the purchase information events to Google Cloud Pub/Sub.
