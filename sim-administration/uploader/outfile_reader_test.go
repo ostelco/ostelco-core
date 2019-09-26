@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -15,6 +16,7 @@ type OutputFileRecord struct {
 	inputVariables    map[string]string
 	headerDescription map[string]string
 	entries           []SimEntry
+	noOfEntries       int
 }
 
 const (
@@ -143,11 +145,25 @@ func ReadOutputFile(filename string) (OutputFileRecord, error) {
 		log.Fatal(err)
 	}
 
+	countedNoOfEntries := len(state.entries)
+	declaredNoOfEntities, err := strconv.Atoi(state.headerDescription["Quantity"])
+
+	if err != nil {
+		log.Fatal("Could not find  declared quantity of entities")
+	}
+
+	if countedNoOfEntries != declaredNoOfEntities {
+		log.Fatalf("Declared no of entities = %d, counted nunber of entities = %d. Mismatch!",
+			declaredNoOfEntities,
+			countedNoOfEntries)
+	}
+
 	result := OutputFileRecord{
 		Filename:          filename,
 		inputVariables:    state.inputVariables,
 		headerDescription: state.headerDescription,
 		entries:           state.entries,
+		noOfEntries:       declaredNoOfEntities,
 	}
 
 	return result, nil
@@ -214,6 +230,7 @@ func testReadOutputFile(t *testing.T) {
 
 	// Check that the output entry set looks legit.
 	assert.Equal(t, 3, len(record.entries))
+	assert.Equal(t, 3, record.noOfEntries)
 
 	// Now check sanity/internal consistency of parameters
 }
