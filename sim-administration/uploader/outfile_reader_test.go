@@ -19,6 +19,8 @@ func testKeywordValueParser(t *testing.T) {
 func testReadOutputFile(t *testing.T) {
 	sample_output_file_name := "sample_out_file_for_testing.out"
 	record, _ := ReadOutputFile(sample_output_file_name)
+
+	// First parameter to check
 	assert.Equal(t, sample_output_file_name, record.Filename)
 
 	// Check that all the header variables are there
