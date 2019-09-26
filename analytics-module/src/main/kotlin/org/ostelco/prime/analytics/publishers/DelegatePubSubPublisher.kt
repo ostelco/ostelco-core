@@ -11,6 +11,7 @@ import com.google.pubsub.v1.ProjectTopicName
 import com.google.pubsub.v1.PubsubMessage
 import io.grpc.ManagedChannelBuilder
 import org.ostelco.prime.analytics.ConfigRegistry
+import org.ostelco.prime.analytics.events.Event
 import org.ostelco.prime.getLogger
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -69,5 +70,12 @@ class DelegatePubSubPublisher(
                 logger.debug("Published message $messageId")
             }
         }, DataConsumptionInfoPublisher.singleThreadScheduledExecutor)
+    }
+
+    override fun publishEvent(event: Event) {
+        val message = PubsubMessage.newBuilder()
+                .setData(event.toJsonByteString())
+                .build()
+        publishPubSubMessage(message)
     }
 }

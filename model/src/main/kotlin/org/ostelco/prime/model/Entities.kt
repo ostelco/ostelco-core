@@ -336,19 +336,6 @@ data class PurchaseRecord(
     companion object
 }
 
-data class PurchaseRecordInfo(override val id: String,
-                              val customerAnalyticsId: String,
-                              val product: Product,
-                              val timestamp: Long,
-                              val status: String) : HasId {
-    constructor(purchaseRecord: PurchaseRecord, customerAnalyticsId: String, status: String) : this(
-            purchaseRecord.id,
-            customerAnalyticsId,
-            purchaseRecord.product,
-            purchaseRecord.timestamp,
-            status)
-}
-
 data class SimEntry(
         val iccId: String,
         val status: SimProfileStatus,
@@ -372,36 +359,6 @@ enum class SimProfileStatus {
 data class Context(
         val customer: Customer,
         val regions: Collection<RegionDetails> = emptyList()
-)
-
-data class DataTrafficInfo(
-        val subscriptionAnalyticsId: String,
-        val usedBucketBytes: Long,
-        val bundleBytes: Long,
-        val timestamp: Long,
-        val apn: String?,
-        val mccMnc: String?
-)
-
-/**
- * Represents the relationship between a subscription and a customer in a specific region
- *
- * @property subscriptionAnalyticsId subscription for the SIM peering
- * @property customerAnalyticsId customer the subscription is linked to
- * @property regionCode region for the peering
- * @property timestamp timestamp of the peering event
- */
-data class SimProvisioning(
-        val subscriptionAnalyticsId: String,
-        val customerAnalyticsId: String,
-        val regionCode: String,
-        val timestamp: Long
-)
-
-data class SubscriptionStatusUpdate(
-        val subscriptionAnalyticsId: String,
-        val status: SimProfileStatus,
-        val timestamp: Long
 )
 
 data class CustomerActivity(
