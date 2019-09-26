@@ -12,7 +12,9 @@ import (
 )
 
 type OutputFileRecord struct {
-	Filename string
+	Filename          string
+	inputVariables    map[string]string
+	headerDescription map[string]string
 }
 
 const (
@@ -103,7 +105,9 @@ func ReadOutputFile(filename string) (OutputFileRecord, error) {
 	}
 
 	result := OutputFileRecord{
-		Filename: filename,
+		Filename:          filename,
+		inputVariables:    state.inputVariables,
+		headerDescription: state.headerDescription,
 	}
 
 	return result, nil
@@ -141,6 +145,7 @@ func isComment(s string) bool {
 ///
 ///   The tests
 ///
+
 func testKeywordValueParser(t *testing.T) {
 	theMap := make(map[string]string)
 	parseLineIntoKeyValueMap("ProfileType     : BAR_FOOTEL_STD", theMap)
@@ -150,12 +155,25 @@ func testKeywordValueParser(t *testing.T) {
 
 func testReadOutputFile(t *testing.T) {
 	sample_output_file_name := "sample_out_file_for_testing.out"
-	outputFileRecord, _ := ReadOutputFile(sample_output_file_name)
-	assert.Equal(t, sample_output_file_name, outputFileRecord.Filename)
+	record, _ := ReadOutputFile(sample_output_file_name)
+	assert.Equal(t, sample_output_file_name, record.Filename)
+
+	// Check all the header variables
+	assert.Equal(t, record.headerDescription["Customer"], "Footel")
+	assert.Equal(t, record.headerDescription["ProfileType"], "BAR_FOOTEL_STD")
+	assert.Equal(t, record.headerDescription["Order Date"], "2019092901")
+	assert.Equal(t, record.headerDescription["Batch No"], "2019092901")
+	assert.Equal(t, record.headerDescription["Quantity"], "3")
+
+	// Check all the input variables
+	assert.Equal(t, record.inputVariables["ICCID"], "8947000000000012141")
+	assert.Equal(t, record.inputVariables["IMSI"], "242017100011213")
 }
 
+//
+//  The test suite tying it all together.
+//
 func Test(t *testing.T) {
-	// Individual tests (in this test suite).
 	testKeywordValueParser(t)
 	testReadOutputFile(t)
 }
