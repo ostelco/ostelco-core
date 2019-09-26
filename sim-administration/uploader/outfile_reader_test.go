@@ -138,9 +138,24 @@ func isComment(s string) bool {
 	return match
 }
 
-func Test(t *testing.T) {
+///
+///   The tests
+///
+func testKeywordValueParser(t *testing.T) {
+	theMap := make(map[string]string)
+	parseLineIntoKeyValueMap("ProfileType     : BAR_FOOTEL_STD", theMap)
+
+	assert.Equal(t, "BAR_FOOTEL_STD", theMap["ProfileType"])
+}
+
+func testReadOutputFile(t *testing.T) {
 	sample_output_file_name := "sample_out_file_for_testing.out"
 	outputFileRecord, _ := ReadOutputFile(sample_output_file_name)
-
 	assert.Equal(t, sample_output_file_name, outputFileRecord.Filename)
+}
+
+func Test(t *testing.T) {
+	// Individual tests (in this test suite).
+	testKeywordValueParser(t)
+	testReadOutputFile(t)
 }
