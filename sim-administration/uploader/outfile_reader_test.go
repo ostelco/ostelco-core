@@ -121,11 +121,11 @@ func ReadOutputFile(filename string) (OutputFileRecord, error) {
 
 			iccidWithChecksum := rawIccid
 			if strings.HasSuffix(rawIccid, "F") {
-				iccidWithChecksum := trimSuffix(rawIccid)
+				iccidWithChecksum = trimSuffix(rawIccid, 1)
 			}
 
 			var iccidWithoutChecksum = trimSuffix(iccidWithChecksum, 1)
-			CheckICCIDSyntax(iccidWithChecksum)
+			// TODO: Enable this!! CheckICCIDSyntax(iccidWithChecksum)
 			entry := SimEntry{
 				rawIccid:             rawIccid,
 				iccidWithChecksum:    iccidWithChecksum,
