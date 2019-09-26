@@ -29,6 +29,18 @@ type ParserState struct {
 	headerDescription map[string]string
 }
 
+func parseLineIntoKeyValueMap(line string, theMap map[string]string) {
+	var splitString = strings.Split(line, ":")
+	if len(splitString) != 2 {
+		log.Fatalf("Unparsable colon separated key/value pair: '%s'\n", line)
+	}
+	key := strings.TrimSpace(splitString[0])
+	value := strings.TrimSpace(splitString[1])
+
+	log.Print("key =", key, ", value =", value)
+	theMap[key] = value
+}
+
 func ReadOutputFile(filename string) (OutputFileRecord, error) {
 
 	_, err := os.Stat(filename)
@@ -69,28 +81,12 @@ func ReadOutputFile(filename string) (OutputFileRecord, error) {
 		}
 
 		if state.currentState == HEADER_DESCRIPTION {
-			var splitString = strings.Split(line, ":")
-			if len(splitString) != 2 {
-				log.Fatalf("Unparsable input variable string: '%s'\n", line)
-			}
-
-			key := strings.TrimSpace(splitString[0])
-			value := strings.TrimSpace(splitString[1])
-
-			log.Print("key =", key, ", value =", value)
-
-			state.headerDescription[key] = value
+			parseLineIntoKeyValueMap(line, state.headerDescription)
 		} else if state.currentState == INPUT_VARIABLES {
 			if line == "var_In:" {
 				continue
 			}
-			var splitString = strings.Split(line, ":")
-			if len(splitString) != 2 {
-				log.Fatalf("Unparsable input variable string: '%s'\n", line)
-			}
-			key := strings.TrimSpace(splitString[0])
-			value := strings.TrimSpace(splitString[1])
-			state.inputVariables[key] = value
+			parseLineIntoKeyValueMap(line, state.inputVariables)
 		} else if state.currentState == OUTPUT_VARIABLES {
 			// First read the var_Out header with a slash-separated list of actual
 			// fields.  Then after that, read all the fields and put them in a struct.
