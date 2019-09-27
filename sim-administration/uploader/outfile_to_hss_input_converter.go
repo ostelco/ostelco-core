@@ -1,4 +1,28 @@
 //usr/bin/env go run "$0" "$@"; exit "$?"
+/**
+ * This program is intended to be used from the command line, and will convert an
+ * output file from a sim card vendor into an input file for a HSS. The assumptions
+ * necessary for this to work are:
+ *
+ *  * The SIM card vendor produces output files similar to the example .out file
+ *     found in the same source directory as this program
+ *
+ *  * The HSS accepts input as a CSV file, with no header field, but with
+ *    ICCID/IMSI/Ki fields, all separated by commas
+ *
+ * Needless to say, the outmost care should be taken when handling Ki values and
+ * this program must, as a matter of course, be considered a security risk, as
+ * must all  software that touch SIM values.
+ *
+ * With that caveat in place, the usage of this program typically looks like
+ * this:
+ *
+ *    ./outfile_to_hss_input_converter.go  -input-file sample_out_file_for_testing.out -output-file sample-output-file-for-hss-consumption.csv
+ *
+ * (followed by cryptographically strong erasure of the .out file,
+ *  encapsulation of the .csv file in strong cryptography etc., none
+ *  of which is handled by this script).
+ */
 
 package main
 
@@ -58,7 +82,7 @@ func trimSuffix(s string, suffixLen int) string {
 	return s[:len(s)-suffixLen]
 }
 
-func ReadOutputFile(filename string) (OutputFileRecord) {
+func ReadOutputFile(filename string) OutputFileRecord {
 
 	_, err := os.Stat(filename)
 
@@ -229,10 +253,10 @@ func parseCommandLine() (string, string) {
 	return *inputFile, *outputFile
 }
 
-func WriteHssCsvFile(filename string, entries []SimEntry) (error) {
+func WriteHssCsvFile(filename string, entries []SimEntry) error {
 	f, err := os.Create(filename)
 	if err != nil {
-		log.Fatal("Couldn't create hss csv file '",filename, "': ", err)
+		log.Fatal("Couldn't create hss csv file '", filename, "': ", err)
 	}
 
 	max := 0
@@ -240,7 +264,7 @@ func WriteHssCsvFile(filename string, entries []SimEntry) (error) {
 		s := fmt.Sprintf("%s, %s, %s\n", entry.iccidWithChecksum, entry.imsi, entry.ki)
 		_, err = f.WriteString(s)
 		if err != nil {
-			log.Fatal("Couldn't write to  hss csv file '",filename, "': ", err)
+			log.Fatal("Couldn't write to  hss csv file '", filename, "': ", err)
 		}
 		max = i + 1
 	}
@@ -257,12 +281,11 @@ func main() {
 
 	fmt.Println("inputFile = ", inputFile)
 	fmt.Println("outputFile = ", outputFile)
-	
+
 	outRecord := ReadOutputFile(inputFile)
-	
+
 	err := WriteHssCsvFile(outputFile, outRecord.entries)
 	if err != nil {
-		log.Fatal("Couldn't close output file '", outputFile, "'.  Error = '", err,"'")
+		log.Fatal("Couldn't close output file '", outputFile, "'.  Error = '", err, "'")
 	}
 }
-
