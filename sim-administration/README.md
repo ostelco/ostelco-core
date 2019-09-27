@@ -18,7 +18,6 @@ go programmes here, both designed to be run from the command line.
     bash script that will use curl to upload sim card parameters
     to a "prime" instance.
     
-    
 For both of these programmes, see the source code, in particular the
 comments near the top of the files for instructions on how to use them.
 
