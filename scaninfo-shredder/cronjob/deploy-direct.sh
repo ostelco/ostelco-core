@@ -7,7 +7,7 @@ if [ ! -f scaninfo-shredder/cronjob/deploy-direct.sh ]; then
     exit 1
 fi
 
-kubectl config use-context $(kubectl config get-contexts --output name | grep private-cluster)
+kubectl config use-context $(kubectl config get-contexts --output name | grep pi-prod)
 
 GCP_PROJECT_ID="$(gcloud config get-value project -q)"
 SHREDDER_VERSION="$(gradle scaninfo-shredder:properties -q | grep "version:" | awk '{print $2}' | tr -d '[:space:]')"
