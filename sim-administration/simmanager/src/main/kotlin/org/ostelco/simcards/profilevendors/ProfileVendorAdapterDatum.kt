@@ -143,7 +143,7 @@ data class ProfileVendorAdapter(
                         if (result == null) {
                             logAndReturnNotFoundError("Couldn't find any response for query iccidlist='$iccidList'")
                         } else {
-                            return result.right()
+                             result.right()
                         }
                     }
                 }
