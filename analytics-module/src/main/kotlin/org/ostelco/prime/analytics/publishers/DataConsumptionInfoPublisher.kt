@@ -1,19 +1,13 @@
 package org.ostelco.prime.analytics.publishers
 
-import com.google.gson.Gson
-import com.google.protobuf.ByteString
-import com.google.pubsub.v1.PubsubMessage
 import org.ostelco.prime.analytics.ConfigRegistry
-import org.ostelco.prime.model.DataTrafficInfo
-import java.time.Instant
+import org.ostelco.prime.analytics.events.DataConsumptionEvent
 
 /**
  * This holds logic for publishing the data consumption information events to Google Cloud Pub/Sub.
  */
 object DataConsumptionInfoPublisher :
         PubSubPublisher by DelegatePubSubPublisher(topicId = ConfigRegistry.config.dataTrafficTopicId) {
-
-    private val gson = Gson()
 
     /**
      * Publishes a new data consumption record to Cloud Pubsub
@@ -30,24 +24,13 @@ object DataConsumptionInfoPublisher :
             return
         }
 
-        val dataTrafficInfo = DataTrafficInfo(
-                timestamp = Instant.now().toEpochMilli(),
+        // schedule a message to be published, messages are automatically batched
+        publishEvent(DataConsumptionEvent(
                 subscriptionAnalyticsId = subscriptionAnalyticsId,
                 usedBucketBytes = usedBucketBytes,
                 bundleBytes = bundleBytes,
                 apn = apn,
                 mccMnc = mccMnc
-        )
-
-        val pubsubMessage = PubsubMessage.newBuilder()
-                .setData(toJson(dataTrafficInfo))
-                .build()
-
-        // schedule a message to be published, messages are automatically batched
-        publishPubSubMessage(pubsubMessage)
-    }
-
-    private fun toJson(dataTrafficInfo: DataTrafficInfo): ByteString {
-        return ByteString.copyFromUtf8(gson.toJson(dataTrafficInfo))
+        ))
     }
 }
