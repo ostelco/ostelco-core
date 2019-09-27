@@ -22,7 +22,7 @@ import org.ostelco.prime.model.CustomerRegionStatus.PENDING
 import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.JumioScanData
 import org.ostelco.prime.model.KycStatus
-import org.ostelco.prime.model.KycType.ADDRESS_AND_PHONE_NUMBER
+import org.ostelco.prime.model.KycType.ADDRESS
 import org.ostelco.prime.model.KycType.JUMIO
 import org.ostelco.prime.model.KycType.MY_INFO
 import org.ostelco.prime.model.KycType.NRIC_FIN
@@ -769,7 +769,7 @@ class Neo4jStoreTest {
                                                     kycStatusMap = mapOf(
                                                             JUMIO to KycStatus.PENDING,
                                                             MY_INFO to KycStatus.PENDING,
-                                                            ADDRESS_AND_PHONE_NUMBER to KycStatus.PENDING,
+                                                            ADDRESS to KycStatus.PENDING,
                                                             NRIC_FIN to KycStatus.PENDING),
                                                     status = PENDING)),
                                     actual = it.toSet())
@@ -868,7 +868,7 @@ class Neo4jStoreTest {
                                                     kycStatusMap = mapOf(
                                                             JUMIO to KycStatus.PENDING,
                                                             MY_INFO to KycStatus.PENDING,
-                                                            ADDRESS_AND_PHONE_NUMBER to KycStatus.PENDING,
+                                                            ADDRESS to KycStatus.PENDING,
                                                             NRIC_FIN to KycStatus.PENDING),
                                                     status = PENDING)),
                                     actual = it.toSet())
@@ -970,7 +970,7 @@ class Neo4jStoreTest {
         Neo4jStoreSingleton.setKycStatus(
                 customerId = CUSTOMER.id,
                 regionCode = "sg",
-                kycType = ADDRESS_AND_PHONE_NUMBER)
+                kycType = ADDRESS)
                 .mapLeft { fail(it.message) }
 
         Neo4jStoreSingleton.getRegionDetails(
@@ -1035,7 +1035,7 @@ class Neo4jStoreTest {
         Neo4jStoreSingleton.setKycStatus(
                 customerId = CUSTOMER.id,
                 regionCode = "sg",
-                kycType = ADDRESS_AND_PHONE_NUMBER)
+                kycType = ADDRESS)
 
         Neo4jStoreSingleton.getRegionDetails(
                 identity = IDENTITY,

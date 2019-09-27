@@ -1,0 +1,32 @@
+[
+  {
+    "mode": "REQUIRED",
+    "name": "timestamp",
+    "type": "TIMESTAMP"
+  },
+  {
+    "mode": "REQUIRED",
+    "name": "subscriptionAnalyticsId",
+    "type": "STRING"
+  },
+  {
+    "mode": "REQUIRED",
+    "name": "usedBucketBytes",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "REQUIRED",
+    "name": "bundleBytes",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "apn",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "mccMnc",
+    "type": "STRING"
+  }
+]

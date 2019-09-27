@@ -25,9 +25,10 @@ class AnalyticsModule : PrimeModule {
         env.lifecycle().manage(server)
 
         // dropwizard starts Analytics events publisher
-        env.lifecycle().manage(DataConsumptionInfoPublisher)
-        env.lifecycle().manage(PurchaseInfoPublisher)
         env.lifecycle().manage(ActiveUsersPublisher)
+        env.lifecycle().manage(DataConsumptionInfoPublisher)
+        env.lifecycle().manage(PurchasePublisher)
+        env.lifecycle().manage(RefundPublisher)
         env.lifecycle().manage(SimProvisioningPublisher)
         env.lifecycle().manage(SubscriptionStatusUpdatePublisher)
     }
@@ -56,7 +57,11 @@ data class AnalyticsConfig(
 
     @NotBlank
     @JsonProperty("subscriptionStatusUpdateTopicId")
-    val subscriptionStatusUpdateTopicId: String
+    val subscriptionStatusUpdateTopicId: String,
+
+    @NotBlank
+    @JsonProperty("refundsTopicId")
+    val refundsTopicId: String
 )
 
 object ConfigRegistry {

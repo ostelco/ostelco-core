@@ -35,19 +35,19 @@ class MetadataQueryTest {
     fun testShred() {
         var testTime = Instant.now().toEpochMilli() - (scanInfoShredder.expiryDuration) - 10000
         // Add 200 records
-        for (i in 1..200) {
+        for (i in 1..2000) {
             saveScanMetaData("cid1", "sgp", "id{$i}", "ref$i", testTime)
-            if (i == 110) {
+            if (i == 1100) {
                 testTime = Instant.now().toEpochMilli()
             }
         }
         runBlocking {
             val deletedItemsCount = scanInfoShredder.shred()
-            assertEquals(110, deletedItemsCount, "Missing some items while scanning for items")
+            assertEquals(1100, deletedItemsCount, "Missing some items while scanning for items")
             val remainingItemsCount = scanInfoShredder.scanMetadataStore.fetch({ entityQueryBuilder ->
                 entityQueryBuilder.setLimit(1000)
             }).size
-            assertEquals(90, remainingItemsCount, "Non expected count")
+            assertEquals(900, remainingItemsCount, "Non expected count")
         }
     }
 
