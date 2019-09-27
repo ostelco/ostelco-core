@@ -26,4 +26,4 @@ docker push eu.gcr.io/${GCP_PROJECT_ID}/scaninfo-shredder:${TAG}
 
 echo "Deploying scaninfo-shredder to GKE"
 
-sed -e 's/SHREDDER_VERSION/'"${TAG}"'/g; s/GCP_PROJECT_ID/'"${GCP_PROJECT_ID}"'/g' scaninfo-shredder/cronjob/shredder-dev.yaml | kubectl apply -f -
+sed -e 's/SHREDDER_VERSION/'"${TAG}"'/g; s/GCP_PROJECT_ID/'"${GCP_PROJECT_ID}"'/g' scaninfo-shredder/cronjob/shredder-dev.yaml | kubectl apply -n dev -f -
