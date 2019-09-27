@@ -22,5 +22,10 @@ For both of these programmes, see the source code, in particular the
 comments near the top of the files for instructions on how to use them.
 
 
+# TODO
+* Make a build command that runs tests and reports test coverage (etc),
+  make it part of the "build-all.go" script.
+
+
 
 
