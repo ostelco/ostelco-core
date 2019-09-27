@@ -194,6 +194,7 @@ func Abs(x int) int {
 }
 
 func parseCommandLine() Batch {
+
 	//
 	// Set up command line parsing
 	//
@@ -210,7 +211,8 @@ func parseCommandLine() Batch {
 	profileType := flag.String("profile-type", "Not a valid sim profile type", "SIM profile type")
 
 	// XXX Legal values are Loltel and M1 at this time, how to configure that
-	//     flexibly?
+	//     flexibly?  Eventually by puttig them in a database and consulting it during
+	//     command execution, but for now, just by squinting.
 
 	hssVendor := flag.String("hss-vendor", "M1", "The HSS vendor")
 	uploadHostname :=
@@ -232,9 +234,6 @@ func parseCommandLine() Batch {
 	//
 	flag.Parse()
 
-	uploadUrl := fmt.Sprintf("http://%s:%s/ostelco/sim-inventory/%s/import-batch/profilevendor/%s?initialHssState=%s",
-		*uploadHostname, *uploadPortnumber, *hssVendor, *profileVendor, *initialHlrActivationStatusOfProfiles)
-
 	//
 	// Check parameters for syntactic correctness and
 	// semantic sanity.
@@ -246,6 +245,9 @@ func parseCommandLine() Batch {
 	checkIMSISyntax("first-imsi", *firstIMSI)
 	checkMSISDNSyntax("last-msisdn", *lastMsisdn)
 	checkMSISDNSyntax("first-msisdn", *firstMsisdn)
+
+	uploadUrl := fmt.Sprintf("http://%s:%s/ostelco/sim-inventory/%s/import-batch/profilevendor/%s?initialHssState=%s",
+		*uploadHostname, *uploadPortnumber, *hssVendor, *profileVendor, *initialHlrActivationStatusOfProfiles)
 
 	checkURLSyntax("uploadUrl", uploadUrl)
 	checkProfileType("profile-type", *profileType)

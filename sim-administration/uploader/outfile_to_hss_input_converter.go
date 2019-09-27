@@ -1,7 +1,11 @@
+//usr/bin/env go run "$0" "$@"; exit "$?"
+
 package main
 
 import (
 	"bufio"
+	"flag"
+	"fmt"
 	"log"
 	"os"
 	"regexp"
@@ -54,7 +58,7 @@ func trimSuffix(s string, suffixLen int) string {
 	return s[:len(s)-suffixLen]
 }
 
-func ReadOutputFile(filename string) (OutputFileRecord, error) {
+func ReadOutputFile(filename string) (OutputFileRecord) {
 
 	_, err := os.Stat(filename)
 
@@ -164,7 +168,7 @@ func ReadOutputFile(filename string) (OutputFileRecord, error) {
 		noOfEntries:       declaredNoOfEntities,
 	}
 
-	return result, nil
+	return result
 }
 
 func parseOutputLine(s string) (string, string, string) {
@@ -197,4 +201,70 @@ func isSectionHeader(s string) bool {
 func isComment(s string) bool {
 	match, _ := regexp.MatchString("^\\*+$", s)
 	return match
+}
+
+/// XXX Add a main function that
+//   a) Reads the output file, then produces a HSS input file from that
+//   b) Later, integrate with the prime input generator, and add a
+//      database to keep track of the workflow.
+//
+//
+
+//
+// Set up command line parsing
+//
+func parseCommandLine() (string, string) {
+	inputFile := flag.String("input-file",
+		"not  a valid filename",
+		"path to .out file used as input file")
+
+	outputFile := flag.String("output-file",
+		"not  a valid filename",
+		"path to .csv file used as input file")
+
+	//
+	// Parse input according to spec above
+	//
+	flag.Parse()
+	return *inputFile, *outputFile
+}
+
+///
+///   Main.
+///
+
+func main() {
+	inputFile, outputFile := parseCommandLine()
+
+	fmt.Println("inputFile = ", inputFile)
+	fmt.Println("outputFile = ", outputFile)
+	
+	outRecord := ReadOutputFile(inputFile)
+	
+	WriteHssCsvFile(outputFile, outRecord.entries)
+}
+
+func WriteHssCsvFile(filename string, entries []SimEntry) {
+	f, err := os.Create(filename)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	for _, entry := range entries {
+		fmt.Println("", entry.iccidWithChecksum, ", ", entry.imsi, ", ", entry.ki)
+	}
+
+	l, err := f.WriteString("Hello World")
+	if err != nil {
+		fmt.Println(err)
+		f.Close()
+		return
+	}
+	fmt.Println(l, "bytes written successfully")
+	err = f.Close()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }
