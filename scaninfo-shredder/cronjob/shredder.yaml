@@ -13,16 +13,16 @@ spec:
             image: eu.gcr.io/GCP_PROJECT_ID/scaninfo-shredder:SHREDDER_VERSION
             imagePullPolicy: Always
             env:
-              - name: DATASET_PROJECT
-                value: GCP_PROJECT_ID
-              - name: JUMIO_API_TOKEN
-                valueFrom:
-                  secretKeyRef:
-                    name: jumio-secrets
-                    key: apiToken
-              - name: JUMIO_API_SECRET
-                valueFrom:
-                  secretKeyRef:
-                    name: jumio-secrets
-                    key: apiSecret
+            - name: DATASET_PROJECT
+              value: GCP_PROJECT_ID
+            - name: JUMIO_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: jumio-secrets
+                  key: apiToken
+            - name: JUMIO_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: jumio-secrets
+                  key: apiSecret
           restartPolicy: Never
