@@ -234,7 +234,7 @@ internal class ScanInfoShredder(private val config: ScanInfoShredderConfig) {
                         lastBatchSize = scanResult.first.size
                         totalItems += lastBatchSize
                         startCursor = scanResult.second
-                        if (lastBatchSize >0) {
+                        if (lastBatchSize > 0) {
                             batchNo++;
                         }
                         // coroutineScope waits for all children to finish.
