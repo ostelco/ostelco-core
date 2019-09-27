@@ -1,5 +1,6 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+import org.ostelco.prime.gradle.Version
 
 plugins {
   kotlin("jvm")
@@ -9,17 +10,9 @@ plugins {
 }
 
 // Update version in [script/start.sh] too.
-version = "1.61.2"
+version = "1.64.0"
 
 dependencies {
-
-  val dropwizardVersion:String by rootProject.extra
-  val jacksonVersion:String by rootProject.extra
-  val guavaVersion:String by rootProject.extra
-  val prometheusDropwizardVersion:String by rootProject.extra
-  val mockitoVersion:String by rootProject.extra
-  val dockerComposeJunitRuleVersion:String by rootProject.extra
-
   // interface module between prime and prime-modules
   api(project(":prime-modules"))
 
@@ -47,22 +40,22 @@ dependencies {
 
   runtimeOnly(project(":logging"))
 
-  implementation("io.dropwizard:dropwizard-http2:$dropwizardVersion")
-  runtimeOnly("io.dropwizard:dropwizard-json-logging:$dropwizardVersion")
-  implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
-  implementation("com.google.guava:guava:$guavaVersion")
-  implementation("org.dhatim:dropwizard-prometheus:$prometheusDropwizardVersion")
+  implementation("io.dropwizard:dropwizard-http2:${Version.dropwizard}")
+  runtimeOnly("io.dropwizard:dropwizard-json-logging:${Version.dropwizard}")
+  implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${Version.jackson}")
+  implementation("com.google.guava:guava:${Version.guava}")
+  implementation("org.dhatim:dropwizard-prometheus:${Version.prometheusDropwizard}")
 
-  testImplementation("io.dropwizard:dropwizard-testing:$dropwizardVersion")
-  testImplementation("org.mockito:mockito-core:$mockitoVersion")
+  testImplementation("io.dropwizard:dropwizard-testing:${Version.dropwizard}")
+  testImplementation("org.mockito:mockito-core:${Version.mockito}")
   testImplementation("com.lmax:disruptor:3.4.2")
-  testImplementation("com.palantir.docker.compose:docker-compose-rule-junit4:$dockerComposeJunitRuleVersion")
-  testImplementation("org.dhatim:dropwizard-prometheus:$prometheusDropwizardVersion")
+  testImplementation("com.palantir.docker.compose:docker-compose-rule-junit4:${Version.dockerComposeJunitRule}")
+  testImplementation("org.dhatim:dropwizard-prometheus:${Version.prometheusDropwizard}")
 }
 
 sourceSets.create("integration") {
-  java.srcDirs("src/integration-tests/kotlin")
-  resources.srcDirs("src/integration-tests/resources")
+  java.srcDirs("src/integration-test/kotlin")
+  resources.srcDirs("src/integration-test/resources")
   compileClasspath += sourceSets.main.get().output + sourceSets.test.get().output
   runtimeClasspath += sourceSets.main.get().output + sourceSets.test.get().output
 }
@@ -110,6 +103,6 @@ tasks.test {
 
 idea {
   module {
-    testSourceDirs.add(File("src/integration-tests/kotlin"))
+    testSourceDirs = testSourceDirs + file("src/integration-test/kotlin")
   }
 }

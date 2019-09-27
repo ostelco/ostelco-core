@@ -1,0 +1,22 @@
+[
+  {
+    "mode": "REQUIRED",
+    "name": "timestamp",
+    "type": "TIMESTAMP"
+  },
+  {
+    "mode": "REQUIRED",
+    "name": "customerAnalyticsId",
+    "type": "STRING"
+  },
+  {
+    "mode": "REQUIRED",
+    "name": "purchaseId",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "reason",
+    "type": "STRING"
+  }
+]

@@ -1,3 +1,5 @@
+import org.ostelco.prime.gradle.Version
+
 plugins {
   kotlin("jvm")
   `java-library`
@@ -5,26 +7,21 @@ plugins {
 }
 
 dependencies {
-
-  val stripeVersion:String by rootProject.extra
-  val googleCloudVersion:String by rootProject.extra
-  val kotlinVersion:String by rootProject.extra
-
   implementation(project(":prime-modules"))
   implementation(project(":data-store"))
 
-  implementation("com.stripe:stripe-java:$stripeVersion")
+  implementation("com.stripe:stripe-java:${Version.stripe}")
 
-  implementation("com.google.cloud:google-cloud-pubsub:$googleCloudVersion")
-  implementation("com.google.cloud:google-cloud-datastore:$googleCloudVersion")
+  implementation("com.google.cloud:google-cloud-pubsub:${Version.googleCloudPubSub}")
+  implementation("com.google.cloud:google-cloud-datastore:${Version.googleCloudDataStore}")
 
   testImplementation(kotlin("test"))
   testImplementation(kotlin("test-junit"))
 }
 
 sourceSets.create("integration") {
-  java.srcDirs("src/integration-tests/kotlin")
-  resources.srcDirs("src/integration-tests/resources")
+  java.srcDirs("src/integration-test/kotlin")
+  resources.srcDirs("src/integration-test/resources")
   compileClasspath += sourceSets.main.get().output + sourceSets.test.get().output
   runtimeClasspath += sourceSets.main.get().output + sourceSets.test.get().output
 }
@@ -49,6 +46,6 @@ apply(from = "../gradle/jacoco.gradle")
 
 idea {
   module {
-    testSourceDirs.add(File("src/integration-tests/kotlin"))
+    testSourceDirs = testSourceDirs + file("src/integration-test/kotlin")
   }
 }

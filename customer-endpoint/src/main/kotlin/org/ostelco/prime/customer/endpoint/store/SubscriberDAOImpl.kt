@@ -458,9 +458,9 @@ class SubscriberDAOImpl : SubscriberDAO {
                 .mapLeft { mapStorageErrorToApiError("Invalid NRIC/FIN ID", ApiErrorCode.INVALID_NRIC_FIN_ID, it) }
     }
 
-    override fun saveAddressAndPhoneNumber(identity: Identity, address: String, phoneNumber: String): Either<ApiError, Unit> {
-        return storage.saveAddressAndPhoneNumber(identity = identity, address = address, phoneNumber = phoneNumber)
-                .mapLeft { mapStorageErrorToApiError("Failed to save address and phone number", ApiErrorCode.FAILED_TO_SAVE_ADDRESS_AND_PHONE_NUMBER, it) }
+    override fun saveAddress(identity: Identity, address: String): Either<ApiError, Unit> {
+        return storage.saveAddress(identity = identity, address = address)
+                .mapLeft { mapStorageErrorToApiError("Failed to save address", ApiErrorCode.FAILED_TO_SAVE_ADDRESS, it) }
     }
 
     //

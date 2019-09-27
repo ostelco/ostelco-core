@@ -188,7 +188,7 @@ interface ClientGraphStore {
     /**
      * Save address and Phone number
      */
-    fun saveAddressAndPhoneNumber(identity: Identity, address: String, phoneNumber: String): Either<StoreError, Unit>
+    fun saveAddress(identity: Identity, address: String): Either<StoreError, Unit>
 }
 
 data class ConsumptionResult(val msisdnAnalyticsId: String, val granted: Long, val balance: Long)

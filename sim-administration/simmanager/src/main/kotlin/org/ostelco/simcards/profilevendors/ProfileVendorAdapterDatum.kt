@@ -120,10 +120,12 @@ data class ProfileVendorAdapter(
                         profileType = profileType)
             }
 
+    // TODO: Add an unit test that tests for the absence of error logging if
+    //       the expectSuccess is false and the result is ES2+, but with an error code.
     private fun getProfileStatusA(iccidList: List<String>, expectSuccess: Boolean): Either<SimManagerError, List<ProfileStatus>> {
 
         fun logAndReturnNotFoundError(msg: String): Either<SimManagerError, List<ProfileStatus>> {
-            if (!expectSuccess) {
+            if (expectSuccess) {
                 Companion.logger.error(msg)
             }
             return NotFoundError(msg, pingOk = true).left()
@@ -135,9 +137,9 @@ data class ProfileVendorAdapter(
         return clientInvocation { client.profileStatus(iccidList = iccidList) }
                 .flatMap { response ->
                     if (executionWasFailure(status = response.myHeader.functionExecutionStatus)) {
-                        logAndReturnNotFoundError("execution status =${response.myHeader.functionExecutionStatus}")
+                        logAndReturnNotFoundError("execution getProfileStatusA.   iccidList='$iccidList', status=${response.myHeader.functionExecutionStatus}")
                     } else if (response.profileStatusList == null) {
-                        logAndReturnNotFoundError("Couldn't find any response for query $iccidList")
+                        logAndReturnNotFoundError("Couldn't find any response for query iccidlist='$iccidList'")
                     } else {
                         val result = response.profileStatusList!! // TODO: Why is this necessary (see if-branch above)
                         return result.right()
@@ -179,6 +181,7 @@ data class ProfileVendorAdapter(
             return NotUpdatedError("simEntry without id.  simEntry=$simEntry").left()
         }
 
+        
         return confirmOrderA(iccid = simEntry.iccid, eid = eid, releaseFlag = releaseFlag)
                 .flatMap { response ->
 
@@ -217,7 +220,6 @@ data class ProfileVendorAdapter(
                     .flatMap {
                         it.first().right()
                     }
-
     /**
      * Downloads the SM-DP+ 'profile status' information for a list of ICCIDs
      * from a SM-DP+ service.
@@ -257,7 +259,6 @@ data class ProfileVendorAdapter(
                     .flatMap {
                         confirmOrder(eid, it)
                     }
-
     ///
     ///  Pinging the SMDP+ to see if it's there.
     ///

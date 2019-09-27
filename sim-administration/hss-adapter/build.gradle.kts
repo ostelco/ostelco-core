@@ -5,6 +5,7 @@ import com.google.protobuf.gradle.ofSourceSet
 import com.google.protobuf.gradle.plugins
 import com.google.protobuf.gradle.protobuf
 import com.google.protobuf.gradle.protoc
+import org.ostelco.prime.gradle.Version
 
 plugins {
   kotlin("jvm")
@@ -14,55 +15,41 @@ plugins {
   id("com.google.protobuf")
 }
 
-val grpcVersion:String by rootProject.extra
-val protocVersion:String by rootProject.extra
-val javaxAnnotationVersion:String by rootProject.extra
-
 dependencies {
-
-  val arrowVersion:String by rootProject.extra
-  val kotlinVersion:String by rootProject.extra
-  val dropwizardVersion:String by rootProject.extra
-  val metricsVersion:String by rootProject.extra
-  val guavaVersion:String by rootProject.extra
-  val jacksonVersion:String by rootProject.extra
-  val mockitoKotlinVersion:String by rootProject.extra
-  val testcontainersVersion:String by rootProject.extra
-
   implementation(project(":prime-modules"))
   implementation(project(":sim-administration:simmanager"))
 
-  api("io.grpc:grpc-netty-shaded:$grpcVersion")
-  api("io.grpc:grpc-protobuf:$grpcVersion")
-  api("io.grpc:grpc-stub:$grpcVersion")
-  api("io.grpc:grpc-core:$grpcVersion")
-  implementation("javax.annotation:javax.annotation-api:$javaxAnnotationVersion")
+  api("io.grpc:grpc-netty-shaded:${Version.grpc}")
+  api("io.grpc:grpc-protobuf:${Version.grpc}")
+  api("io.grpc:grpc-stub:${Version.grpc}")
+  api("io.grpc:grpc-core:${Version.grpc}")
+  implementation("javax.annotation:javax.annotation-api:${Version.javaxAnnotation}")
 
-  api("io.arrow-kt:arrow-core:$arrowVersion")
-  api("io.arrow-kt:arrow-typeclasses:$arrowVersion")
-  api("io.arrow-kt:arrow-instances-core:$arrowVersion")
-  api("io.arrow-kt:arrow-effects:$arrowVersion")
+  api("io.arrow-kt:arrow-core:${Version.arrow}")
+  api("io.arrow-kt:arrow-typeclasses:${Version.arrow}")
+  api("io.arrow-kt:arrow-instances-core:${Version.arrow}")
+  api("io.arrow-kt:arrow-effects:${Version.arrow}")
 
   implementation(kotlin("reflect"))
   implementation(kotlin("stdlib-jdk8"))
 
-  implementation("io.dropwizard:dropwizard-core:$dropwizardVersion")
-  implementation("io.dropwizard:dropwizard-client:$dropwizardVersion")
-  implementation("io.dropwizard:dropwizard-jdbi3:$dropwizardVersion")
-  implementation("io.dropwizard.metrics:metrics-core:$metricsVersion")
-  implementation("com.google.guava:guava:$guavaVersion")
+  implementation("io.dropwizard:dropwizard-core:${Version.dropwizard}")
+  implementation("io.dropwizard:dropwizard-client:${Version.dropwizard}")
+  implementation("io.dropwizard:dropwizard-jdbi3:${Version.dropwizard}")
+  implementation("io.dropwizard.metrics:metrics-core:${Version.metrics}")
+  implementation("com.google.guava:guava:${Version.guava}")
 
-  implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
+  implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${Version.jackson}")
 
-  testImplementation("io.dropwizard:dropwizard-testing:$dropwizardVersion")
-  testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:$mockitoKotlinVersion")
+  testImplementation("io.dropwizard:dropwizard-testing:${Version.dropwizard}")
+  testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:${Version.mockitoKotlin}")
 
-  testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
+  testImplementation("org.testcontainers:postgresql:${Version.testcontainers}")
 }
 
 sourceSets.create("integration") {
-  java.srcDirs("src/integration-tests/kotlin")
-  resources.srcDirs("src/integration-tests/resources")
+  java.srcDirs("src/integration-test/kotlin")
+  resources.srcDirs("src/integration-test/resources")
   compileClasspath += sourceSets.main.get().output + sourceSets.test.get().output
   runtimeClasspath += sourceSets.main.get().output + sourceSets.test.get().output
 }
@@ -97,10 +84,10 @@ tasks.withType<ShadowJar> {
 var protobufGeneratedFilesBaseDir: String = ""
 
 protobuf {
-  protoc { artifact = "com.google.protobuf:protoc:$protocVersion" }
+  protoc { artifact = "com.google.protobuf:protoc:${Version.protoc}" }
   plugins {
     id("grpc") {
-      artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion"
+      artifact = "io.grpc:protoc-gen-grpc-java:${Version.grpc}"
     }
   }
   generateProtoTasks {
@@ -119,6 +106,7 @@ idea {
   module {
     sourceDirs.addAll(files("${protobufGeneratedFilesBaseDir}/main/java"))
     sourceDirs.addAll(files("${protobufGeneratedFilesBaseDir}/main/grpc"))
+    testSourceDirs = testSourceDirs + file("src/integration-test/kotlin")
   }
 }
 
