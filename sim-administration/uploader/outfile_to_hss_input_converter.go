@@ -229,6 +229,37 @@ func parseCommandLine() (string, string) {
 	return *inputFile, *outputFile
 }
 
+
+
+func WriteHssCsvFile(filename string, entries []SimEntry) {
+	f, err := os.Create(filename)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	max := 0
+	for i, entry := range entries {
+		s := fmt.Sprintf("", entry.iccidWithChecksum, ", ", entry.imsi, ", ", entry.ki)
+		f.WriteString(s)
+		max = i + 1
+	}
+/*
+	l, err := f.WriteString("Hello World")
+	if err != nil {
+		fmt.Println(err)
+		f.Close()
+		return
+	}
+ */
+	fmt.Println("bytes written successfully into ", max, " sim card records.")
+	err = f.Close()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+}
+
 ///
 ///   Main.
 ///
@@ -244,27 +275,3 @@ func main() {
 	WriteHssCsvFile(outputFile, outRecord.entries)
 }
 
-func WriteHssCsvFile(filename string, entries []SimEntry) {
-	f, err := os.Create(filename)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	for _, entry := range entries {
-		fmt.Println("", entry.iccidWithChecksum, ", ", entry.imsi, ", ", entry.ki)
-	}
-
-	l, err := f.WriteString("Hello World")
-	if err != nil {
-		fmt.Println(err)
-		f.Close()
-		return
-	}
-	fmt.Println(l, "bytes written successfully")
-	err = f.Close()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-}
