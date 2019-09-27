@@ -229,35 +229,23 @@ func parseCommandLine() (string, string) {
 	return *inputFile, *outputFile
 }
 
-
-
-func WriteHssCsvFile(filename string, entries []SimEntry) {
+func WriteHssCsvFile(filename string, entries []SimEntry) (error) {
 	f, err := os.Create(filename)
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Fatal("Couldn't create hss csv file '",filename, "': ", err)
 	}
 
 	max := 0
 	for i, entry := range entries {
-		s := fmt.Sprintf("", entry.iccidWithChecksum, ", ", entry.imsi, ", ", entry.ki)
-		f.WriteString(s)
+		s := fmt.Sprintf("%s, %s, %s\n", entry.iccidWithChecksum, entry.imsi, entry.ki)
+		_, err = f.WriteString(s)
+		if err != nil {
+			log.Fatal("Couldn't write to  hss csv file '",filename, "': ", err)
+		}
 		max = i + 1
 	}
-/*
-	l, err := f.WriteString("Hello World")
-	if err != nil {
-		fmt.Println(err)
-		f.Close()
-		return
-	}
- */
-	fmt.Println("bytes written successfully into ", max, " sim card records.")
-	err = f.Close()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	fmt.Println("Successfully written ", max, " sim card records.")
+	return f.Close()
 }
 
 ///
@@ -272,6 +260,9 @@ func main() {
 	
 	outRecord := ReadOutputFile(inputFile)
 	
-	WriteHssCsvFile(outputFile, outRecord.entries)
+	err := WriteHssCsvFile(outputFile, outRecord.entries)
+	if err != nil {
+		log.Fatal("Couldn't close output file '", outputFile, "'.  Error = '", err,"'")
+	}
 }
 
