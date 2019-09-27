@@ -1,32 +1,32 @@
 package org.ostelco.prime.analytics
 
 import org.ostelco.prime.analytics.metrics.CustomMetricsRegistry
-import org.ostelco.prime.analytics.publishers.DataConsumptionInfoPublisher
-import org.ostelco.prime.analytics.publishers.PurchaseInfoPublisher
-import org.ostelco.prime.analytics.publishers.SimProvisioningPublisher
-import org.ostelco.prime.analytics.publishers.SubscriptionStatusUpdatePublisher
-import org.ostelco.prime.model.PurchaseRecord
+import org.ostelco.prime.analytics.publishers.*
 import org.ostelco.prime.model.SimProfileStatus
+import java.math.BigDecimal
 
 class AnalyticsServiceImpl : AnalyticsService {
-
-    override fun reportTrafficInfo(subscriptionAnalyticsId: String, usedBucketBytes: Long, bundleBytes: Long, apn: String?, mccMnc: String?) {
-        DataConsumptionInfoPublisher.publish(subscriptionAnalyticsId, usedBucketBytes, bundleBytes, apn, mccMnc)
-    }
-
     override fun reportMetric(primeMetric: PrimeMetric, value: Long) {
         CustomMetricsRegistry.updateMetricValue(primeMetric, value)
     }
 
-    override fun reportPurchaseInfo(purchaseRecord: PurchaseRecord, customerAnalyticsId: String, status: String) {
-        PurchaseInfoPublisher.publish(purchaseRecord, customerAnalyticsId, status)
+    override fun reportDataConsumption(subscriptionAnalyticsId: String, usedBucketBytes: Long, bundleBytes: Long, apn: String?, mccMnc: String?) {
+        DataConsumptionInfoPublisher.publish(subscriptionAnalyticsId, usedBucketBytes, bundleBytes, apn, mccMnc)
+    }
+
+    override fun reportPurchase(customerAnalyticsId: String, purchaseId: String, sku: String, priceAmountCents: Int, priceCurrency: String) {
+        PurchasePublisher.publish(customerAnalyticsId, purchaseId, sku, priceAmountCents, priceCurrency)
+    }
+
+    override fun reportRefund(customerAnalyticsId: String, purchaseId: String, reason: String?) {
+        RefundPublisher.publish(customerAnalyticsId, purchaseId, reason)
     }
 
     override fun reportSimProvisioning(subscriptionAnalyticsId: String, customerAnalyticsId: String, regionCode: String) {
         SimProvisioningPublisher.publish(subscriptionAnalyticsId, customerAnalyticsId, regionCode)
     }
 
-    override fun reportSimStatusUpdate(subscriptionAnalyticsId: String, status: SimProfileStatus) {
+    override fun reportSubscriptionStatusUpdate(subscriptionAnalyticsId: String, status: SimProfileStatus) {
         SubscriptionStatusUpdatePublisher.publish(subscriptionAnalyticsId, status)
     }
 }

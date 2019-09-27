@@ -550,7 +550,7 @@ object Neo4jStoreSingleton : GraphStore {
                     Either.monad<StoreError>().binding {
                         val subscriptions = get(Subscription under (SimProfile withId iccId)).bind()
                         subscriptions.forEach { subscription ->
-                            analyticsReporter.reportSimStatusUpdate(subscription.analyticsId, status)
+                            analyticsReporter.reportSubscriptionStatusUpdate(subscription.analyticsId, status)
                         }
                     }.fix()
                 }.unsafeRunSync()
@@ -601,7 +601,7 @@ object Neo4jStoreSingleton : GraphStore {
                     analyticsReporter.reportSimProvisioning(
                             subscriptionAnalyticsId = subscription.analyticsId,
                             customerAnalyticsId = customer.analyticsId,
-                            regionCode = regionCode.toLowerCase()
+                            regionCode = regionCode
                     )
 
                     bundles.forEach { bundle ->
@@ -1050,10 +1050,12 @@ object Neo4jStoreSingleton : GraphStore {
                             }.bind()
 
                     /* TODO: While aborting transactions, send a record with "reverted" status. */
-                    analyticsReporter.reportPurchaseInfo(
-                            purchaseRecord = purchaseRecord,
+                    analyticsReporter.reportPurchase(
                             customerAnalyticsId = customer.analyticsId,
-                            status = "success")
+                            purchaseId = purchaseRecord.id,
+                            sku = product.sku,
+                            priceAmountCents = product.price.amount,
+                            priceCurrency = product.price.currency)
                 }
 
                 applyProduct(
@@ -2385,7 +2387,13 @@ object Neo4jStoreSingleton : GraphStore {
                             BadGatewayError("Failed to update purchase record for refund ${refund.id}",
                                     error = it)
                         }.bind()
-                analyticsReporter.reportPurchaseInfo(purchaseRecord, customerAnalyticsId, "refunded")
+
+                analyticsReporter.reportRefund(
+                        customerAnalyticsId = customerAnalyticsId,
+                        purchaseId = purchaseRecord.id,
+                        reason = reason
+                )
+
                 ProductInfo(purchaseRecord.product.sku)
             }.fix()
         }.unsafeRunSync()
