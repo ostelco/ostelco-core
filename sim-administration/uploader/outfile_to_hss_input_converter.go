@@ -17,11 +17,13 @@
  * With that caveat in place, the usage of this program typically looks like
  * this:
  *
- *    ./outfile_to_hss_input_converter.go  -input-file sample_out_file_for_testing.out -output-file sample-output-file-for-hss-consumption.csv
+ *    ./outfile_to_hss_input_converter.go  \
+ *              -input-file sample_out_file_for_testing.out
+ *              -output-file-prefix  ./hss-input-for-
  *
  * (followed by cryptographically strong erasure of the .out file,
  *  encapsulation of the .csv file in strong cryptography etc., none
- *  of which is handled by this script).
+ *  of which are handled by this script).
  */
 
 package main
@@ -198,7 +200,7 @@ func ReadOutputFile(filename string) OutputFileRecord {
 	return result
 }
 
-func getOutputFileName(state ParserState) (string) {
+func getOutputFileName(state ParserState) string {
 	return "" + getCustomer(state) + "_" + getProfileType(state) + "_" + getBatchNo(state)
 }
 
@@ -286,7 +288,7 @@ func fileExists(filename string) bool {
 
 func WriteHssCsvFile(filename string, entries []SimEntry) error {
 
-	if fileExists(filename){
+	if fileExists(filename) {
 		log.Fatal("Output file already exists. '", filename, "'.")
 	}
 
