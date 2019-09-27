@@ -11,12 +11,6 @@ podAutoscaling:
   enabled: false
 
 cronjobs:
-  shredder:
-    enabled: true
-    image: eu.gcr.io/pi-ostelco-dev/scaninfo-shredder
-    tag: "1.0.0-6052932a-dev"
-    dataset_project: pi-ostelco-dev
-    dev: true
 
 prime:
   image: eu.gcr.io/pi-ostelco-dev/prime
