@@ -1,6 +1,5 @@
 package org.ostelco.storage.scaninfo.shredder
 
-
 import com.google.cloud.datastore.Cursor
 import com.google.cloud.datastore.DatastoreException
 import com.google.cloud.datastore.StructuredQuery
@@ -12,6 +11,8 @@ import io.dropwizard.configuration.EnvironmentVariableSubstitutor
 import io.dropwizard.configuration.SubstitutingSourceProvider
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -25,6 +26,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.time.Instant
 import java.util.*
+import kotlin.system.measureTimeMillis
 
 
 /**
@@ -204,35 +206,47 @@ internal class ScanInfoShredder(private val config: ScanInfoShredderConfig) {
         return true
     }
 
+    private fun CoroutineScope.dropScan(it: ScanMetadata): Job = launch {
+        val infoDeleted = if (config.deleteScan) {
+            deleteScanInformation(it.scanReference, config.deleteUrl, apiToken, apiSecret)
+        } else {
+            logger.info("Delete disabled, skipping ${it.scanReference}")
+            true
+        }
+        if (infoDeleted) {
+            // Delete the datastore record.
+            deleteScanMetadata(it)
+        }
+    }
+
     suspend fun shred(): Int {
         var totalItems = 0
-        logger.info("Querying Datastore for Scan which are expired")
-        val start = System.currentTimeMillis()
-        coroutineScope {
+        logger.info("Looking for expired scan data...")
+        val time = measureTimeMillis {
+            var batchNo = 0
             var startCursor: String? = null
             do {
-                val scanResult = listScans(startCursor)
-                scanResult.first.forEach {
-                    launch {
-                        val infoDeleted = if (config.deleteScan) {
-                            deleteScanInformation(it.scanReference, config.deleteUrl, apiToken, apiSecret)
-                        } else {
-                            logger.info("Delete disabled, skipping ${it.scanReference}")
-                            true
+                var lastBatchSize = 0
+                val batchTime = measureTimeMillis {
+                    coroutineScope {
+                        val scanResult = listScans(startCursor)
+                        scanResult.first.forEach { dropScan(it) }
+                        lastBatchSize = scanResult.first.size
+                        totalItems += lastBatchSize
+                        startCursor = scanResult.second
+                        if (lastBatchSize >0) {
+                            batchNo++;
                         }
-                        if (infoDeleted) {
-                            // Delete the datastore record.
-                            deleteScanMetadata(it)
-                        }
+                        // coroutineScope waits for all children to finish.
                     }
                 }
-                totalItems += scanResult.first.size
-                startCursor = scanResult.second
+                if (lastBatchSize > 0) {
+                    logger.info("Batch ${batchNo} finished in ${batchTime} milli seconds")
+                }
             } while (startCursor != null)
         }
-        // coroutineScope waits for all children to finish.
-        val end = System.currentTimeMillis()
-        logger.info("Queries finished in ${(end - start) / 1000} seconds")
+        logger.info("Deleted ${totalItems} scans from Jumio")
+        logger.info("Task finished in ${time} milli seconds")
         return totalItems
     }
 }
