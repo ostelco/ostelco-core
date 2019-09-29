@@ -7,7 +7,7 @@ if [ ! -f scaninfo-shredder/cronjob/deploy-dev-direct.sh ]; then
     exit 1
 fi
 
-kubectl config use-context $(kubectl config get-contexts --output name | grep dev-cluster)
+kubectl config use-context $(kubectl config get-contexts --output name | grep pi-dev)
 
 GCP_PROJECT_ID="$(gcloud config get-value project -q)"
 SHREDDER_VERSION="$(gradle scaninfo-shredder:properties -q | grep "version:" | awk '{print $2}' | tr -d '[:space:]')"
@@ -26,4 +26,4 @@ docker push eu.gcr.io/${GCP_PROJECT_ID}/scaninfo-shredder:${TAG}
 
 echo "Deploying scaninfo-shredder to GKE"
 
-sed -e 's/SHREDDER_VERSION/'"${TAG}"'/g; s/GCP_PROJECT_ID/'"${GCP_PROJECT_ID}"'/g' scaninfo-shredder/cronjob/shredder-dev.yaml | kubectl apply -f -
+sed -e 's/SHREDDER_VERSION/'"${TAG}"'/g; s/GCP_PROJECT_ID/'"${GCP_PROJECT_ID}"'/g' scaninfo-shredder/cronjob/shredder-dev.yaml | kubectl apply -n dev -f -
