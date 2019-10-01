@@ -266,7 +266,7 @@ func transitionMode(state *ParserState, targetState string) {
 
 // TODO: Consider replacing this thing with a map lookup.
 func modeFromSectionHeader(s string) string {
-	sectionName := s[1:len(s)]
+	sectionName := s[1:]
 	switch (sectionName) {
 	case "HEADER DESCRIPTION":
 		return HEADER_DESCRIPTION
