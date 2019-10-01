@@ -140,7 +140,10 @@ func ReadOutputFile(filename string) OutputFileRecord {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
+
+		// Read line, trim spaces in both ends.
 		line := scanner.Text()
+		line = strings.TrimSpace()
 
 		// Is this a line we should read quickly then
 		// move on to the next...?
