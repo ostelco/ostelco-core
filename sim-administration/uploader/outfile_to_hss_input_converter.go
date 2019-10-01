@@ -190,7 +190,7 @@ func ReadOutputFile(filename string) OutputFileRecord {
 			}
 
 			var iccidWithoutChecksum = trimSuffix(iccidWithChecksum, 1)
-			// TODO: Enable this!! CheckICCIDSyntax(iccidWithChecksum)
+			// TODO: Enable this!! checkICCIDSyntax(iccidWithChecksum)
 			entry := SimEntry{
 				rawIccid:             rawIccid,
 				iccidWithChecksum:    iccidWithChecksum,

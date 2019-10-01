@@ -102,7 +102,7 @@ func isICCID(s string) bool {
 	return match
 }
 
-func CheckICCIDSyntax(name string, potentialIccid string) {
+func checkICCIDSyntax(name string, potentialIccid string) {
 	if !isICCID(potentialIccid) {
 		log.Fatalf("Not a valid %s ICCID: '%s'.  Must be 18 or 19 (or 20) digits (_including_ luhn checksum).", name, potentialIccid)
 	}
@@ -239,8 +239,8 @@ func parseCommandLine() Batch {
 	// semantic sanity.
 	//
 
-	CheckICCIDSyntax("first-rawIccid", *firstIccid)
-	CheckICCIDSyntax("last-rawIccid", *lastIccid)
+	checkICCIDSyntax("first-rawIccid", *firstIccid)
+	checkICCIDSyntax("last-rawIccid", *lastIccid)
 	checkIMSISyntax("last-imsi", *lastIMSI)
 	checkIMSISyntax("first-imsi", *firstIMSI)
 	checkMSISDNSyntax("last-msisdn", *lastMsisdn)
