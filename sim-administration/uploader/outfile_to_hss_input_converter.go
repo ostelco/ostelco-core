@@ -39,6 +39,30 @@ import (
 	"strings"
 )
 
+///
+///   Main.
+///
+
+func main() {
+	inputFile, outputFilePrefix := parseCommandLine()
+
+	fmt.Println("inputFile = ", inputFile)
+	fmt.Println("outputFilePrefix = ", outputFilePrefix)
+
+	outRecord := ReadOutputFile(inputFile)
+	outputFile := outputFilePrefix + outRecord.outputFileName + ".csv"
+	fmt.Println("outputFile = ", outputFile)
+
+	err := WriteHssCsvFile(outputFile, outRecord.entries)
+	if err != nil {
+		log.Fatal("Couldn't close output file '", outputFilePrefix, "'.  Error = '", err, "'")
+	}
+}
+
+///
+/// Data structures
+///
+
 type OutputFileRecord struct {
 	Filename          string
 	inputVariables    map[string]string
@@ -71,6 +95,10 @@ type ParserState struct {
 	headerDescription map[string]string
 	entries           []SimEntry
 }
+
+///
+///  Functions
+///
 
 func ParseLineIntoKeyValueMap(line string, theMap map[string]string) {
 	var splitString = strings.Split(line, ":")
@@ -313,24 +341,4 @@ func WriteHssCsvFile(filename string, entries []SimEntry) error {
 	}
 	fmt.Println("Successfully written ", max, " sim card records.")
 	return f.Close()
-}
-
-///
-///   Main.
-///
-
-func main() {
-	inputFile, outputFilePrefix := parseCommandLine()
-
-	fmt.Println("inputFile = ", inputFile)
-	fmt.Println("outputFilePrefix = ", outputFilePrefix)
-
-	outRecord := ReadOutputFile(inputFile)
-	outputFile := outputFilePrefix + outRecord.outputFileName + ".csv"
-	fmt.Println("outputFile = ", outputFile)
-
-	err := WriteHssCsvFile(outputFile, outRecord.entries)
-	if err != nil {
-		log.Fatal("Couldn't close output file '", outputFilePrefix, "'.  Error = '", err, "'")
-	}
 }
