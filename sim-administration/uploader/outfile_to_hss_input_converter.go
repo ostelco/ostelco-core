@@ -263,16 +263,18 @@ func transitionMode(state *ParserState, targetState string) {
 	state.currentState = targetState
 }
 
+
+// TODO: Consider replacing this thing with a map lookup.
 func modeFromSectionHeader(s string) string {
 	sectionName := s[1:len(s)]
-	if sectionName == "HEADER DESCRIPTION" {
+	switch (sectionName) {
+	case "HEADER DESCRIPTION":
 		return HEADER_DESCRIPTION
-	} else if sectionName == "INPUT VARIABLES" {
+	case "INPUT VARIABLES"
 		return INPUT_VARIABLES
-	} else if sectionName == "OUTPUT VARIABLES" {
+	case "OUTPUT VARIABLES"
 		return OUTPUT_VARIABLES
-	} else {
-		return UNKNOWN_HEADER
+	default return UNKNOWN_HEADER
 	}
 }
 
