@@ -47,4 +47,10 @@ tasks.withType<ShadowJar> {
   archiveVersion.set("")
 }
 
+tasks.register("version") {
+  doLast {
+    println(version)
+  }
+}
+
 apply(from = "../gradle/jacoco.gradle")
