@@ -255,7 +255,7 @@ func parseCommandLine() Batch {
 	// Convert to integers, and get lengths
 
 	log.Println("firstmsisdn =", *firstMsisdn)
-	log.Println("lastmsisdn =", *lastMsisdn)
+	log.Println("lastmsisdn  =", *lastMsisdn)
 
 	var firstMsisdnInt, _ = Atoi(*firstMsisdn)
 	var lastMsisdnInt, _ = Atoi(*lastMsisdn)
@@ -275,9 +275,9 @@ func parseCommandLine() Batch {
 	// Validate that lengths of sequences are equal in absolute
 	// values.
 	if Abs(msisdnLen) != Abs(iccidlen) || Abs(msisdnLen) != Abs(imsiLen) {
-		log.Println("msisdnLen =", msisdnLen)
-		log.Println("iccidLen=", iccidlen)
-		log.Println("imsiLen=", imsiLen)
+		log.Printf("msisdnLen   = %10d\n", msisdnLen)
+		log.Printf("iccidLen    = %10d\n", iccidlen)
+		log.Printf("imsiLen     = %10d\n", imsiLen)
 		log.Fatal("FATAL: msisdnLen, iccidLen and imsiLen are not identical.")
 	}
 
