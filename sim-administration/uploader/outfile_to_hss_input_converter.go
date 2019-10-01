@@ -157,14 +157,16 @@ func ReadOutputFile(filename string) OutputFileRecord {
 
 		// ... or should we look closer at it and parse it
 		// looking for real content?
-		if state.currentState == HEADER_DESCRIPTION {
+
+		switch (state.currentState) {
+		case HEADER_DESCRIPTION:
 			ParseLineIntoKeyValueMap(line, state.headerDescription)
-		} else if state.currentState == INPUT_VARIABLES {
+		case INPUT_VARIABLES:
 			if line == "var_In:" {
 				continue
 			}
 			ParseLineIntoKeyValueMap(line, state.inputVariables)
-		} else if state.currentState == OUTPUT_VARIABLES {
+		case OUTPUT_VARIABLES:
 			if line == "var_Out: ICCID/IMSI/KI" {
 				continue
 			}
@@ -197,8 +199,11 @@ func ReadOutputFile(filename string) OutputFileRecord {
 				ki:                   ki}
 			state.entries = append(state.entries, entry)
 
-		} else if state.currentState == UNKNOWN_HEADER {
+		case UNKNOWN_HEADER:
 			continue
+
+		default
+			log.Fatalf("Unknown parser state '%s'\n", state.currentState)
 		}
 	}
 
