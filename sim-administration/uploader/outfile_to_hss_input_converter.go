@@ -75,8 +75,8 @@ type OutputFileRecord struct {
 	//       them to file, and fails if the number of declared entries
 	//       differs from the actual number of entries.  .... but that is
 	//       for another day.
-	noOfEntries       int
-	outputFileName    string
+	noOfEntries    int
+	outputFileName string
 }
 
 const (
@@ -150,7 +150,7 @@ func ReadOutputFile(filename string) OutputFileRecord {
 
 		// Read line, trim spaces in both ends.
 		line := scanner.Text()
-		line = strings.TrimSpace()
+		line = strings.TrimSpace(line)
 
 		// Is this a line we should read quickly then
 		// move on to the next...?
@@ -165,7 +165,7 @@ func ReadOutputFile(filename string) OutputFileRecord {
 		// ... or should we look closer at it and parse it
 		// looking for real content?
 
-		switch (state.currentState) {
+		switch state.currentState {
 		case HEADER_DESCRIPTION:
 			ParseLineIntoKeyValueMap(line, state.headerDescription)
 		case INPUT_VARIABLES:
@@ -209,7 +209,7 @@ func ReadOutputFile(filename string) OutputFileRecord {
 		case UNKNOWN_HEADER:
 			continue
 
-		default
+		default:
 			log.Fatalf("Unknown parser state '%s'\n", state.currentState)
 		}
 	}
@@ -270,18 +270,18 @@ func transitionMode(state *ParserState, targetState string) {
 	state.currentState = targetState
 }
 
-
 // TODO: Consider replacing this thing with a map lookup.
 func modeFromSectionHeader(s string) string {
 	sectionName := s[1:]
-	switch (sectionName) {
+	switch sectionName {
 	case "HEADER DESCRIPTION":
 		return HEADER_DESCRIPTION
-	case "INPUT VARIABLES"
+	case "INPUT VARIABLES":
 		return INPUT_VARIABLES
-	case "OUTPUT VARIABLES"
+	case "OUTPUT VARIABLES":
 		return OUTPUT_VARIABLES
-	default return UNKNOWN_HEADER
+	default:
+		return UNKNOWN_HEADER
 	}
 }
 
