@@ -68,6 +68,13 @@ type OutputFileRecord struct {
 	inputVariables    map[string]string
 	headerDescription map[string]string
 	entries           []SimEntry
+	// TODO: As it is today, the noOfEntries is just the number of entries,
+	//       but I may want to change that to be the declared number of entries,
+	//       and then later, dynamically, read in the individual entries
+	//       in a channel that is just piped to the goroutine that writes
+	//       them to file, and fails if the number of declared entries
+	//       differs from the actual number of entries.  .... but that is
+	//       for another day.
 	noOfEntries       int
 	outputFileName    string
 }
