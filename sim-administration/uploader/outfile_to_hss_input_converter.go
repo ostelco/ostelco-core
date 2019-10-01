@@ -322,6 +322,7 @@ func fileExists(filename string) bool {
 	return !info.IsDir()
 }
 
+// TODO: Consider rewriting using https://golang.org/pkg/encoding/csv/
 func WriteHssCsvFile(filename string, entries []SimEntry) error {
 
 	if fileExists(filename) {
