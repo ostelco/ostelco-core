@@ -209,6 +209,10 @@ func parseCommandLine() Batch {
 	firstMsisdn := flag.String("first-msisdn", "Not a valid MSISDN", "First MSISDN in batch")
 	lastMsisdn := flag.String("last-msisdn", "Not a valid MSISDN", "Last MSISDN in batch")
 	profileType := flag.String("profile-type", "Not a valid sim profile type", "SIM profile type")
+	batchLengthString := flag.String(
+		"batch-length",
+		"Not a valid batch-length, must be an integer",
+		"Number of sim cards in batch")
 
 	// XXX Legal values are Loltel and M1 at this time, how to configure that
 	//     flexibly?  Eventually by puttig them in a database and consulting it during
@@ -246,6 +250,15 @@ func parseCommandLine() Batch {
 	checkMSISDNSyntax("last-msisdn", *lastMsisdn)
 	checkMSISDNSyntax("first-msisdn", *firstMsisdn)
 
+	batchLength, err := Atoi(*batchLengthString)
+	if err != nil {
+		log.Fatalf("Not a valid batch length string '%s'.\n", *batchLengthString)
+	}
+
+	if batchLength <= 0 {
+		log.Fatalf("Batch length must be positive, but was '%d'", batchLength)
+	}
+
 	uploadUrl := fmt.Sprintf("http://%s:%s/ostelco/sim-inventory/%s/import-batch/profilevendor/%s?initialHssState=%s",
 		*uploadHostname, *uploadPortnumber, *hssVendor, *profileVendor, *initialHlrActivationStatusOfProfiles)
 
@@ -254,8 +267,14 @@ func parseCommandLine() Batch {
 
 	// Convert to integers, and get lengths
 
-	log.Println("firstmsisdn =", *firstMsisdn)
-	log.Println("lastmsisdn  =", *lastMsisdn)
+	msisdnIncrement := -1
+	if *firstMsisdn <= *lastMsisdn {
+		msisdnIncrement = 1
+	}
+
+	log.Println("firstmsisdn     = ", *firstMsisdn)
+	log.Println("lastmsisdn      = ", *lastMsisdn)
+	log.Println("msisdnIncrement = ", msisdnIncrement)
 
 	var firstMsisdnInt, _ = Atoi(*firstMsisdn)
 	var lastMsisdnInt, _ = Atoi(*lastMsisdn)
@@ -274,7 +293,7 @@ func parseCommandLine() Batch {
 
 	// Validate that lengths of sequences are equal in absolute
 	// values.
-	if Abs(msisdnLen) != Abs(iccidlen) || Abs(msisdnLen) != Abs(imsiLen) {
+	if Abs(msisdnLen) != Abs(iccidlen) || Abs(msisdnLen) != Abs(imsiLen) || batchLength != Abs(imsiLen) {
 		log.Printf("msisdnLen   = %10d\n", msisdnLen)
 		log.Printf("iccidLen    = %10d\n", iccidlen)
 		log.Printf("imsiLen     = %10d\n", imsiLen)
@@ -286,6 +305,7 @@ func parseCommandLine() Batch {
 		log.Printf("Unknown parameters:  %s", flag.Args())
 	}
 
+
 	// Return a correctly parsed batch
 	return Batch{
 		profileType:     *profileType,
@@ -296,6 +316,6 @@ func parseCommandLine() Batch {
 		firstImsi:       firstImsiInt,
 		imsiIncrement:   Sign(imsiLen),
 		firstMsisdn:     firstMsisdnInt,
-		msisdnIncrement: Sign(msisdnLen),
+		msisdnIncrement: msisdnIncrement,
 	}
 }
