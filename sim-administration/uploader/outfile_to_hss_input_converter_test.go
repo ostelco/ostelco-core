@@ -5,10 +5,6 @@ import (
 	"testing"
 )
 
-///
-///   The tests
-///
-
 func testKeywordValueParser(t *testing.T) {
 	theMap := make(map[string]string)
 	ParseLineIntoKeyValueMap("ProfileType     : BAR_FOOTEL_STD", theMap)
@@ -37,12 +33,4 @@ func testReadOutputFile(t *testing.T) {
 	// Check that the output entry set looks legit.
 	assert.Equal(t, 3, len(record.entries))
 	assert.Equal(t, 3, record.noOfEntries)
-}
-
-//
-//  The test suite tying it all together.
-//
-func Test(t *testing.T) {
-	testKeywordValueParser(t)
-	testReadOutputFile(t)
 }
