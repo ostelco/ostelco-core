@@ -134,9 +134,7 @@ func ParseLineIntoKeyValueMap(line string, theMap map[string]string) {
 	theMap[key] = value
 }
 
-func trimSuffix(s string, suffixLen int) string {
-	return s[:len(s)-suffixLen]
-}
+
 
 func ReadOutputFile(filename string) OutputFileRecord {
 
