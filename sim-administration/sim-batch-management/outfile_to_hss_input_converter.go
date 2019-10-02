@@ -134,8 +134,6 @@ func ParseLineIntoKeyValueMap(line string, theMap map[string]string) {
 	theMap[key] = value
 }
 
-
-
 func ReadOutputFile(filename string) OutputFileRecord {
 
 	_, err := os.Stat(filename)
