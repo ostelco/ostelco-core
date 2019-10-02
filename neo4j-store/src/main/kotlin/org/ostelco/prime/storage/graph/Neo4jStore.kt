@@ -41,6 +41,7 @@ import org.ostelco.prime.model.ChangeSegment
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.CustomerRegionStatus
 import org.ostelco.prime.model.CustomerRegionStatus.APPROVED
+import org.ostelco.prime.model.CustomerRegionStatus.AVAILABLE
 import org.ostelco.prime.model.CustomerRegionStatus.PENDING
 import org.ostelco.prime.model.FCMStrings
 import org.ostelco.prime.model.HasId
@@ -103,6 +104,7 @@ import org.ostelco.prime.storage.graph.ConfigRegistry.config
 import org.ostelco.prime.storage.graph.Graph.read
 import org.ostelco.prime.storage.graph.Graph.write
 import org.ostelco.prime.storage.graph.Graph.writeSuspended
+import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.getCustomerId
 import org.ostelco.prime.storage.graph.Relation.BELONG_TO_SEGMENT
 import org.ostelco.prime.storage.graph.Relation.HAS_BUNDLE
 import org.ostelco.prime.storage.graph.Relation.HAS_SIM_PROFILE
@@ -291,6 +293,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     private val hssNameLookup: HssNameLookupService = config.hssNameLookupService.getKtsService()
     private val onNewCustomerAction: OnNewCustomerAction = config.onNewCustomerAction.getKtsService()
+    private val allowedRegionsService: AllowedRegionsService = config.allowedRegionsService.getKtsService()
 
     // -------------
     // Client Store
@@ -415,9 +418,14 @@ object Neo4jStoreSingleton : GraphStore {
     override fun getAllRegionDetails(identity: org.ostelco.prime.model.Identity): Either<StoreError, Collection<RegionDetails>> = readTransaction {
         getCustomerId(identity = identity)
                 .flatMap { customerId ->
-                    getRegionDetails(
-                            customerId = customerId,
-                            transaction = transaction).right()
+                    getAllowedRegions(identity, transaction).map { allowedRegions ->
+                        val allRegions = getAvailableRegionDetails(transaction)
+                        val customerRegions = getRegionDetails(
+                                customerId = customerId,
+                                transaction = transaction)
+                        combineRegions(allRegions, customerRegions)
+                                .filter { allowedRegions.contains(it.region.id) }
+                    }
                 }
     }
 
@@ -427,13 +435,22 @@ object Neo4jStoreSingleton : GraphStore {
 
         getCustomerId(identity = identity)
                 .flatMap { customerId ->
-                    getRegionDetails(
-                            customerId = customerId,
-                            regionCode = regionCode,
-                            transaction = transaction)
-                            .singleOrNull()
-                            ?.right()
-                            ?: NotFoundError(type = customerRegionRelation.name, id = "$customerId -> $regionCode").left()
+                    getAllowedRegions(identity, transaction).flatMap { allowedRegions ->
+                        getRegionDetails(
+                                customerId = customerId,
+                                regionCode = regionCode,
+                                transaction = transaction).singleOrNull { allowedRegions.contains(it.region.id) }
+                                ?.right()
+                                ?: NotFoundError(type = customerRegionRelation.name, id = "$customerId -> $regionCode").left()
+                    }
+                }
+    }
+
+    private fun getAllowedRegions(identity: org.ostelco.prime.model.Identity, primeTransaction: PrimeTransaction): Either<StoreError, Collection<String>> {
+        return getCustomer(identity = identity)
+                .flatMap { customer ->
+                    logger.info("contact email = ${customer.contactEmail}")
+                    allowedRegionsService.get(identity = identity, customer = customer, transaction = primeTransaction)
                 }
     }
 
@@ -496,6 +513,28 @@ object Neo4jStoreSingleton : GraphStore {
                                 simProfiles = value.flatMap(RegionDetails::simProfiles))
                     }
         }
+    }
+
+    private fun getAvailableRegionDetails(transaction: Transaction): Collection<RegionDetails> {
+        val query = "MATCH (r:${regionEntity.name}) RETURN r;"
+        return read(query, transaction) { it ->
+            it.list { record ->
+                val region = regionEntity.createEntity(record["r"].asMap())
+                RegionDetails(
+                        region = region,
+                        status = AVAILABLE,
+                        kycStatusMap = getKycStatusMapForRegion(region.id.toLowerCase()),
+                        simProfiles = emptyList())
+            }.requireNoNulls()
+        }
+    }
+
+    private fun combineRegions(allRegions: Collection<RegionDetails>, customerRegions: Collection<RegionDetails>): Collection<RegionDetails> {
+        var combined = allRegions.associate { it.region.id to it }.toMutableMap()
+        for (details in customerRegions) {
+            combined.replace(details.region.id, details)
+        }
+        return combined.values
     }
 
     //
@@ -1685,9 +1724,9 @@ object Neo4jStoreSingleton : GraphStore {
                     logger.error("Failed to fetched MyInfo $version using authCode = $authorisationCode", e)
                     null
                 } ?: SystemError(
-                                type = "MyInfo Auth Code",
-                                id = authorisationCode,
-                                message = "Failed to fetched MyInfo $version").left().bind()
+                        type = "MyInfo Auth Code",
+                        id = authorisationCode,
+                        message = "Failed to fetched MyInfo $version").left().bind()
 
                 // TODO vihang: Should we set status for NRIC_FIN to APPROVED?
 
@@ -1847,7 +1886,7 @@ object Neo4jStoreSingleton : GraphStore {
 
                 val existingKycStatusMap = existingCustomerRegion.kycStatusMap
                 val existingKycStatus = existingKycStatusMap[kycType]
-                val newKycStatus = when(existingKycStatus) {
+                val newKycStatus = when (existingKycStatus) {
                     // APPROVED is end state. No more state change.
                     KycStatus.APPROVED -> KycStatus.APPROVED
                     // REJECTED and PENDING to 'any' is allowed

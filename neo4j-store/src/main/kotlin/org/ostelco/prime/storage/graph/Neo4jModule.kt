@@ -41,7 +41,8 @@ data class Config(
         val host: String,
         val protocol: String,
         val hssNameLookupService: KtsServiceFactory,
-        val onNewCustomerAction: KtsServiceFactory)
+        val onNewCustomerAction: KtsServiceFactory,
+        val allowedRegionsService: KtsServiceFactory)
 
 object ConfigRegistry {
     lateinit var config: Config
