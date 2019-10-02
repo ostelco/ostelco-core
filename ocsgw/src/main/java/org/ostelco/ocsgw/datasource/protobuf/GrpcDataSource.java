@@ -16,7 +16,6 @@ import org.ostelco.ocs.api.CreditControlRequestInfo;
 import org.ostelco.ocs.api.CreditControlRequestType;
 import org.ostelco.ocs.api.OcsServiceGrpc;
 import org.ostelco.ocsgw.datasource.DataSource;
-import org.ostelco.ocsgw.metrics.OcsgwMetrics;
 import org.ostelco.ocsgw.utils.EventConsumer;
 import org.ostelco.ocsgw.utils.EventProducer;
 import org.slf4j.Logger;
@@ -52,8 +51,6 @@ public class GrpcDataSource implements DataSource {
     private ManagedChannel grpcChannel;
 
     private ServiceAccountJwtAccessCredentials jwtAccessCredentials;
-
-    private OcsgwMetrics ocsgwAnalytics;
 
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
@@ -93,7 +90,6 @@ public class GrpcDataSource implements DataSource {
         final String serviceAccountFile = "/config/" + System.getenv("SERVICE_FILE");
         jwtAccessCredentials = ServiceAccountJwtAccessCredentials.fromStream(new FileInputStream(serviceAccountFile));
 
-        ocsgwAnalytics = new OcsgwMetrics(metricsServerHostname, jwtAccessCredentials, protobufDataSource);
         producer = new EventProducer<>(requestQueue);
     }
 
@@ -104,7 +100,6 @@ public class GrpcDataSource implements DataSource {
         initCreditControlRequestStream();
         initActivateStream();
         initKeepAlive();
-        ocsgwAnalytics.initAnalyticsRequestStream();
 
         setupEventConsumer();
     }
