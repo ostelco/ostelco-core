@@ -104,7 +104,6 @@ import org.ostelco.prime.storage.graph.ConfigRegistry.config
 import org.ostelco.prime.storage.graph.Graph.read
 import org.ostelco.prime.storage.graph.Graph.write
 import org.ostelco.prime.storage.graph.Graph.writeSuspended
-import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.getCustomerId
 import org.ostelco.prime.storage.graph.Relation.BELONG_TO_SEGMENT
 import org.ostelco.prime.storage.graph.Relation.HAS_BUNDLE
 import org.ostelco.prime.storage.graph.Relation.HAS_SIM_PROFILE
@@ -418,13 +417,13 @@ object Neo4jStoreSingleton : GraphStore {
     override fun getAllRegionDetails(identity: org.ostelco.prime.model.Identity): Either<StoreError, Collection<RegionDetails>> = readTransaction {
         getCustomerId(identity = identity)
                 .flatMap { customerId ->
-                    getAllowedRegions(identity, transaction).map { allowedRegions ->
+                    getAllowedRegionIds(identity, transaction).map { allowedIds ->
                         val allRegions = getAvailableRegionDetails(transaction)
                         val customerRegions = getRegionDetails(
                                 customerId = customerId,
                                 transaction = transaction)
                         combineRegions(allRegions, customerRegions)
-                                .filter { allowedRegions.contains(it.region.id) }
+                                .filter { allowedIds.contains(it.region.id) }
                     }
                 }
     }
@@ -435,23 +434,22 @@ object Neo4jStoreSingleton : GraphStore {
 
         getCustomerId(identity = identity)
                 .flatMap { customerId ->
-                    getAllowedRegions(identity, transaction).flatMap { allowedRegions ->
+                    getAllowedRegionIds(identity, transaction).flatMap { allowedIds ->
                         getRegionDetails(
                                 customerId = customerId,
                                 regionCode = regionCode,
-                                transaction = transaction).singleOrNull { allowedRegions.contains(it.region.id) }
+                                transaction = transaction).singleOrNull { allowedIds.contains(it.region.id) }
                                 ?.right()
                                 ?: NotFoundError(type = customerRegionRelation.name, id = "$customerId -> $regionCode").left()
                     }
                 }
     }
 
-    private fun getAllowedRegions(identity: org.ostelco.prime.model.Identity, primeTransaction: PrimeTransaction): Either<StoreError, Collection<String>> {
-        return getCustomer(identity = identity)
-                .flatMap { customer ->
-                    logger.info("contact email = ${customer.contactEmail}")
-                    allowedRegionsService.get(identity = identity, customer = customer, transaction = primeTransaction)
-                }
+    // Retrieve the list of allowed region Ids from AllowedRegionsService
+    private fun getAllowedRegionIds(
+            identity: org.ostelco.prime.model.Identity,
+            transaction: PrimeTransaction): Either<StoreError, Collection<String>> = getCustomer(identity).flatMap {
+        allowedRegionsService.get(identity, it, transaction)
     }
 
     private fun getRegionDetails(
@@ -516,6 +514,7 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     private fun getAvailableRegionDetails(transaction: Transaction): Collection<RegionDetails> {
+        // Make list of details using regions in present in graphDB with default values
         val query = "MATCH (r:${regionEntity.name}) RETURN r;"
         return read(query, transaction) { it ->
             it.list { record ->
@@ -530,9 +529,11 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     private fun combineRegions(allRegions: Collection<RegionDetails>, customerRegions: Collection<RegionDetails>): Collection<RegionDetails> {
-        var combined = allRegions.associate { it.region.id to it }.toMutableMap()
-        for (details in customerRegions) {
-            combined.replace(details.region.id, details)
+        // Create a map with default region details
+        var combined = allRegions.associateBy { it.region.id }.toMutableMap()
+        // Overwrite default region details with items from actual region-relations for customer
+        customerRegions.forEach {
+            combined[it.region.id] = it
         }
         return combined.values
     }
