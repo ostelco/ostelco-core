@@ -1,92 +1,31 @@
-# How to upload batch information to prime using the 
+# Sim logistics management
 
-## Introduction
-Prime has  REST endpoint for uploading sim batches.   This is an 
-interface with little error checking (beyond the bare miniumums)
-and a low abstraction layer: It requires a CSV file of ICCID/IMSI/MSISDN/PROFILE tuples.
+This directory contains code for managing orders of SIM cards, 
+sending these orders to various actors, and injecting them into
+various subsystems.
 
-This is convenient as a starting point, but in practice it has turned
-out to be a little too simple, hence the script upload-sim-batch.go.
+It is currently in  a state of flux, but will evolve in a bottom
+up fashion driven by daily demands to perform the tasks the code
+in this directory assists in.
 
-This script takes assumes that there is already a way to talk HTTP 
-(no encryption) to the upload profiles.  The default assumption is that
-a tunnel has been set up from localhost:8080 to somewhere more
-appropriate, but these coordinaters can be tweaked using command line
-parameters.
+The code in this directory is written in golang.  Currently there are two
+go programmes here, both designed to be run from the command line.
 
-The basic REST interface assumes an incoming .csv file, but that is
-bulky, and the information content is low.  In practice we will 
-more often than not know the ranges of IMSI, ICCID and MSISDN numbers
-involved, and obviously also the profile type names.  The script can
-take these values as parameters and generate a valid CSV file, and
-upload it automatically.
-
-The parameters are checked for consistency, so that if there are 
-more MSISDNs than ICCIDs in the ranges given as parameters, for instance,
-then the script will terminate with an error message.
-
-(these are reasonable things to check btw, errors have been made
-that justifies adding these checks).
-
-##Prerequisites
-
-* Go has to be installed on the system  being run.
-* Prime needs to be accessible via ssh tunnel or otherwise from the host
-  where the script is being run.
+ *  outfile_to_hss_input_converter.go:  Will convert output from 
+    a SIM card vendor into  input for a HSS vendor.
+    
+ *  upload-sim-batch.go: Will from command line parameters generate a 
+    bash script that will use curl to upload sim card parameters
+    to a "prime" instance.
+    
+For both of these programmes, see the source code, in particular the
+comments near the top of the files for instructions on how to use them.
 
 
-##A typical invocation looks like this:
+# TODO
+* Make a build command that runs tests and reports test coverage (etc),
+  make it part of the "build-all.go" script.
 
-
-(The parameters below have correct lengths, but are otherwise bogus,
-and will cause error messages.)
-
-```
- ./upload-sim-batch.go \
-      -first-iccid 1234567678901234567689 \
-      -last-iccid 1234567678901234567689 \
-      -first-imsi 12345676789012345 \
-      -last-imsi 12345676789012345 \
-      -first-msisdn 12345676789012345 \
-      -last-msisdn 12345676789012345 \
-      -profile-type gargle-blaster-zot \
-      -profile-vendor idemalto \
-      -upload-hostname localhost \
-      -upload-portnumber 8080
-```
-
-##The full set of  command line options
-
-```
-
-  -batch-length integer
-              The number of profiles in the batch.  Must match with iccid, msisdn and imsi ranges (if present).
-  -first-iccid string
-    	      An 18 or 19 digit long string.  The 19-th digit being a luhn luhnChecksum digit, if present (default "not  a valid iccid")
-  -first-imsi string
-    	      First IMSI in batch (default "Not a valid IMSI")
-  -first-msisdn string
-    		First MSISDN in batch (default "Not a valid MSISDN")
-  -hss-vendor string
-    	      The HSS vendor (default "M1")
-  -initial-hlr-activation-status-of-profiles string
-    					     Initial hss activation state.  Legal values are ACTIVATED and NOT_ACTIVATED. (default "ACTIVATED")
-  -last-iccid string
-    	      An 18 or 19 digit long string.  The 19-th digit being a luhn luhnChecksum digit, if present (default "not  a valid iccid")
-  -last-imsi string
-    	     Last IMSI in batch (default "Not a valid IMSI")
-  -last-msisdn string
-    	       Last MSISDN in batch (default "Not a valid MSISDN")
-  -profile-type string
-    		SIM profile type (default "Not a valid sim profile type")
-  -profile-vendor string
-    		  Vendor of SIM profiles (default "Idemia")
-  -upload-hostname string
-    		   host to upload batch to (default "localhost")
-  -upload-portnumber string
-    		     port to upload to (default "8080")
-
-```
 
 
 
