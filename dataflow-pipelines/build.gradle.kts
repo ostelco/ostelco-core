@@ -11,8 +11,6 @@ plugins {
 dependencies {
   implementation(kotlin("stdlib-jdk8"))
 
-  implementation(project(":analytics-grpc-api"))
-
   implementation("com.google.cloud:google-cloud-pubsub:${Version.googleCloudPubSub}")
 
   implementation("org.apache.beam:beam-sdks-java-core:${Version.beam}")

@@ -12,7 +12,6 @@ dependencies {
   implementation(kotlin("stdlib-jdk8"))
 
   implementation(project(":ocs-grpc-api"))
-  implementation(project(":analytics-grpc-api"))
 
   implementation(project(":diameter-stack"))
   implementation(project(":diameter-ha"))

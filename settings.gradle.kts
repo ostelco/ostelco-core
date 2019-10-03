@@ -2,7 +2,6 @@ rootProject.name = "ostelco-core"
 
 include(":acceptance-tests")
 include(":admin-endpoint")
-include(":analytics-grpc-api")
 include(":analytics-module")
 include(":app-notifier")
 include(":appleid-auth-service")
@@ -51,7 +50,6 @@ include(":sim-administration:sm-dp-plus-emulator")
 
 project(":acceptance-tests").projectDir = File("$rootDir/acceptance-tests")
 project(":admin-endpoint").projectDir = File("$rootDir/admin-endpoint")
-project(":analytics-grpc-api").projectDir = File("$rootDir/analytics-grpc-api")
 project(":analytics-module").projectDir = File("$rootDir/analytics-module")
 project(":app-notifier").projectDir = File("$rootDir/app-notifier")
 project(":appleid-auth-service").projectDir = File("$rootDir/appleid-auth-service")

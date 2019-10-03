@@ -70,8 +70,6 @@ jobs:
           command: |
             scripts/generate-selfsigned-ssl-certs.sh   ocs.dev.ostelco.org 
             cp certs/ocs.dev.ostelco.org/nginx.crt ocsgw/cert/ocs.crt
-            scripts/generate-selfsigned-ssl-certs.sh   metrics.dev.ostelco.org 
-            cp certs/metrics.dev.ostelco.org/nginx.crt ocsgw/cert/metrics.crt
       - run:
           name: Acceptance Tests
           command: docker-compose up --build --abort-on-container-exit
@@ -255,13 +253,10 @@ jobs:
             echo $GOOGLE_DEV_ENDPOINTS_CREDENTIALS > ${HOME}/gcloud-service-key.json
             gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
 
-            sed -i  's/GCP_PROJECT_ID/'${DEV_PROJECT}'/g' prime/infra/dev/ocs-api.yaml 
-            sed -i  's/GCP_PROJECT_ID/'${DEV_PROJECT}'/g' prime/infra/dev/metrics-api.yaml 
+            sed -i  's/GCP_PROJECT_ID/'${DEV_PROJECT}'/g' prime/infra/dev/ocs-api.yaml
 
             python -m grpc_tools.protoc --include_imports --include_source_info --proto_path=ocs-grpc-api/src/main/proto --descriptor_set_out=ocs_descriptor.pb ocs.proto
-            python -m grpc_tools.protoc --include_imports --include_source_info --proto_path=analytics-grpc-api/src/main/proto --descriptor_set_out=metrics_descriptor.pb prime_metrics.proto
             gcloud endpoints services deploy ocs_descriptor.pb prime/infra/dev/ocs-api.yaml
-            gcloud endpoints services deploy metrics_descriptor.pb prime/infra/dev/metrics-api.yaml
             gcloud endpoints services deploy prime/infra/dev/prime-customer-api.yaml
             gcloud endpoints services deploy prime/infra/dev/prime-webhooks.yaml
             gcloud endpoints services deploy prime/infra/dev/prime-houston-api.yaml
@@ -322,13 +317,10 @@ jobs:
             echo $GOOGLE_PROD_ENDPOINTS_CREDENTIALS > ${HOME}/gcloud-service-key.json
             gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
 
-            sed -i 's/GCP_PROJECT_ID/'${PROD_PROJECT}'/g' prime/infra/prod/ocs-api.yaml 
-            sed -i 's/GCP_PROJECT_ID/'${PROD_PROJECT}'/g' prime/infra/prod/metrics-api.yaml 
+            sed -i 's/GCP_PROJECT_ID/'${PROD_PROJECT}'/g' prime/infra/prod/ocs-api.yaml
 
             python -m grpc_tools.protoc --include_imports --include_source_info --proto_path=ocs-grpc-api/src/main/proto --descriptor_set_out=ocs_descriptor.pb ocs.proto
-            python -m grpc_tools.protoc --include_imports --include_source_info --proto_path=analytics-grpc-api/src/main/proto --descriptor_set_out=metrics_descriptor.pb prime_metrics.proto
             gcloud endpoints services deploy ocs_descriptor.pb prime/infra/prod/ocs-api.yaml
-            gcloud endpoints services deploy metrics_descriptor.pb prime/infra/prod/metrics-api.yaml
             gcloud endpoints services deploy prime/infra/prod/prime-customer-api.yaml
             gcloud endpoints services deploy prime/infra/prod/prime-webhooks.yaml
             gcloud endpoints services deploy prime/infra/prod/prime-houston-api.yaml
