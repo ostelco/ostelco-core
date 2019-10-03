@@ -10,7 +10,7 @@ plugins {
 
 dependencies {
   implementation(kotlin("stdlib-jdk8"))
-
+  
   implementation("com.google.cloud:google-cloud-pubsub:${Version.googleCloudPubSub}")
 
   implementation("org.apache.beam:beam-sdks-java-core:${Version.beam}")
