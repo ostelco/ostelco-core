@@ -31,6 +31,7 @@ import org.ostelco.prime.customer.model.Region
 import org.ostelco.prime.customer.model.RegionDetails
 import org.ostelco.prime.customer.model.RegionDetails.StatusEnum.APPROVED
 import org.ostelco.prime.customer.model.RegionDetails.StatusEnum.PENDING
+import org.ostelco.prime.customer.model.RegionDetails.StatusEnum.AVAILABLE
 import org.ostelco.prime.customer.model.RegionDetailsList
 import org.ostelco.prime.customer.model.ScanInformation
 import org.ostelco.prime.customer.model.SimProfile
@@ -192,8 +193,9 @@ class RegionsTest {
                 path = "/regions"
                 this.email = email
             }
-
-            assertTrue(regionDetailsList.isEmpty(), "RegionDetails list for new customer should be empty")
+            regionDetailsList.forEach {
+                assertTrue(it.status == AVAILABLE, "All regions should be in available state")
+            }
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
         }
