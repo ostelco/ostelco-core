@@ -73,8 +73,7 @@ public class GrpcDataSource implements DataSource {
      */
     public GrpcDataSource(
             final ProtobufDataSource protobufDataSource,
-            final String ocsServerHostname,
-            final String metricsServerHostname) throws IOException {
+            final String ocsServerHostname) throws IOException {
 
         this.protobufDataSource = protobufDataSource;
 
@@ -82,7 +81,6 @@ public class GrpcDataSource implements DataSource {
 
         LOG.info("Created GrpcDataSource");
         LOG.info("ocsServerHostname : {}", ocsServerHostname);
-        LOG.info("metricsServerHostname : {}", metricsServerHostname);
 
         // Not using the standard GOOGLE_APPLICATION_CREDENTIALS for this
         // as we need to download the file using container credentials in

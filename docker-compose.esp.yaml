@@ -90,7 +90,6 @@ services:
     command: ["./wait_including_esps.sh"]
     environment:
       - OCS_GRPC_SERVER=ocs.dev.ostelco.org
-      - METRICS_GRPC_SERVER=metrics.dev.ostelco.org
       - SERVICE_FILE=prime-service-account.json
       - GOOGLE_CLOUD_PROJECT=${GCP_PROJECT_ID}
       - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
