@@ -145,8 +145,8 @@ jobs:
             export PATH=/usr/lib/jvm/zulu12.3.11-ca-jdk12.0.2-linux_x64/bin:$PATH
             javac -version
       - run:
-          name: Gradle Build Prime
-          command:  ./gradlew --build-cache prime:build -info -s -x test -x integration
+          name: Gradle Build Prime and ScanInfo Shredder
+          command:  ./gradlew --build-cache prime:build scaninfo-shredder:build -info -s -x test -x integration
       # - run:
       #     name: Gradle Build OCSGW 
       #     command: |
@@ -160,7 +160,11 @@ jobs:
             gsutil cp  ~/caches.tar.gz gs://pi-ostelco-core-gradle-cache
       - run: 
           name: Persist Prime version
-          command: ./gradlew -q version > prime_version      
+          command: ./gradlew -q prime:version > prime_version
+
+      - run:
+          name: Persist scaninfo-shredder version
+          command: ./gradlew -q scaninfo-shredder:version > scaninfo-shredder_version
 
       - persist_to_workspace:
           root: ~/project/
@@ -172,7 +176,7 @@ jobs:
           when: on_fail
           command: .circleci/notify-slack.sh on-PR-merge-to-dev false
 
-  build-image:
+  build-prime-image:
     docker:
       - image: google/cloud-sdk:latest
 
@@ -203,18 +207,41 @@ jobs:
             docker build -t eu.gcr.io/pi-ostelco-dev/prime:$TAG .
             docker push eu.gcr.io/pi-ostelco-dev/prime:$TAG  
 
-      # - run:
-      #     name: build OCSGW docker image and push image to GCR
-      #     command: |
-      #       gcloud auth configure-docker --quiet
-      #       TAG=${CIRCLE_SHA1:0:9}
-      #       cd ocsgw
-      #       docker build -t eu.gcr.io/pi-ostelco-dev/ocsgw:$TAG .
-      #       docker push eu.gcr.io/pi-ostelco-dev/ocsgw:$TAG   
       - run:
           name: notify slack on failure
           when: on_fail
           command: .circleci/notify-slack.sh on-PR-merge-to-dev false
+
+  build-scaninfo-shredder-image:
+    docker:
+      - image: google/cloud-sdk:latest
+
+    working_directory: ~/project
+
+    steps:
+      - run:
+          name: authenticate with gcloud
+          command: |
+            # $GOOGLE_GCR_CREDENTIALS env variable contains Google credentials
+            # with permission to write to Google container registry
+            echo $GOOGLE_GCR_CREDENTIALS > ${HOME}/gcloud-service-key.json
+            gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
+      - attach_workspace:
+          # Must be absolute path or relative path from working_directory
+          at: ~/project
+
+      # starts a remote docker environment to run docker commands
+      - setup_remote_docker
+
+      - run:
+          name: build scaninfo shredder docker image and push image to GCR
+          command: |
+            gcloud auth configure-docker --quiet
+            SCANINFO_SHREDDER_VERSION=$(cat scaninfo-shredder_version)
+            TAG=$SCANINFO_SHREDDER_VERSION-${CIRCLE_SHA1:0:9}
+            cd scaninfo-shredder
+            docker build -t eu.gcr.io/pi-ostelco-dev/scaninfo-shredder:$TAG .
+            docker push eu.gcr.io/pi-ostelco-dev/scaninfo-shredder:$TAG
 
   update-dev-endpoints:
     docker:
@@ -264,7 +291,9 @@ jobs:
           name: deploy prime to the dev cluster
           command: |
             PRIME_VERSION=$(cat prime_version)
-            TAG=$PRIME_VERSION-${CIRCLE_SHA1:0:9}
+            PRIME_TAG=$PRIME_VERSION-${CIRCLE_SHA1:0:9}
+            SCANINFO_SHREDDER_VERSION=$(cat scaninfo-shredder_version)
+            SCANINFO_SHREDDER_TAG=$SCANINFO_SHREDDER_VERSION-${CIRCLE_SHA1:0:9}
             export GOOGLE_CREDENTIALS=${PI_DEV_CLUSTER_CREDENTIALS}
             /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
@@ -272,7 +301,8 @@ jobs:
             helm upgrade prime ostelco/prime --version 1.0.1 --install \
              --namespace dev \
              -f .circleci/prime-dev-values.yaml \
-             --set prime.tag=$TAG 
+             --set prime.tag=$PRIME_TAG \
+             --set cronjobs.shredder.tag=$SCANINFO_SHREDDER_TAG
 
       - run:
           name: notify slack on failure
@@ -360,7 +390,9 @@ jobs:
           name: deploy stable prod prime to the prod cluster
           command: |
             PRIME_VERSION=$(cat prime_version)
-            TAG=$PRIME_VERSION-${CIRCLE_SHA1:0:9}
+            PRIME_TAG=$PRIME_VERSION-${CIRCLE_SHA1:0:9}
+            SCANINFO_SHREDDER_VERSION=$(cat scaninfo-shredder_version)
+            SCANINFO_SHREDDER_TAG=$SCANINFO_SHREDDER_VERSION-${CIRCLE_SHA1:0:9}
             export GOOGLE_CREDENTIALS=${PI_PROD_CLUSTER_CREDENTIALS}
             /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
@@ -368,7 +400,8 @@ jobs:
             helm upgrade prime ostelco/prime --version 1.0.1 --install \
              --namespace prod \
              -f .circleci/prime-prod-values.yaml \
-             --set prime.tag=$TAG
+             --set prime.tag=$PRIME_TAG \
+             --set cronjobs.shredder.tag=$SCANINFO_SHREDDER_TAG
 
       - run:
           name: notify slack on failure
@@ -393,14 +426,19 @@ workflows:
             branches:
               only:
                 - develop
-      - build-image:
+      - build-prime-image:
+          requires:
+            - build-code
+      - build-scaninfo-shredder-image:
           requires:
             - build-code
       - update-dev-endpoints:
           requires:
-            - build-image
+            - build-code
       - deploy-to-dev:
           requires:
+            - build-prime-image
+            - build-scaninfo-shredder-image
             - update-dev-endpoints
       - approve-prod-canary-deploy:
           type: approval
@@ -418,4 +456,4 @@ workflows:
             - deploy-canary 
       - deploy-stable-prod:
           requires:
-            - approve-prod-stable-deploy           
+            - approve-prod-stable-deploy

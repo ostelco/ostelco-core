@@ -7,18 +7,15 @@ plugins {
 }
 
 dependencies {
-
-  val kotlinVersion:String by rootProject.extra
-
-  implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
+  implementation(kotlin("stdlib-jdk8"))
 
   implementation(project(":prime"))
   implementation(project(":neo4j-store"))
   
   implementation("com.google.cloud.sql:postgres-socket-factory:1.0.15")
 
-  implementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
-  implementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
+  implementation(kotlin("test"))
+  implementation(kotlin("test-junit"))
 }
 
 application {

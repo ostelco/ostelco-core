@@ -10,29 +10,7 @@ x-google-endpoints:
 schemes:
   - "https"
 paths:
-  "/ping":
-    get:
-      description: "Get current timestamp. Used to check liveliness of service."
-      produces:
-        - application/json
-      operationId: "ping"
-      responses:
-        200:
-          description: "Get current timestamp."
-          schema:
-            $ref: '#/definitions/Pong'
-  "/uuid":
-    get:
-      description: "Get a random uuid. Used to check liveliness of service."
-      produces:
-        - application/json
-      operationId: "uuid"
-      responses:
-        200:
-          description: "Get random UUID."
-          schema:
-            $ref: '#/definitions/Uuid'
-  "/profiles/{id}":
+  "/support/profiles/{id}":
     get:
       description: "Get profile for the given email-id or msisdn (url encoded)."
       produces:
@@ -53,7 +31,7 @@ paths:
         description: "The id of the user (msisdn or email)"
         required: true
         type: string
-  "/profiles/{email}/subscriptions":
+  "/support/profiles/{email}/subscriptions":
     get:
       description: "Get subscription (msisdn) for the user."
       produces:
@@ -74,7 +52,7 @@ paths:
           description: "The email of the user"
           required: true
           type: string
-  "/profiles/{email}/scans":
+  "/support/profiles/{email}/scans":
     get:
       description: "Get eKYC scan information for the user."
       produces:
@@ -95,7 +73,7 @@ paths:
           description: "The email of the user"
           required: true
           type: string
-  "/profiles/{email}/plans":
+  "/support/profiles/{email}/plans":
     get:
       description: "Get all plans subscribed to by a customer"
       produces:
@@ -116,7 +94,7 @@ paths:
           description: "The email of the customer"
           required: true
           type: string
-  "/profiles/{email}/plans/{planId}":
+  "/support/profiles/{email}/plans/{planId}":
     post:
       description: "Subscribe a customer to a plan"
       produces:
@@ -165,7 +143,7 @@ paths:
           description: "The name of the plan to remove the subscription for"
           required: true
           type: string
-  "/bundles/{email}":
+  "/support/bundles/{email}":
     get:
       description: "Get bundles (balance) for the user (identified by email)."
       produces:
@@ -186,7 +164,7 @@ paths:
         description: "The email of the user"
         required: true
         type: string
-  "/purchases/{email}":
+  "/support/purchases/{email}":
     get:
       description: "Get list of all purchases."
       produces:
@@ -212,7 +190,7 @@ paths:
         description: "The email of the user"
         required: true
         type: string
-  "/refund/{email}":
+  "/support/refund/{email}":
     put:
       description: "Full refund of a purchase."
       produces:
@@ -248,7 +226,7 @@ paths:
         description: "The reason for refund"
         required: true
         type: string
-  "/notify/{email}":
+  "/support/notify/{email}":
     put:
       description: "Send notification to a customer."
       produces:
@@ -280,7 +258,7 @@ paths:
           description: "The notification message"
           required: true
           type: string
-  "/plans":
+  "/support/plans":
     get:
       description: "Get plan details"
       produces:
@@ -346,7 +324,7 @@ paths:
           type: string
       security:
         - auth0_jwt: []
-  "/profiles/{email}/state":
+  "/support/profiles/{email}/state":
     get:
       description: "Get state of the user."
       produces:
@@ -367,7 +345,7 @@ paths:
           description: "The email of the user"
           required: true
           type: string
-  "/context/{email}":
+  "/support/context/{email}":
     get:
       description: "Get context which is customer and region details."
       produces:
@@ -388,7 +366,7 @@ paths:
           description: "The email of the user"
           required: true
           type: string
-  "/auditLog/{email}":
+  "/support/auditLog/{email}":
     get:
       description: "Get list of all audit logs."
       produces:
@@ -410,7 +388,7 @@ paths:
           description: "The email of the user"
           required: true
           type: string
-  "/customer/{email}":
+  "/support/customer/{email}":
     delete:
       description: "Remove the customer from the backend."
       produces:
@@ -495,12 +473,12 @@ definitions:
           JUMIO: PENDING
           MY_INFO: APPROVED
           NRIC_FIN: REJECTED
-          ADDRESS_AND_PHONE_NUMBER: PENDING
+          ADDRESS: PENDING
       simProfiles:
         $ref: '#/definitions/SimProfileList'
   KycType:
     type: string
-    enum: [ JUMIO, MY_INFO, NRIC_FIN, ADDRESS_AND_PHONE_NUMBER ]
+    enum: [ JUMIO, MY_INFO, NRIC_FIN, ADDRESS ]
   KycStatus:
     type: string
     enum: [ PENDING, REJECTED, APPROVED ]

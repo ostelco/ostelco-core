@@ -1,31 +1,25 @@
+import org.ostelco.prime.gradle.Version
+
 plugins {
   kotlin("jvm")
   `java-library`
 }
 
 dependencies {
-
-  val jacksonVersion:String by rootProject.extra
-  val dropwizardVersion:String by rootProject.extra
-  val googleCloudVersion:String by rootProject.extra
-  val dockerComposeJunitRuleVersion:String by rootProject.extra
-  val kotlinVersion:String by rootProject.extra
-  val mockitoVersion:String by rootProject.extra
-
   implementation(project(":prime-modules"))
-  implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
+  implementation("com.fasterxml.jackson.core:jackson-databind:${Version.jacksonDatabind}")
 
-  implementation("io.dropwizard:dropwizard-client:$dropwizardVersion")
+  implementation("io.dropwizard:dropwizard-client:${Version.dropwizard}")
   
-  api("com.google.cloud:google-cloud-core:$googleCloudVersion")
-  implementation("com.google.cloud:google-cloud-datastore:$googleCloudVersion")
+  api("com.google.cloud:google-cloud-core:${Version.googleCloud}")
+  implementation("com.google.cloud:google-cloud-datastore:${Version.googleCloudDataStore}")
 
-  testImplementation("com.palantir.docker.compose:docker-compose-rule-junit4:$dockerComposeJunitRuleVersion")
+  testImplementation("com.palantir.docker.compose:docker-compose-rule-junit4:${Version.dockerComposeJunitRule}")
 
-  testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
-  testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
+  testImplementation(kotlin("test"))
+  testImplementation(kotlin("test-junit"))
 
-  testImplementation("org.mockito:mockito-core:$mockitoVersion")
+  testImplementation("org.mockito:mockito-core:${Version.mockito}")
 }
 
 apply(from = "../gradle/jacoco.gradle")

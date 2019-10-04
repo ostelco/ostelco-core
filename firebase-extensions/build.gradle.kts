@@ -1,14 +1,13 @@
+import org.ostelco.prime.gradle.Version
+
 plugins {
   kotlin("jvm")
   `java-library`
 }
 
 dependencies {
-
-  val firebaseVersion:String by rootProject.extra
-
   implementation(project(":prime-modules"))
 
   // Match netty via ocs-grpc-api
-  api("com.google.firebase:firebase-admin:$firebaseVersion")
+  api("com.google.firebase:firebase-admin:${Version.firebase}")
 }

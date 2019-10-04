@@ -5,7 +5,7 @@
 //     prime to generate sequences and checksums, but that will require a major
 //     extension of a program that is soon going into production, so I'm keeping this
 //     complexity external for now. However, the existance of this program should be
-//     considered technical debt, and the debt can be paid back e.g. by 
+//     considered technical debt, and the debt can be paid back e.g. by
 //     internalizing the logic into prime.
 
 package main
@@ -107,11 +107,11 @@ func checkICCIDSyntax(name string, potentialIccid string) {
 		log.Fatalf("Not a valid %s ICCID: '%s'.  Must be 18 or 19 (or 20) digits (_including_ luhn checksum).", name, potentialIccid)
 	}
 
-	stringWithoutLuhnChecksum := iccidWithoutLuhnChecksum(potentialIccid)
+	stringWithoutLuhnChecksum := IccidWithoutLuhnChecksum(potentialIccid)
 	controlDigit := generateControlDigit(stringWithoutLuhnChecksum)
 	checksummedCandidate := fmt.Sprintf("%s%d", stringWithoutLuhnChecksum, controlDigit)
 	if checksummedCandidate != potentialIccid {
-		log.Fatalf("Not a valid  ICCID: '%s'. Expected luhn checksom '%d'",potentialIccid, controlDigit )
+		log.Fatalf("Not a valid  ICCID: '%s'. Expected luhn checksom '%d'", potentialIccid, controlDigit)
 	}
 }
 
@@ -167,7 +167,7 @@ type Batch struct {
 	imsiIncrement   int
 }
 
-func iccidWithoutLuhnChecksum(s string) string {
+func IccidWithoutLuhnChecksum(s string) string {
 	return trimSuffix(s, 1)
 }
 
@@ -175,15 +175,34 @@ func trimSuffix(s string, suffixLen int) string {
 	return s[:len(s)-suffixLen]
 }
 
+func Sign(x int) int {
+	if x < 0 {
+		return -1
+	} else if x > 0 {
+		return 1
+	} else {
+		return 0
+	}
+}
+
+// Abs returns the absolute value of x.
+func Abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
 func parseCommandLine() Batch {
+
 	//
 	// Set up command line parsing
 	//
-	 firstIccid := flag.String("first-iccid",
-		"not  a valid iccid",
+	firstIccid := flag.String("first-rawIccid",
+		"not  a valid rawIccid",
 		"An 18 or 19 digit long string.  The 19-th digit being a luhn luhnChecksum digit, if present")
-	lastIccid := flag.String("last-iccid",
-		"not  a valid iccid",
+	lastIccid := flag.String("last-rawIccid",
+		"not  a valid rawIccid",
 		"An 18 or 19 digit long string.  The 19-th digit being a luhn luhnChecksum digit, if present")
 	firstIMSI := flag.String("first-imsi", "Not a valid IMSI", "First IMSI in batch")
 	lastIMSI := flag.String("last-imsi", "Not a valid IMSI", "Last IMSI in batch")
@@ -192,7 +211,8 @@ func parseCommandLine() Batch {
 	profileType := flag.String("profile-type", "Not a valid sim profile type", "SIM profile type")
 
 	// XXX Legal values are Loltel and M1 at this time, how to configure that
-	//     flexibly?
+	//     flexibly?  Eventually by puttig them in a database and consulting it during
+	//     command execution, but for now, just by squinting.
 
 	hssVendor := flag.String("hss-vendor", "M1", "The HSS vendor")
 	uploadHostname :=
@@ -214,20 +234,20 @@ func parseCommandLine() Batch {
 	//
 	flag.Parse()
 
-	uploadUrl := fmt.Sprintf("http://%s:%s/ostelco/sim-inventory/%s/import-batch/profilevendor/%s?initialHssState=%s",
-		*uploadHostname, *uploadPortnumber, *hssVendor, *profileVendor, *initialHlrActivationStatusOfProfiles)
-
 	//
 	// Check parameters for syntactic correctness and
 	// semantic sanity.
 	//
 
-	checkICCIDSyntax("first-iccid", *firstIccid)
-	checkICCIDSyntax("last-iccid", *lastIccid)
+	checkICCIDSyntax("first-rawIccid", *firstIccid)
+	checkICCIDSyntax("last-rawIccid", *lastIccid)
 	checkIMSISyntax("last-imsi", *lastIMSI)
 	checkIMSISyntax("first-imsi", *firstIMSI)
 	checkMSISDNSyntax("last-msisdn", *lastMsisdn)
 	checkMSISDNSyntax("first-msisdn", *firstMsisdn)
+
+	uploadUrl := fmt.Sprintf("http://%s:%s/ostelco/sim-inventory/%s/import-batch/profilevendor/%s?initialHssState=%s",
+		*uploadHostname, *uploadPortnumber, *hssVendor, *profileVendor, *initialHlrActivationStatusOfProfiles)
 
 	checkURLSyntax("uploadUrl", uploadUrl)
 	checkProfileType("profile-type", *profileType)
@@ -235,29 +255,29 @@ func parseCommandLine() Batch {
 	// Convert to integers, and get lengths
 
 	log.Println("firstmsisdn =", *firstMsisdn)
-	log.Println("lastmsisdn =", *lastMsisdn)
+	log.Println("lastmsisdn  =", *lastMsisdn)
 
 	var firstMsisdnInt, _ = Atoi(*firstMsisdn)
 	var lastMsisdnInt, _ = Atoi(*lastMsisdn)
-	var msisdnLen =  lastMsisdnInt - firstMsisdnInt + 1
+	var msisdnLen = lastMsisdnInt - firstMsisdnInt + 1
 	if msisdnLen < 0 {
-		msisdnLen = - msisdnLen
+		msisdnLen = -msisdnLen
 	}
 
 	var firstImsiInt, _ = Atoi(*firstIMSI)
 	var lastImsiInt, _ = Atoi(*lastIMSI)
 	var imsiLen = lastImsiInt - firstImsiInt + 1
 
-	var firstIccidInt, _ = Atoi(iccidWithoutLuhnChecksum(*firstIccid))
-	var lastIccidInt, _ = Atoi(iccidWithoutLuhnChecksum(*lastIccid))
+	var firstIccidInt, _ = Atoi(IccidWithoutLuhnChecksum(*firstIccid))
+	var lastIccidInt, _ = Atoi(IccidWithoutLuhnChecksum(*lastIccid))
 	var iccidlen = lastIccidInt - firstIccidInt + 1
 
 	// Validate that lengths of sequences are equal in absolute
 	// values.
 	if Abs(msisdnLen) != Abs(iccidlen) || Abs(msisdnLen) != Abs(imsiLen) {
-		log.Println("msisdnLen =", msisdnLen)
-		log.Println("iccidLen=", iccidlen)
-		log.Println("imsiLen=", imsiLen)
+		log.Printf("msisdnLen   = %10d\n", msisdnLen)
+		log.Printf("iccidLen    = %10d\n", iccidlen)
+		log.Printf("imsiLen     = %10d\n", imsiLen)
 		log.Fatal("FATAL: msisdnLen, iccidLen and imsiLen are not identical.")
 	}
 
@@ -278,22 +298,4 @@ func parseCommandLine() Batch {
 		firstMsisdn:     firstMsisdnInt,
 		msisdnIncrement: Sign(msisdnLen),
 	}
-}
-
-func Sign(x int) int {
-	if x < 0 {
-		return -1
-	} else if x > 0 {
-		return 1
-	} else {
-		return 0
-	}
-}
-
-// Abs returns the absolute value of x.
-func Abs(x int) int {
-	if x < 0 {
-		return -x
-	}
-	return x
 }

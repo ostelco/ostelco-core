@@ -61,6 +61,9 @@ modules:
       dataTrafficTopicId: data-traffic
       purchaseInfoTopicId: purchase-info
       activeUsersTopicId: active-users
+      simProvisioningTopicId: sim-provisioning
+      subscriptionStatusUpdateTopicId: subscription-status-update
+      refundsTopicId: analytics-refunds
   - type: ocs
     config:
       lowBalanceThreshold: 0
