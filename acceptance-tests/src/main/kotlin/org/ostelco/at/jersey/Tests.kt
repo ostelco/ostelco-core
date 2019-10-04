@@ -1522,8 +1522,8 @@ class SingaporeKycTest {
                     this.email = email
                 }
 
-                val sgRegionIndex = regionDetailsList.indexOfFirst { it.region.id == "sg" }
-                assertTrue(sgRegionIndex != -1, "regionDetailsList should contain sg region")
+                val sgRegionDetails = regionDetailsList.singleOrNull { it.region.id == "sg" }
+                assertTrue(sgRegionDetails != null, "regionDetailsList should contain sg region")
 
                 val regionDetails = RegionDetails()
                         .region(Region().id("sg").name("Singapore"))
@@ -1535,7 +1535,7 @@ class SingaporeKycTest {
                                 KycType.NRIC_FIN.name to KycStatus.PENDING))
                         .simProfiles(SimProfileList())
 
-                assertEquals(regionDetails, regionDetailsList[sgRegionIndex], "RegionDetails do not match")
+                assertEquals(regionDetails, sgRegionDetails, "RegionDetails do not match")
             }
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -1576,8 +1576,8 @@ class SingaporeKycTest {
                     this.email = email
                 }
 
-                val sgRegionIndex = regionDetailsList.indexOfFirst { it.region.id == "sg" }
-                assertTrue(sgRegionIndex != -1, "regionDetailsList should contain sg region")
+                val newRegionDetailsList = regionDetailsList.singleOrNull { it.region.id == "sg" }
+                assertTrue(newRegionDetailsList != null, "regionDetailsList should contain sg region")
 
                 val regionDetails = RegionDetails()
                         .region(Region().id("sg").name("Singapore"))
@@ -1589,7 +1589,7 @@ class SingaporeKycTest {
                                 KycType.NRIC_FIN.name to KycStatus.PENDING))
                         .simProfiles(SimProfileList())
 
-                assertEquals(regionDetails, regionDetailsList[sgRegionIndex], "RegionDetails do not match")
+                assertEquals(regionDetails, newRegionDetailsList, "RegionDetails do not match")
             }
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -1625,8 +1625,8 @@ class SingaporeKycTest {
                     path = "/regions"
                     this.email = email
                 }
-                val sgRegionIndex = regionDetailsList.indexOfFirst { it.region.id == "sg" }
-                assertTrue(sgRegionIndex != -1, "regionDetailsList should contain sg region")
+                val sgRegionDetails = regionDetailsList.singleOrNull { it.region.id == "sg" }
+                assertTrue(sgRegionDetails != null, "regionDetailsList should contain sg region")
 
                 val regionDetails = RegionDetails()
                         .region(Region().id("sg").name("Singapore"))
@@ -1638,7 +1638,7 @@ class SingaporeKycTest {
                                 KycType.ADDRESS.name to KycStatus.PENDING))
                         .simProfiles(SimProfileList())
 
-                assertEquals(regionDetails, regionDetailsList[sgRegionIndex], "RegionDetails do not match")
+                assertEquals(regionDetails, sgRegionDetails, "RegionDetails do not match")
             }
 
             val scanInfo: ScanInformation = post {
@@ -1676,8 +1676,8 @@ class SingaporeKycTest {
                     this.email = email
                 }
 
-                val sgRegionIndex = regionDetailsList.indexOfFirst { it.region.id == "sg" }
-                assertTrue(sgRegionIndex != -1, "regionDetailsList should contain sg region")
+                val sgRegionDetails = regionDetailsList.singleOrNull { it.region.id == "sg" }
+                assertTrue(sgRegionDetails != null, "regionDetailsList should contain sg region")
 
                 val regionDetails = RegionDetails()
                         .region(Region().id("sg").name("Singapore"))
@@ -1689,7 +1689,7 @@ class SingaporeKycTest {
                                 KycType.ADDRESS.name to KycStatus.PENDING))
                         .simProfiles(SimProfileList())
 
-                assertEquals(regionDetails, regionDetailsList[sgRegionIndex], "RegionDetails do not match")
+                assertEquals(regionDetails, sgRegionDetails, "RegionDetails do not match")
             }
 
             put<String>(expectedResultCode = 204) {
@@ -1704,8 +1704,8 @@ class SingaporeKycTest {
                     this.email = email
                 }
 
-                val sgRegionIndex = regionDetailsList.indexOfFirst { it.region.id == "sg" }
-                assertTrue(sgRegionIndex != -1, "regionDetailsList should contain sg region")
+                val sgRegionDetails = regionDetailsList.singleOrNull { it.region.id == "sg" }
+                assertTrue(sgRegionDetails != null, "regionDetailsList should contain sg region")
 
                 val regionDetails = RegionDetails()
                         .region(Region().id("sg").name("Singapore"))
@@ -1717,7 +1717,7 @@ class SingaporeKycTest {
                                 KycType.NRIC_FIN.name to KycStatus.APPROVED))
                         .simProfiles(SimProfileList())
 
-                assertEquals(regionDetails, regionDetailsList[sgRegionIndex], "RegionDetails do not match")
+                assertEquals(regionDetails, sgRegionDetails, "RegionDetails do not match")
             }
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -1778,8 +1778,8 @@ class SingaporeKycTest {
                     this.email = email
                 }
 
-                val sgRegionIndex = regionDetailsList.indexOfFirst { it.region.id == "sg" }
-                assertTrue(sgRegionIndex != -1, "regionDetailsList should contain sg region")
+                val sgRegionDetails = regionDetailsList.singleOrNull { it.region.id == "sg" }
+                assertTrue(sgRegionDetails != null, "regionDetailsList should contain sg region")
 
                 val regionDetails = RegionDetails()
                         .region(Region().id("sg").name("Singapore"))
@@ -1791,7 +1791,7 @@ class SingaporeKycTest {
                                 KycType.ADDRESS.name to KycStatus.PENDING))
                         .simProfiles(SimProfileList())
 
-                assertEquals(regionDetails, regionDetailsList[sgRegionIndex], "RegionDetails do not match")
+                assertEquals(regionDetails, sgRegionDetails, "RegionDetails do not match")
             }
 
             put<String>(expectedResultCode = 204) {
@@ -1806,8 +1806,8 @@ class SingaporeKycTest {
                     this.email = email
                 }
 
-                val sgRegionIndex = regionDetailsList.indexOfFirst { it.region.id == "sg" }
-                assertTrue(sgRegionIndex != -1, "regionDetailsList should contain sg region")
+                val sgRegionDetails = regionDetailsList.singleOrNull { it.region.id == "sg" }
+                assertTrue(sgRegionDetails != null, "regionDetailsList should contain sg region")
 
                 val regionDetails = RegionDetails()
                         .region(Region().id("sg").name("Singapore"))
@@ -1819,7 +1819,7 @@ class SingaporeKycTest {
                                 KycType.NRIC_FIN.name to KycStatus.PENDING))
                         .simProfiles(SimProfileList())
 
-                assertEquals(regionDetails, regionDetailsList[sgRegionIndex], "RegionDetails do not match")
+                assertEquals(regionDetails, sgRegionDetails, "RegionDetails do not match")
             }
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
