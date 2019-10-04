@@ -1498,6 +1498,7 @@ class SingaporeKycTest {
                 }
                 regionDetailsList.forEach {
                     assertTrue(it.status == AVAILABLE, "All regions should be in available state")
+                    assertTrue(it.simProfiles.isEmpty(), "All regions should have empty Sim profile list")
                 }
             }
 
