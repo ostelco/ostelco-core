@@ -214,6 +214,11 @@ class RegionsTest {
                 path = "/regions"
                 this.email = email
             }
+
+            assertTrue(
+                    regionDetailsList.singleOrNull { it.status != AVAILABLE }  !=  null,
+                    "List should contain only one region in a state other than available")
+
             val noRegionIndex = regionDetailsList.indexOfFirst { it.region.id == "no" }
             assertTrue(noRegionIndex != -1, "regionDetailsList should contain 'no' region")
 
