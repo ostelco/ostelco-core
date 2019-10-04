@@ -1199,7 +1199,7 @@ class JumioKycTest {
                 this.email = email
             }
 
-            noRegionDetails = regionDetailsList.singleOrNull { it.region.id == "no" }
+            noRegionDetails = newRegionDetailsList.singleOrNull { it.region.id == "no" }
             assertTrue(noRegionDetails != null, "Did not find Norway region")
 
             assertEquals(Region().id("no").name("Norway"), noRegionDetails.region)
