@@ -75,7 +75,7 @@ public class LocalDataSource implements DataSource {
                         mscc.getRatingGroup(),
                         mscc.getServiceIdentifier(),
                         newRequested,
-                        new ServiceUnit(mscc.getUsed().getTotal(), mscc.getUsed().getInput(), mscc.getUsed().getOutput()),
+                        mscc.getUsed(),
                         granted,
                         mscc.getValidityTime(),
                         7200,
