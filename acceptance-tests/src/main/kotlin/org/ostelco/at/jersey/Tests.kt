@@ -890,16 +890,16 @@ class JumioKycTest {
             }
 
 
-            val noRegionIndex = regionDetailsList.indexOfFirst { it.region.id == "no" }
-            assertTrue(noRegionIndex != -1, "Did not find Norway region")
+            val noRegionDetails = regionDetailsList.singleOrNull { it.region.id == "no" }
+            assertTrue(noRegionDetails != null, "Did not find Norway region")
 
-            assertEquals(Region().id("no").name("Norway"), regionDetailsList[noRegionIndex].region)
-            assertEquals(PENDING, regionDetailsList[noRegionIndex].status, message = "Wrong State")
+            assertEquals(Region().id("no").name("Norway"), noRegionDetails.region)
+            assertEquals(PENDING, noRegionDetails.status, message = "Wrong State")
 
             assertEquals(
                     expected = mapOf(
                             KycType.JUMIO.name to KycStatus.REJECTED),
-                    actual = regionDetailsList[noRegionIndex].kycStatusMap)
+                    actual = noRegionDetails.kycStatusMap)
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -945,16 +945,16 @@ class JumioKycTest {
                 this.email = email
             }
 
-            val noRegionIndex = regionDetailsList.indexOfFirst { it.region.id == "no" }
-            assertTrue(noRegionIndex != -1, "Did not find Norway region")
+            val noRegionDetails = regionDetailsList.singleOrNull { it.region.id == "no" }
+            assertTrue(noRegionDetails != null, "Did not find Norway region")
 
-            assertEquals(Region().id("no").name("Norway"), regionDetailsList[noRegionIndex].region)
-            assertEquals(APPROVED, regionDetailsList[noRegionIndex].status, message = "Wrong State")
+            assertEquals(Region().id("no").name("Norway"), noRegionDetails.region)
+            assertEquals(APPROVED, noRegionDetails.status, message = "Wrong State")
 
             assertEquals(
                     expected = mapOf(
                             KycType.JUMIO.name to KycStatus.APPROVED),
-                    actual = regionDetailsList[noRegionIndex].kycStatusMap)
+                    actual = noRegionDetails.kycStatusMap)
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -1000,15 +1000,15 @@ class JumioKycTest {
                 this.email = email
             }
 
-            val noRegionIndex = regionDetailsList.indexOfFirst { it.region.id == "no" }
-            assertTrue(noRegionIndex != -1, "Did not find Norway region")
+            val noRegionDetails = regionDetailsList.singleOrNull { it.region.id == "no" }
+            assertTrue(noRegionDetails != null, "Did not find Norway region")
 
-            assertEquals(Region().id("no").name("Norway"), regionDetailsList[noRegionIndex].region)
-            assertEquals(PENDING, regionDetailsList[noRegionIndex].status, message = "Wrong State")
+            assertEquals(Region().id("no").name("Norway"), noRegionDetails.region)
+            assertEquals(PENDING, noRegionDetails.status, message = "Wrong State")
 
             assertEquals(
                     expected = mapOf(KycType.JUMIO.name to KycStatus.REJECTED),
-                    actual = regionDetailsList[noRegionIndex].kycStatusMap)
+                    actual = noRegionDetails.kycStatusMap)
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -1052,15 +1052,15 @@ class JumioKycTest {
                 this.email = email
             }
 
-            val noRegionIndex = regionDetailsList.indexOfFirst { it.region.id == "no" }
-            assertTrue(noRegionIndex != -1, "Did not find Norway region")
+            val noRegionDetails = regionDetailsList.singleOrNull { it.region.id == "no" }
+            assertTrue(noRegionDetails != null, "Did not find Norway region")
 
-            assertEquals(Region().id("no").name("Norway"), regionDetailsList[noRegionIndex].region)
-            assertEquals(PENDING, regionDetailsList[noRegionIndex].status, message = "Wrong State")
+            assertEquals(Region().id("no").name("Norway"), noRegionDetails.region)
+            assertEquals(PENDING, noRegionDetails.status, message = "Wrong State")
 
             assertEquals(
                     expected = mapOf(KycType.JUMIO.name to KycStatus.PENDING),
-                    actual = regionDetailsList[noRegionIndex].kycStatusMap)
+                    actual = noRegionDetails.kycStatusMap)
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -1104,14 +1104,14 @@ class JumioKycTest {
                 this.email = email
             }
 
-            val noRegionIndex = regionDetailsList.indexOfFirst { it.region.id == "no" }
-            assertTrue(noRegionIndex != -1, "Did not find Norway region")
+            val noRegionDetails = regionDetailsList.singleOrNull { it.region.id == "no" }
+            assertTrue(noRegionDetails != null, "Did not find Norway region")
 
-            assertEquals(Region().id("no").name("Norway"), regionDetailsList[noRegionIndex].region)
-            assertEquals(PENDING, regionDetailsList[noRegionIndex].status, message = "Wrong State")
+            assertEquals(Region().id("no").name("Norway"), noRegionDetails.region)
+            assertEquals(PENDING, noRegionDetails.status, message = "Wrong State")
             assertEquals(
                     expected = mapOf(KycType.JUMIO.name to KycStatus.REJECTED),
-                    actual = regionDetailsList[noRegionIndex].kycStatusMap)
+                    actual = noRegionDetails.kycStatusMap)
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -1155,14 +1155,14 @@ class JumioKycTest {
                 this.email = email
             }
 
-            var noRegionIndex = regionDetailsList.indexOfFirst { it.region.id == "no" }
-            assertTrue(noRegionIndex != -1, "Did not find Norway region")
+            var noRegionDetails = regionDetailsList.singleOrNull { it.region.id == "no" }
+            assertTrue(noRegionDetails != null, "Did not find Norway region")
 
-            assertEquals(Region().id("no").name("Norway"), regionDetailsList[noRegionIndex].region)
-            assertEquals(PENDING, regionDetailsList[noRegionIndex].status, message = "Wrong State")
+            assertEquals(Region().id("no").name("Norway"), noRegionDetails.region)
+            assertEquals(PENDING, noRegionDetails.status, message = "Wrong State")
             assertEquals(
                     expected = mapOf(KycType.JUMIO.name to KycStatus.REJECTED),
-                    actual = regionDetailsList[noRegionIndex].kycStatusMap)
+                    actual = noRegionDetails.kycStatusMap)
 
             val newScanInfo: ScanInformation = post {
                 path = "/regions/no/kyc/jumio/scans"
@@ -1199,15 +1199,15 @@ class JumioKycTest {
                 this.email = email
             }
 
-            noRegionIndex = regionDetailsList.indexOfFirst { it.region.id == "no" }
-            assertTrue(noRegionIndex != -1, "Did not find Norway region")
+            noRegionDetails = regionDetailsList.singleOrNull { it.region.id == "no" }
+            assertTrue(noRegionDetails != null, "Did not find Norway region")
 
-            assertEquals(Region().id("no").name("Norway"), newRegionDetailsList[noRegionIndex].region)
-            assertEquals(APPROVED, newRegionDetailsList[noRegionIndex].status, message = "Wrong State")
+            assertEquals(Region().id("no").name("Norway"), noRegionDetails.region)
+            assertEquals(APPROVED, noRegionDetails.status, message = "Wrong State")
 
             assertEquals(
                     expected = mapOf(KycType.JUMIO.name to KycStatus.APPROVED),
-                    actual = newRegionDetailsList[noRegionIndex].kycStatusMap)
+                    actual = noRegionDetails.kycStatusMap)
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -1307,15 +1307,15 @@ class JumioKycTest {
                 this.email = email
             }
 
-            var noRegionIndex = regionDetailsList1.indexOfFirst { it.region.id == "no" }
-            assertTrue(noRegionIndex != -1, "Did not find Norway region")
+            var noRegionDetails = regionDetailsList1.singleOrNull { it.region.id == "no" }
+            assertTrue(noRegionDetails != null, "Did not find Norway region")
 
-            assertEquals(Region().id("no").name("Norway"), regionDetailsList1[noRegionIndex].region)
-            assertEquals(PENDING, regionDetailsList1[noRegionIndex].status, message = "Wrong State")
+            assertEquals(Region().id("no").name("Norway"), noRegionDetails.region)
+            assertEquals(PENDING, noRegionDetails.status, message = "Wrong State")
 
             assertEquals(
                     expected = mapOf(KycType.JUMIO.name to KycStatus.REJECTED),
-                    actual = regionDetailsList1[noRegionIndex].kycStatusMap)
+                    actual = noRegionDetails.kycStatusMap)
 
             val newScanInfo: ScanInformation = post {
                 path = "/regions/no/kyc/jumio/scans"
@@ -1353,15 +1353,15 @@ class JumioKycTest {
                 this.email = email
             }
 
-            noRegionIndex = regionDetailsList2.indexOfFirst { it.region.id == "no" }
-            assertTrue(noRegionIndex != -1, "Did not find Norway region")
+            noRegionDetails = regionDetailsList2.singleOrNull { it.region.id == "no" }
+            assertTrue(noRegionDetails != null, "Did not find Norway region")
 
-            assertEquals(Region().id("no").name("Norway"), regionDetailsList2[noRegionIndex].region)
-            assertEquals(APPROVED, regionDetailsList2[noRegionIndex].status, message = "Wrong State")
+            assertEquals(Region().id("no").name("Norway"), noRegionDetails.region)
+            assertEquals(APPROVED, noRegionDetails.status, message = "Wrong State")
 
             assertEquals(
                     expected = mapOf(KycType.JUMIO.name to KycStatus.APPROVED),
-                    actual = regionDetailsList2[noRegionIndex].kycStatusMap)
+                    actual = noRegionDetails.kycStatusMap)
 
             val encodedEmail = URLEncoder.encode(email, StandardCharsets.UTF_8)
             val scanInformationList = get<Collection<ScanInformation>> {
@@ -1417,16 +1417,16 @@ class JumioKycTest {
                 path = "/regions"
                 this.email = email
             }
-            val noRegionIndex = regionDetailsList.indexOfFirst { it.region.id == "no" }
-            assertTrue(noRegionIndex != -1, "Did not find Norway region")
+            val noRegionDetails = regionDetailsList.singleOrNull { it.region.id == "no" }
+            assertTrue(noRegionDetails != null, "Did not find Norway region")
 
 
-            assertEquals(Region().id("no").name("Norway"), regionDetailsList[noRegionIndex].region)
-            assertEquals(PENDING, regionDetailsList[noRegionIndex].status, message = "Wrong State")
+            assertEquals(Region().id("no").name("Norway"), noRegionDetails.region)
+            assertEquals(PENDING, noRegionDetails.status, message = "Wrong State")
 
             assertEquals(
                     expected = mapOf(KycType.JUMIO.name to KycStatus.REJECTED),
-                    actual = regionDetailsList[noRegionIndex].kycStatusMap)
+                    actual = noRegionDetails.kycStatusMap)
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
