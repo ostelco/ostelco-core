@@ -8,7 +8,7 @@
 //     considered technical debt, and the debt can be paid back e.g. by
 //     internalizing the logic into prime.
 
-package main
+package uploadtoprime
 
 import (
 	"flag"
@@ -17,6 +17,7 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"loltelutils"
 )
 
 import (
@@ -168,32 +169,8 @@ type Batch struct {
 }
 
 func IccidWithoutLuhnChecksum(s string) string {
-	return trimSuffix(s, 1)
+	return TrimSuffix(s, 1)
 }
-
-func trimSuffix(s string, suffixLen int) string {
-	return s[:len(s)-suffixLen]
-}
-
-func Sign(x int) int {
-	if x < 0 {
-		return -1
-	} else if x > 0 {
-		return 1
-	} else {
-		return 0
-	}
-}
-
-// Abs returns the absolute value of x.
-func Abs(x int) int {
-	if x < 0 {
-		return -x
-	}
-	return x
-}
-
-
 
 
 func parseCommandLine() Batch {
@@ -269,7 +246,6 @@ func parseCommandLine() Batch {
 	checkProfileType("profile-type", *profileType)
 
 	// Convert to integers, and get lengths
-
 	msisdnIncrement := -1
 	if *firstMsisdn <= *lastMsisdn {
 		msisdnIncrement = 1

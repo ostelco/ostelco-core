@@ -45,3 +45,4 @@ metrics_descriptor.pb
 # Python virtual env
 venv
 prime-service-account.json
+go.sum
