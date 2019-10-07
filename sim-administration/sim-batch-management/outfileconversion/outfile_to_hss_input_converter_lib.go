@@ -4,12 +4,12 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/loltelutils"
 	"log"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
-	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/loltelutils"
 )
 
 ///

@@ -21,14 +21,8 @@ import (
 	"strings"
 )
 
-func main() {
-	batch := parseUploadFileGeneratorCommmandline()
-	var csvPayload = generateCsvPayload(batch)
 
-	generatePostingCurlscript(batch.url, csvPayload)
-}
-
-func generatePostingCurlscript(url string, payload string) {
+func GeneratePostingCurlscript(url string, payload string) {
 	fmt.Printf("#!/bin/bash\n")
 
 	fmt.Printf("curl  -H 'Content-Type: text/plain' -X PUT --data-binary @-  %s <<EOF\n", url)
@@ -170,7 +164,8 @@ func IccidWithoutLuhnChecksum(s string) string {
 }
 
 
-func parseUploadFileGeneratorCommmandline() OutputBatch {
+
+func ParseUploadFileGeneratorCommmandline() OutputBatch {
 
 	//
 	// Set up command line parsing
@@ -295,4 +290,23 @@ func parseUploadFileGeneratorCommmandline() OutputBatch {
 		firstMsisdn:     firstMsisdnInt,
 		msisdnIncrement: msisdnIncrement,
 	}
+}
+
+
+///
+///    Input batch management
+///
+
+type InputBatch struct {
+	customer        string
+	profileType     string
+	orderDate       string
+	batchNo         string
+	length          int
+	firstIccid      int
+	firstImsi       int
+}
+
+func ParseInputFileGeneratorCommmandline() InputBatch {
+	return InputBatch{customer: "Foo", profileType: "Bar", orderDate: "baz", batchNo: "gazonk", length: 5, firstIccid: 0, firstImsi:2}
 }
