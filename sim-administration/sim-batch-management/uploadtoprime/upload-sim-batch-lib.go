@@ -308,5 +308,8 @@ type InputBatch struct {
 }
 
 func ParseInputFileGeneratorCommmandline() InputBatch {
-	return InputBatch{customer: "Foo", profileType: "Bar", orderDate: "baz", batchNo: "gazonk", length: 5, firstIccid: 0, firstImsi:2}
+	// TODO: This is what we want to happen, but for some reason it isn't happening, so
+	//       we need to up our Go-Fu before we can make flag.Parse(arguments) work
+
+	return InputBatch{customer: "Loltel", profileType: "OYA_LOLTEL_ACB", orderDate: "20191007", batchNo: "2019100701", length: 10, firstIccid: 894700000000002214, firstImsi:242017100012213}
 }

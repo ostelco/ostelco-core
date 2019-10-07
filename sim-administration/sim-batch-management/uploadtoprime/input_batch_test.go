@@ -6,14 +6,13 @@ import (
 )
 
 func TestParseInputFileGeneratorCommmandline(t *testing.T) {
-	parsedBatch := ParseInputFileGeneratorCommmandline()
-	assert.Equal(t, "Foo", parsedBatch.customer)
-	assert.Equal(t, "Bar", parsedBatch.profileType)
-	assert.Equal(t, "baz", parsedBatch.orderDate)
-	assert.Equal(t, "gazonk", parsedBatch.batchNo)
-	assert.Equal(t, 5, parsedBatch.length)
-	assert.Equal(t, 0, parsedBatch.firstIccid)
-	assert.Equal(t, 2, parsedBatch.firstImsi)
 
-	return InputBatch{customer: "Foo", profileType: "Bar", orderDate: "baz", batchNo: "gazonk", length: 5, firstIccid: 0, firstImsi:2}
+	parsedBatch := ParseInputFileGeneratorCommmandline()
+	assert.Equal(t, "Loltel", parsedBatch.customer)
+	assert.Equal(t, "OYA_LOLTEL_ACB", parsedBatch.profileType)
+	assert.Equal(t, "20191007", parsedBatch.orderDate)
+	assert.Equal(t, "2019100701", parsedBatch.batchNo)
+	assert.Equal(t, 10, parsedBatch.length)
+	assert.Equal(t, 894700000000002214, parsedBatch.firstIccid)
+	assert.Equal(t, 242017100012213, parsedBatch.firstImsi)
 }
