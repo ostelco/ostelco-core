@@ -17,7 +17,7 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
-	. "github.com/ostelco/ostelco-core/loltelutils"
+	"github.com/ostelco/ostelco-core/loltelutils"
 	)
 
 import (
