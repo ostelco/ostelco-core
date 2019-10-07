@@ -158,7 +158,7 @@ func ReadOutputFile(filename string) OutputFileRecord {
 
 			iccidWithChecksum := rawIccid
 			if strings.HasSuffix(rawIccid, "F") {
-				iccidWithChecksum = trimSuffix(rawIccid, 1)
+				iccidWithChecksum = loltelutils.TrimSuffix(rawIccid, 1)
 			}
 
 			var iccidWithoutChecksum = trimSuffix(iccidWithChecksum, 1)

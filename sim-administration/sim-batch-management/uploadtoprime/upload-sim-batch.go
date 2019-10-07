@@ -17,8 +17,8 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
-	"loltelutils"
-)
+	. "github.com/ostelco/ostelco-core/loltelutils"
+	)
 
 import (
 	. "strconv"
