@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"github.com/ostelco/ostelco-core/loltelutils"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/loltelutils"
 )
 
 ///
@@ -162,7 +162,7 @@ func ReadOutputFile(filename string) OutputFileRecord {
 				iccidWithChecksum = loltelutils.TrimSuffix(rawIccid, 1)
 			}
 
-			var iccidWithoutChecksum = trimSuffix(iccidWithChecksum, 1)
+			var iccidWithoutChecksum = loltelutils.TrimSuffix(iccidWithChecksum, 1)
 			// TODO: Enable this!! checkICCIDSyntax(iccidWithChecksum)
 			entry := SimEntry{
 				rawIccid:             rawIccid,

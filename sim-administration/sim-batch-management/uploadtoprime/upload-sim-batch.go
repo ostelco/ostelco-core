@@ -13,15 +13,12 @@ package uploadtoprime
 import (
 	"flag"
 	"fmt"
-	"github.com/ostelco/ostelco-core/loltelutils"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/loltelutils"
 	"log"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
-)
-
-import (
-	. "strconv"
 )
 
 func main() {
@@ -54,7 +51,7 @@ func calculateChecksum(luhnString string, double bool) int {
 	checksum := 0
 
 	for i := len(source) - 1; i > -1; i-- {
-		t, _ := ParseInt(source[i], 10, 8)
+		t, _ := strconv.ParseInt(source[i], 10, 8)
 		n := int(t)
 
 		if double {
@@ -73,7 +70,7 @@ func calculateChecksum(luhnString string, double bool) int {
 }
 
 func LuhnChecksum(number int) int {
-	return generateControlDigit(Itoa(number))
+	return generateControlDigit(strconv.Itoa(number))
 }
 
 func generateCsvPayload(batch Batch) string {
@@ -169,7 +166,7 @@ type Batch struct {
 }
 
 func IccidWithoutLuhnChecksum(s string) string {
-	return TrimSuffix(s, 1)
+	return loltelutils.TrimSuffix(s, 1)
 }
 
 
@@ -230,7 +227,7 @@ func parseCommandLine() Batch {
 	checkMSISDNSyntax("last-msisdn", *lastMsisdn)
 	checkMSISDNSyntax("first-msisdn", *firstMsisdn)
 
-	batchLength, err := Atoi(*batchLengthString)
+	batchLength, err := strconv.Atoi(*batchLengthString)
 	if err != nil {
 		log.Fatalf("Not a valid batch length string '%s'.\n", *batchLengthString)
 	}
@@ -255,24 +252,25 @@ func parseCommandLine() Batch {
 	log.Println("lastmsisdn      = ", *lastMsisdn)
 	log.Println("msisdnIncrement = ", msisdnIncrement)
 
-	var firstMsisdnInt, _ = Atoi(*firstMsisdn)
-	var lastMsisdnInt, _ = Atoi(*lastMsisdn)
+	var firstMsisdnInt, _ = strconv.Atoi(*firstMsisdn)
+	var lastMsisdnInt, _ = strconv.Atoi(*lastMsisdn)
 	var msisdnLen = lastMsisdnInt - firstMsisdnInt + 1
 	if msisdnLen < 0 {
 		msisdnLen = -msisdnLen
 	}
 
-	var firstImsiInt, _ = Atoi(*firstIMSI)
-	var lastImsiInt, _ = Atoi(*lastIMSI)
+	var firstImsiInt, _ = strconv.Atoi(*firstIMSI)
+	var lastImsiInt, _ = strconv.Atoi(*lastIMSI)
 	var imsiLen = lastImsiInt - firstImsiInt + 1
 
-	var firstIccidInt, _ = Atoi(IccidWithoutLuhnChecksum(*firstIccid))
-	var lastIccidInt, _ = Atoi(IccidWithoutLuhnChecksum(*lastIccid))
+	var firstIccidInt, _ = strconv.Atoi(IccidWithoutLuhnChecksum(*firstIccid))
+	var lastIccidInt, _ = strconv.Atoi(IccidWithoutLuhnChecksum(*lastIccid))
 	var iccidlen = lastIccidInt - firstIccidInt + 1
 
 	// Validate that lengths of sequences are equal in absolute
 	// values.
-	if Abs(msisdnLen) != Abs(iccidlen) || Abs(msisdnLen) != Abs(imsiLen) || batchLength != Abs(imsiLen) {
+	// TODO: Perhaps use some varargs trick of some sort here?
+	if loltelutils.Abs(msisdnLen) != loltelutils.Abs(iccidlen) || loltelutils.Abs(msisdnLen) != loltelutils.Abs(imsiLen) || batchLength != loltelutils.Abs(imsiLen) {
 		log.Printf("msisdnLen   = %10d\n", msisdnLen)
 		log.Printf("iccidLen    = %10d\n", iccidlen)
 		log.Printf("imsiLen     = %10d\n", imsiLen)
@@ -289,11 +287,11 @@ func parseCommandLine() Batch {
 	return Batch{
 		profileType:     *profileType,
 		url:             uploadUrl,
-		length:          Abs(iccidlen),
+		length:          loltelutils.Abs(iccidlen),
 		firstIccid:      firstIccidInt,
-		iccidIncrement:  Sign(iccidlen),
+		iccidIncrement:  loltelutils.Sign(iccidlen),
 		firstImsi:       firstImsiInt,
-		imsiIncrement:   Sign(imsiLen),
+		imsiIncrement:   loltelutils.Sign(imsiLen),
 		firstMsisdn:     firstMsisdnInt,
 		msisdnIncrement: msisdnIncrement,
 	}
