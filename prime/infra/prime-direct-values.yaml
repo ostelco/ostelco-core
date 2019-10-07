@@ -11,6 +11,8 @@ podAutoscaling:
   enabled: false
 
 cronjobs:
+  shredder:
+    enabled: false
 
 prime:
   image: eu.gcr.io/pi-ostelco-dev/prime
