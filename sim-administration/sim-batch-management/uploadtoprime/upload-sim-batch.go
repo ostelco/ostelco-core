@@ -22,7 +22,7 @@ import (
 )
 
 func main() {
-	batch := parseCommandLine()
+	batch := parseUploadFileGeneratorCommmandline()
 	var csvPayload = generateCsvPayload(batch)
 
 	generatePostingCurlscript(batch.url, csvPayload)
@@ -73,7 +73,7 @@ func LuhnChecksum(number int) int {
 	return generateControlDigit(strconv.Itoa(number))
 }
 
-func generateCsvPayload(batch Batch) string {
+func generateCsvPayload(batch OutputBatch) string {
 	var sb strings.Builder
 	sb.WriteString("ICCID, IMSI, MSISDN, PIN1, PIN2, PUK1, PUK2, PROFILE\n")
 
@@ -153,7 +153,7 @@ func checkProfileType(name string, potentialProfileName string) {
 	}
 }
 
-type Batch struct {
+type OutputBatch struct {
 	profileType     string
 	url             string
 	length          int
@@ -170,7 +170,7 @@ func IccidWithoutLuhnChecksum(s string) string {
 }
 
 
-func parseCommandLine() Batch {
+func parseUploadFileGeneratorCommmandline() OutputBatch {
 
 	//
 	// Set up command line parsing
@@ -233,7 +233,7 @@ func parseCommandLine() Batch {
 	}
 
 	if batchLength <= 0 {
-		log.Fatalf("Batch length must be positive, but was '%d'", batchLength)
+		log.Fatalf("OutputBatch length must be positive, but was '%d'", batchLength)
 	}
 
 	uploadUrl := fmt.Sprintf("http://%s:%s/ostelco/sim-inventory/%s/import-batch/profilevendor/%s?initialHssState=%s",
@@ -284,7 +284,7 @@ func parseCommandLine() Batch {
 
 
 	// Return a correctly parsed batch
-	return Batch{
+	return OutputBatch{
 		profileType:     *profileType,
 		url:             uploadUrl,
 		length:          loltelutils.Abs(iccidlen),
