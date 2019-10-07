@@ -13,12 +13,12 @@ package uploadtoprime
 import (
 	"flag"
 	"fmt"
+	"github.com/ostelco/ostelco-core/loltelutils"
 	"log"
 	"net/url"
 	"regexp"
 	"strings"
-	"github.com/ostelco/ostelco-core/loltelutils"
-	)
+)
 
 import (
 	. "strconv"
@@ -26,7 +26,7 @@ import (
 
 func main() {
 	batch := parseCommandLine()
-	var csvPayload string = generateCsvPayload(batch)
+	var csvPayload = generateCsvPayload(batch)
 
 	generatePostingCurlscript(batch.url, csvPayload)
 }
@@ -36,7 +36,7 @@ func generatePostingCurlscript(url string, payload string) {
 
 	fmt.Printf("curl  -H 'Content-Type: text/plain' -X PUT --data-binary @-  %s <<EOF\n", url)
 	fmt.Printf("%s", payload)
-	fmt.Print(("EOF\n"))
+	fmt.Print("EOF\n")
 }
 
 func generateControlDigit(luhnString string) int {
