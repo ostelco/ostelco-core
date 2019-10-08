@@ -8,10 +8,10 @@ type QueryType {
 
 type Context {
   customer: Customer
-  bundles: [Bundle!]
+  bundles: [Bundle!]!
   regions(regionCode: String): [RegionDetails!]!
   products: [Product!]!
-  purchases: [Purchase!]
+  purchases: [Purchase!]!
 }
 
 type Customer {
@@ -42,6 +42,7 @@ type Region {
 enum CustomerRegionStatus {
   PENDING
   APPROVED
+  AVAILABLE
 }
 
 type KycStatusMap {
