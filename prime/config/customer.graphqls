@@ -7,7 +7,7 @@ type QueryType {
 }
 
 type Context {
-  customer: Customer!
+  customer: Customer
   bundles: [Bundle!]
   regions(regionCode: String): [RegionDetails!]!
   products: [Product!]!
