@@ -42,6 +42,7 @@ type Region {
 enum CustomerRegionStatus {
   PENDING
   APPROVED
+  AVAILABLE
 }
 
 type KycStatusMap {
