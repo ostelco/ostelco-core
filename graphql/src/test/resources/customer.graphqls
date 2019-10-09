@@ -7,11 +7,11 @@ type QueryType {
 }
 
 type Context {
-  customer: Customer!
-  bundles: [Bundle!]
-  regions(regionCode: String): [RegionDetails!]
-  products: [Product!]
-  purchases: [Purchase!]
+  customer: Customer
+  bundles: [Bundle!]!
+  regions(regionCode: String): [RegionDetails!]!
+  products: [Product!]!
+  purchases: [Purchase!]!
 }
 
 type Customer {
@@ -29,8 +29,8 @@ type Bundle {
 
 type RegionDetails {
   region: Region!
-  status: CustomerRegionStatus
-  kycStatusMap: KycStatusMap
+  status: CustomerRegionStatus!
+  kycStatusMap: KycStatusMap!
   simProfiles: [SimProfile!]
 }
 
@@ -76,8 +76,8 @@ enum SimProfileStatus {
 type Product {
   sku: String!
   price: Price!
-  properties: Properties
-  presentation: Presentation
+  properties: Properties!
+  presentation: Presentation!
 }
 
 type Properties {
@@ -88,11 +88,11 @@ type Properties {
 type Presentation {
   subTotal: String
   payeeLabel: String
-  priceLabel: String
+  priceLabel: String!
   taxLabel: String
   tax: String
   subTotalLabel: String
-  productLabel: String
+  productLabel: String!
   label: String
 }
 
