@@ -70,6 +70,11 @@ modules:
         textReader:
           type: file
           filename: /config-data/OnNewCustomerAction.kts
+      allowedRegionsService:
+        serviceInterface: org.ostelco.prime.storage.graph.AllowedRegionsService
+        textReader:
+          type: file
+          filename: /config-data/AllowedRegionsService.kts
   - type: analytics
     config:
       projectId: ${GCP_PROJECT_ID}

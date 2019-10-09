@@ -136,6 +136,12 @@ class Neo4jStorageTest {
                             textReader = ClasspathResourceTextReader(
                                     filename = "/OnNewCustomerAction.kts"
                             )
+                    ),
+                    allowedRegionsService = KtsServiceFactory(
+                            serviceInterface = "org.ostelco.prime.storage.graph.AllowedRegionsService",
+                            textReader = ClasspathResourceTextReader(
+                                    filename = "/AllowedRegionsService.kts"
+                            )
                     )
             )
 
