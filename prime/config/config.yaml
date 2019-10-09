@@ -105,6 +105,9 @@ modules:
         - serviceId: 1
           ratingGroup: 10
           rate: Normal
+        - serviceId: -1
+          ratingGroup: 102010001
+          rate: Normal
   - type: api
   - type: stripe-payment-processor
     config:
