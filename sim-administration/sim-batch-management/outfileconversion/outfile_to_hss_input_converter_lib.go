@@ -20,16 +20,16 @@ type OutputFileRecord struct {
 	Filename          string
 	inputVariables    map[string]string
 	headerDescription map[string]string
-	entries           []SimEntry
-	// TODO: As it is today, the noOfEntries is just the number of entries,
-	//       but I may want to change that to be the declared number of entries,
-	//       and then later, dynamically, read in the individual entries
+	Entries           []SimEntry
+	// TODO: As it is today, the noOfEntries is just the number of Entries,
+	//       but I may want to change that to be the declared number of Entries,
+	//       and then later, dynamically, read in the individual Entries
 	//       in a channel that is just piped to the goroutine that writes
-	//       them to file, and fails if the number of declared entries
-	//       differs from the actual number of entries.  .... but that is
+	//       them to file, and fails if the number of declared Entries
+	//       differs from the actual number of Entries.  .... but that is
 	//       for another day.
 	noOfEntries    int
-	outputFileName string
+	OutputFileName string
 }
 
 const (
@@ -61,7 +61,7 @@ type ParserState struct {
 ///
 
 
-func parseOutputToHssConverterCommandLine() (string, string) {
+func ParseOutputToHssConverterCommandLine() (string, string) {
 	inputFile := flag.String("input-file",
 		"not  a valid filename",
 		"path to .out file used as input file")
@@ -201,9 +201,9 @@ func ReadOutputFile(filename string) OutputFileRecord {
 		Filename:          filename,
 		inputVariables:    state.inputVariables,
 		headerDescription: state.headerDescription,
-		entries:           state.entries,
+		Entries:           state.entries,
 		noOfEntries:       declaredNoOfEntities,
-		outputFileName:    getOutputFileName(state),
+		OutputFileName:    getOutputFileName(state),
 	}
 
 	return result

@@ -26,24 +26,25 @@
  *  of which are handled by this script).
  */
 
-package outfileconversion
+package main
 
 import (
 	"fmt"
 	"log"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/outfileconversion"
 )
 
 func main() {
-	inputFile, outputFilePrefix := parseOutputToHssConverterCommandLine()
+	inputFile, outputFilePrefix := outfileconversion.ParseOutputToHssConverterCommandLine()
 
 	fmt.Println("inputFile = ", inputFile)
 	fmt.Println("outputFilePrefix = ", outputFilePrefix)
 
-	outRecord := ReadOutputFile(inputFile)
-	outputFile := outputFilePrefix + outRecord.outputFileName + ".csv"
+	outRecord := outfileconversion.ReadOutputFile(inputFile)
+	outputFile := outputFilePrefix + outRecord.OutputFileName + ".csv"
 	fmt.Println("outputFile = ", outputFile)
 
-	err := WriteHssCsvFile(outputFile, outRecord.entries)
+	err := outfileconversion.WriteHssCsvFile(outputFile, outRecord.Entries)
 	if err != nil {
 		log.Fatal("Couldn't close output file '", outputFilePrefix, "'.  Error = '", err, "'")
 	}
