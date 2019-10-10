@@ -67,7 +67,7 @@ func LuhnChecksum(number int) int {
 	return generateControlDigit(strconv.Itoa(number))
 }
 
-func generateCsvPayload(batch OutputBatch) string {
+func GenerateCsvPayload(batch OutputBatch) string {
 	var sb strings.Builder
 	sb.WriteString("ICCID, IMSI, MSISDN, PIN1, PIN2, PUK1, PUK2, PROFILE\n")
 
@@ -149,7 +149,7 @@ func checkProfileType(name string, potentialProfileName string) {
 
 type OutputBatch struct {
 	profileType     string
-	url             string
+	Url             string
 	length          int
 	firstMsisdn     int
 	msisdnIncrement int
@@ -281,7 +281,7 @@ func ParseUploadFileGeneratorCommmandline() OutputBatch {
 	// Return a correctly parsed batch
 	return OutputBatch{
 		profileType:     *profileType,
-		url:             uploadUrl,
+		Url:             uploadUrl,
 		length:          loltelutils.Abs(iccidlen),
 		firstIccid:      firstIccidInt,
 		iccidIncrement:  loltelutils.Sign(iccidlen),

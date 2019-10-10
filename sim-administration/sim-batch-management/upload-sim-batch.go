@@ -1,10 +1,12 @@
-//usr/bin/env go run "$0" "$@"; exit "$?"
+//usr/bin/env go run "$0" "$@"; exit "$?"	
 
-package sim_batch_management
+package main
+
+import "github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/uploadtoprime"
 
 func main() {
-	batch := ParseUploadFileGeneratorCommmandline()
-	var csvPayload = generateCsvPayload(batch)
+	batch := uploadtoprime.ParseUploadFileGeneratorCommmandline()
+	var csvPayload = uploadtoprime.GenerateCsvPayload(batch)
 
-	GeneratePostingCurlscript(batch.url, csvPayload)
+	uploadtoprime.GeneratePostingCurlscript(batch.Url, csvPayload)
 }
