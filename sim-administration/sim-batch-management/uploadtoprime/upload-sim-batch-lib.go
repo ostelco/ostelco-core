@@ -182,8 +182,8 @@ func ParseUploadFileGeneratorCommmandline() OutputBatch {
 	lastMsisdn := flag.String("last-msisdn", "Not a valid MSISDN", "Last MSISDN in batch")
 	profileType := flag.String("profile-type", "Not a valid sim profile type", "SIM profile type")
 	batchLengthString := flag.String(
-		"batch-length",
-		"Not a valid batch-length, must be an integer",
+		"batch-quantity",
+		"Not a valid batch-quantity, must be an integer",
 		"Number of sim cards in batch")
 
 	// XXX Legal values are Loltel and M1 at this time, how to configure that
@@ -224,11 +224,11 @@ func ParseUploadFileGeneratorCommmandline() OutputBatch {
 
 	batchLength, err := strconv.Atoi(*batchLengthString)
 	if err != nil {
-		log.Fatalf("Not a valid batch length string '%s'.\n", *batchLengthString)
+		log.Fatalf("Not a valid batch quantity string '%s'.\n", *batchLengthString)
 	}
 
 	if batchLength <= 0 {
-		log.Fatalf("OutputBatch length must be positive, but was '%d'", batchLength)
+		log.Fatalf("OutputBatch quantity must be positive, but was '%d'", batchLength)
 	}
 
 	uploadUrl := fmt.Sprintf("http://%s:%s/ostelco/sim-inventory/%s/import-batch/profilevendor/%s?initialHssState=%s",
@@ -298,18 +298,39 @@ func ParseUploadFileGeneratorCommmandline() OutputBatch {
 ///
 
 type InputBatch struct {
-	customer        string
-	profileType     string
-	orderDate       string
-	batchNo         string
-	length          int
-	firstIccid      int
-	firstImsi       int
+	customer    string
+	profileType string
+	orderDate   string
+	batchNo     string
+	quantity    int
+	firstIccid  int
+	firstImsi   int
 }
 
 func ParseInputFileGeneratorCommmandline() InputBatch {
-	// TODO: This is what we want to happen, but for some reason it isn't happening, so
+	// TODO: This function should be rewritten to parse a string array and send it to flags.
 	//       we need to up our Go-Fu before we can make flag.Parse(arguments) work
 
-	return InputBatch{customer: "Loltel", profileType: "OYA_LOLTEL_ACB", orderDate: "20191007", batchNo: "2019100701", length: 10, firstIccid: 894700000000002214, firstImsi:242017100012213}
+	return InputBatch{customer: "Loltel", profileType: "OYA_LOLTEL_ACB", orderDate: "20191007", batchNo: "2019100701", quantity: 10, firstIccid: 894700000000002214, firstImsi:242017100012213}
+}
+
+func GenerateInputFile(batch InputBatch) string {
+	result := "*HEADER DESCRIPTION\n" +
+		"***************************************\n" +
+		fmt.Sprintf("Customer        : Loltel\n") +
+		fmt.Sprintf("ProfileType     : %s\n", batch.profileType) +
+		fmt.Sprintf("Order Date      : %s\n", batch.orderDate) +
+		fmt.Sprintf("Batch No        : %s\n", batch.batchNo) +
+		fmt.Sprintf("Quantity        : %d\n", batch.quantity) +
+		"***************************************\n" +
+		"*INPUT VARIABLES\n" +
+		"***************************************\n" +
+		"var_In:\n" +
+		fmt.Sprintf(" ICCID: %d\n", batch.firstIccid) +
+		fmt.Sprintf("IMSI: %d\n", batch.firstImsi) +
+		"***************************************\n" +
+		"*OUTPUT VARIABLES\n" +
+		"***************************************\n" +
+		"var_Out: ICCID/IMSI/KI\n";
+	return result
 }
