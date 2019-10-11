@@ -56,16 +56,15 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                     responseBuilder.setRequestId(request.requestId)
                             .setMsisdn(msisdn).setResultCode(ResultCode.DIAMETER_SUCCESS)
 
-                    val doneSignal = CountDownLatch(request.msccList.size)
-
                     if (request.msccCount == 0) {
+                        responseBuilder.validityTime = 86400
                         storage.consume(msisdn, 0L, 0L) {
                             storeResult -> storeResult.fold(
                                 {responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN},
                                 {responseBuilder.resultCode = ResultCode.DIAMETER_SUCCESS})
                         }
                     } else {
-
+                        val doneSignal = CountDownLatch(request.msccList.size)
                         request.msccList.forEach { mscc ->
 
                             val requested = mscc.requested?.totalOctets ?: 0
@@ -90,12 +89,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                                 doneSignal.countDown()
                             }
                         }
-                    }
-
-                    doneSignal.await(2, TimeUnit.SECONDS)
-
-                    if (responseBuilder.msccCount == 0) {
-                        responseBuilder.validityTime = 86400
+                        doneSignal.await(2, TimeUnit.SECONDS)
                     }
 
                     synchronized(OnlineCharging) {
