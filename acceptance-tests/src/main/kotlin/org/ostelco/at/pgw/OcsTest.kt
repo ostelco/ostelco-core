@@ -603,6 +603,39 @@ class OcsTest {
         }
     }
 
+    /**
+     * This test CCR-I without any Requested-Service-Units
+     */
+
+    @Test
+    fun creditControlRequestInitNoRsuUnknownUser() {
+
+        val session = testClient.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
+        val request = testClient.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session
+        ) ?: fail("Failed to create request")
+
+        TestHelper.createInitRequest(request.avps, "1337")
+
+        testClient.sendNextRequest(request, session)
+
+        waitForAnswer(session.sessionId)
+
+        run {
+            val result = testClient.getAnswer(session.sessionId)
+            assertEquals(DIAMETER_USER_UNKNOWN, result?.resultCode)
+            val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
+            assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
+            assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
+            assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+            val resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
+            assertNull(resultMSCC, "There should not be any MSCC if there is no MSCC in the CCR")
+        }
+    }
+
+
 
     /**
      * This test will check that we can handle CCR-U requests that also report CC-Time and CC-Service-Specific-Units

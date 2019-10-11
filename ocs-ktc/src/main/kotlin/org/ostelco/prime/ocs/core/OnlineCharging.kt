@@ -58,30 +58,40 @@ object OnlineCharging : OcsAsyncRequestConsumer {
 
                     val doneSignal = CountDownLatch(request.msccList.size)
 
-                    request.msccList.forEach { mscc ->
+                    if (request.msccCount == 0) {
+                        storage.consume(msisdn, 0L, 0L) {
+                            storeResult -> storeResult.fold(
+                                {responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN},
+                                {responseBuilder.resultCode = ResultCode.DIAMETER_SUCCESS})
+                        }
+                    } else {
 
-                        val requested = mscc.requested?.totalOctets ?: 0
-                        if (requested > 0) {
-                            charge(msisdn, mscc, request.serviceInformation.psInformation.sgsnMccMnc) { storeResult ->
-                                storeResult.fold(
-                                        {
-                                            // FixMe
-                                            responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN
-                                            doneSignal.countDown()
-                                        },
-                                        { consumptionResult ->
-                                            addGrantedQuota(consumptionResult.granted, mscc, responseBuilder)
-                                            addInfo(consumptionResult.balance, mscc, responseBuilder)
-                                            reportAnalytics(consumptionResult, request)
-                                            Notifications.lowBalanceAlert(msisdn, consumptionResult.granted, consumptionResult.balance)
-                                            doneSignal.countDown()
-                                        }
-                                )
+                        request.msccList.forEach { mscc ->
+
+                            val requested = mscc.requested?.totalOctets ?: 0
+                            if (requested > 0) {
+                                charge(msisdn, mscc, request.serviceInformation.psInformation.sgsnMccMnc) { storeResult ->
+                                    storeResult.fold(
+                                            {
+                                                // FixMe
+                                                responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN
+                                                doneSignal.countDown()
+                                            },
+                                            { consumptionResult ->
+                                                addGrantedQuota(consumptionResult.granted, mscc, responseBuilder)
+                                                addInfo(consumptionResult.balance, mscc, responseBuilder)
+                                                reportAnalytics(consumptionResult, request)
+                                                Notifications.lowBalanceAlert(msisdn, consumptionResult.granted, consumptionResult.balance)
+                                                doneSignal.countDown()
+                                            }
+                                    )
+                                }
+                            } else {
+                                doneSignal.countDown()
                             }
-                        } else {
-                            doneSignal.countDown()
                         }
                     }
+
                     doneSignal.await(2, TimeUnit.SECONDS)
 
                     if (responseBuilder.msccCount == 0) {
