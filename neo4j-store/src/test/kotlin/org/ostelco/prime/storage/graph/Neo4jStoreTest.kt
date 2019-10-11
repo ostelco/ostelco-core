@@ -19,6 +19,7 @@ import org.ostelco.prime.kts.engine.reader.ClasspathResourceTextReader
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.CustomerRegionStatus.APPROVED
 import org.ostelco.prime.model.CustomerRegionStatus.PENDING
+import org.ostelco.prime.model.CustomerRegionStatus.AVAILABLE
 import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.JumioScanData
 import org.ostelco.prime.model.KycStatus
@@ -706,8 +707,12 @@ class Neo4jStoreTest {
         // test
         Neo4jStoreSingleton.getAllRegionDetails(identity = IDENTITY)
                 .bimap(
-                        { fail("Failed to fetch regions empty list") },
-                        { assert(it.isEmpty()) { "Regions list should be empty" } })
+                        { fail("Failed to fetch regions list") },
+                        {
+                            for (region in it) {
+                                assert(region.status == AVAILABLE) { "All regions should be marked available" }
+                            }
+                        })
     }
 
     @Test
@@ -1086,6 +1091,12 @@ class Neo4jStoreTest {
                             serviceInterface = "org.ostelco.prime.storage.graph.OnNewCustomerAction",
                             textReader = ClasspathResourceTextReader(
                                     filename = "/OnNewCustomerAction.kts"
+                            )
+                    ),
+                    allowedRegionsService = KtsServiceFactory(
+                            serviceInterface = "org.ostelco.prime.storage.graph.AllowedRegionsService",
+                            textReader = ClasspathResourceTextReader(
+                                    filename = "/AllowedRegionsService.kts"
                             )
                     )
             )

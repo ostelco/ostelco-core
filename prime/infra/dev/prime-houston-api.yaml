@@ -409,21 +409,6 @@ paths:
           type: string
 
 definitions:
-  Pong:
-    type: object
-    properties:
-      timestamp:
-        type: integer
-        format: int64
-    required:
-      - timestamp
-  Uuid:
-    type: object
-    properties:
-      uuid:
-        type: string
-    required:
-      - uuid
   Context:
     type: object
     properties:

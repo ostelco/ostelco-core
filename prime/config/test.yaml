@@ -55,6 +55,11 @@ modules:
         textReader:
           type: classpathResource
           filename: /OnNewCustomerAction.kts
+      allowedRegionsService:
+        serviceInterface: org.ostelco.prime.storage.graph.AllowedRegionsService
+        textReader:
+          type: classpathResource
+          filename: /AllowedRegionsService.kts
   - type: analytics
     config:
       projectId: ${GCP_PROJECT_ID}
