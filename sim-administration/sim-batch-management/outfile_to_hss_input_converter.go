@@ -30,8 +30,8 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/outfileconversion"
+	"log"
 )
 
 func main() {
