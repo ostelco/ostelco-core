@@ -10,7 +10,6 @@ import org.apache.http.impl.client.CloseableHttpClient
 import org.junit.AfterClass
 import org.junit.Before
 import org.junit.ClassRule
-import org.junit.Ignore
 import org.junit.Test
 import org.mockito.Mockito
 import org.mockito.Mockito.mock
@@ -27,7 +26,6 @@ import java.util.*
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 
-@Ignore("Fails to Mock config classes which are Kotlin Data classes")
 class SimInventoryUnitTests {
 
     companion object {

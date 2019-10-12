@@ -7,6 +7,7 @@ object Version {
   const val arrowTypeClasses = "0.9.0"
 
   const val beam = "2.15.0"
+  const val byteBuddy = "1.10.1"
   const val csv = "1.7"
   const val cxf = "3.3.3"
   const val dockerComposeJunitRule = "1.3.0"
