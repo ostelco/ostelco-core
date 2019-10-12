@@ -16,7 +16,7 @@ dependencies {
   testRuntimeOnly("io.jsonwebtoken:jjwt-impl:${Version.jjwt}")
   testRuntimeOnly("io.jsonwebtoken:jjwt-jackson:${Version.jjwt}")
 
-  testImplementation("com.nhaarman:mockito-kotlin:1.6.0")
+  testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:${Version.mockitoKotlin}")
 }
 
 apply(from = "../gradle/jacoco.gradle")
