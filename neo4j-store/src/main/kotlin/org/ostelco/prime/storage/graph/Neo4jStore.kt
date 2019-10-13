@@ -1822,7 +1822,7 @@ object Neo4jStoreSingleton : GraphStore {
 
                 val customerId = getCustomer(identity = identity).bind().id
 
-                // set // apply(from = "../../gradle/jacoco.gradle") KYC Status to Pending
+                // set ADDRESS KYC Status to Pending
                 setKycStatus(
                         customerId = customerId,
                         regionCode = "sg",
@@ -1837,7 +1837,7 @@ object Neo4jStoreSingleton : GraphStore {
                                 "address" to address.toByteArray())
                 ).bind()
 
-                // set // apply(from = "../../gradle/jacoco.gradle") KYC Status to Approved
+                // set ADDRESS KYC Status to Approved
                 setKycStatus(
                         customerId = customerId,
                         regionCode = "sg",
