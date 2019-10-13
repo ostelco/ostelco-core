@@ -106,6 +106,10 @@ val integration = tasks.create("integration", Test::class.java) {
 
 tasks.build.get().dependsOn(integration)
 
+jacoco {
+  toolVersion = "0.8.3" // because 0.8.4 has a issue - https://github.com/mockito/mockito/issues/1717
+}
+
 var protobufGeneratedFilesBaseDir: String = ""
 
 protobuf {
