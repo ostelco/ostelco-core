@@ -290,9 +290,10 @@ object Neo4jStoreSingleton : GraphStore {
             dataClass = None::class.java)
             .also { UniqueRelationStore(it) }
 
-    private val hssNameLookup: HssNameLookupService = config.hssNameLookupService.getKtsService()
     private val onNewCustomerAction: OnNewCustomerAction = config.onNewCustomerAction.getKtsService()
     private val allowedRegionsService: AllowedRegionsService = config.allowedRegionsService.getKtsService()
+    val onRegionApprovedAction: OnRegionApprovedAction = config.onRegionApprovedAction.getKtsService()
+    private val hssNameLookup: HssNameLookupService = config.hssNameLookupService.getKtsService()
 
     // -------------
     // Client Store
@@ -1540,10 +1541,11 @@ object Neo4jStoreSingleton : GraphStore {
                             transaction = transaction)
                     .flatMap {
                         if (status == APPROVED) {
-                            assignCustomerToSegment(
-                                    customerId = customerId,
-                                    segmentId = getInitialSegmentNameForRegion(regionCode, transaction),
-                                    transaction = transaction)
+                            onRegionApprovedAction.apply(
+                                    customer = customer,
+                                    regionCode = regionCode,
+                                    transaction = PrimeTransaction(transaction)
+                            )
                         } else {
                             Unit.right()
                         }
@@ -1920,10 +1922,11 @@ object Neo4jStoreSingleton : GraphStore {
 
                 if (approvedNow) {
                     AuditLog.info(customerId = customerId, message = "Approved for region - $regionCode")
-                    assignCustomerToSegment(
-                            customerId = customerId,
-                            segmentId = getInitialSegmentNameForRegion(regionCode, transaction),
-                            transaction = transaction).bind()
+                    onRegionApprovedAction.apply(
+                            customer = customer,
+                            regionCode = regionCode,
+                            transaction = PrimeTransaction(transaction)
+                    ).bind()
                 }
 
                 customerRegionRelationStore

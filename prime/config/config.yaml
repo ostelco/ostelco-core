@@ -60,11 +60,6 @@ modules:
     config:
       host: ${NEO4J_HOST}
       protocol: bolt+routing
-      hssNameLookupService:
-        serviceInterface: org.ostelco.prime.storage.graph.HssNameLookupService
-        textReader:
-          type: file
-          filename: /config-data/HssNameLookupService.kts
       onNewCustomerAction:
         serviceInterface: org.ostelco.prime.storage.graph.OnNewCustomerAction
         textReader:
@@ -75,6 +70,16 @@ modules:
         textReader:
           type: file
           filename: /config-data/AllowedRegionsService.kts
+      onRegionApprovedAction:
+        serviceInterface: org.ostelco.prime.storage.graph.OnRegionApprovedAction
+        textReader:
+          type: file
+          filename: /config-data/OnRegionApprovedAction.kts
+      hssNameLookupService:
+        serviceInterface: org.ostelco.prime.storage.graph.HssNameLookupService
+        textReader:
+          type: file
+          filename: /config-data/HssNameLookupService.kts
   - type: analytics
     config:
       projectId: ${GCP_PROJECT_ID}
