@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit
 object OnlineCharging : OcsAsyncRequestConsumer {
 
     var loadUnitTest = false
+    val keepAliveMsisdn = "keepalive"
     private val loadAcceptanceTest = System.getenv("LOAD_TESTING") == "true"
 
     private val storage: AdminDataSource = getResource()
@@ -49,14 +50,15 @@ object OnlineCharging : OcsAsyncRequestConsumer {
     }
 
 
-    private fun isKeepAlive(request: CreditControlRequestInfo) : Boolean {
-        return request.msisdn == "keepalive"
-    }
+    private fun isKeepAlive(request: CreditControlRequestInfo) : Boolean = request.msisdn == keepAliveMsisdn
 
     private fun handleKeepAlive(request: CreditControlRequestInfo, returnCreditControlAnswer : (CreditControlAnswerInfo) -> Unit) {
         val responseBuilder = CreditControlAnswerInfo.newBuilder()
-        responseBuilder.requestNumber = request.requestNumber
-        responseBuilder.setRequestId(request.requestId).setMsisdn("keepalive").resultCode = ResultCode.UNKNOWN
+                .setRequestNumber(request.requestNumber)
+                .setRequestId(request.requestId)
+                .setMsisdn(keepAliveMsisdn)
+                .setResultCode(ResultCode.UNKNOWN)
+
         returnCreditControlAnswer(responseBuilder.buildPartial())
     }
 
