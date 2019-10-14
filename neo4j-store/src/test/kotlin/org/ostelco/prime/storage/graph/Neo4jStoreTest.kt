@@ -271,7 +271,7 @@ class Neo4jStoreTest {
                 .mapLeft { fail(it.message) }
 
         Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 status = APPROVED,
                 regionCode = REGION_CODE)
 
@@ -652,7 +652,7 @@ class Neo4jStoreTest {
                 customer = CUSTOMER).isRight())
 
         assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 status = APPROVED,
                 regionCode = REGION_CODE).isRight())
 
@@ -750,11 +750,11 @@ class Neo4jStoreTest {
                 customer = CUSTOMER).isRight())
 
         assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 status = APPROVED,
                 regionCode = "no").isRight())
         assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 status = PENDING,
                 regionCode = "sg").isRight())
 
@@ -794,11 +794,11 @@ class Neo4jStoreTest {
                 customer = CUSTOMER).isRight())
 
         assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 status = APPROVED,
                 regionCode = "no").isRight())
         assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 status = PENDING,
                 regionCode = "sg").isRight())
 
@@ -833,11 +833,11 @@ class Neo4jStoreTest {
                 customer = CUSTOMER).isRight())
 
         assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 status = APPROVED,
                 regionCode = "no").isRight())
         assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 status = PENDING,
                 regionCode = "sg").isRight())
 
@@ -897,11 +897,11 @@ class Neo4jStoreTest {
                 customer = CUSTOMER).isRight())
 
         assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 status = APPROVED,
                 regionCode = "no").isRight())
         assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 status = PENDING,
                 regionCode = "sg").isRight())
 
@@ -958,7 +958,7 @@ class Neo4jStoreTest {
                 }
 
         Neo4jStoreSingleton.setKycStatus(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 regionCode = "sg",
                 kycType = MY_INFO)
                 .mapLeft { fail(it.message) }
@@ -973,7 +973,7 @@ class Neo4jStoreTest {
                 })
 
         Neo4jStoreSingleton.setKycStatus(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 regionCode = "sg",
                 kycType = ADDRESS)
                 .mapLeft { fail(it.message) }
@@ -1010,7 +1010,7 @@ class Neo4jStoreTest {
                 }
 
         Neo4jStoreSingleton.setKycStatus(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 regionCode = "sg",
                 kycType = NRIC_FIN)
 
@@ -1024,7 +1024,7 @@ class Neo4jStoreTest {
                 })
 
         Neo4jStoreSingleton.setKycStatus(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 regionCode = "sg",
                 kycType = JUMIO)
 
@@ -1038,7 +1038,7 @@ class Neo4jStoreTest {
                 })
 
         Neo4jStoreSingleton.setKycStatus(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 regionCode = "sg",
                 kycType = ADDRESS)
 
