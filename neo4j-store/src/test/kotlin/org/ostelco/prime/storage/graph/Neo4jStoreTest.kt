@@ -1011,6 +1011,9 @@ class Neo4jStoreTest {
                 customer = CUSTOMER,
                 regionCode = "sg",
                 kycType = NRIC_FIN)
+                .mapLeft {
+                    fail(it.message)
+                }
 
         Neo4jStoreSingleton.getRegionDetails(
                 identity = IDENTITY,
@@ -1025,6 +1028,9 @@ class Neo4jStoreTest {
                 customer = CUSTOMER,
                 regionCode = "sg",
                 kycType = JUMIO)
+                .mapLeft {
+                    fail(it.message)
+                }
 
         Neo4jStoreSingleton.getRegionDetails(
                 identity = IDENTITY,
@@ -1039,6 +1045,9 @@ class Neo4jStoreTest {
                 customer = CUSTOMER,
                 regionCode = "sg",
                 kycType = ADDRESS)
+                .mapLeft {
+                    fail(it.message)
+                }
 
         Neo4jStoreSingleton.getRegionDetails(
                 identity = IDENTITY,
