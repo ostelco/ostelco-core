@@ -2448,7 +2448,6 @@ object Neo4jStoreSingleton : GraphStore {
     private val offerEntity = Offer::class.entityType
 
     private val segmentEntity = Segment::class.entityType
-    private val segmentStore = Segment::class.entityStore
 
     private val offerToSegmentRelation = RelationType(OFFERED_TO_SEGMENT, offerEntity, segmentEntity, None::class.java)
     private val offerToSegmentStore = RelationStore(offerToSegmentRelation)
@@ -2456,7 +2455,7 @@ object Neo4jStoreSingleton : GraphStore {
     private val offerToProductRelation = RelationType(OFFER_HAS_PRODUCT, offerEntity, productEntity, None::class.java)
     private val offerToProductStore = RelationStore(offerToProductRelation)
 
-    private val customerToSegmentRelation = RelationType(BELONG_TO_SEGMENT, customerEntity, segmentEntity, None::class.java)
+    val customerToSegmentRelation = RelationType(BELONG_TO_SEGMENT, customerEntity, segmentEntity, None::class.java)
     private val customerToSegmentStore = RelationStore(customerToSegmentRelation)
 
     //

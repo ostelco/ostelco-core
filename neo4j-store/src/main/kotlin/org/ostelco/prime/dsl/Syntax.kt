@@ -10,6 +10,7 @@ import org.ostelco.prime.model.Region
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.customerToBundleRelation
+import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.customerToSegmentRelation
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.customerToSimProfileRelation
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.identifiesRelation
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.purchaseRecordRelation
@@ -22,6 +23,7 @@ import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.subscriptionSimProfil
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.subscriptionToBundleRelation
 import org.ostelco.prime.storage.graph.RelationType
 import org.ostelco.prime.storage.graph.model.Identity
+import org.ostelco.prime.storage.graph.model.Segment
 import org.ostelco.prime.storage.graph.model.SimProfile
 import kotlin.reflect.KClass
 
@@ -117,6 +119,11 @@ data class CustomerContext(override val id: String) : EntityContext<Customer>(Cu
             relationType = purchaseRecordRelation,
             fromId = id,
             toId = product.id)
+
+    infix fun belongsToSegment(segment: SegmentContext) = RelationExpression(
+            relationType = customerToSegmentRelation,
+            fromId = id,
+            toId = segment.id)
 }
 
 data class BundleContext(override val id: String) : EntityContext<Bundle>(Bundle::class, id)
@@ -146,6 +153,7 @@ data class SubscriptionContext(override val id: String) : EntityContext<Subscrip
 data class ScanInfoContext(override val id: String) : EntityContext<ScanInformation>(ScanInformation::class, id)
 data class PlanContext(override val id: String) : EntityContext<Plan>(Plan::class, id)
 data class ProductContext(override val id: String) : EntityContext<Product>(Product::class, id)
+data class SegmentContext(override val id: String) : EntityContext<Segment>(Segment::class, id)
 
 //
 // Identity
@@ -287,3 +295,8 @@ infix fun PurchaseRecord.Companion.forPurchasesBy(customer: CustomerContext) =
                 relationType = purchaseRecordRelation,
                 fromId = customer.id
         )
+
+//
+// Segment
+//
+infix fun Segment.Companion.withId(id: String): SegmentContext = SegmentContext(id)
