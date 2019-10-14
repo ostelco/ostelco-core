@@ -117,7 +117,7 @@ class Neo4jStoreTest {
                 )
             }
             create {
-                Segment(id = getSegmentNameFromCountryCode(REGION))
+                Segment(id = "country-${REGION.toLowerCase()}")
             }
         }
     }
@@ -256,7 +256,7 @@ class Neo4jStoreTest {
 
         val offer = Offer(
                 id = "NEW_OFFER",
-                segments = listOf(getSegmentNameFromCountryCode(REGION)),
+                segments = listOf("country-${REGION.toLowerCase()}"),
                 products = listOf(sku))
 
         Neo4jStoreSingleton.createOffer(offer)
@@ -942,8 +942,7 @@ class Neo4jStoreTest {
             create { Region("sg", "Singapore") }
         }.mapLeft { fail(it.message) }
 
-        /* Note: (kmm) For 'sg' the first segment offered is always a plan. */
-        Neo4jStoreSingleton.createSegment(org.ostelco.prime.model.Segment(id = getPlanSegmentNameFromCountryCode("sg")))
+        Neo4jStoreSingleton.createSegment(org.ostelco.prime.model.Segment(id = "country-sg"))
                 .mapLeft { fail(it.message) }
 
         assert(Neo4jStoreSingleton.addCustomer(
@@ -991,8 +990,7 @@ class Neo4jStoreTest {
     @Test
     fun `test NRIC_FIN JUMIO and ADDRESS_PHONE status`() {
 
-        /* Note: (kmm) For 'sg' the first segment offered is always a plan. */
-        Neo4jStoreSingleton.createSegment(org.ostelco.prime.model.Segment(id = getPlanSegmentNameFromCountryCode("sg")))
+        Neo4jStoreSingleton.createSegment(org.ostelco.prime.model.Segment(id = "country-sg"))
 
         job {
             create { Region("sg", "Singapore") }

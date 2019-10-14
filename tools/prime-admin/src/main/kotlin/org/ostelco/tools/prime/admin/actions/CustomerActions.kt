@@ -11,12 +11,10 @@ import org.ostelco.prime.dsl.writeTransaction
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.Identity
-import org.ostelco.prime.model.Segment
 import org.ostelco.prime.storage.NotFoundError
 import org.ostelco.prime.storage.StoreError
 import org.ostelco.prime.storage.ValidationError
 import org.ostelco.prime.storage.graph.adminStore
-import org.ostelco.prime.storage.graph.getSegmentNameFromCountryCode
 import java.util.*
 
 //
@@ -37,29 +35,6 @@ fun createCustomer(email: String, nickname: String): Either<StoreError, Unit> = 
                         analyticsId = UUID.randomUUID().toString(),
                         referralId = UUID.randomUUID().toString()))
 
-fun assignCustomerToRegionSegment(email: String, regionCode: String): Either<StoreError, Unit> = IO {
-    Either.monad<StoreError>().binding {
-
-        val customerId = adminStore.getCustomer(
-                identity = Identity(
-                        id = email,
-                        type = "EMAIL",
-                        provider = "email"
-                )
-        )
-                .bind()
-                .id
-
-        adminStore.updateSegment(
-                segment = Segment(
-                        id = getSegmentNameFromCountryCode(regionCode),
-                        subscribers = listOf(customerId)
-                )
-        )
-                .bind()
-    }.fix()
-}.unsafeRunSync()
-
 fun approveRegionForCustomer(email: String, regionCode: String): Either<StoreError, Unit> = IO {
     Either.monad<StoreError>().binding {
 
@@ -68,14 +43,6 @@ fun approveRegionForCustomer(email: String, regionCode: String): Either<StoreErr
         )
                 .bind()
                 .id
-
-        adminStore.updateSegment(
-                segment = Segment(
-                        id = getSegmentNameFromCountryCode(regionCode),
-                        subscribers = listOf(customerId)
-                )
-        )
-                .bind()
 
         adminStore.approveRegionForCustomer(
                 customerId = customerId,

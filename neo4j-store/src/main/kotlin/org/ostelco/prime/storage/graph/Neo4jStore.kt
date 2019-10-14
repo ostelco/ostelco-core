@@ -1956,17 +1956,6 @@ object Neo4jStoreSingleton : GraphStore {
         }
     }
 
-    private fun getInitialSegmentNameForRegion(regionCode: String, transaction: Transaction): String =
-            segmentStore.get(getPlanSegmentNameFromCountryCode(regionCode), transaction)
-                    .fold(
-                            {
-                                getSegmentNameFromCountryCode(regionCode)
-                            },
-                            {
-                                it.id
-                            }
-                    )
-
     // ------------
     // Admin Store
     // ------------

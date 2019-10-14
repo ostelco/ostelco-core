@@ -53,7 +53,7 @@ class Neo4jLoadTest {
                         properties = mapOf(NO_OF_BYTES.s to "1_000_000_000"))
             }
             create {
-                Segment(id = getSegmentNameFromCountryCode(COUNTRY))
+                Segment(id = "country-${COUNTRY.toLowerCase()}")
             }
         }
     }
