@@ -18,8 +18,8 @@ import org.ostelco.prime.kts.engine.KtsServiceFactory
 import org.ostelco.prime.kts.engine.reader.ClasspathResourceTextReader
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.CustomerRegionStatus.APPROVED
-import org.ostelco.prime.model.CustomerRegionStatus.PENDING
 import org.ostelco.prime.model.CustomerRegionStatus.AVAILABLE
+import org.ostelco.prime.model.CustomerRegionStatus.PENDING
 import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.JumioScanData
 import org.ostelco.prime.model.KycStatus

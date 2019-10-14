@@ -530,7 +530,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     private fun combineRegions(allRegions: Collection<RegionDetails>, customerRegions: Collection<RegionDetails>): Collection<RegionDetails> {
         // Create a map with default region details
-        var combined = allRegions.associateBy { it.region.id }.toMutableMap()
+        val combined = allRegions.associateBy { it.region.id }.toMutableMap()
         // Overwrite default region details with items from actual region-relations for customer
         customerRegions.forEach {
             combined[it.region.id] = it
@@ -2249,6 +2249,7 @@ object Neo4jStoreSingleton : GraphStore {
                 createPurchaseRecordRelation(customerId, purchaseRecord)
                         .bind()
 
+                // FIXME Moving customer to new segments should be done only based on productClass.
                 /* Offer products to the newly signed up subscriber. */
                 product.segmentIds.forEach { segmentId ->
                     assignCustomerToSegment(

@@ -53,7 +53,6 @@ fun doActions() {
     // link to region
     approveRegionForCustomer(email = email, regionCode = regionCode).printLeft()
 
-
     // add SimProfile
     createSubscription(
             email = email,
