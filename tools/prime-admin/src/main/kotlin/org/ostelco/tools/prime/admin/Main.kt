@@ -1,6 +1,7 @@
 package org.ostelco.tools.prime.admin
 
 import org.ostelco.prime.PrimeApplication
+import org.ostelco.tools.prime.admin.actions.addCustomerToSegment
 import org.ostelco.tools.prime.admin.actions.approveRegionForCustomer
 import org.ostelco.tools.prime.admin.actions.createCustomer
 import org.ostelco.tools.prime.admin.actions.createSubscription
@@ -38,6 +39,7 @@ fun doActions() {
     val email = ""
     val nickname = ""
     val regionCode = ""
+    val segmentId = ""
     val iccId = ""
     val alias = ""
     val msisdn = ""
@@ -53,6 +55,8 @@ fun doActions() {
     // link to region
     approveRegionForCustomer(email = email, regionCode = regionCode).printLeft()
 
+    // link to segment
+    addCustomerToSegment(email = email, segmentId = segmentId).printLeft()
 
     // add SimProfile
     createSubscription(
