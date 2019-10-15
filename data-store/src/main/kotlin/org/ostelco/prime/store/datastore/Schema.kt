@@ -129,7 +129,7 @@ class EntityStore<E : Any>(
 
         // convert object to map of (field name, field value)
         // TODO: Fails to serialize datastore 'Value<*>' types such as 'StringValue'.
-        val map: MutableMap<String, Any?> = objectMapper.convertValue(entity, object : TypeReference<Map<String, Any?>>() {})
+        val map: Map<String, Any?> = objectMapper.convertValue(entity, object : TypeReference<Map<String, Any?>>() {})
 
         val keyFactory = parents.fold(
                 initial = datastore.newKeyFactory().setKind(entityClass.qualifiedName)
