@@ -292,7 +292,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     private val onNewCustomerAction: OnNewCustomerAction = config.onNewCustomerAction.getKtsService()
     private val allowedRegionsService: AllowedRegionsService = config.allowedRegionsService.getKtsService()
-    val onRegionApprovedAction: OnRegionApprovedAction = config.onRegionApprovedAction.getKtsService()
+    private val onRegionApprovedAction: OnRegionApprovedAction = config.onRegionApprovedAction.getKtsService()
     private val hssNameLookup: HssNameLookupService = config.hssNameLookupService.getKtsService()
 
     // -------------
