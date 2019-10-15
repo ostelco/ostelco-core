@@ -7,6 +7,7 @@ import arrow.core.left
 import arrow.core.right
 import arrow.effects.IO
 import arrow.instances.either.monad.monad
+import org.ostelco.prime.dsl.withId
 import org.ostelco.prime.dsl.writeTransaction
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Customer
@@ -23,11 +24,7 @@ import java.util.*
 
 fun createCustomer(email: String, nickname: String): Either<StoreError, Unit> = adminStore
         .addCustomer(
-                identity = Identity(
-                        id = email,
-                        type = "EMAIL",
-                        provider = "email"
-                ),
+                identity = emailAsIdentity(email = email),
                 customer = Customer(
                         id = UUID.randomUUID().toString(),
                         nickname = nickname,
@@ -38,9 +35,8 @@ fun createCustomer(email: String, nickname: String): Either<StoreError, Unit> = 
 fun approveRegionForCustomer(email: String, regionCode: String): Either<StoreError, Unit> = IO {
     Either.monad<StoreError>().binding {
 
-        val customerId = adminStore.getCustomer(
-                identity = Identity(id = email, type = "EMAIL", provider = "email")
-        )
+        val customerId = adminStore
+                .getCustomer(identity = emailAsIdentity(email = email))
                 .bind()
                 .id
 
@@ -52,14 +48,20 @@ fun approveRegionForCustomer(email: String, regionCode: String): Either<StoreErr
     }.fix()
 }.unsafeRunSync()
 
+fun addCustomerToSegment(email: String, segmentId: String): Either<StoreError, Unit> = writeTransaction {
+    IO {
+        Either.monad<StoreError>().binding {
+            val customerId = adminStore
+                    .getCustomer(identity = emailAsIdentity(email = email))
+                    .bind()
+                    .id
+            fact { (Customer withId customerId) belongsToSegment (org.ostelco.prime.storage.graph.model.Segment withId segmentId) }.bind()
+        }.fix()
+    }.unsafeRunSync()
+}
+
 fun deleteCustomer(email: String) = adminStore
-        .removeCustomer(
-                identity = Identity(
-                        id = email,
-                        type = "EMAIL",
-                        provider = "email"
-                )
-        )
+        .removeCustomer(identity = emailAsIdentity(email = email))
 
 fun createSubscription(
         email: String,
@@ -68,11 +70,7 @@ fun createSubscription(
         alias: String = "",
         msisdn: String) = adminStore
         .addSubscription(
-                identity = Identity(
-                        id = email,
-                        type = "EMAIL",
-                        provider = "email"
-                ),
+                identity = emailAsIdentity(email = email),
                 regionCode = regionCode,
                 iccId = iccId,
                 alias = alias,
@@ -84,13 +82,7 @@ fun createSubscription(
 //
 
 fun setBalance(email: String, balance: Long) = adminStore
-        .getBundles(
-                identity = Identity(
-                        id = email,
-                        type = "EMAIL",
-                        provider = "email"
-                )
-        )
+        .getBundles(identity = emailAsIdentity(email = email))
         .flatMap { bundles ->
             when (bundles.size) {
                 0 -> NotFoundError(
@@ -121,21 +113,17 @@ fun setBalance(email: String, balance: Long) = adminStore
 //
 
 fun getAllRegionDetails(email: String) = adminStore
-        .getAllRegionDetails(
-                identity = Identity(
-                        id = email,
-                        type = "EMAIL",
-                        provider = "email"
-                )
-        )
+        .getAllRegionDetails(identity = emailAsIdentity(email = email))
 
 fun getRegionDetails(email: String, regionCode: String) = adminStore
         .getRegionDetails(
-                identity = Identity(
-                        id = email,
-                        type = "EMAIL",
-                        provider = "email"
-                ),
+                identity = emailAsIdentity(email = email),
                 regionCode = regionCode
         )
 
+// Common
+private fun emailAsIdentity(email: String) = Identity(
+        id = email,
+        type = "EMAIL",
+        provider = "email"
+)

@@ -20,14 +20,14 @@ interface AllowedRegionsService {
     ): Either<StoreError, Collection<String>>
 }
 
-interface HssNameLookupService {
-    fun getHssName(regionCode: String): String
-}
-
 interface OnRegionApprovedAction {
     fun apply(
             customer: Customer,
             regionCode: String,
             transaction: PrimeTransaction
     ): Either<StoreError, Unit>
+}
+
+interface HssNameLookupService {
+    fun getHssName(regionCode: String): String
 }
