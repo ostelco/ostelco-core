@@ -47,7 +47,7 @@ object Version {
   const val slf4j = "1.7.28"
   // IMPORTANT: When Stripe SDK library version is updated, check if the Stripe API version has changed.
   // If so, then update API version in Stripe Web Console for callback Webhooks.
-  const val stripe = "12.0.0"
+  const val stripe = "13.1.0"
   const val swagger = "2.0.9"
   const val swaggerCodegen = "2.4.8"
   const val testcontainers = "1.12.1"
