@@ -27,8 +27,7 @@ data class Region(
 data class Offer(
         val id: String,
         val segments: Collection<String> = emptyList(),
-        val products: Collection<String> = emptyList()
-)
+        val products: Collection<String> = emptyList())
 
 data class Segment(
         val id: String,
