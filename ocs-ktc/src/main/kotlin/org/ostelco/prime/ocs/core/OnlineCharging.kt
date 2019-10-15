@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit
 object OnlineCharging : OcsAsyncRequestConsumer {
 
     var loadUnitTest = false
+    val keepAliveMsisdn = "keepalive"
     private val loadAcceptanceTest = System.getenv("LOAD_TESTING") == "true"
 
     private val storage: AdminDataSource = getResource()
@@ -40,64 +41,85 @@ object OnlineCharging : OcsAsyncRequestConsumer {
         val msisdn = request.msisdn
 
         if (msisdn != null) {
-
-            val responseBuilder = CreditControlAnswerInfo.newBuilder()
-
-            responseBuilder.setRequestNumber(request.requestNumber)
-
-            // these are keepalives to keep latency low
-            if (msisdn == "keepalive") {
-                responseBuilder.setRequestId(request.requestId).setMsisdn("keepalive").resultCode = ResultCode.UNKNOWN
-                returnCreditControlAnswer(responseBuilder.buildPartial())
+            if (isKeepAlive(request)) {
+                handleKeepAlive(request, returnCreditControlAnswer)
             } else {
-
-                CoroutineScope(Dispatchers.Default).launch {
-
-                    responseBuilder.setRequestId(request.requestId)
-                            .setMsisdn(msisdn).setResultCode(ResultCode.DIAMETER_SUCCESS)
-
-                    if (request.msccCount == 0) {
-                        responseBuilder.validityTime = 86400
-                        storage.consume(msisdn, 0L, 0L) {
-                            storeResult -> storeResult.fold(
-                                {responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN},
-                                {responseBuilder.resultCode = ResultCode.DIAMETER_SUCCESS})
-                        }
-                    } else {
-                        val doneSignal = CountDownLatch(request.msccList.size)
-                        request.msccList.forEach { mscc ->
-
-                            val requested = mscc.requested?.totalOctets ?: 0
-                            if (requested > 0) {
-                                charge(msisdn, mscc, request.serviceInformation.psInformation.sgsnMccMnc) { storeResult ->
-                                    storeResult.fold(
-                                            {
-                                                // FixMe
-                                                responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN
-                                                doneSignal.countDown()
-                                            },
-                                            { consumptionResult ->
-                                                addGrantedQuota(consumptionResult.granted, mscc, responseBuilder)
-                                                addInfo(consumptionResult.balance, mscc, responseBuilder)
-                                                reportAnalytics(consumptionResult, request)
-                                                Notifications.lowBalanceAlert(msisdn, consumptionResult.granted, consumptionResult.balance)
-                                                doneSignal.countDown()
-                                            }
-                                    )
-                                }
-                            } else {
-                                doneSignal.countDown()
-                            }
-                        }
-                        doneSignal.await(2, TimeUnit.SECONDS)
-                    }
-
-                    synchronized(OnlineCharging) {
-                        returnCreditControlAnswer(responseBuilder.build())
-                    }
-                }
+                chargeRequest(request, msisdn, returnCreditControlAnswer)
             }
         }
+    }
+
+
+    private fun isKeepAlive(request: CreditControlRequestInfo) : Boolean = request.msisdn == keepAliveMsisdn
+
+    private fun handleKeepAlive(request: CreditControlRequestInfo, returnCreditControlAnswer : (CreditControlAnswerInfo) -> Unit) {
+        val responseBuilder = CreditControlAnswerInfo.newBuilder()
+                .setRequestNumber(request.requestNumber)
+                .setRequestId(request.requestId)
+                .setMsisdn(keepAliveMsisdn)
+                .setResultCode(ResultCode.UNKNOWN)
+
+        returnCreditControlAnswer(responseBuilder.buildPartial())
+    }
+
+    private fun chargeRequest(request: CreditControlRequestInfo,
+                              msisdn: String,
+                              returnCreditControlAnswer: (CreditControlAnswerInfo) -> Unit) {
+
+        CoroutineScope(Dispatchers.Default).launch {
+
+            val responseBuilder = CreditControlAnswerInfo.newBuilder()
+            responseBuilder.requestNumber = request.requestNumber
+            responseBuilder.setRequestId(request.requestId)
+                    .setMsisdn(msisdn)
+                    .resultCode = ResultCode.DIAMETER_SUCCESS
+
+            if (request.msccCount == 0) {
+                responseBuilder.validityTime = 86400
+                storage.consume(msisdn, 0L, 0L) {
+                    storeResult -> storeResult.fold(
+                        {responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN},
+                        {responseBuilder.resultCode = ResultCode.DIAMETER_SUCCESS})
+                }
+            } else {
+                chargeMSCCs(request, msisdn, responseBuilder)
+            }
+
+            synchronized(OnlineCharging) {
+                returnCreditControlAnswer(responseBuilder.build())
+            }
+        }
+    }
+
+    private suspend fun chargeMSCCs(request: CreditControlRequestInfo,
+                            msisdn: String,
+                            responseBuilder : CreditControlAnswerInfo.Builder) {
+        val doneSignal = CountDownLatch(request.msccList.size)
+        request.msccList.forEach { mscc ->
+
+            val requested = mscc.requested?.totalOctets ?: 0
+            if (requested > 0) {
+                charge(msisdn, mscc, request.serviceInformation.psInformation.sgsnMccMnc) { storeResult ->
+                    storeResult.fold(
+                            {
+                                // FixMe : should all store errors be unknown user?
+                                responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN
+                                doneSignal.countDown()
+                            },
+                            { consumptionResult ->
+                                addGrantedQuota(consumptionResult.granted, mscc, responseBuilder)
+                                addInfo(consumptionResult.balance, mscc, responseBuilder)
+                                reportAnalytics(consumptionResult, request)
+                                Notifications.lowBalanceAlert(msisdn, consumptionResult.granted, consumptionResult.balance)
+                                doneSignal.countDown()
+                            }
+                    )
+                }
+            } else {
+                doneSignal.countDown()
+            }
+        }
+        doneSignal.await(2, TimeUnit.SECONDS)
     }
 
     private fun reportAnalytics(consumptionResult : ConsumptionResult, request: CreditControlRequestInfo) {
