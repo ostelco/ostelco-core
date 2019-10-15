@@ -72,6 +72,12 @@ dependencies {
 
   testImplementation("io.dropwizard:dropwizard-testing:${Version.dropwizard}")
   testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:${Version.mockitoKotlin}")
+  testImplementation("net.bytebuddy:byte-buddy:${Version.byteBuddy}") {
+      because("mockito-kotlin:2.2.0 has byte-buddy:1.9.0 which does not work for java13")
+  }
+  testImplementation("net.bytebuddy:byte-buddy-agent:${Version.byteBuddy}") {
+      because("mockito-kotlin:2.2.0 has byte-buddy:1.9.0 which does not work for java13")
+  }
   testImplementation("org.testcontainers:postgresql:${Version.testcontainers}")
 
   testImplementation(project(":sim-administration:sm-dp-plus-emulator"))
@@ -100,6 +106,10 @@ val integration = tasks.create("integration", Test::class.java) {
 
 tasks.build.get().dependsOn(integration)
 
+jacoco {
+  toolVersion = "0.8.3" // because 0.8.4 has a issue - https://github.com/mockito/mockito/issues/1717
+}
+
 var protobufGeneratedFilesBaseDir: String = ""
 
 protobuf {
@@ -119,7 +129,7 @@ protobuf {
   protobufGeneratedFilesBaseDir = generatedFilesBaseDir
 }
 
-apply(from = "../../gradle/jacoco.gradle")
+apply(from = "../../gradle/jacoco.gradle.kts")
 
 idea {
   module {

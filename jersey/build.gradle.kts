@@ -15,4 +15,4 @@ dependencies {
   testRuntimeOnly("io.jsonwebtoken:jjwt-jackson:${Version.jjwt}")
 }
 
-apply(from = "../gradle/jacoco.gradle")
+apply(from = "../gradle/jacoco.gradle.kts")

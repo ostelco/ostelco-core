@@ -25,7 +25,9 @@ public class ProtobufToDiameterConverter {
         return new MultipleServiceCreditControl(
                 msccGRPC.getRatingGroup(),
                 (int) msccGRPC.getServiceIdentifier(),
-                Collections.singletonList(new ServiceUnit()), new ServiceUnit(), new ServiceUnit(msccGRPC.getGranted().getTotalOctets(), 0, 0),
+                Collections.singletonList(new ServiceUnit()),
+                Collections.singletonList(new ServiceUnit()),
+                new ServiceUnit(msccGRPC.getGranted().getTotalOctets(), 0, 0),
                 msccGRPC.getValidityTime(),
                 msccGRPC.getQuotaHoldingTime(),
                 msccGRPC.getVolumeQuotaThreshold(),
@@ -99,12 +101,16 @@ public class ProtobufToDiameterConverter {
                             .setOutputOctets(0L));
                 }
 
-                ServiceUnit used = mscc.getUsed();
+                for (ServiceUnit used : mscc.getUsed()) {
 
-                protoMscc.setUsed(org.ostelco.ocs.api.ServiceUnit.newBuilder()
-                        .setInputOctets(used.getInput())
-                        .setOutputOctets(used.getOutput())
-                        .setTotalOctets(used.getTotal()));
+                    // We do not track CC-Service-Specific-Units or CC-Time
+                    if (used.getTotal() > 0) {
+                        protoMscc.setUsed(org.ostelco.ocs.api.ServiceUnit.newBuilder()
+                                .setInputOctets(used.getInput())
+                                .setOutputOctets(used.getOutput())
+                                .setTotalOctets(used.getTotal()));
+                    }
+                }
 
                 protoMscc.setRatingGroup(mscc.getRatingGroup());
                 protoMscc.setServiceIdentifier(mscc.getServiceIdentifier());

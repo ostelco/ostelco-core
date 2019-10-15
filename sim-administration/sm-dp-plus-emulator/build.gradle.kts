@@ -44,4 +44,4 @@ tasks.withType<ShadowJar> {
   archiveVersion.set("")
 }
 
-apply(from = "../../gradle/jacoco.gradle")
+apply(from = "../../gradle/jacoco.gradle.kts")

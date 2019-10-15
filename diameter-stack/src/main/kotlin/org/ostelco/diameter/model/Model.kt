@@ -82,6 +82,12 @@ class ServiceUnit() {
     @AvpField(Avp.CC_OUTPUT_OCTETS)
     var output: Long = 0
 
+    @AvpField(Avp.CC_TIME)
+    var ccTime: Long = 0
+
+    @AvpField(Avp.CC_SERVICE_SPECIFIC_UNITS)
+    var ccServiceSpecificUnits: Long = 0
+
     @AvpField(Avp.REPORTING_REASON)
     var reportingReason: ReportingReason? = null
 
@@ -106,8 +112,8 @@ class MultipleServiceCreditControl() {
     @AvpList(Avp.REQUESTED_SERVICE_UNIT, ServiceUnit::class)
     var requested: List<ServiceUnit> = emptyList()
 
-    @AvpField(Avp.USED_SERVICE_UNIT)
-    var used = ServiceUnit()
+    @AvpList(Avp.USED_SERVICE_UNIT, ServiceUnit::class)
+    var used: List<ServiceUnit> = emptyList()
 
     @AvpField(Avp.GRANTED_SERVICE_UNIT)
     var granted = ServiceUnit()
@@ -130,7 +136,7 @@ class MultipleServiceCreditControl() {
             ratingGroup: Long,
             serviceIdentifier: Long,
             requested: List<ServiceUnit>,
-            used: ServiceUnit,
+            used: List<ServiceUnit>,
             granted: ServiceUnit,
             validityTime: Int,
             quotaHoldingTime: Long,

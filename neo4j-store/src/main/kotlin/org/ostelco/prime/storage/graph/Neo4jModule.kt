@@ -40,8 +40,11 @@ class Neo4jModule : PrimeModule {
 data class Config(
         val host: String,
         val protocol: String,
-        val hssNameLookupService: KtsServiceFactory,
-        val onNewCustomerAction: KtsServiceFactory)
+        val onNewCustomerAction: KtsServiceFactory,
+        val allowedRegionsService: KtsServiceFactory,
+        val onRegionApprovedAction: KtsServiceFactory,
+        val hssNameLookupService: KtsServiceFactory
+)
 
 object ConfigRegistry {
     lateinit var config: Config

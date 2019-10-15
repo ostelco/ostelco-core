@@ -125,16 +125,28 @@ class Neo4jStorageTest {
             ConfigRegistry.config = Config(
                     host = "0.0.0.0",
                     protocol = "bolt",
-                    hssNameLookupService = KtsServiceFactory(
-                            serviceInterface = "org.ostelco.prime.storage.graph.HssNameLookupService",
-                            textReader = ClasspathResourceTextReader(
-                                    filename = "/HssNameLookupService.kts"
-                            )
-                    ),
                     onNewCustomerAction = KtsServiceFactory(
                             serviceInterface = "org.ostelco.prime.storage.graph.OnNewCustomerAction",
                             textReader = ClasspathResourceTextReader(
                                     filename = "/OnNewCustomerAction.kts"
+                            )
+                    ),
+                    allowedRegionsService = KtsServiceFactory(
+                            serviceInterface = "org.ostelco.prime.storage.graph.AllowedRegionsService",
+                            textReader = ClasspathResourceTextReader(
+                                    filename = "/AllowedRegionsService.kts"
+                            )
+                    ),
+                    onRegionApprovedAction = KtsServiceFactory(
+                            serviceInterface = "org.ostelco.prime.storage.graph.OnRegionApprovedAction",
+                            textReader = ClasspathResourceTextReader(
+                                    filename = "/OnRegionApprovedAction.kts"
+                            )
+                    ),
+                    hssNameLookupService = KtsServiceFactory(
+                            serviceInterface = "org.ostelco.prime.storage.graph.HssNameLookupService",
+                            textReader = ClasspathResourceTextReader(
+                                    filename = "/HssNameLookupService.kts"
                             )
                     )
             )

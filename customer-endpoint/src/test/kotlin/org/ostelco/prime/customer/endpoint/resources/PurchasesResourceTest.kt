@@ -1,7 +1,7 @@
 package org.ostelco.prime.customer.endpoint.resources
 
 import arrow.core.Either
-import com.nhaarman.mockito_kotlin.argumentCaptor
+import com.nhaarman.mockitokotlin2.argumentCaptor
 import io.dropwizard.auth.AuthDynamicFeature
 import io.dropwizard.auth.AuthValueFactoryProvider
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter.Builder
