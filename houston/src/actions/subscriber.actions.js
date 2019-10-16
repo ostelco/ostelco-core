@@ -83,80 +83,80 @@ const fetchSubscriberById = (id) => ({
   }
 });
 
-const fetchContextByEmail = (email) => ({
+const fetchContextById = (id) => ({
   [CALL_API]: {
     actions: [
       actions.contextByEmailRequest,
       actions.contextByEmailSuccess,
       actions.contextByEmailFailure],
-    endpoint: `context/${email}`,
+    endpoint: `context/${id}`,
     method: 'GET'
   }
 });
 
-const fetchSubscriptionsByEmail = (email) => ({
+const fetchSubscriptionsById = (id) => ({
   [CALL_API]: {
     actions: [
       actions.subscriptionsRequest,
       actions.subscriptionsSuccess,
       actions.subscriptionsFailure],
-    endpoint: `profiles/${email}/subscriptions`,
+    endpoint: `profiles/${id}/subscriptions`,
     method: 'GET'
   }
 });
 
-const fetchBundlesByEmail = (email) => ({
+const fetchBundlesById = (id) => ({
   [CALL_API]: {
     actions: [
       actions.bundlesRequest,
       actions.bundlesSuccess,
       actions.bundlesFailure],
-    endpoint: `bundles/${email}`,
+    endpoint: `bundles/${id}`,
     method: 'GET'
   }
 });
 
-const fetchPaymentHistoryByEmail = (email) => ({
+const fetchPaymentHistoryById = (id) => ({
   [CALL_API]: {
     actions: [
       actions.paymentHistoryRequest,
       actions.paymentHistorySuccess,
       actions.paymentHistoryFailure],
-    endpoint: `purchases/${email}`,
+    endpoint: `purchases/${id}`,
     method: 'GET'
   }
 });
 
-const putRefundPurchaseByEmail = (email, purchaseRecordId, reason) => ({
+const putRefundPurchaseById = (id, purchaseRecordId, reason) => ({
   [CALL_API]: {
     actions: [
       actions.refundPaymentRequest,
       actions.refundPaymentSuccess,
       actions.refundPaymentFailure],
-    endpoint: `refund/${email}`,
+    endpoint: `refund/${id}`,
     method: 'PUT',
     params: { purchaseRecordId, reason }
   }
 });
 
-const fetchAuditLogsByEmail = (email) => ({
+const fetchAuditLogsById = (id) => ({
   [CALL_API]: {
     actions: [
       actions.auditLogsRequest,
       actions.auditLogsSuccess,
       actions.auditLogsFailure],
-    endpoint: `auditLog/${email}`,
+    endpoint: `auditLog/${id}`,
     method: 'GET'
   }
 });
 
-const deleteUserByEmail = (email) => ({
+const deleteUserById = (id) => ({
   [CALL_API]: {
     actions: [
       actions.deleteUserRequest,
       actions.deleteUserSuccess,
       actions.deleteUserFailure],
-    endpoint: `customer/${email}`,
+    endpoint: `customer/${id}`,
     allowEmptyResponse: true,
     method: 'DELETE'
   }
@@ -174,15 +174,15 @@ const getSubscriberAndBundlesByEmail = (email) => (dispatch, getState) => {
 
   return dispatch(fetchSubscriberById(email))
     .then(() => {
-      // Get the email from the fetched user
-      const subscriberEmail = encodeEmail(_.get(getState(), 'subscriber.contactEmail'));
-      if (subscriberEmail) {
-        dispatch(fetchContextByEmail(subscriberEmail)).catch(handleError);
-        dispatch(fetchAuditLogsByEmail(subscriberEmail)).catch(handleError);
-        dispatch(fetchSubscriptionsByEmail(subscriberEmail)).catch(handleError);
-        return dispatch(fetchBundlesByEmail(subscriberEmail))
+      // Get the id from the fetched user
+      const subscriberId = _.get(getState(), 'subscriber[0].id');
+      if (subscriberId) {
+        dispatch(fetchContextById(subscriberId)).catch(handleError);
+        dispatch(fetchAuditLogsById(subscriberId)).catch(handleError);
+        dispatch(fetchSubscriptionsById(subscriberId)).catch(handleError);
+        return dispatch(fetchBundlesById(subscriberId))
           .then(() => {
-            return dispatch(fetchPaymentHistoryByEmail(subscriberEmail));
+            return dispatch(fetchPaymentHistoryById(subscriberId));
           })
           .catch(handleError);
       }
@@ -197,12 +197,12 @@ const refundPurchase = (purchaseRecordId, reason) => (dispatch, getState) => {
     dispatch(alertActions.alertError(error));
   };
 
-  // Get the email from the fetched user
-  const subscriberEmail = encodeEmail(_.get(getState(), 'subscriber.contactEmail'));
-  if (subscriberEmail) {
-    return dispatch(putRefundPurchaseByEmail(subscriberEmail, purchaseRecordId, reason))
+  // Get the id from the fetched user
+  const subscriberId = _.get(getState(), 'subscriber[0].id');
+  if (subscriberId) {
+    return dispatch(putRefundPurchaseById(subscriberId, purchaseRecordId, reason))
       .then(() => {
-        return dispatch(fetchPaymentHistoryByEmail(subscriberEmail));
+        return dispatch(fetchPaymentHistoryById(subscriberId));
       })
       .catch(handleError);
   }
@@ -215,10 +215,10 @@ const deleteUser = () => (dispatch, getState) => {
     dispatch(alertActions.alertError({message}));
   };
 
-  // Get the email from the fetched user
-  const subscriberEmail = encodeEmail(_.get(getState(), 'subscriber.contactEmail'));
-  if (subscriberEmail) {
-    return dispatch(deleteUserByEmail(subscriberEmail))
+  // Get the id from the fetched user
+  const subscriberId = _.get(getState(), 'subscriber[0].id');
+  if (subscriberId) {
+    return dispatch(deleteUserById(subscriberId))
       .catch(handleError);
   }
 };
