@@ -738,9 +738,8 @@ class PurchaseTest {
             assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
             assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
 
-            val encodedEmail = URLEncoder.encode(email, StandardCharsets.UTF_8)
             val refundedProduct = put<ProductInfo> {
-                path = "/support/refund/$encodedEmail"
+                path = "/support/refund/$customerId"
                 this.email = email
                 queryParams = mapOf(
                         "purchaseRecordId" to purchaseRecords.last().id,
@@ -1257,9 +1256,8 @@ class JumioKycTest {
             }
             assertEquals("APPROVED", scanInformation.status, message = "Wrong status")
 
-            val encodedEmail = URLEncoder.encode(email, StandardCharsets.UTF_8)
             val scanInformationList = get<Collection<ScanInformation>> {
-                path = "/support/profiles/$encodedEmail/scans"
+                path = "/support/profiles/$customerId/scans"
                 this.email = email
             }
             assertEquals(1, scanInformationList.size, message = "More scans than expected")
@@ -1363,9 +1361,8 @@ class JumioKycTest {
                     expected = mapOf(KycType.JUMIO.name to KycStatus.APPROVED),
                     actual = noRegionDetails.kycStatusMap)
 
-            val encodedEmail = URLEncoder.encode(email, StandardCharsets.UTF_8)
             val scanInformationList = get<Collection<ScanInformation>> {
-                path = "/support/profiles/$encodedEmail/scans"
+                path = "/support/profiles/$customerId/scans"
                 this.email = email
             }
             assertEquals(2, scanInformationList.size, message = "More scans than expected")
