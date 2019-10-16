@@ -55,10 +55,10 @@ class ProfilesResource {
     @GET
     @Path("{query}")
     @Produces(MediaType.APPLICATION_JSON)
-    fun getProfile(@Auth token: AccessTokenPrincipal?,
-                   @NotNull
-                   @PathParam("query")
-                   query: String): Response =
+    fun getCustomerList(@Auth token: AccessTokenPrincipal?,
+                        @NotNull
+                        @PathParam("query")
+                        query: String): Response =
             if (token == null) {
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
@@ -68,7 +68,7 @@ class ProfilesResource {
                             .responseBuilder()
                 } else {
                     logger.info("${token.name} Accessing profile for email:$query")
-                    getProfileList(contactEmail = query)
+                    getCustomerList(contactEmail = query)
                             .responseBuilder()
                 }
             }.build()
@@ -124,7 +124,7 @@ class ProfilesResource {
     }
 
     // TODO: Reuse the one from SubscriberDAO
-    private fun getProfileList(contactEmail: String): Either<ApiError, Collection<Customer>> {
+    private fun getCustomerList(contactEmail: String): Either<ApiError, Collection<Customer>> {
         return try {
             storage.getIdentitiesForContactEmail(contactEmail = contactEmail).mapLeft {
                 NotFoundError("Failed to fetch profile.", ApiErrorCode.FAILED_TO_FETCH_CUSTOMER, it)
@@ -234,10 +234,10 @@ class PurchaseResource {
     @GET
     @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    fun getPurchaseHistoryByEmail(@Auth token: AccessTokenPrincipal?,
-                                  @NotNull
-                                  @PathParam("id")
-                                  id: String): Response =
+    fun getPurchaseHistoryById(@Auth token: AccessTokenPrincipal?,
+                               @NotNull
+                               @PathParam("id")
+                               id: String): Response =
             if (token == null) {
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
@@ -374,16 +374,16 @@ class NotifyResource {
     @PUT
     @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    fun sendNotificationByEmail(@Auth token: AccessTokenPrincipal?,
-                                @NotNull
-                                @PathParam("id")
-                                id: String,
-                                @NotNull
-                                @QueryParam("title")
-                                title: String,
-                                @NotNull
-                                @QueryParam("message")
-                                message: String): Response =
+    fun sendNotificationById(@Auth token: AccessTokenPrincipal?,
+                             @NotNull
+                             @PathParam("id")
+                             id: String,
+                             @NotNull
+                             @QueryParam("title")
+                             title: String,
+                             @NotNull
+                             @QueryParam("message")
+                             message: String): Response =
             if (token == null) {
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
@@ -409,10 +409,10 @@ class AuditLogResource {
     @GET
     @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    fun query(@Auth token: AccessTokenPrincipal?,
-              @NotNull
-              @PathParam("id")
-              id: String): Response =
+    fun queryAuditLogs(@Auth token: AccessTokenPrincipal?,
+                       @NotNull
+                       @PathParam("id")
+                       id: String): Response =
             if (token == null) {
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
