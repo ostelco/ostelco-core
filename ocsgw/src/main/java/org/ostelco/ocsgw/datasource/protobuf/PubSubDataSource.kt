@@ -52,8 +52,8 @@ class PubSubDataSource(
         }
 
         publisher = setupPublisherToTopic(projectId, ccrTopicId)
-        initCcrKeepAlive()
         setupCcaReceiver(projectId, ccaSubscriptionId)
+        initCcrKeepAlive()
 
         setupActivateReceiver(projectId, activateSubscriptionId)
     }
