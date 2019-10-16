@@ -136,7 +136,7 @@ class ProfilesResource {
                                 null
                             },
                             { it })
-                }
+                }.distinctBy { it.id }
                 Either.right(customerList)
             }
         } catch (e: Exception) {
