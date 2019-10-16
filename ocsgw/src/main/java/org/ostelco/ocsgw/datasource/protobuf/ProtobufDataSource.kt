@@ -125,6 +125,12 @@ class ProtobufDataSource {
             return
         }
 
+        // If CCR-I is only authentication we should block to force sync on CCR-U / CCA-U
+        if ((request.ccRequestType?.integer32 == CreditControlRequestType.INITIAL_REQUEST.number) && request.multipleServiceCreditControls.isEmpty()) {
+            blocked.add(answer.msisdn)
+            return
+        }
+
         for (mssAnswerInfo in answer.extraInfo.msccInfoList) {
             for (msccRequest in request.multipleServiceCreditControls) {
                 if (mssAnswerInfo.serviceIdentifier == msccRequest.serviceIdentifier && mssAnswerInfo.ratingGroup == msccRequest.ratingGroup) {
