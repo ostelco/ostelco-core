@@ -19,4 +19,4 @@ dependencies {
   testImplementation(kotlin("test-junit"))
 }
 
-apply(from = "../gradle/jacoco.gradle")
+apply(from = "../gradle/jacoco.gradle.kts")

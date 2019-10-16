@@ -5,5 +5,5 @@ import org.ostelco.prime.jsonmapper.objectMapper
 
 object JsonUtils {
     fun compactJson(json: String): String = objectMapper.writeValueAsString(
-            objectMapper.readValue<Map<String, String>>(json, object : TypeReference<Map<String, Any>>() {}))
+            objectMapper.readValue<Map<String, Any>>(json, object : TypeReference<Map<String, Any>>() {}))
 }

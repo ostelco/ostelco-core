@@ -12,4 +12,4 @@ dependencies {
   testImplementation("io.dropwizard:dropwizard-testing:${Version.dropwizard}")
 }
 
-apply(from = "../gradle/jacoco.gradle")
+apply(from = "../gradle/jacoco.gradle.kts")

@@ -14,4 +14,4 @@ dependencies {
   implementation("com.fasterxml.jackson.core:jackson-databind:${Version.jacksonDatabind}")
 }
 
-apply(from = "../gradle/jacoco.gradle")
+apply(from = "../gradle/jacoco.gradle.kts")

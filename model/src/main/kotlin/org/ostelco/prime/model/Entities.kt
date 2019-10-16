@@ -62,6 +62,7 @@ data class RegionDetails(
 enum class CustomerRegionStatus {
     PENDING,   // eKYC initiated, but not yet approved
     APPROVED,  // eKYC approved
+    AVAILABLE  // Region is available for provisioning
 }
 
 enum class KycType {

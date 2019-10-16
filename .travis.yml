@@ -10,7 +10,7 @@ cache:
 
 install: echo "skip 'gradle assemble' step"
 
-jdk: openjdk12
+jdk: openjdk13
 
 # TODO vihang: fix neo4j-store:test
 script: 
