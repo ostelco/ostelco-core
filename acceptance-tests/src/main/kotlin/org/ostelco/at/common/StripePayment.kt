@@ -75,6 +75,9 @@ object StripePayment {
         return token.card.id
     }
 
+    val MAX_TRIES = 3
+    val WAIT_DELAY = 300L
+
     /**
      * Obtains 'default source' directly from Stripe. Use in tests to
      * verify that the correspondng 'setDefaultSource' API works as
@@ -85,8 +88,17 @@ object StripePayment {
         // https://stripe.com/docs/api/java#create_source
         Stripe.apiKey = System.getenv("STRIPE_API_KEY")
 
-        val customer = Customer.retrieve(stripeCustomerId)
-        return customer.defaultSource
+        var error = Exception()
+
+        (0..MAX_TRIES).forEach {
+            try {
+                return Customer.retrieve(stripeCustomerId).defaultSource
+            } catch (e: Exception) {
+                error = e
+            }
+        }
+
+        throw(error)
     }
 
     /**
@@ -96,7 +108,15 @@ object StripePayment {
         // https://stripe.com/docs/api/java#create_card_token
         Stripe.apiKey = System.getenv("STRIPE_API_KEY")
 
-        val customers = Customer.list(emptyMap()).data
+        var customers: List<Customer> = emptyList()
+
+        (0..MAX_TRIES).forEach {
+            customers = Customer.list(emptyMap()).data
+            if (!customers.isEmpty())
+                return@forEach
+            Thread.sleep(WAIT_DELAY)
+        }
+
         return customers.first { it.id == customerId }.id
     }
 
