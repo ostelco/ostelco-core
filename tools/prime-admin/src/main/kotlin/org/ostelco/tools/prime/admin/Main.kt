@@ -20,7 +20,7 @@ import kotlin.math.pow
 fun main() {
     PrimeApplication().run("server", "config/config.yaml")
     try {
-        doActions()
+        setupCustomer()
         println("Done")
     } finally {
         DwEnvModule.env.applicationContext.server.stop()
@@ -29,12 +29,7 @@ fun main() {
     }
 }
 
-fun doActions() {
-
-//    check()
-//    sync()
-//    setup()
-//    index()
+fun setupCustomer() {
 
     val email = ""
     val nickname = ""
@@ -73,7 +68,6 @@ fun doActions() {
 
     // Get all region details
     getAllRegionDetails(email = email).print()
-
 }
 
 fun batchProvision() {
@@ -116,6 +110,15 @@ fun batchProvision() {
 
     // Get all region details
     getAllRegionDetails(email = email).print()
+}
+
+fun doActions() {
+
+//    check()
+//    sync()
+//    setup()
+//    index()
+
 }
 
 data class SimProfileData(val iccId: String, val msisdn: String)
