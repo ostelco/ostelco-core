@@ -39,13 +39,13 @@ const {
   setNotificationType,
  } = actions;
 
-const putNotificationByEmail = (email, title, message) => ({
+const putNotificationById = (id, title, message) => ({
   [CALL_API]: {
     actions: [
       actions.notifyRequest,
       actions.notifySuccess,
       actions.notifyFailure],
-    endpoint: `notify/${email}`,
+    endpoint: `notify/${id}`,
     method: 'PUT',
     allowEmptyResponse: true,
     params: { message, title }
@@ -57,10 +57,11 @@ const sendNotificationToSubscriber = (title, message) => (dispatch, getState) =>
     console.log('Error reported.', error);
     dispatch(alertActions.alertError(error));
   };
-  // Get the email from the fetched user
-  const subscriberEmail = encodeEmail(_.get(getState(), 'subscriber.contactEmail'));
-  if (subscriberEmail) {
-    return dispatch(putNotificationByEmail(subscriberEmail, title, message))
+
+  // Get the id from the fetched user
+  const subscriberId = _.get(getState(), 'subscriber[0].id');
+  if (subscriberId) {
+    return dispatch(putNotificationById(subscriberId, title, message))
       .catch(handleError);
   }
 };
