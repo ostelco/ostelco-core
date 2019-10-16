@@ -1,7 +1,5 @@
 package org.ostelco.prime.ocs.core
 
-import arrow.core.Either
-import arrow.core.right
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -14,12 +12,12 @@ import org.ostelco.ocs.api.ResultCode
 import org.ostelco.ocs.api.ServiceUnit
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.module.getResource
+import org.ostelco.prime.ocs.ConfigRegistry
 import org.ostelco.prime.ocs.analytics.AnalyticsReporter
 import org.ostelco.prime.ocs.consumption.OcsAsyncRequestConsumer
 import org.ostelco.prime.ocs.notifications.Notifications
 import org.ostelco.prime.storage.AdminDataSource
 import org.ostelco.prime.storage.ConsumptionResult
-import org.ostelco.prime.storage.StoreError
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -30,9 +28,12 @@ object OnlineCharging : OcsAsyncRequestConsumer {
     val keepAliveMsisdn = "keepalive"
     private val loadAcceptanceTest = System.getenv("LOAD_TESTING") == "true"
 
-    private val storage: AdminDataSource = getResource()
-
     private val logger by getLogger()
+
+    private val storage: AdminDataSource = getResource()
+    private val chargingAndRatingService by lazy {
+        ConfigRegistry.config.chargingAndRatingService.getKtsService<ChargingAndRatingService>()
+    }
 
     override fun creditControlRequestEvent(
             request: CreditControlRequestInfo,
@@ -50,9 +51,9 @@ object OnlineCharging : OcsAsyncRequestConsumer {
     }
 
 
-    private fun isKeepAlive(request: CreditControlRequestInfo) : Boolean = request.msisdn == keepAliveMsisdn
+    private fun isKeepAlive(request: CreditControlRequestInfo): Boolean = request.msisdn == keepAliveMsisdn
 
-    private fun handleKeepAlive(request: CreditControlRequestInfo, returnCreditControlAnswer : (CreditControlAnswerInfo) -> Unit) {
+    private fun handleKeepAlive(request: CreditControlRequestInfo, returnCreditControlAnswer: (CreditControlAnswerInfo) -> Unit) {
         val responseBuilder = CreditControlAnswerInfo.newBuilder()
                 .setRequestNumber(request.requestNumber)
                 .setRequestId(request.requestId)
@@ -76,10 +77,10 @@ object OnlineCharging : OcsAsyncRequestConsumer {
 
             if (request.msccCount == 0) {
                 responseBuilder.validityTime = 86400
-                storage.consume(msisdn, 0L, 0L) {
-                    storeResult -> storeResult.fold(
-                        {responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN},
-                        {responseBuilder.resultCode = ResultCode.DIAMETER_SUCCESS})
+                storage.consume(msisdn, 0L, 0L) { storeResult ->
+                    storeResult.fold(
+                            { responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN },
+                            { responseBuilder.resultCode = ResultCode.DIAMETER_SUCCESS })
                 }
             } else {
                 chargeMSCCs(request, msisdn, responseBuilder)
@@ -92,29 +93,43 @@ object OnlineCharging : OcsAsyncRequestConsumer {
     }
 
     private suspend fun chargeMSCCs(request: CreditControlRequestInfo,
-                            msisdn: String,
-                            responseBuilder : CreditControlAnswerInfo.Builder) {
+                                    msisdn: String,
+                                    responseBuilder: CreditControlAnswerInfo.Builder) {
+
         val doneSignal = CountDownLatch(request.msccList.size)
+
         request.msccList.forEach { mscc ->
+
+            fun consumptionResultHandler(consumptionResult: ConsumptionResult) {
+                addGrantedQuota(consumptionResult.granted, mscc, responseBuilder)
+                addInfo(consumptionResult.balance, mscc, responseBuilder)
+                reportAnalytics(consumptionResult, request)
+                Notifications.lowBalanceAlert(msisdn, consumptionResult.granted, consumptionResult.balance)
+                doneSignal.countDown()
+            }
 
             val requested = mscc.requested?.totalOctets ?: 0
             if (requested > 0) {
-                charge(msisdn, mscc, request.serviceInformation.psInformation.sgsnMccMnc) { storeResult ->
-                    storeResult.fold(
-                            {
-                                // FixMe : should all store errors be unknown user?
-                                responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN
-                                doneSignal.countDown()
-                            },
-                            { consumptionResult ->
-                                addGrantedQuota(consumptionResult.granted, mscc, responseBuilder)
-                                addInfo(consumptionResult.balance, mscc, responseBuilder)
-                                reportAnalytics(consumptionResult, request)
-                                Notifications.lowBalanceAlert(msisdn, consumptionResult.granted, consumptionResult.balance)
-                                doneSignal.countDown()
+                chargingAndRatingService.charge(
+                        msisdn = msisdn,
+                        multipleServiceCreditControl = mscc,
+                        mccMnc = request.serviceInformation.psInformation.sgsnMccMnc,
+                        apn = request.serviceInformation.psInformation.calledStationId)
+                        .bimap(::consumptionResultHandler) { consumptionRequest ->
+                            storage.consume(
+                                    msisdn = consumptionRequest.msisdn,
+                                    usedBytes = consumptionRequest.usedBytes,
+                                    requestedBytes = consumptionRequest.requestedBytes) { storeResult ->
+
+                                storeResult.swap()
+                                        .fold(::consumptionResultHandler) { storeError ->
+                                            // FixMe : should all store errors be unknown user?
+                                            logger.error(storeError.message)
+                                            responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN
+                                            doneSignal.countDown()
+                                        }
                             }
-                    )
-                }
+                        }
             } else {
                 doneSignal.countDown()
             }
@@ -122,7 +137,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
         doneSignal.await(2, TimeUnit.SECONDS)
     }
 
-    private fun reportAnalytics(consumptionResult : ConsumptionResult, request: CreditControlRequestInfo) {
+    private fun reportAnalytics(consumptionResult: ConsumptionResult, request: CreditControlRequestInfo) {
         if (!loadUnitTest && !loadAcceptanceTest) {
             CoroutineScope(Dispatchers.Default).launch {
                 AnalyticsReporter.report(
@@ -178,18 +193,6 @@ object OnlineCharging : OcsAsyncRequestConsumer {
 
         synchronized(OnlineCharging) {
             response.addMscc(responseMscc.build())
-        }
-    }
-
-    private suspend fun charge(msisdn: String, multipleServiceCreditControl: MultipleServiceCreditControl, mccmnc: String, callback: (Either<StoreError, ConsumptionResult>) -> Unit) {
-
-        val requested = multipleServiceCreditControl.requested?.totalOctets ?: 0
-        val used = multipleServiceCreditControl.used?.totalOctets ?: 0
-
-        when (Rating.getRate(msisdn, multipleServiceCreditControl.serviceIdentifier, multipleServiceCreditControl.ratingGroup, mccmnc)) {
-            Rating.Rate.ZERO -> callback(ConsumptionResult(msisdn, multipleServiceCreditControl.requested.totalOctets, multipleServiceCreditControl.requested.totalOctets * 100).right())
-            Rating.Rate.NORMAL -> storage.consume(msisdn, used, requested, callback)
-            Rating.Rate.BLOCKED -> callback(ConsumptionResult(msisdn, 0L, 0L).right())
         }
     }
 }

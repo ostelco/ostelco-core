@@ -96,28 +96,11 @@ modules:
         projectId: ${GCP_PROJECT_ID}
         activateTopicId: ${ACTIVATE_TOPIC_ID}
         ccrSubscriptionId: ${CCR_SUBSCRIPTION_ID}
-      rating:
-        - serviceId: 400
-          ratingGroup: 400
-          rate: Normal
-        - serviceId: 401
-          ratingGroup: 401
-          rate: Zero
-        - serviceId: 402
-          ratingGroup: 402
-          rate: Zero
-        - serviceId: 409
-          ratingGroup: 409
-          rate: Zero
-        - serviceId: -1
-          ratingGroup: 600
-          rate: Normal
-        - serviceId: 1
-          ratingGroup: 10
-          rate: Normal
-        - serviceId: -1
-          ratingGroup: 102010001
-          rate: Normal
+      chargingAndRatingService:
+        serviceInterface: org.ostelco.prime.ocs.core.ChargingAndRatingService
+        textReader:
+          type: file
+          filename: /config-data/ChargingAndRatingService.kts
   - type: api
   - type: stripe-payment-processor
     config:

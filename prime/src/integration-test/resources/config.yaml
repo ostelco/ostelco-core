@@ -40,6 +40,11 @@ modules:
   - type: ocs
     config:
       lowBalanceThreshold: 0
+      chargingAndRatingService:
+        serviceInterface: org.ostelco.prime.ocs.core.ChargingAndRatingService
+        textReader:
+          type: classpathResource
+          filename: /ChargingAndRatingService.kts
   - type: api
   - type: stripe-payment-processor
     config:
