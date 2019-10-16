@@ -59,7 +59,7 @@ val integration = tasks.create("integration", Test::class.java) {
 tasks.build.get().dependsOn(integration)
 integration.mustRunAfter(tasks.test)
 
-apply(from = "../gradle/jacoco.gradle")
+apply(from = "../gradle/jacoco.gradle.kts")
 
 idea {
   module {

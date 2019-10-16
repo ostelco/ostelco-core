@@ -60,16 +60,26 @@ modules:
     config:
       host: ${NEO4J_HOST}
       protocol: bolt+routing
-      hssNameLookupService:
-        serviceInterface: org.ostelco.prime.storage.graph.HssNameLookupService
-        textReader:
-          type: file
-          filename: /config-data/HssNameLookupService.kts
       onNewCustomerAction:
         serviceInterface: org.ostelco.prime.storage.graph.OnNewCustomerAction
         textReader:
           type: file
           filename: /config-data/OnNewCustomerAction.kts
+      allowedRegionsService:
+        serviceInterface: org.ostelco.prime.storage.graph.AllowedRegionsService
+        textReader:
+          type: file
+          filename: /config-data/AllowedRegionsService.kts
+      onRegionApprovedAction:
+        serviceInterface: org.ostelco.prime.storage.graph.OnRegionApprovedAction
+        textReader:
+          type: file
+          filename: /config-data/OnRegionApprovedAction.kts
+      hssNameLookupService:
+        serviceInterface: org.ostelco.prime.storage.graph.HssNameLookupService
+        textReader:
+          type: file
+          filename: /config-data/HssNameLookupService.kts
   - type: analytics
     config:
       projectId: ${GCP_PROJECT_ID}
@@ -104,6 +114,9 @@ modules:
           rate: Normal
         - serviceId: 1
           ratingGroup: 10
+          rate: Normal
+        - serviceId: -1
+          ratingGroup: 102010001
           rate: Normal
   - type: api
   - type: stripe-payment-processor

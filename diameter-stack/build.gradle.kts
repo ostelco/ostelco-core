@@ -30,4 +30,4 @@ dependencies {
   testImplementation("org.mockito:mockito-all:1.10.19")
 }
 
-apply(from = "../gradle/jacoco.gradle")
+apply(from = "../gradle/jacoco.gradle.kts")
