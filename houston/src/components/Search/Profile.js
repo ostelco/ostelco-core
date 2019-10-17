@@ -2,6 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Col, Row, Card, CardBody, CardTitle, Button } from 'reactstrap';
+import _ from 'lodash';
 
 import { subscriberActions } from '../../actions/subscriber.actions';
 import Subscription from './Subscription';
@@ -96,8 +97,8 @@ Profile.propTypes = {
 };
 
 function mapStateToProps(state) {
-  const { subscriber } = state;
   const { subscriptions } = state;
+  const subscriber = _.get(state, 'subscriber[0]')
   return {
     profile: subscriber,
     subscriptions

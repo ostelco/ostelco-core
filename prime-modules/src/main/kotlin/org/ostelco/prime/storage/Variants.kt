@@ -197,7 +197,8 @@ interface AdminGraphStore {
 
     fun getCustomerForMsisdn(msisdn: String): Either<StoreError, Customer>
 
-    fun getIdentityForContactEmail(contactEmail: String): Either<StoreError, Identity>
+    fun getIdentityForCustomerId(id: String): Either<StoreError, Identity>
+    fun getIdentitiesFor(queryString: String): Either<StoreError, Collection<Identity>>
 
     /**
      * Link Customer to MSISDN

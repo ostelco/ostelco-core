@@ -7,6 +7,7 @@ import { notifyConstants } from '../actions/notifiy.actions';
 
 // Reducers.
 import alert from '../actions/alert.actions';
+import customer from '../actions/cutomer.actions';
 import notification from '../actions/notifiy.actions';
 import authentication from './auth.reducer';
 import {
@@ -24,6 +25,7 @@ const appReducer = combineReducers({
   alert,
   notification,
   subscriber,
+  customer,
   context,
   subscriptions,
   bundles,
