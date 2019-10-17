@@ -51,29 +51,11 @@ class PubSubDataSource(
             pubSubChannelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel))
         }
 
-        // init publisher
-        logger.info("Setting up Publisher for pubsub Topic: {}", ccrTopicId)
         publisher = setupPublisherToTopic(projectId, ccrTopicId)
+        setupCcaReceiver(projectId, ccaSubscriptionId)
+        initCcrKeepAlive()
 
-        // Instantiate an asynchronous message receiver
-        setupPubSubSubscriber(projectId, ccaSubscriptionId) { message, consumer ->
-            // handle incoming message, then ack/nack the received message
-            val ccaInfo = CreditControlAnswerInfo.parseFrom(message)
-            if (ccaInfo.resultCode != ResultCode.UNKNOWN) {
-                logger.info("Pubsub received CreditControlAnswer for msisdn {} sessionId [{}]", ccaInfo.msisdn, ccaInfo.requestId)
-                protobufDataSource.handleCcrAnswer(ccaInfo)
-            }
-            consumer.ack()
-        }
-
-        setupPubSubSubscriber(projectId, activateSubscriptionId) { message, consumer ->
-            // handle incoming message, then ack/nack the received message
-            protobufDataSource.handleActivateResponse(
-                    ActivateResponse.parseFrom(message))
-            consumer.ack()
-        }
-
-        initKeepAlive()
+        setupActivateReceiver(projectId, activateSubscriptionId)
     }
 
     override fun init() {
@@ -92,6 +74,27 @@ class PubSubDataSource(
     }
 
     override fun isBlocked(msisdn: String): Boolean = protobufDataSource.isBlocked(msisdn)
+
+
+    private fun setupCcaReceiver(projectId: String, ccaSubscriptionId: String) {
+        // Instantiate an asynchronous message receiver
+        setupPubSubSubscriber(projectId, ccaSubscriptionId) { message, consumer ->
+            val ccaInfo = CreditControlAnswerInfo.parseFrom(message)
+            if (ccaInfo.resultCode != ResultCode.UNKNOWN) {
+                logger.info("Pubsub received CreditControlAnswer for msisdn {} sessionId [{}]", ccaInfo.msisdn, ccaInfo.requestId)
+                protobufDataSource.handleCcrAnswer(ccaInfo)
+            }
+            consumer.ack()
+        }
+    }
+
+    private fun setupActivateReceiver(projectId: String, activateSubscriptionId: String) {
+        setupPubSubSubscriber(projectId, activateSubscriptionId) { message, consumer ->
+            protobufDataSource.handleActivateResponse(
+                    ActivateResponse.parseFrom(message))
+            consumer.ack()
+        }
+    }
 
     private fun sendRequest(creditControlRequestInfo : CreditControlRequestInfo) {
         val base64String = Base64.getEncoder().encodeToString(
@@ -177,10 +180,10 @@ class PubSubDataSource(
     }
 
     /**
-     * The keep alive messages are sent so the stream is always active-
+     * The keep alive messages are sent so the stream is always active
      * This to keep latency low.
      */
-    private fun initKeepAlive() {
+    private fun initCcrKeepAlive() {
         // this is used to keep low latency on the connection
         singleThreadScheduledExecutor.scheduleWithFixedDelay({
             val ccrInfo = CreditControlRequestInfo.newBuilder()
