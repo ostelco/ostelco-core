@@ -202,8 +202,7 @@ class BundlesResource {
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
                 logger.info("${token.name} Accessing bundles for customerId: $id")
-                getBundles(customerId = id)
-                        .responseBuilder()
+                getBundles(customerId = id).responseBuilder()
             }.build()
 
     // TODO: Reuse the one from SubscriberDAO
@@ -243,8 +242,7 @@ class PurchaseResource {
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
                 logger.info("${token.name} Accessing bundles for customerId: $id")
-                getPurchaseHistory(customerId = id)
-                        .responseBuilder()
+                getPurchaseHistory(customerId = id).responseBuilder()
             }.build()
 
     // TODO: Reuse the one from SubscriberDAO
@@ -447,8 +445,7 @@ class CustomerResource {
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
                 logger.info("${token.name} Removing the customer for customerId: $id")
-                removeCustomer(customerId = id)
-                        .responseBuilder(Response.Status.NO_CONTENT)
+                removeCustomer(customerId = id).responseBuilder(Response.Status.NO_CONTENT)
             }.build()
 
     // TODO: Reuse the one from SubscriberDAO
