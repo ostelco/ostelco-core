@@ -3,8 +3,6 @@ import { alertActions } from './alert.actions';
 import { CALL_API } from '../helpers/api';
 import _ from 'lodash';
 
-import { encodeEmail } from '../helpers/utils';
-
 const NOTIFY_REQUEST = 'NOTIFY_REQUEST';
 const NOTIFY_SUCCESS = 'NOTIFY_SUCCESS';
 const NOTIFY_FAILURE = 'NOTIFY_FAILURE';
