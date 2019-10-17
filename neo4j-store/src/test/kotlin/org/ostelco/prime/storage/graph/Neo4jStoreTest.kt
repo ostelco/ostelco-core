@@ -150,7 +150,7 @@ class Neo4jStoreTest {
                 referredBy = null)
                 .mapLeft { fail(it.message) }
 
-        Neo4jStoreSingleton.getIdentitiesForContactEmail(contactEmail = EMAIL).bimap(
+        Neo4jStoreSingleton.getIdentitiesFor(queryString = EMAIL).bimap(
                 { fail(it.message) },
                 { list->
                     val identity: Identity  = list.first()
@@ -168,7 +168,7 @@ class Neo4jStoreTest {
                 referredBy = null)
                 .mapLeft { fail(it.message) }
 
-        Neo4jStoreSingleton.getIdentitiesForContactEmail(contactEmail = EMAIL).bimap(
+        Neo4jStoreSingleton.getIdentitiesFor(queryString = EMAIL).bimap(
                 { fail(it.message) },
                 { list ->
                     val identity: Identity = list.first()
