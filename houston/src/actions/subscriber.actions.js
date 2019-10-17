@@ -3,6 +3,7 @@ import { createActions } from 'redux-actions';
 
 import { CALL_API } from '../helpers/api';
 import { alertActions } from './alert.actions';
+import { customerActions } from './cutomer.actions';
 import { encodeEmail } from '../helpers/utils';
 
 const SUBSCRIBER_BY_EMAIL_REQUEST = 'SUBSCRIBER_BY_EMAIL_REQUEST';
@@ -164,6 +165,7 @@ const deleteUserById = (id) => ({
 
 // TODO: API based implementaion. Reference: https://github.com/reduxjs/redux/issues/1676
 const getSubscriberAndBundlesByEmail = (email) => (dispatch, getState) => {
+  dispatch(customerActions.clearCustomer());
   localStorage.setItem('searchedEmail', email)
 
   email = encodeEmail(email);
@@ -175,8 +177,10 @@ const getSubscriberAndBundlesByEmail = (email) => (dispatch, getState) => {
   return dispatch(fetchSubscriberById(email))
     .then(() => {
       // Get the id from the fetched user
+      const subscriber = _.get(getState(), 'subscriber[0]');
       const subscriberId = _.get(getState(), 'subscriber[0].id');
       if (subscriberId) {
+        dispatch(customerActions.selectCustomer(subscriber));
         dispatch(fetchContextById(subscriberId)).catch(handleError);
         dispatch(fetchAuditLogsById(subscriberId)).catch(handleError);
         dispatch(fetchSubscriptionsById(subscriberId)).catch(handleError);
