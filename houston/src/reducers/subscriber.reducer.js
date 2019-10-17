@@ -3,7 +3,7 @@ import { actions } from '../actions/subscriber.actions';
 
 const defaultState = {};
 
-export const subscriber = handleActions(
+export const subscribers = handleActions(
   {
     [actions.subscriberByEmailRequest]: (state, action) => ({
       loading: true

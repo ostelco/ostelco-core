@@ -14,6 +14,7 @@ const {
   clearCustomer,
 } = actions;
 
+
 export const customerActions =  { ...actions };
 
  const reducer = handleActions(
