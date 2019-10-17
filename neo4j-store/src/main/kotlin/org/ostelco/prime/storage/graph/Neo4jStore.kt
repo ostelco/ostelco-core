@@ -1995,19 +1995,40 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
 
-    override fun getIdentityForContactEmail(contactEmail: String): Either<StoreError, ModelIdentity> = readTransaction {
+    override fun getIdentityForCustomerId(id: String): Either<StoreError, ModelIdentity> = readTransaction {
         read("""
-                MATCH (:${customerEntity.name} { contactEmail:'$contactEmail' })<-[r:${identifiesRelation.name}]-(identity:${identityEntity.name})
+                MATCH (:${customerEntity.name} { id:'$id' })<-[r:${identifiesRelation.name}]-(identity:${identityEntity.name})
                 RETURN identity, r.provider as provider
                 """.trimIndent(),
                 transaction) {
             if (it.hasNext()) {
-                val record = it.single()
+                val record = it.list().first()
                 val identity = identityEntity.createEntity(record.get("identity").asMap())
                 val provider = record.get("provider").asString()
                 Either.right(ModelIdentity(id = identity.id, type = identity.type, provider = provider))
             } else {
-                Either.left(NotFoundError(type = customerEntity.name, id = contactEmail))
+                Either.left(NotFoundError(type = customerEntity.name, id = id))
+            }
+        }
+    }
+
+    override fun getIdentitiesFor(queryString: String): Either<StoreError, Collection<ModelIdentity>> = readTransaction {
+        read("""
+                MATCH (c:${customerEntity.name})<-[r:${identifiesRelation.name}]-(identity:${identityEntity.name})
+                WHERE c.contactEmail contains '$queryString' or c.nickname contains '$queryString'
+                RETURN c, identity, r.provider as provider
+                """.trimIndent(),
+                transaction) {
+            if (it.hasNext()) {
+                val identityList = mutableListOf<ModelIdentity>()
+                it.forEach { record ->
+                    val identity = identityEntity.createEntity(record.get("identity").asMap())
+                    val provider = record.get("provider").asString()
+                    identityList.add(ModelIdentity(id = identity.id, type = identity.type, provider = provider))
+                }
+                Either.right(identityList)
+            } else {
+                Either.left(NotFoundError(type = customerEntity.name, id = queryString))
             }
         }
     }

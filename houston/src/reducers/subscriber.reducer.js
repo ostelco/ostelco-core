@@ -8,9 +8,7 @@ export const subscriber = handleActions(
     [actions.subscriberByEmailRequest]: (state, action) => ({
       loading: true
     }),
-    [actions.subscriberByEmailSuccess]: (state, action) => ({
-      ...action.payload
-    }),
+    [actions.subscriberByEmailSuccess]: (state, action) => (action.payload), // Array of subscribers
     [actions.subscriberByEmailFailure]: (state, action) => ({
       ...action.payload
     })
