@@ -2012,10 +2012,11 @@ object Neo4jStoreSingleton : GraphStore {
         }
     }
 
-    override fun getIdentitiesForContactEmail(contactEmail: String): Either<StoreError, Collection<ModelIdentity>> = readTransaction {
+    override fun getIdentitiesFor(queryString: String): Either<StoreError, Collection<ModelIdentity>> = readTransaction {
         read("""
-                MATCH (:${customerEntity.name} { contactEmail:'$contactEmail' })<-[r:${identifiesRelation.name}]-(identity:${identityEntity.name})
-                RETURN identity, r.provider as provider
+                MATCH (c:${customerEntity.name})<-[r:${identifiesRelation.name}]-(identity:${identityEntity.name})
+                WHERE c.contactEmail contains $queryString or c.nickname contains $queryString
+                RETURN c, identity, r.provider as provider
                 """.trimIndent(),
                 transaction) {
             if (it.hasNext()) {
@@ -2027,7 +2028,7 @@ object Neo4jStoreSingleton : GraphStore {
                 }
                 Either.right(identityList)
             } else {
-                Either.left(NotFoundError(type = customerEntity.name, id = contactEmail))
+                Either.left(NotFoundError(type = customerEntity.name, id = queryString))
             }
         }
     }

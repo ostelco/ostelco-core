@@ -62,13 +62,14 @@ class ProfilesResource {
             if (token == null) {
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
-                if (!isEmail(query)) {
-                    logger.info("${token.name} Accessing profile for msisdn:$query")
-                    getProfileListForMsisdn(query)
+                val trimmedQuery = query.trim()
+                if (trimmedQuery.toIntOrNull() != null) {
+                    logger.info("${token.name} Accessing profile for msisdn: $query")
+                    getProfileListForMsisdn(trimmedQuery)
                             .responseBuilder()
                 } else {
-                    logger.info("${token.name} Accessing profile for email:$query")
-                    getCustomerList(contactEmail = query)
+                    logger.info("${token.name} Accessing profile for nickname/contactEmail: $query")
+                    getCustomerList(queryString = trimmedQuery)
                             .responseBuilder()
                 }
             }.build()
@@ -124,15 +125,15 @@ class ProfilesResource {
     }
 
     // TODO: Reuse the one from SubscriberDAO
-    private fun getCustomerList(contactEmail: String): Either<ApiError, Collection<Customer>> {
+    private fun getCustomerList(queryString: String): Either<ApiError, Collection<Customer>> {
         return try {
-            storage.getIdentitiesForContactEmail(contactEmail = contactEmail).mapLeft {
+            storage.getIdentitiesFor(queryString = queryString).mapLeft {
                 NotFoundError("Failed to fetch profile.", ApiErrorCode.FAILED_TO_FETCH_CUSTOMER, it)
             }.flatMap { identityList ->
                 val customerList = identityList.mapNotNull { identity: Identity ->
                     storage.getCustomer(identity).fold(
                             {
-                                logger.error("Error fetching customer for $identity,  $it")
+                                logger.error("Error fetching customer for $queryString,  $it")
                                 null
                             },
                             { it })
@@ -140,7 +141,7 @@ class ProfilesResource {
                 Either.right(customerList)
             }
         } catch (e: Exception) {
-            logger.error("Failed to fetch profile for customer with contactEmail - $contactEmail", e)
+            logger.error("Failed to fetch profile for customer with nickname/contactEmail - $queryString", e)
             Either.left(NotFoundError("Failed to fetch profile", ApiErrorCode.FAILED_TO_FETCH_CUSTOMER))
         }
     }
