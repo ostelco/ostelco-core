@@ -50,7 +50,7 @@ steps:
       path: /root/out_zip
 # Build docker images
   - name: gcr.io/cloud-builders/docker
-    args: ['build', '--tag=eu.gcr.io/$PROJECT_ID/prime:$TAG_NAME', '--cache-from', 'azul/zulu-openjdk:12.0.2', 'prime']
+    args: ['build', '--tag=eu.gcr.io/$PROJECT_ID/prime:$TAG_NAME', '--cache-from', 'azul/zulu-openjdk:13', 'prime']
     timeout: 120s
 # Deploy new docker image to Google Kubernetes Engine (GKE)
   - name: ubuntu

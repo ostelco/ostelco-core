@@ -63,4 +63,4 @@ tasks.test {
   }
 }
 
-apply(from = "../gradle/jacoco.gradle")
+apply(from = "../gradle/jacoco.gradle.kts")
