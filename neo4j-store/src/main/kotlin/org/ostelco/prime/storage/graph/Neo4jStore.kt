@@ -651,7 +651,7 @@ object Neo4jStoreSingleton : GraphStore {
                     fact { (Customer withId customerId) subscribesTo (Subscription withMsisdn msisdn) }.bind()
                     fact { (Subscription withMsisdn msisdn) isUnder (SimProfile withId simProfile.id) }.bind()
                 }
-                if (profileType != "android") {
+                if (!setOf("android", "iphone", "test").contains(profileType)) {
                     emailNotifier.sendESimQrCodeEmail(
                             email = customer.contactEmail,
                             name = customer.nickname,

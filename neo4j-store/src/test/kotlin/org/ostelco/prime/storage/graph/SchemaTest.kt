@@ -191,7 +191,7 @@ class SchemaTest {
 
     @Test
     fun `json to map`() {
-        val map = objectMapper.readValue<Map<String, String>>("""{"label":"3GB for 300 NOK"}""", object : TypeReference<LinkedHashMap<String, String>>() {})
+        val map = objectMapper.readValue<Map<String, String>>("""{"label":"3GB for 300 NOK"}""", object : TypeReference<Map<String, String>>() {})
         assertEquals("3GB for 300 NOK", map["label"])
     }
 
