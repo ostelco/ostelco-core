@@ -2,11 +2,28 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Col, Row, Card, CardBody, Button } from 'reactstrap';
+import Highlighter from "react-highlight-words";
 
 import { subscriberActions } from '../../actions/subscriber.actions';
 
+const Highlight = ({ children, highlightIndex }) => (
+  <strong className="bg-warning text-dark">{children}</strong>
+);
+
+const convertToHighlightedText = (text, query) => {
+  return (  
+    <Highlighter
+      searchWords={[query]}
+      autoEscape={true}
+      caseSensitive={true}
+      textToHighlight={text}
+      highlightTag={Highlight}
+    />);
+}
+
 export const CustomerRow = props => {
 
+  let query = localStorage.getItem('searchedEmail')
   function onSelect(e) {
     e.preventDefault();
     console.log(`Selecting customer with id ${props.customer.id}`);
@@ -17,15 +34,15 @@ export const CustomerRow = props => {
       <div>
       <Row>
         <Col xs={2} md={2}>{'Name:'}</Col>
-        <Col xs={12} md={8}>{`${props.customer.nickname}`}</Col>
+        <Col xs={12} md={8}>{convertToHighlightedText(props.customer.nickname, query)}</Col>
       </Row>
       <Row>
         <Col xs={2} md={2}>{'Email:'}</Col>
-        <Col xs={12} md={8}>{`${props.customer.contactEmail}`}</Col>
+        <Col xs={12} md={8}>{convertToHighlightedText(props.customer.contactEmail, query)}</Col>
       </Row>
       <Row>
         <Col xs={2} md={2}>{'ID:'}</Col>
-        <Col xs={12} md={8}>{`${props.customer.id}`}</Col>
+        <Col xs={12} md={8}>{convertToHighlightedText(props.customer.id, query)}</Col>
       </Row>
       <br />
       <Row>
