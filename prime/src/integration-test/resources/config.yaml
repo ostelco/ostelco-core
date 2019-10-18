@@ -40,6 +40,11 @@ modules:
   - type: ocs
     config:
       lowBalanceThreshold: 0
+      consumptionPolicyService:
+        serviceInterface: org.ostelco.prime.ocs.core.ConsumptionPolicy
+        textReader:
+          type: classpathResource
+          filename: /ConsumptionPolicyService.kts
   - type: api
   - type: stripe-payment-processor
     config:
