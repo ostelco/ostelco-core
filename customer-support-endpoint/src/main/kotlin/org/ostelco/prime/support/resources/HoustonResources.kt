@@ -63,7 +63,7 @@ class ProfilesResource {
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
                 val trimmedQuery = query.trim()
-                if (trimmedQuery.toIntOrNull() != null) {
+                if (isMsisdn(trimmedQuery)) {
                     logger.info("${token.name} Accessing profile for msisdn: $query")
                     getProfileListForMsisdn(trimmedQuery)
                             .responseBuilder()
@@ -150,6 +150,12 @@ class ProfilesResource {
         val regex = "^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$"
         val pattern = Pattern.compile(regex)
         return pattern.matcher(email).matches()
+    }
+
+    private fun isMsisdn(query: String): Boolean {
+        val regex = "^[0-9]+$"
+        val pattern = Pattern.compile(regex)
+        return pattern.matcher(query).matches()
     }
 
     private fun getProfileListForMsisdn(msisdn: String): Either<ApiError, Collection<Customer>> {
