@@ -2015,7 +2015,7 @@ object Neo4jStoreSingleton : GraphStore {
     override fun getIdentitiesFor(queryString: String): Either<StoreError, Collection<ModelIdentity>> = readTransaction {
         read("""
                 MATCH (c:${customerEntity.name})<-[r:${identifiesRelation.name}]-(identity:${identityEntity.name})
-                WHERE c.contactEmail contains '$queryString' or c.nickname contains '$queryString'
+                WHERE c.contactEmail contains '$queryString' or c.nickname contains '$queryString' or c.id contains '$queryString'
                 RETURN c, identity, r.provider as provider
                 """.trimIndent(),
                 transaction) {

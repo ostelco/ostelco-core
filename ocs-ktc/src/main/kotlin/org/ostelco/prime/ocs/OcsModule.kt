@@ -3,6 +3,7 @@ package org.ostelco.prime.ocs
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonTypeName
 import io.dropwizard.setup.Environment
+import org.ostelco.prime.kts.engine.KtsServiceFactory
 import org.ostelco.prime.module.PrimeModule
 import org.ostelco.prime.ocs.ConfigRegistry.config
 import org.ostelco.prime.ocs.activation.ActivateEventObservableSingleton
@@ -10,7 +11,6 @@ import org.ostelco.prime.ocs.consumption.grpc.OcsGrpcServer
 import org.ostelco.prime.ocs.consumption.grpc.OcsGrpcService
 import org.ostelco.prime.ocs.consumption.pubsub.PubSubClient
 import org.ostelco.prime.ocs.core.OnlineCharging
-import org.ostelco.prime.ocs.core.Rating
 
 @JsonTypeName("ocs")
 class OcsModule : PrimeModule {
@@ -43,10 +43,6 @@ class OcsModule : PrimeModule {
                     }
             )
         }
-
-        config.rating?.forEach { rate ->
-            Rating.addRate(rate.serviceId, rate.ratingGroup, rate.rate)
-        }
     }
 }
 
@@ -63,7 +59,7 @@ data class PubSubChannel(
 data class Config(
         val lowBalanceThreshold: Long = 0,
         val pubSubChannel: PubSubChannel? = null,
-        val rating: ArrayList<Rate>? = null)
+        val consumptionPolicyService: KtsServiceFactory)
 
 object ConfigRegistry {
     lateinit var config: Config

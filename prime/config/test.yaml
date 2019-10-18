@@ -81,19 +81,11 @@ modules:
         projectId: ${GCP_PROJECT_ID}
         activateTopicId: ocs-activate
         ccrSubscriptionId: ocs-ccr-sub
-      rating:
-          - serviceId: 1
-            ratingGroup: 10
-            rate: Normal
-          - serviceId: 2
-            ratingGroup: 12
-            rate: Normal
-          - serviceId: 4
-            ratingGroup: 14
-            rate: Normal
-          - serviceId: -1
-            ratingGroup: 10
-            rate: Normal
+      consumptionPolicyService:
+        serviceInterface: org.ostelco.prime.ocs.core.ConsumptionPolicy
+        textReader:
+          type: classpathResource
+          filename: /ConsumptionPolicyService.kts
   - type: api
   - type: firebase-app-notifier
     config:
