@@ -11,7 +11,7 @@ const Highlight = ({ children, highlightIndex }) => (
 );
 
 const convertToHighlightedText = (text, query) => {
-  return (  
+  return (
     <Highlighter
       searchWords={[query]}
       autoEscape={true}
