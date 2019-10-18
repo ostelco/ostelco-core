@@ -96,11 +96,11 @@ modules:
         projectId: ${GCP_PROJECT_ID}
         activateTopicId: ${ACTIVATE_TOPIC_ID}
         ccrSubscriptionId: ${CCR_SUBSCRIPTION_ID}
-      chargingAndRatingService:
-        serviceInterface: org.ostelco.prime.ocs.core.ChargingAndRatingService
+      consumptionPolicyService:
+        serviceInterface: org.ostelco.prime.ocs.core.ConsumptionPolicy
         textReader:
           type: file
-          filename: /config-data/ChargingAndRatingService.kts
+          filename: /config-data/ConsumptionPolicyService.kts
   - type: api
   - type: stripe-payment-processor
     config:

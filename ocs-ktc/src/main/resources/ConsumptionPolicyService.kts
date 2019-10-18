@@ -2,7 +2,7 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import org.ostelco.ocs.api.MultipleServiceCreditControl
-import org.ostelco.prime.ocs.core.ChargingAndRatingService
+import org.ostelco.prime.ocs.core.ConsumptionPolicy
 import org.ostelco.prime.ocs.core.ConsumptionRequest
 import org.ostelco.prime.storage.ConsumptionResult
 
@@ -11,9 +11,9 @@ private data class ServiceIdRatingGroup(
         val ratingGroup: Long
 )
 
-object : ChargingAndRatingService {
+object : ConsumptionPolicy {
 
-    override fun charge(
+    override fun checkConsumption(
             msisdn: String,
             multipleServiceCreditControl: MultipleServiceCreditControl,
             mccMnc: String,

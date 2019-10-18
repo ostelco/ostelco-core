@@ -31,8 +31,8 @@ object OnlineCharging : OcsAsyncRequestConsumer {
     private val logger by getLogger()
 
     private val storage: AdminDataSource = getResource()
-    private val chargingAndRatingService by lazy {
-        ConfigRegistry.config.chargingAndRatingService.getKtsService<ChargingAndRatingService>()
+    private val consumptionPolicy by lazy {
+        ConfigRegistry.config.consumptionPolicyService.getKtsService<ConsumptionPolicy>()
     }
 
     override fun creditControlRequestEvent(
@@ -108,28 +108,36 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                 doneSignal.countDown()
             }
 
+            suspend fun consumeRequestHandler(consumptionRequest: ConsumptionRequest) {
+                storage.consume(
+                        msisdn = consumptionRequest.msisdn,
+                        usedBytes = consumptionRequest.usedBytes,
+                        requestedBytes = consumptionRequest.requestedBytes) { storeResult ->
+
+                    storeResult
+                            .fold(
+                                    { storeError ->
+                                        // FixMe : should all store errors be unknown user?
+                                        logger.error(storeError.message)
+                                        responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN
+                                        doneSignal.countDown()
+                                    },
+                                    { consumptionResult ->  consumptionResultHandler(consumptionResult) }
+                            )
+                }
+            }
+
             val requested = mscc.requested?.totalOctets ?: 0
             if (requested > 0) {
-                chargingAndRatingService.charge(
+                consumptionPolicy.checkConsumption(
                         msisdn = msisdn,
                         multipleServiceCreditControl = mscc,
                         mccMnc = request.serviceInformation.psInformation.sgsnMccMnc,
                         apn = request.serviceInformation.psInformation.calledStationId)
-                        .bimap(::consumptionResultHandler) { consumptionRequest ->
-                            storage.consume(
-                                    msisdn = consumptionRequest.msisdn,
-                                    usedBytes = consumptionRequest.usedBytes,
-                                    requestedBytes = consumptionRequest.requestedBytes) { storeResult ->
-
-                                storeResult.swap()
-                                        .fold(::consumptionResultHandler) { storeError ->
-                                            // FixMe : should all store errors be unknown user?
-                                            logger.error(storeError.message)
-                                            responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN
-                                            doneSignal.countDown()
-                                        }
-                            }
-                        }
+                        .bimap(
+                                { consumptionResult -> consumptionResultHandler(consumptionResult) },
+                                { consumptionRequest ->  consumeRequestHandler(consumptionRequest) }
+                        )
             } else {
                 doneSignal.countDown()
             }

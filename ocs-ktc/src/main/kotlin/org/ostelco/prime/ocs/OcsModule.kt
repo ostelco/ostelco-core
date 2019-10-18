@@ -59,7 +59,7 @@ data class PubSubChannel(
 data class Config(
         val lowBalanceThreshold: Long = 0,
         val pubSubChannel: PubSubChannel? = null,
-        val chargingAndRatingService: KtsServiceFactory)
+        val consumptionPolicyService: KtsServiceFactory)
 
 object ConfigRegistry {
     lateinit var config: Config

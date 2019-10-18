@@ -81,11 +81,11 @@ modules:
         projectId: ${GCP_PROJECT_ID}
         activateTopicId: ocs-activate
         ccrSubscriptionId: ocs-ccr-sub
-      chargingAndRatingService:
-        serviceInterface: org.ostelco.prime.ocs.core.ChargingAndRatingService
+      consumptionPolicyService:
+        serviceInterface: org.ostelco.prime.ocs.core.ConsumptionPolicy
         textReader:
           type: classpathResource
-          filename: /ChargingAndRatingService.kts
+          filename: /ConsumptionPolicyService.kts
   - type: api
   - type: firebase-app-notifier
     config:
