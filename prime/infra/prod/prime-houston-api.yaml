@@ -3,7 +3,7 @@ info:
   title: "Houston Admin API"
   description: "The APIs for the Houston Admin Client."
   version: "2.0.0"
-host: "houston-api.dev.oya.world"
+host: "houston-api.oya.world"
 x-google-endpoints:
   - name: "houston-api.oya.world"
     allowCors: true
