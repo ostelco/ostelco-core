@@ -36,6 +36,12 @@ object DocumentDataStoreSingleton : DocumentStore {
             .getOrElse { emptyList() }
 
     override fun addNotificationToken(customerId: String, token: ApplicationToken): Boolean {
+        // Remove any other entries with the same token.
+        getNotificationTokens(customerId).forEach {
+            if (it.tokenType == token.tokenType && it.token == token.token && it.applicationID != token.applicationID) {
+                removeNotificationToken(customerId, it.applicationID)
+            }
+        }
         return notificationTokenStore.put(
                 token,
                 token.applicationID,
