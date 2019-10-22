@@ -11,7 +11,6 @@ import org.ostelco.prime.model.HasId
 import org.ostelco.prime.storage.DatabaseError
 import org.ostelco.prime.storage.StoreError
 import org.ostelco.prime.storage.SystemError
-import org.ostelco.prime.storage.graph.ChangeableRelationStore
 import org.ostelco.prime.storage.graph.EntityRegistry
 import org.ostelco.prime.storage.graph.EntityStore
 import org.ostelco.prime.storage.graph.Neo4jClient
@@ -158,10 +157,6 @@ class WriteTransaction(override val transaction: PrimeTransaction) : ReadTransac
                     )
                 }
             }
-            is ChangeableRelationStore<*, *, *> -> {
-                logger.error("Using create on ChangeableRelationStore for relation - {}", relationExpression.relationType.name)
-                SystemError(type = "relationStore", id = relationExpression.relationType.name, message = "Invalid relation store").left()
-            }
             null -> {
                 SystemError(type = "relationStore", id = relationExpression.relationType.name, message = "Missing relation store").left()
             }
@@ -216,11 +211,6 @@ class JobContext(private val transaction: PrimeTransaction) {
                             fromId = relationContext.fromId,
                             toId = relationContext.toId,
                             transaction = transaction)
-                }
-            }
-            is ChangeableRelationStore<*, *, *> -> {
-                result = result.flatMap {
-                    SystemError(type = relationType.name, id = "", message = "Unable to create changable relation").left()
                 }
             }
         }

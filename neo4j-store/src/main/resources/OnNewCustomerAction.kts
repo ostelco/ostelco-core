@@ -10,7 +10,7 @@ import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.storage.StoreError
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.applyProduct
-import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.createPurchaseRecordRelation
+import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.createPurchaseRecord
 import org.ostelco.prime.storage.graph.OnNewCustomerAction
 import org.ostelco.prime.storage.graph.PrimeTransaction
 import java.time.Instant
@@ -27,7 +27,7 @@ object : OnNewCustomerAction {
             Either.monad<StoreError>().binding {
                 WriteTransaction(transaction).apply {
                     val product = get(Product withSku welcomePackProductSku).bind()
-                    createPurchaseRecordRelation(
+                    createPurchaseRecord(
                             customer.id,
                             PurchaseRecord(
                                     id = UUID.randomUUID().toString(),
