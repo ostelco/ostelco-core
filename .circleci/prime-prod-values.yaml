@@ -150,7 +150,9 @@ prime:
       cpu: 300m
       memory: 1Gi
   livenessProbe: {}
-  readinessProbe: {}
+  readinessProbe:
+    path: /ping
+    port: 8080
   annotations:
     prometheus.io/scrape: 'true'
     prometheus.io/path: '/prometheus-metrics'
