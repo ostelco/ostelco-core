@@ -12,6 +12,7 @@ import arrow.instances.either.monad.monad
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.appnotifier.AppNotifier
+import org.ostelco.prime.appnotifier.NotificationType
 import org.ostelco.prime.auditlog.AuditLog
 import org.ostelco.prime.dsl.ReadTransaction
 import org.ostelco.prime.dsl.WriteTransaction
@@ -43,7 +44,6 @@ import org.ostelco.prime.model.CustomerRegionStatus
 import org.ostelco.prime.model.CustomerRegionStatus.APPROVED
 import org.ostelco.prime.model.CustomerRegionStatus.AVAILABLE
 import org.ostelco.prime.model.CustomerRegionStatus.PENDING
-import org.ostelco.prime.model.FCMStrings
 import org.ostelco.prime.model.HasId
 import org.ostelco.prime.model.KycStatus
 import org.ostelco.prime.model.KycStatus.REJECTED
@@ -1661,9 +1661,8 @@ object Neo4jStoreSingleton : GraphStore {
                     scanInformationDatastore.upsertVendorScanInformation(customer.id, scanInformation.countryCode, vendorData)
                             .flatMap {
                                 appNotifier.notify(
+                                        notificationType = NotificationType.JUMIO_VERIFICATION_SUCCEEDED,
                                         customerId = customer.id,
-                                        title = FCMStrings.NOTIFICATION_TITLE.s,
-                                        body = FCMStrings.JUMIO_IDENTITY_VERIFIED.s,
                                         data = extendedStatus
                                 )
                                 logger.info(NOTIFY_OPS_MARKER, "Jumio verification succeeded for ${customer.contactEmail} Info: $extendedStatus")
@@ -1676,9 +1675,8 @@ object Neo4jStoreSingleton : GraphStore {
                 } else {
                     // TODO: find out what more information can be passed to the client.
                     appNotifier.notify(
+                            notificationType = NotificationType.JUMIO_VERIFICATION_FAILED,
                             customerId = customer.id,
-                            title = FCMStrings.NOTIFICATION_TITLE.s,
-                            body = FCMStrings.JUMIO_IDENTITY_FAILED.s,
                             data = extendedStatus
                     )
                     logger.info(NOTIFY_OPS_MARKER, "Jumio verification failed for ${customer.contactEmail} Info: $extendedStatus")
