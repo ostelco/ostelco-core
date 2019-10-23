@@ -24,7 +24,8 @@ class FirebaseAppNotifier: AppNotifier {
     private val listOfFailureCodes = listOf(
             "messaging/invalid-recipient",
             "messaging/invalid-registration-token",
-            "messaging/registration-token-not-registered"
+            "messaging/registration-token-not-registered",
+            "registration-token-not-registered"
     )
 
     override fun notify(notificationType: NotificationType, customerId: String, data: Map<String, Any>) =
