@@ -42,7 +42,7 @@ object TestHelper {
         }
     }
 
-    private fun addBucketRequest(ccrAvps: AvpSet, ratingGroup: Int, serviceIdentifier: Int, requestedBucketSize: Long, usedBucketSize: Long = 0, ccTime: Long = 0, ccServiceSpecificUnits: Long = 0) {
+    private fun addBucketRequest(ccrAvps: AvpSet, ratingGroup: Int, serviceIdentifier: Int, requestedBucketSize: Long, usedBucketSize: Long = 0, ccTime: Long = 0, ccServiceSpecificUnits: Long = 0, reportingReason: ReportingReason = ReportingReason.QUOTA_EXHAUSTED) {
 
         set(ccrAvps) {
 
@@ -69,7 +69,7 @@ object TestHelper {
                 if (usedBucketSize > 0) {
                     group(Avp.USED_SERVICE_UNIT) {
                         avp(Avp.CC_TOTAL_OCTETS, usedBucketSize, pFlag = true)
-                        avp(Avp.REPORTING_REASON, ReportingReason.QUOTA_EXHAUSTED.ordinal, VENDOR_ID_3GPP, mFlag = true, pFlag = true)
+                        avp(Avp.REPORTING_REASON, reportingReason, VENDOR_ID_3GPP, mFlag = true, pFlag = true)
                     }
                 }
 
@@ -176,7 +176,7 @@ object TestHelper {
     }
 
     @JvmStatic
-    fun createUpdateRequest(ccrAvps: AvpSet, msisdn: String, requestedBucketSize: Long, usedBucketSize: Long, ratingGroup: Int, serviceIdentifier: Int) {
+    fun createUpdateRequest(ccrAvps: AvpSet, msisdn: String, requestedBucketSize: Long, usedBucketSize: Long, ratingGroup: Int, serviceIdentifier: Int, reportingReason: ReportingReason) {
         buildBasicRequest(ccrAvps, RequestType.UPDATE_REQUEST, requestNumber = 1)
         addUser(ccrAvps, msisdn = msisdn, imsi = IMSI)
         addBucketRequest(ccrAvps, ratingGroup, serviceIdentifier, requestedBucketSize = requestedBucketSize, usedBucketSize = usedBucketSize)
