@@ -24,7 +24,8 @@ class FirebaseAppNotifier: AppNotifier {
     private val listOfFailureCodes = listOf(
             "messaging/invalid-recipient",
             "messaging/invalid-registration-token",
-            "messaging/registration-token-not-registered"
+            "messaging/registration-token-not-registered",
+            "registration-token-not-registered"
     )
 
     override fun notify(notificationType: NotificationType, customerId: String, data: Map<String, Any>) =
@@ -91,12 +92,15 @@ class FirebaseAppNotifier: AppNotifier {
             override fun onFailure(t: Throwable) {
                 if (t is FirebaseMessagingException) {
                     val errorCode = t.errorCode
-                    logger.warn("Notification for $customerId  with appId: ${token.applicationID} " +
-                            "failed with errorCode: $errorCode")
                     if (listOfFailureCodes.contains(errorCode)) {
-                        logger.warn("Removing failed token for $customerId with appId: ${token.applicationID} " +
+                        // Known failure, we should remove this token from our list
+                        logger.info("Removing failed token (errorCode: $errorCode) for $customerId with appId: ${token.applicationID} " +
                                 "token: $token.token")
                         store.removeNotificationToken(customerId, token.applicationID)
+                    } else {
+                        // Other failures we should look into.
+                        logger.warn("Notification for $customerId  with appId: ${token.applicationID} " +
+                                "failed with errorCode: $errorCode")
                     }
                 } else {
                     logger.warn("Notification for $customerId  with appId: ${token.applicationID} " +
