@@ -61,6 +61,7 @@ class DelegatePubSubPublisher(
                 if (throwable is ApiException) {
                     // details on the API exception
                     logger.warn("Pubsub topic: $topicId\n" +
+                            "Message : ${throwable.message}\n" +
                             "Status code: ${throwable.statusCode.code}\n" +
                             "Retrying: ${throwable.isRetryable}")
                 }
