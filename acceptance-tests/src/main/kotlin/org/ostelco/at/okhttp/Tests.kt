@@ -833,7 +833,7 @@ class SingaporeKycTest {
                 assertEquals(regionDetails, regionDetailsList[sgRegionIndex], "RegionDetails do not match")
             }
 
-            client.updateDetails("Singapore")
+            client.updateDetailsForSG("Singapore")
 
             run {
                 val regionDetailsList = client.allRegions
@@ -921,7 +921,7 @@ class SingaporeKycTest {
                 assertEquals(regionDetails, regionDetailsList[sgRegionIndex], "RegionDetails do not match")
             }
 
-            client.updateDetails("Singapore")
+            client.updateDetailsForSG("Singapore")
 
             run {
                 val regionDetailsList = client.allRegions

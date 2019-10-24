@@ -1817,7 +1817,8 @@ object Neo4jStoreSingleton : GraphStore {
     //
     override fun saveAddress(
             identity: org.ostelco.prime.model.Identity,
-            address: String): Either<StoreError, Unit> {
+            address: String,
+            regionCode: String): Either<StoreError, Unit> {
 
         return IO {
             Either.monad<StoreError>().binding {
@@ -1827,14 +1828,14 @@ object Neo4jStoreSingleton : GraphStore {
                 // set ADDRESS KYC Status to Pending
                 setKycStatus(
                         customer = customer,
-                        regionCode = "sg",
+                        regionCode = regionCode,
                         kycType = ADDRESS,
                         kycStatus = KycStatus.PENDING).bind()
 
                 secureArchiveService.archiveEncrypted(
                         customerId = customer.id,
                         fileName = "address",
-                        regionCodes = listOf("sg"),
+                        regionCodes = listOf(regionCode),
                         dataMap = mapOf(
                                 "address" to address.toByteArray())
                 ).bind()
@@ -1842,7 +1843,7 @@ object Neo4jStoreSingleton : GraphStore {
                 // set ADDRESS KYC Status to Approved
                 setKycStatus(
                         customer = customer,
-                        regionCode = "sg",
+                        regionCode = regionCode,
                         kycType = ADDRESS).bind()
             }.fix()
         }.unsafeRunSync()
@@ -1944,14 +1945,18 @@ object Neo4jStoreSingleton : GraphStore {
     private fun getKycStatusMapForRegion(regionCode: String): Map<KycType, KycStatus> {
         return when (regionCode) {
             "sg" -> setOf(JUMIO, MY_INFO, NRIC_FIN, ADDRESS)
+            "my" -> setOf(JUMIO, ADDRESS)
             else -> setOf(JUMIO)
         }.map { it to KycStatus.PENDING }.toMap()
     }
 
     private fun getApprovedKycTypeSetList(regionCode: String): List<Set<KycType>> {
         return when (regionCode) {
-            "sg" -> listOf(setOf(MY_INFO, ADDRESS),
-                    setOf(JUMIO, ADDRESS))
+            "sg" -> listOf(
+                    setOf(MY_INFO, ADDRESS),
+                    setOf(JUMIO, ADDRESS)
+            )
+            "my" -> listOf(setOf(JUMIO, ADDRESS))
             else -> listOf(setOf(JUMIO))
         }
     }
