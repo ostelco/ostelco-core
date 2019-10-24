@@ -2293,7 +2293,7 @@ object Neo4jStoreSingleton : GraphStore {
                 RETURN pr
                 """.trimIndent(), transaction) { statementResult ->
             statementResult.list { record ->
-                purchaseRecordEntity.createEntity(record["r"].asMap())
+                purchaseRecordEntity.createEntity(record["pr"].asMap())
             }.right()
         }
     }
