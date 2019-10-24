@@ -353,7 +353,7 @@ paths:
       description: "Update address for Singapore region."
       produces:
         - application/json
-      operationId: "updateDetails"
+      operationId: "updateDetailsForSG"
       parameters:
         - name: address
           in: query
@@ -370,7 +370,7 @@ paths:
       description: "Update address for Malaysia region."
       produces:
         - application/json
-      operationId: "updateDetails"
+      operationId: "updateDetailsForMY"
       parameters:
         - name: address
           in: query
