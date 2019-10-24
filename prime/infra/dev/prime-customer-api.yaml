@@ -350,7 +350,24 @@ paths:
         - firebase: []
   "/regions/sg/kyc/profile":
     put:
-      description: "Update Singapore Customer's address and phone number."
+      description: "Update address for Singapore region."
+      produces:
+        - application/json
+      operationId: "updateDetails"
+      parameters:
+        - name: address
+          in: query
+          description: "Customer's Address"
+          required: true
+          type: string
+      responses:
+        204:
+          description: "Successfully updated customer's details."
+      security:
+        - firebase: []
+  "/regions/my/kyc/profile":
+    put:
+      description: "Update address for Malaysia region."
       produces:
         - application/json
       operationId: "updateDetails"

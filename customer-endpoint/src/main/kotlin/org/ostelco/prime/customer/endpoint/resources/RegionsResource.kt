@@ -48,6 +48,7 @@ class RegionsResource(private val dao: SubscriberDAO) {
             regionCode: String
     ): KycResource = when (regionCode.toLowerCase()) {
         "sg" -> SingaporeKycResource(dao = dao)
+        "my" -> MalaysiaKycResource(dao = dao)
         else -> KycResource(regionCode = regionCode, dao = dao)
     }
 
