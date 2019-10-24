@@ -314,37 +314,6 @@ class RelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType
     }
 }
 
-class ChangeableRelationStore<FROM : HasId, RELATION : HasId, TO : HasId>(private val relationType: RelationType<FROM, RELATION, TO>) : BaseRelationStore() {
-
-    init {
-        relationType.relationStore = this
-    }
-
-    fun get(id: String, transaction: Transaction): Either<StoreError, RELATION> {
-        return read("""MATCH (from)-[r:${relationType.name}{id:'$id'}]->(to) RETURN r;""",
-                transaction) { statementResult ->
-            if (statementResult.hasNext()) {
-                relationType.createRelation(statementResult.single().get("r").asMap()).right()
-            } else {
-                Either.left(NotFoundError(type = relationType.name, id = id))
-            }
-        }
-    }
-
-    fun update(relation: RELATION, transaction: Transaction): Either<StoreError, Unit> {
-        val properties = getProperties(relation)
-        // TODO vihang: replace setClause with map based settings written by Kjell
-        val setClause: String = properties.entries.fold("") { acc, entry -> """$acc SET r.`${entry.key}` = "${entry.value}" """ }
-        return write("""MATCH (from)-[r:${relationType.name}{id:'${relation.id}'}]->(to) $setClause ;""",
-                transaction) { statementResult ->
-            Either.cond(
-                    test = statementResult.summary().counters().containsUpdates(), // TODO vihang: this is not perfect way to check if updates are applied
-                    ifTrue = {},
-                    ifFalse = { NotUpdatedError(type = relationType.name, id = relation.id) })
-        }
-    }
-}
-
 // Removes double apostrophes from key values in a JSON string.
 // Usage: output = re.replace(input, "$1$2$3")
 val re = Regex("""([,{])\s*"([^"]+)"\s*(:)""")

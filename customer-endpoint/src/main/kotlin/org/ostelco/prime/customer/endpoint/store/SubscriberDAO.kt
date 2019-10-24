@@ -120,7 +120,7 @@ interface SubscriberDAO {
 
     fun checkNricFinIdUsingDave(identity: Identity, nricFinId: String): Either<ApiError, Unit>
 
-    fun saveAddress(identity: Identity, address: String): Either<ApiError, Unit>
+    fun saveAddress(identity: Identity, address: String, regionCode: String): Either<ApiError, Unit>
 
     //
     // Token

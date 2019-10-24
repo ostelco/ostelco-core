@@ -119,10 +119,14 @@ class PubSubDataSource(
             override fun onFailure(throwable: Throwable) {
                 if (throwable is ApiException) {
                     // details on the API exception
-                    logger.warn("Status code: {}", throwable.statusCode.code)
-                    logger.warn("Retrying: {}", throwable.isRetryable)
+                    logger.warn("Pubsub topic: $ccaTopicId\n" +
+                            "RequestId : ${creditControlRequestInfo.requestId} \n" +
+                            "Message : ${throwable.message}\n" +
+                            "Status code: ${throwable.statusCode.code}\n" +
+                            "Retrying: ${throwable.isRetryable}")
+                } else {
+                    logger.warn("Error sending CCR Request to PubSub. topic: $ccaTopicId requestId ${creditControlRequestInfo.requestId}")
                 }
-                logger.warn("Error sending CCR Request to PubSub")
             }
 
             override fun onSuccess(messageId: String) {
