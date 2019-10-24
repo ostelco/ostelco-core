@@ -1,19 +1,17 @@
+import org.ostelco.prime.gradle.Version
+
 plugins {
   kotlin("jvm")
   `java-library`
 }
 
 dependencies {
-
-  val dropwizardVersion:String by rootProject.extra
-  val kotlinVersion:String by rootProject.extra
-
   implementation(project(":prime-modules"))
 
-  testImplementation("io.dropwizard:dropwizard-testing:$dropwizardVersion")
+  testImplementation("io.dropwizard:dropwizard-testing:${Version.dropwizard}")
 
   testImplementation(kotlin("test"))
   testImplementation(kotlin("test-junit"))
 }
 
-apply(from = "../gradle/jacoco.gradle")
+apply(from = "../gradle/jacoco.gradle.kts")

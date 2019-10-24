@@ -32,14 +32,19 @@ class Neo4jModule : PrimeModule {
         if (System.getenv("ACCEPTANCE_TESTING") == "true") {
             RunnableKotlinScript(ClasspathResourceTextReader("/AcceptanceTestSetup.kts").readText()).eval<Any?>()
         }
+
+        Neo4jStoreSingleton.subscribeToSimProfileStatusUpdates()
     }
 }
 
 data class Config(
         val host: String,
         val protocol: String,
-        val hssNameLookupService: KtsServiceFactory,
-        val onNewCustomerAction: KtsServiceFactory)
+        val onNewCustomerAction: KtsServiceFactory,
+        val allowedRegionsService: KtsServiceFactory,
+        val onRegionApprovedAction: KtsServiceFactory,
+        val hssNameLookupService: KtsServiceFactory
+)
 
 object ConfigRegistry {
     lateinit var config: Config

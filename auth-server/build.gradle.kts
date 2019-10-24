@@ -1,4 +1,5 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.ostelco.prime.gradle.Version
 
 plugins {
   kotlin("jvm")
@@ -8,25 +9,18 @@ plugins {
 }
 
 dependencies {
-
-  val kotlinVersion:String by rootProject.extra
-  val dropwizardVersion:String by rootProject.extra
-  val jacksonVersion:String by rootProject.extra
-  val jaxbVersion:String by rootProject.extra
-  val javaxActivationVersion:String by rootProject.extra
-
   implementation(kotlin("stdlib-jdk8"))
-  implementation("io.dropwizard:dropwizard-core:$dropwizardVersion")
+  implementation("io.dropwizard:dropwizard-core:${Version.dropwizard}")
 
   implementation(project(":firebase-extensions"))
-  implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion") {
+  implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${Version.jackson}") {
     exclude(group = "org.jetbrains.kotlin", module = "kotlin-reflect")
   }
 
-  runtimeOnly("javax.xml.bind:jaxb-api:$jaxbVersion")
-  runtimeOnly("javax.activation:activation:$javaxActivationVersion")
+  runtimeOnly("javax.xml.bind:jaxb-api:${Version.jaxb}")
+  runtimeOnly("javax.activation:activation:${Version.javaxActivation}")
   
-  testImplementation("io.dropwizard:dropwizard-testing:$dropwizardVersion")
+  testImplementation("io.dropwizard:dropwizard-testing:${Version.dropwizard}")
   testImplementation(kotlin("test-junit"))
   testRuntimeOnly("org.hamcrest:hamcrest-all:1.3")
 }
@@ -42,8 +36,8 @@ tasks.withType<ShadowJar> {
 }
 
 sourceSets.create("integration") {
-  java.srcDirs("src/integration-tests/kotlin")
-  resources.srcDirs("src/integration-tests/resources")
+  java.srcDirs("src/integration-test/kotlin")
+  resources.srcDirs("src/integration-test/resources")
   compileClasspath += sourceSets.main.get().output + sourceSets.test.get().output
   runtimeClasspath += sourceSets.main.get().output + sourceSets.test.get().output
 }
@@ -65,10 +59,10 @@ val integration = tasks.create("integration", Test::class.java) {
 tasks.build.get().dependsOn(integration)
 integration.mustRunAfter(tasks.test)
 
-apply(from = "../gradle/jacoco.gradle")
+apply(from = "../gradle/jacoco.gradle.kts")
 
 idea {
   module {
-    testSourceDirs.add(File("src/integration-tests/kotlin"))
+    testSourceDirs = testSourceDirs + file("src/integration-test/kotlin")
   }
 }

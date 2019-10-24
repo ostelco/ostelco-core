@@ -60,22 +60,35 @@ modules:
     config:
       host: ${NEO4J_HOST}
       protocol: bolt+routing
-      hssNameLookupService:
-        serviceInterface: org.ostelco.prime.storage.graph.HssNameLookupService
-        textReader:
-          type: file
-          filename: /config-data/HssNameLookupService.kts
       onNewCustomerAction:
         serviceInterface: org.ostelco.prime.storage.graph.OnNewCustomerAction
         textReader:
           type: file
           filename: /config-data/OnNewCustomerAction.kts
+      allowedRegionsService:
+        serviceInterface: org.ostelco.prime.storage.graph.AllowedRegionsService
+        textReader:
+          type: file
+          filename: /config-data/AllowedRegionsService.kts
+      onRegionApprovedAction:
+        serviceInterface: org.ostelco.prime.storage.graph.OnRegionApprovedAction
+        textReader:
+          type: file
+          filename: /config-data/OnRegionApprovedAction.kts
+      hssNameLookupService:
+        serviceInterface: org.ostelco.prime.storage.graph.HssNameLookupService
+        textReader:
+          type: file
+          filename: /config-data/HssNameLookupService.kts
   - type: analytics
     config:
       projectId: ${GCP_PROJECT_ID}
-      dataTrafficTopicId: ${DATA_TRAFFIC_TOPIC}
-      purchaseInfoTopicId: ${PURCHASE_INFO_TOPIC}
-      activeUsersTopicId: ${ACTIVE_USERS_TOPIC}
+      dataTrafficTopicId: data-traffic
+      purchaseInfoTopicId: purchase-info
+      activeUsersTopicId: active-users
+      simProvisioningTopicId: sim-provisioning
+      subscriptionStatusUpdateTopicId: subscription-status-update
+      refundsTopicId: analytics-refunds
   - type: ocs
     config:
       lowBalanceThreshold: 100000000
@@ -83,25 +96,11 @@ modules:
         projectId: ${GCP_PROJECT_ID}
         activateTopicId: ${ACTIVATE_TOPIC_ID}
         ccrSubscriptionId: ${CCR_SUBSCRIPTION_ID}
-      rating:
-        - serviceId: 400
-          ratingGroup: 400
-          rate: Normal
-        - serviceId: 401
-          ratingGroup: 401
-          rate: Zero
-        - serviceId: 402
-          ratingGroup: 402
-          rate: Zero
-        - serviceId: 409
-          ratingGroup: 409
-          rate: Zero
-        - serviceId: -1
-          ratingGroup: 600
-          rate: Normal
-        - serviceId: 1
-          ratingGroup: 10
-          rate: Normal
+      consumptionPolicyService:
+        serviceInterface: org.ostelco.prime.ocs.core.ConsumptionPolicy
+        textReader:
+          type: file
+          filename: /config-data/ConsumptionPolicyService.kts
   - type: api
   - type: stripe-payment-processor
     config:

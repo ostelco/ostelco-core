@@ -62,13 +62,14 @@ data class RegionDetails(
 enum class CustomerRegionStatus {
     PENDING,   // eKYC initiated, but not yet approved
     APPROVED,  // eKYC approved
+    AVAILABLE  // Region is available for provisioning
 }
 
 enum class KycType {
     JUMIO,
     MY_INFO,
     NRIC_FIN,
-    ADDRESS_AND_PHONE_NUMBER
+    ADDRESS
 }
 
 enum class KycStatus {
@@ -202,7 +203,7 @@ enum class VendorScanData(val s: String) {
 }
 
 enum class FCMStrings(val s: String) {
-    NOTIFICATION_TITLE("eKYC Status"),
+    JUMIO_NOTIFICATION_TITLE("eKYC Status"),
     JUMIO_IDENTITY_VERIFIED("Successfully verified the identity"),
     JUMIO_IDENTITY_FAILED("Failed to verify the identity")
 }
@@ -336,19 +337,6 @@ data class PurchaseRecord(
     companion object
 }
 
-data class PurchaseRecordInfo(override val id: String,
-                              val customerAnalyticsId: String,
-                              val product: Product,
-                              val timestamp: Long,
-                              val status: String) : HasId {
-    constructor(purchaseRecord: PurchaseRecord, customerAnalyticsId: String, status: String) : this(
-            purchaseRecord.id,
-            customerAnalyticsId,
-            purchaseRecord.product,
-            purchaseRecord.timestamp,
-            status)
-}
-
 data class SimEntry(
         val iccId: String,
         val status: SimProfileStatus,
@@ -371,7 +359,8 @@ enum class SimProfileStatus {
 
 data class Context(
         val customer: Customer,
-        val regions: Collection<RegionDetails> = emptyList())
+        val regions: Collection<RegionDetails> = emptyList()
+)
 
 data class CustomerActivity(
         val timestamp: Long,

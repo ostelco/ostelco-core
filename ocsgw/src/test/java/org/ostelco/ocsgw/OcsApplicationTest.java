@@ -7,6 +7,7 @@ import org.jdiameter.api.Request;
 import org.jdiameter.api.Session;
 import org.junit.jupiter.api.*;
 import org.ostelco.diameter.model.ReAuthRequestType;
+import org.ostelco.diameter.model.ReportingReason;
 import org.ostelco.diameter.model.RequestType;
 import org.ostelco.diameter.model.SessionContext;
 import org.ostelco.diameter.test.Result;
@@ -22,6 +23,8 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 
@@ -119,7 +122,7 @@ public class OcsApplicationTest {
                 session
         );
 
-        TestHelper.createUpdateRequest(request.getAvps(), MSISDN, requestedBucketSize, usedBucketSize, ratingGroup, serviceIdentifier);
+        TestHelper.createUpdateRequest(request.getAvps(), MSISDN, requestedBucketSize, usedBucketSize, ratingGroup, serviceIdentifier, ReportingReason.QUOTA_EXHAUSTED);
 
         client.sendNextRequest(request, session);
 
@@ -201,7 +204,7 @@ public class OcsApplicationTest {
         );
 
         // Only report usage, no request for new bucket
-        TestHelper.createUpdateRequest(request.getAvps(), MSISDN, -1L, 500_000L, ratingGroup, serviceIdentifier);
+        TestHelper.createUpdateRequest(request.getAvps(), MSISDN, -1L, 500_000L, ratingGroup, serviceIdentifier, ReportingReason.QUOTA_EXHAUSTED);
 
         client.sendNextRequest(request, session);
 
@@ -342,6 +345,71 @@ public class OcsApplicationTest {
             assertEquals(ratingGroup, resultMSCC.getGrouped().getAvp(Avp.RATING_GROUP).getUnsigned32());
             Avp granted = resultMSCC.getGrouped().getAvp(Avp.GRANTED_SERVICE_UNIT);
             assertEquals(500_000L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
+        } catch (AvpDataException e) {
+            LOG.error("Failed to get Result-Code", e);
+        }
+    }
+
+
+    @Test
+    @DisplayName("Test no MSCC  in CCR-U")
+    public void testNoMsccInCcrU() {
+
+        final int ratingGroup = 10;
+        final int serviceIdentifier = 1;
+
+        Session session = client.createSession(new Object() {}.getClass().getEnclosingMethod().getName());
+        Request initRequest = client.createRequest(
+                OCS_REALM,
+                OCS_HOST,
+                session
+        );
+
+        TestHelper.createInitRequest(initRequest.getAvps(), MSISDN, 500_000L, ratingGroup, serviceIdentifier);
+
+        client.sendNextRequest(initRequest, session);
+
+        waitForAnswer(session.getSessionId());
+
+        try {
+            Result result = client.getAnswer(session.getSessionId());
+            assertEquals(DIAMETER_SUCCESS, result.getResultCode().longValue());
+            AvpSet resultAvps = result.getResultAvps();
+            assertEquals(OCS_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String());
+            assertEquals(OCS_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String());
+            assertEquals(RequestType.INITIAL_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
+            Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
+            assertEquals(DIAMETER_SUCCESS, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
+            assertEquals(serviceIdentifier, resultMSCC.getGrouped().getAvp(Avp.SERVICE_IDENTIFIER_CCA).getUnsigned32());
+            assertEquals(ratingGroup, resultMSCC.getGrouped().getAvp(Avp.RATING_GROUP).getUnsigned32());
+            Avp granted = resultMSCC.getGrouped().getAvp(Avp.GRANTED_SERVICE_UNIT);
+            assertEquals(500_000L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
+        } catch (AvpDataException e) {
+            LOG.error("Failed to get Result-Code", e);
+        }
+
+        Request updateRequest = client.createRequest(
+                OCS_REALM,
+                OCS_HOST,
+                session
+        );
+
+        TestHelper.createUpdateRequest(updateRequest.getAvps(),MSISDN, -1L, 500_000L, ratingGroup, serviceIdentifier, ReportingReason.QHT);
+
+        client.sendNextRequest(updateRequest, session);
+
+        waitForAnswer(session.getSessionId());
+
+        try {
+            Result result = client.getAnswer(session.getSessionId());
+            assertEquals(DIAMETER_SUCCESS, result.getResultCode().longValue());
+            AvpSet resultAvps = result.getResultAvps();
+            assertEquals(OCS_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String());
+            assertEquals(OCS_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String());
+            assertEquals(RequestType.UPDATE_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
+            Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
+            assertNull( "No requested MSCC", resultMSCC);
+            assertEquals(86400, resultAvps.getAvp(Avp.VALIDITY_TIME).getInteger32());
         } catch (AvpDataException e) {
             LOG.error("Failed to get Result-Code", e);
         }

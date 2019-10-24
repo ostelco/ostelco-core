@@ -18,11 +18,12 @@ import org.ostelco.prime.kts.engine.KtsServiceFactory
 import org.ostelco.prime.kts.engine.reader.ClasspathResourceTextReader
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.CustomerRegionStatus.APPROVED
+import org.ostelco.prime.model.CustomerRegionStatus.AVAILABLE
 import org.ostelco.prime.model.CustomerRegionStatus.PENDING
 import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.JumioScanData
 import org.ostelco.prime.model.KycStatus
-import org.ostelco.prime.model.KycType.ADDRESS_AND_PHONE_NUMBER
+import org.ostelco.prime.model.KycType.ADDRESS
 import org.ostelco.prime.model.KycType.JUMIO
 import org.ostelco.prime.model.KycType.MY_INFO
 import org.ostelco.prime.model.KycType.NRIC_FIN
@@ -116,7 +117,7 @@ class Neo4jStoreTest {
                 )
             }
             create {
-                Segment(id = getSegmentNameFromCountryCode(REGION))
+                Segment(id = "country-${REGION.toLowerCase()}")
             }
         }
     }
@@ -149,9 +150,10 @@ class Neo4jStoreTest {
                 referredBy = null)
                 .mapLeft { fail(it.message) }
 
-        Neo4jStoreSingleton.getIdentityForContactEmail(contactEmail = EMAIL).bimap(
+        Neo4jStoreSingleton.getIdentitiesFor(queryString = EMAIL).bimap(
                 { fail(it.message) },
-                { identity: Identity ->
+                { list->
+                    val identity: Identity  = list.first()
                     Neo4jStoreSingleton.getCustomer(identity).bimap(
                             { fail(it.message) },
                             { assertEquals(CUSTOMER, it) })})
@@ -166,9 +168,10 @@ class Neo4jStoreTest {
                 referredBy = null)
                 .mapLeft { fail(it.message) }
 
-        Neo4jStoreSingleton.getIdentityForContactEmail(contactEmail = EMAIL).bimap(
+        Neo4jStoreSingleton.getIdentitiesFor(queryString = EMAIL).bimap(
                 { fail(it.message) },
-                { identity: Identity ->
+                { list ->
+                    val identity: Identity = list.first()
                     assertEquals("EMAIL", identity.type)
                     assertEquals(EMAIL, identity.id)
                     assertEquals(IDENTITY.provider, identity.provider)
@@ -255,7 +258,7 @@ class Neo4jStoreTest {
 
         val offer = Offer(
                 id = "NEW_OFFER",
-                segments = listOf(getSegmentNameFromCountryCode(REGION)),
+                segments = listOf("country-${REGION.toLowerCase()}"),
                 products = listOf(sku))
 
         Neo4jStoreSingleton.createOffer(offer)
@@ -270,7 +273,7 @@ class Neo4jStoreTest {
                 .mapLeft { fail(it.message) }
 
         Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 status = APPROVED,
                 regionCode = REGION_CODE)
 
@@ -651,7 +654,7 @@ class Neo4jStoreTest {
                 customer = CUSTOMER).isRight())
 
         assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 status = APPROVED,
                 regionCode = REGION_CODE).isRight())
 
@@ -706,8 +709,12 @@ class Neo4jStoreTest {
         // test
         Neo4jStoreSingleton.getAllRegionDetails(identity = IDENTITY)
                 .bimap(
-                        { fail("Failed to fetch regions empty list") },
-                        { assert(it.isEmpty()) { "Regions list should be empty" } })
+                        { fail("Failed to fetch regions list") },
+                        {
+                            for (region in it) {
+                                assert(region.status == AVAILABLE) { "All regions should be marked available" }
+                            }
+                        })
     }
 
     @Test
@@ -745,11 +752,11 @@ class Neo4jStoreTest {
                 customer = CUSTOMER).isRight())
 
         assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 status = APPROVED,
                 regionCode = "no").isRight())
         assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 status = PENDING,
                 regionCode = "sg").isRight())
 
@@ -769,7 +776,7 @@ class Neo4jStoreTest {
                                                     kycStatusMap = mapOf(
                                                             JUMIO to KycStatus.PENDING,
                                                             MY_INFO to KycStatus.PENDING,
-                                                            ADDRESS_AND_PHONE_NUMBER to KycStatus.PENDING,
+                                                            ADDRESS to KycStatus.PENDING,
                                                             NRIC_FIN to KycStatus.PENDING),
                                                     status = PENDING)),
                                     actual = it.toSet())
@@ -789,11 +796,11 @@ class Neo4jStoreTest {
                 customer = CUSTOMER).isRight())
 
         assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 status = APPROVED,
                 regionCode = "no").isRight())
         assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 status = PENDING,
                 regionCode = "sg").isRight())
 
@@ -828,11 +835,11 @@ class Neo4jStoreTest {
                 customer = CUSTOMER).isRight())
 
         assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 status = APPROVED,
                 regionCode = "no").isRight())
         assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 status = PENDING,
                 regionCode = "sg").isRight())
 
@@ -868,7 +875,7 @@ class Neo4jStoreTest {
                                                     kycStatusMap = mapOf(
                                                             JUMIO to KycStatus.PENDING,
                                                             MY_INFO to KycStatus.PENDING,
-                                                            ADDRESS_AND_PHONE_NUMBER to KycStatus.PENDING,
+                                                            ADDRESS to KycStatus.PENDING,
                                                             NRIC_FIN to KycStatus.PENDING),
                                                     status = PENDING)),
                                     actual = it.toSet())
@@ -892,11 +899,11 @@ class Neo4jStoreTest {
                 customer = CUSTOMER).isRight())
 
         assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 status = APPROVED,
                 regionCode = "no").isRight())
         assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 status = PENDING,
                 regionCode = "sg").isRight())
 
@@ -937,8 +944,7 @@ class Neo4jStoreTest {
             create { Region("sg", "Singapore") }
         }.mapLeft { fail(it.message) }
 
-        /* Note: (kmm) For 'sg' the first segment offered is always a plan. */
-        Neo4jStoreSingleton.createSegment(org.ostelco.prime.model.Segment(id = getPlanSegmentNameFromCountryCode("sg")))
+        Neo4jStoreSingleton.createSegment(org.ostelco.prime.model.Segment(id = "country-sg"))
                 .mapLeft { fail(it.message) }
 
         assert(Neo4jStoreSingleton.addCustomer(
@@ -953,7 +959,7 @@ class Neo4jStoreTest {
                 }
 
         Neo4jStoreSingleton.setKycStatus(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 regionCode = "sg",
                 kycType = MY_INFO)
                 .mapLeft { fail(it.message) }
@@ -968,9 +974,9 @@ class Neo4jStoreTest {
                 })
 
         Neo4jStoreSingleton.setKycStatus(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 regionCode = "sg",
-                kycType = ADDRESS_AND_PHONE_NUMBER)
+                kycType = ADDRESS)
                 .mapLeft { fail(it.message) }
 
         Neo4jStoreSingleton.getRegionDetails(
@@ -986,8 +992,7 @@ class Neo4jStoreTest {
     @Test
     fun `test NRIC_FIN JUMIO and ADDRESS_PHONE status`() {
 
-        /* Note: (kmm) For 'sg' the first segment offered is always a plan. */
-        Neo4jStoreSingleton.createSegment(org.ostelco.prime.model.Segment(id = getPlanSegmentNameFromCountryCode("sg")))
+        Neo4jStoreSingleton.createSegment(org.ostelco.prime.model.Segment(id = "country-sg"))
 
         job {
             create { Region("sg", "Singapore") }
@@ -1005,9 +1010,12 @@ class Neo4jStoreTest {
                 }
 
         Neo4jStoreSingleton.setKycStatus(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 regionCode = "sg",
                 kycType = NRIC_FIN)
+                .mapLeft {
+                    fail(it.message)
+                }
 
         Neo4jStoreSingleton.getRegionDetails(
                 identity = IDENTITY,
@@ -1019,9 +1027,12 @@ class Neo4jStoreTest {
                 })
 
         Neo4jStoreSingleton.setKycStatus(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 regionCode = "sg",
                 kycType = JUMIO)
+                .mapLeft {
+                    fail(it.message)
+                }
 
         Neo4jStoreSingleton.getRegionDetails(
                 identity = IDENTITY,
@@ -1033,9 +1044,12 @@ class Neo4jStoreTest {
                 })
 
         Neo4jStoreSingleton.setKycStatus(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 regionCode = "sg",
-                kycType = ADDRESS_AND_PHONE_NUMBER)
+                kycType = ADDRESS)
+                .mapLeft {
+                    fail(it.message)
+                }
 
         Neo4jStoreSingleton.getRegionDetails(
                 identity = IDENTITY,
@@ -1076,16 +1090,28 @@ class Neo4jStoreTest {
             ConfigRegistry.config = Config(
                     host = "0.0.0.0",
                     protocol = "bolt",
-                    hssNameLookupService = KtsServiceFactory(
-                            serviceInterface = "org.ostelco.prime.storage.graph.HssNameLookupService",
-                            textReader = ClasspathResourceTextReader(
-                                    filename = "/HssNameLookupService.kts"
-                            )
-                    ),
                     onNewCustomerAction = KtsServiceFactory(
                             serviceInterface = "org.ostelco.prime.storage.graph.OnNewCustomerAction",
                             textReader = ClasspathResourceTextReader(
                                     filename = "/OnNewCustomerAction.kts"
+                            )
+                    ),
+                    allowedRegionsService = KtsServiceFactory(
+                            serviceInterface = "org.ostelco.prime.storage.graph.AllowedRegionsService",
+                            textReader = ClasspathResourceTextReader(
+                                    filename = "/AllowedRegionsService.kts"
+                            )
+                    ),
+                    onRegionApprovedAction = KtsServiceFactory(
+                            serviceInterface = "org.ostelco.prime.storage.graph.OnRegionApprovedAction",
+                            textReader = ClasspathResourceTextReader(
+                                    filename = "/OnRegionApprovedAction.kts"
+                            )
+                    ),
+                    hssNameLookupService = KtsServiceFactory(
+                            serviceInterface = "org.ostelco.prime.storage.graph.HssNameLookupService",
+                            textReader = ClasspathResourceTextReader(
+                                    filename = "/HssNameLookupService.kts"
                             )
                     )
             )

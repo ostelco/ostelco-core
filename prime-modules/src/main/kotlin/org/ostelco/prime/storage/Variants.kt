@@ -188,7 +188,7 @@ interface ClientGraphStore {
     /**
      * Save address and Phone number
      */
-    fun saveAddressAndPhoneNumber(identity: Identity, address: String, phoneNumber: String): Either<StoreError, Unit>
+    fun saveAddress(identity: Identity, address: String): Either<StoreError, Unit>
 }
 
 data class ConsumptionResult(val msisdnAnalyticsId: String, val granted: Long, val balance: Long)
@@ -197,7 +197,8 @@ interface AdminGraphStore {
 
     fun getCustomerForMsisdn(msisdn: String): Either<StoreError, Customer>
 
-    fun getIdentityForContactEmail(contactEmail: String): Either<StoreError, Identity>
+    fun getIdentityForCustomerId(id: String): Either<StoreError, Identity>
+    fun getIdentitiesFor(queryString: String): Either<StoreError, Collection<Identity>>
 
     /**
      * Link Customer to MSISDN

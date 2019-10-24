@@ -120,10 +120,12 @@ data class ProfileVendorAdapter(
                         profileType = profileType)
             }
 
+    // TODO: Add an unit test that tests for the absence of error logging if
+    //       the expectSuccess is false and the result is ES2+, but with an error code.
     private fun getProfileStatusA(iccidList: List<String>, expectSuccess: Boolean): Either<SimManagerError, List<ProfileStatus>> {
 
         fun logAndReturnNotFoundError(msg: String): Either<SimManagerError, List<ProfileStatus>> {
-            if (!expectSuccess) {
+            if (expectSuccess) {
                 Companion.logger.error(msg)
             }
             return NotFoundError(msg, pingOk = true).left()
@@ -135,12 +137,14 @@ data class ProfileVendorAdapter(
         return clientInvocation { client.profileStatus(iccidList = iccidList) }
                 .flatMap { response ->
                     if (executionWasFailure(status = response.myHeader.functionExecutionStatus)) {
-                        logAndReturnNotFoundError("execution status =${response.myHeader.functionExecutionStatus}")
-                    } else if (response.profileStatusList == null) {
-                        logAndReturnNotFoundError("Couldn't find any response for query $iccidList")
+                        logAndReturnNotFoundError("execution getProfileStatusA.   iccidList='$iccidList', status=${response.myHeader.functionExecutionStatus}")
                     } else {
-                        val result = response.profileStatusList!! // TODO: Why is this necessary (see if-branch above)
-                        return result.right()
+                        val result = response.profileStatusList
+                        if (result == null) {
+                            logAndReturnNotFoundError("Couldn't find any response for query iccidlist='$iccidList'")
+                        } else {
+                            result.right()
+                        }
                     }
                 }
     }
@@ -178,6 +182,7 @@ data class ProfileVendorAdapter(
         if (simEntry.id == null) {
             return NotUpdatedError("simEntry without id.  simEntry=$simEntry").left()
         }
+
 
         return confirmOrderA(iccid = simEntry.iccid, eid = eid, releaseFlag = releaseFlag)
                 .flatMap { response ->
@@ -257,7 +262,6 @@ data class ProfileVendorAdapter(
                     .flatMap {
                         confirmOrder(eid, it)
                     }
-
     ///
     ///  Pinging the SMDP+ to see if it's there.
     ///
@@ -266,12 +270,12 @@ data class ProfileVendorAdapter(
      * A dummy ICCID. May or may notreturn a valid profile from any HSS or SM-DP+, but is
      * useful for checking of there is an SM-DP+ in the other end of the connection.
      */
-    val invalidICCID = listOf("8901000000000000001")
+    val listContainingOnlyInvalidIccid = listOf("8901000000000000001")
 
     /**
      * Contact the ES2+  endpoint of the SM-DP+, and return true if the answer indicates
      * that it's up.
      */
     fun ping(): Either<SimManagerError, List<ProfileStatus>> =
-            getProfileStatus(iccidList = invalidICCID, expectSuccess = false)
+            getProfileStatus(iccidList = listContainingOnlyInvalidIccid, expectSuccess = false)
 }

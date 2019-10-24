@@ -1,38 +1,32 @@
+import org.ostelco.prime.gradle.Version
+
 plugins {
   kotlin("jvm")
   `java-library`
 }
 
 dependencies {
-
-  val kotlinVersion:String by rootProject.extra
-  val dropwizardVersion:String by rootProject.extra
-  val swaggerVersion:String by rootProject.extra
-  val javaxActivationApiVersion:String by rootProject.extra
-  val jacksonVersion:String by rootProject.extra
-  val csvVersion:String by rootProject.extra
-
   implementation(kotlin("stdlib-jdk8"))
-  implementation("io.dropwizard:dropwizard-core:$dropwizardVersion")
-  implementation("io.swagger.core.v3:swagger-jaxrs2:$swaggerVersion")
+  implementation("io.dropwizard:dropwizard-core:${Version.dropwizard}")
+  implementation("io.swagger.core.v3:swagger-jaxrs2:${Version.swagger}")
 
 
   implementation(kotlin("reflect"))
   implementation(kotlin("stdlib-jdk8"))
 
-  implementation("io.dropwizard:dropwizard-client:$dropwizardVersion")
+  implementation("io.dropwizard:dropwizard-client:${Version.dropwizard}")
 
-  implementation("io.dropwizard:dropwizard-core:$dropwizardVersion")
-  implementation("io.dropwizard:dropwizard-auth:$dropwizardVersion")
-  implementation("io.dropwizard:dropwizard-client:$dropwizardVersion")
-  implementation("io.dropwizard:dropwizard-jdbi:$dropwizardVersion")
+  implementation("io.dropwizard:dropwizard-core:${Version.dropwizard}")
+  implementation("io.dropwizard:dropwizard-auth:${Version.dropwizard}")
+  implementation("io.dropwizard:dropwizard-client:${Version.dropwizard}")
+  implementation("io.dropwizard:dropwizard-jdbi:${Version.dropwizard}")
 
   implementation("org.conscrypt:conscrypt-openjdk-uber:2.2.1")
 
-  testImplementation("javax.activation:javax.activation-api:$javaxActivationApiVersion")
-  implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
-  implementation("org.apache.commons:commons-csv:$csvVersion")
-  testImplementation("io.dropwizard:dropwizard-testing:$dropwizardVersion")
+  testImplementation("javax.activation:javax.activation-api:${Version.javaxActivationApi}")
+  implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${Version.jackson}")
+  implementation("org.apache.commons:commons-csv:${Version.csv}")
+  testImplementation("io.dropwizard:dropwizard-testing:${Version.dropwizard}")
 }
 
-apply(from = "../../gradle/jacoco.gradle")
+apply(from = "../../gradle/jacoco.gradle.kts")

@@ -1,4 +1,5 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.ostelco.prime.gradle.Version
 
 plugins {
   kotlin("jvm")
@@ -7,14 +8,6 @@ plugins {
 }
 
 dependencies {
-
-  val kotlinVersion:String by rootProject.extra
-  val dropwizardVersion:String by rootProject.extra
-  val jacksonVersion:String by rootProject.extra
-  val csvVersion:String by rootProject.extra
-  val jaxbVersion:String by rootProject.extra
-  val javaxActivationVersion:String by rootProject.extra
-
   implementation(project(":sim-administration:jersey-json-schema-validator"))
   implementation(project(":sim-administration:simcard-utils"))
   implementation(project(":sim-administration:es2plus4dropwizard"))
@@ -23,22 +16,22 @@ dependencies {
   implementation(kotlin("reflect"))
   implementation(kotlin("stdlib-jdk8"))
 
-  implementation("io.dropwizard:dropwizard-client:$dropwizardVersion")
+  implementation("io.dropwizard:dropwizard-client:${Version.dropwizard}")
 
-  implementation("io.dropwizard:dropwizard-core:$dropwizardVersion")
-  implementation("io.dropwizard:dropwizard-auth:$dropwizardVersion")
-  implementation("io.dropwizard:dropwizard-client:$dropwizardVersion")
-  implementation("io.dropwizard:dropwizard-jdbi:$dropwizardVersion")
+  implementation("io.dropwizard:dropwizard-core:${Version.dropwizard}")
+  implementation("io.dropwizard:dropwizard-auth:${Version.dropwizard}")
+  implementation("io.dropwizard:dropwizard-client:${Version.dropwizard}")
+  implementation("io.dropwizard:dropwizard-jdbi:${Version.dropwizard}")
 
   implementation("org.conscrypt:conscrypt-openjdk-uber:2.2.1")
 
-  implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
-  implementation("org.apache.commons:commons-csv:$csvVersion")
+  implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${Version.jackson}")
+  implementation("org.apache.commons:commons-csv:${Version.csv}")
 
-  runtimeOnly("javax.xml.bind:jaxb-api:$jaxbVersion")
-  runtimeOnly("javax.activation:activation:$javaxActivationVersion")
+  runtimeOnly("javax.xml.bind:jaxb-api:${Version.jaxb}")
+  runtimeOnly("javax.activation:activation:${Version.javaxActivation}")
 
-  testImplementation("io.dropwizard:dropwizard-testing:$dropwizardVersion")
+  testImplementation("io.dropwizard:dropwizard-testing:${Version.dropwizard}")
 }
 
 application {
@@ -51,4 +44,4 @@ tasks.withType<ShadowJar> {
   archiveVersion.set("")
 }
 
-apply(from = "../../gradle/jacoco.gradle")
+apply(from = "../../gradle/jacoco.gradle.kts")

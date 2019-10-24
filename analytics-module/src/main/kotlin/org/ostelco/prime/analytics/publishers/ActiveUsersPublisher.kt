@@ -1,15 +1,11 @@
 package org.ostelco.prime.analytics.publishers
 
-import com.google.api.core.ApiFutureCallback
-import com.google.api.core.ApiFutures
-import com.google.api.gax.rpc.ApiException
 import com.google.protobuf.ByteString
 import com.google.protobuf.util.JsonFormat
 import com.google.protobuf.util.Timestamps
 import com.google.pubsub.v1.PubsubMessage
 import org.ostelco.analytics.api.ActiveUsersInfo
 import org.ostelco.prime.analytics.ConfigRegistry
-import org.ostelco.prime.getLogger
 import org.ostelco.prime.metrics.api.User
 import java.time.Instant
 
@@ -18,8 +14,6 @@ import java.time.Instant
  */
 object ActiveUsersPublisher :
         PubSubPublisher by DelegatePubSubPublisher(topicId = ConfigRegistry.config.activeUsersTopicId) {
-
-    private val logger by getLogger()
 
     private val jsonPrinter = JsonFormat.printer().includingDefaultValueFields()
 
@@ -38,25 +32,7 @@ object ActiveUsersPublisher :
                 .setData(convertToJson(activeUsersInfoBuilder.build()))
                 .build()
 
-        //schedule a message to be published, messages are automatically batched
-        val future = publishPubSubMessage(pubsubMessage)
-
-        // add an asynchronous callback to handle success / failure
-        ApiFutures.addCallback(future, object : ApiFutureCallback<String> {
-
-            override fun onFailure(throwable: Throwable) {
-                if (throwable is ApiException) {
-                    // details on the API exception
-                    logger.warn("Status code: {}", throwable.statusCode.code)
-                    logger.warn("Retrying: {}", throwable.isRetryable)
-                }
-                logger.warn("Error publishing active users list")
-            }
-
-            override fun onSuccess(messageId: String) {
-                // Once published, returns server-assigned message ids (unique within the topic)
-                logger.debug(messageId)
-            }
-        }, singleThreadScheduledExecutor)
+        // schedule a message to be published, messages are automatically batched
+        publishPubSubMessage(pubsubMessage)
     }
 }

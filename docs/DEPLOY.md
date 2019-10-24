@@ -1,11 +1,8 @@
 # Deploy to production
 
-## Deploy OCSgw to GCP
+## Deploy OCS gateway to GCP
 
 ./ocsgw/infra/script/deploy-ocsgw.sh
-
-The script takes to parameters. First parameter is instance number [1/2/3]. Second parameter is environment [dev/prod].
-If no parameters passed it will deploy all instances in dev environment.
 
 ## Deploy to kubernetes cluster on GCP
 

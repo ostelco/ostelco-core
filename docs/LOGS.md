@@ -20,11 +20,11 @@ resource.labels.container_name="prime"
  * GKE container > private-cluster > All namespace_id
  * You can expand a single log and filter to log prime-only logs.
 
-# OCSGW logs in GCP
+# OCS Gateway logs in GCP
 
 Same steps as above. Use the filter below:
 
 ```properties
-resource.type="global"
+resource.type="gce_instance"
 logName="projects/GCP_PROJECT_ID/logs/ocsgw"
 ```

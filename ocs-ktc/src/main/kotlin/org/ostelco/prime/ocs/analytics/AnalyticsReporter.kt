@@ -16,7 +16,7 @@ object AnalyticsReporter {
 
     fun report(subscriptionAnalyticsId: String, request: CreditControlRequestInfo, bundleBytes: Long) {
         logger.info("Sent Data Consumption info event to analytics")
-        analyticsReporter.reportTrafficInfo(
+        analyticsReporter.reportDataConsumption(
                 subscriptionAnalyticsId = subscriptionAnalyticsId,
                 usedBucketBytes = request.msccList?.firstOrNull()?.used?.totalOctets ?: 0L,
                 bundleBytes = bundleBytes,

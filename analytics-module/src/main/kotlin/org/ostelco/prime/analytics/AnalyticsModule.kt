@@ -5,9 +5,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName
 import io.dropwizard.setup.Environment
 import org.hibernate.validator.constraints.NotBlank
 import org.ostelco.prime.analytics.metrics.CustomMetricsRegistry
-import org.ostelco.prime.analytics.publishers.ActiveUsersPublisher
-import org.ostelco.prime.analytics.publishers.DataConsumptionInfoPublisher
-import org.ostelco.prime.analytics.publishers.PurchaseInfoPublisher
+import org.ostelco.prime.analytics.publishers.*
 import org.ostelco.prime.module.PrimeModule
 
 @JsonTypeName("analytics")
@@ -27,9 +25,12 @@ class AnalyticsModule : PrimeModule {
         env.lifecycle().manage(server)
 
         // dropwizard starts Analytics events publisher
-        env.lifecycle().manage(DataConsumptionInfoPublisher)
-        env.lifecycle().manage(PurchaseInfoPublisher)
         env.lifecycle().manage(ActiveUsersPublisher)
+        env.lifecycle().manage(DataConsumptionInfoPublisher)
+        env.lifecycle().manage(PurchasePublisher)
+        env.lifecycle().manage(RefundPublisher)
+        env.lifecycle().manage(SimProvisioningPublisher)
+        env.lifecycle().manage(SubscriptionStatusUpdatePublisher)
     }
 }
 
@@ -48,7 +49,20 @@ data class AnalyticsConfig(
 
     @NotBlank
     @JsonProperty("activeUsersTopicId")
-    val activeUsersTopicId: String)
+    val activeUsersTopicId: String,
+
+    @NotBlank
+    @JsonProperty("simProvisioningTopicId")
+    val simProvisioningTopicId: String,
+
+    @NotBlank
+    @JsonProperty("subscriptionStatusUpdateTopicId")
+    val subscriptionStatusUpdateTopicId: String,
+
+    @NotBlank
+    @JsonProperty("refundsTopicId")
+    val refundsTopicId: String
+)
 
 object ConfigRegistry {
     lateinit var config: AnalyticsConfig

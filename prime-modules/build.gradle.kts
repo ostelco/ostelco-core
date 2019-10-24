@@ -1,45 +1,37 @@
+import org.ostelco.prime.gradle.Version
+
 plugins {
   kotlin("jvm")
   `java-library`
 }
 
 dependencies {
-
-  val kotlinVersion:String by rootProject.extra
-  val kotlinXCoroutinesVersion:String by rootProject.extra
-  val dropwizardVersion:String by rootProject.extra
-  val googleCloudVersion:String by rootProject.extra
-  val jacksonVersion:String by rootProject.extra
-  val arrowVersion:String by rootProject.extra
-  val jaxbVersion:String by rootProject.extra
-  val javaxActivationVersion:String by rootProject.extra
-
   api(kotlin("stdlib-jdk8"))
   api(kotlin("reflect"))
-  api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinXCoroutinesVersion")
+  api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Version.kotlinXCoroutines}")
 
-  api("io.dropwizard:dropwizard-auth:$dropwizardVersion")
-  implementation("com.google.cloud:google-cloud-pubsub:$googleCloudVersion")
-  implementation("com.google.cloud:google-cloud-datastore:$googleCloudVersion")
+  api("io.dropwizard:dropwizard-auth:${Version.dropwizard}")
+  implementation("com.google.cloud:google-cloud-pubsub:${Version.googleCloudPubSub}")
+  implementation("com.google.cloud:google-cloud-datastore:${Version.googleCloudDataStore}")
 
-  api("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
+  api("com.fasterxml.jackson.module:jackson-module-kotlin:${Version.jackson}")
 
   api(project(":ocs-grpc-api"))
   api(project(":analytics-grpc-api"))
   api(project(":model"))
 
-  api("io.dropwizard:dropwizard-core:$dropwizardVersion")
+  api("io.dropwizard:dropwizard-core:${Version.dropwizard}")
   
-  api("io.arrow-kt:arrow-core:$arrowVersion")
-  api("io.arrow-kt:arrow-typeclasses:$arrowVersion")
-  api("io.arrow-kt:arrow-instances-core:$arrowVersion")
-  api("io.arrow-kt:arrow-effects:$arrowVersion")
+  api("io.arrow-kt:arrow-core:${Version.arrow}")
+  api("io.arrow-kt:arrow-typeclasses:${Version.arrow}")
+  api("io.arrow-kt:arrow-instances-core:${Version.arrow}")
+  api("io.arrow-kt:arrow-effects:${Version.arrow}")
 
-  runtimeOnly("javax.xml.bind:jaxb-api:$jaxbVersion")
-  runtimeOnly("javax.activation:activation:$javaxActivationVersion")
+  runtimeOnly("javax.xml.bind:jaxb-api:${Version.jaxb}")
+  runtimeOnly("javax.activation:activation:${Version.javaxActivation}")
 
   testImplementation(kotlin("test"))
   testImplementation(kotlin("test-junit"))
 }
 
-apply(from = "../gradle/jacoco.gradle")
+apply(from = "../gradle/jacoco.gradle.kts")

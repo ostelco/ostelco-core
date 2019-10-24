@@ -180,11 +180,11 @@ class TestClient : EventListener<Request, Answer> {
     }
 
     fun getAnswer(sessionId: String) : Result? {
-        return answerMap.get(sessionId)
+        return answerMap.remove(sessionId)
     }
 
     fun getRequest(sessionId: String) : Result? {
-        return requestMap.get(sessionId)
+        return requestMap.remove(sessionId)
     }
 
     override fun receivedSuccessMessage(request: Request, answer: Answer) {

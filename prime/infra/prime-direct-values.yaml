@@ -12,11 +12,7 @@ podAutoscaling:
 
 cronjobs:
   shredder:
-    enabled: true
-    image: eu.gcr.io/pi-ostelco-dev/scaninfo-shredder
-    tag: "1.0.0-6052932a-dev"
-    dataset_project: pi-ostelco-dev
-    dev: true
+    enabled: false
 
 prime:
   image: eu.gcr.io/pi-ostelco-dev/prime
@@ -29,9 +25,6 @@ prime:
     SLACK_CHANNEL: prime-alerts
     SLACK_ENV: Development
     SLACK_DEPLOYMENT: Direct
-    DATA_TRAFFIC_TOPIC: data-traffic
-    PURCHASE_INFO_TOPIC: purchase-info
-    ACTIVE_USERS_TOPIC: active-users
     STRIPE_EVENT_TOPIC: stripe-event
     STRIPE_EVENT_STORE_SUBSCRIPTION: stripe-event-store-sub
     STRIPE_EVENT_REPORT_SUBSCRIPTION: stripe-event-report-sub
@@ -142,8 +135,10 @@ prime:
       cpu: 100m
       memory: 768Mi
   livenessProbe: {}
-  readinessProbe: {}
-  annotations: 
+  readinessProbe:
+    path: /ping
+    port: 8080
+  annotations:
     prometheus.io/scrape: 'true'
     prometheus.io/path: '/prometheus-metrics'
     prometheus.io/port: '8081'  

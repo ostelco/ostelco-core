@@ -1,0 +1,73 @@
+modules:
+  - type: jersey
+    config:
+      authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
+      jerseyClient:
+        timeout: 3s
+  - type: neo4j
+    config:
+      host: 0.0.0.0
+      protocol: bolt
+      onNewCustomerAction:
+        serviceInterface: org.ostelco.prime.storage.graph.OnNewCustomerAction
+        textReader:
+          type: classpathResource
+          filename: /OnNewCustomerAction.kts
+      allowedRegionsService:
+        serviceInterface: org.ostelco.prime.storage.graph.AllowedRegionsService
+        textReader:
+          type: classpathResource
+          filename: /AllowedRegionsService.kts
+      onRegionApprovedAction:
+        serviceInterface: org.ostelco.prime.storage.graph.OnRegionApprovedAction
+        textReader:
+          type: classpathResource
+          filename: /OnRegionApprovedAction.kts
+      hssNameLookupService:
+        serviceInterface: org.ostelco.prime.storage.graph.HssNameLookupService
+        textReader:
+          type: classpathResource
+          filename: /HssNameLookupService.kts
+  - type: analytics
+    config:
+      projectId: ${GCP_PROJECT_ID}
+      dataTrafficTopicId: data-traffic
+      purchaseInfoTopicId: purchase-info
+      activeUsersTopicId: active-users
+      simProvisioningTopicId: sim-provisioning
+      subscriptionStatusUpdateTopicId: subscription-status-update
+      refundsTopicId: analytics-refunds
+  - type: ocs
+    config:
+      lowBalanceThreshold: 0
+      consumptionPolicyService:
+        serviceInterface: org.ostelco.prime.ocs.core.ConsumptionPolicy
+        textReader:
+          type: classpathResource
+          filename: /ConsumptionPolicyService.kts
+  - type: api
+  - type: stripe-payment-processor
+    config:
+      projectId: ${GCP_PROJECT_ID}
+      stripeEventTopicId: stripe-event
+      stripeEventStoreSubscriptionId: stripe-event-store-sub
+      stripeEventReportSubscriptionId: stripe-event-report-sub
+      stripeEventRecurringPaymentSubscriptionId: stripe-event-recurring-payment-sub
+  - type: firebase-app-notifier
+    config:
+      configFile: config/prime-service-account.json
+  - type: admin
+  - type: scaninfo-store
+    config:
+      storeType: emulator
+server:
+  applicationConnectors:
+    - type: h2c
+      port: 8080
+      maxConcurrentStreams: 1024
+      initialStreamRecvWindow: 65535
+
+logging:
+  level: INFO
+  loggers:
+    org.ostelco: DEBUG

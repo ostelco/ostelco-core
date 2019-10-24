@@ -1,14 +1,11 @@
+import org.ostelco.prime.gradle.Version
+
 plugins {
   kotlin("jvm")
   `java-library`
 }
 
 dependencies {
-
-  val kotlinVersion:String by rootProject.extra
-  val jacksonVersion:String by rootProject.extra
-  val mockitoVersion:String by rootProject.extra
-
   api(kotlin("script-util"))
   api(kotlin("script-runtime"))
   
@@ -19,12 +16,12 @@ dependencies {
   // api(kotlin("scripting-compiler"))
 
   implementation(project(":prime-modules"))
-  implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
+  implementation("com.fasterxml.jackson.core:jackson-databind:${Version.jacksonDatabind}")
 
   testImplementation(kotlin("test"))
   testImplementation(kotlin("test-junit"))
 
-  testImplementation("org.mockito:mockito-core:$mockitoVersion")
+  testImplementation("org.mockito:mockito-core:${Version.mockito}")
 }
 
-apply(from = "../gradle/jacoco.gradle")
+apply(from = "../gradle/jacoco.gradle.kts")

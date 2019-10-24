@@ -1,12 +1,17 @@
 package org.ostelco.prime.analytics
 
 import org.ostelco.prime.analytics.MetricType.GAUGE
-import org.ostelco.prime.model.PurchaseRecord
+import org.ostelco.prime.model.SimProfileStatus
+import java.math.BigDecimal
 
 interface AnalyticsService {
-    fun reportTrafficInfo(subscriptionAnalyticsId: String, usedBucketBytes: Long, bundleBytes: Long, apn: String?, mccMnc: String?)
     fun reportMetric(primeMetric: PrimeMetric, value: Long)
-    fun reportPurchaseInfo(purchaseRecord: PurchaseRecord, customerAnalyticsId: String, status: String)
+
+    fun reportDataConsumption(subscriptionAnalyticsId: String, usedBucketBytes: Long, bundleBytes: Long, apn: String?, mccMnc: String?)
+    fun reportPurchase(customerAnalyticsId: String, purchaseId: String, sku: String, priceAmountCents: Int, priceCurrency: String)
+    fun reportRefund(customerAnalyticsId: String, purchaseId: String, reason: String?)
+    fun reportSimProvisioning(subscriptionAnalyticsId: String, customerAnalyticsId: String, regionCode: String)
+    fun reportSubscriptionStatusUpdate(subscriptionAnalyticsId: String, status: SimProfileStatus)
 }
 
 enum class PrimeMetric(val metricType: MetricType) {

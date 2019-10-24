@@ -1,26 +1,23 @@
+import org.ostelco.prime.gradle.Version
+
 plugins {
   kotlin("jvm")
   `java-library`
 }
 
 dependencies {
-
-  val googleCloudVersion:String by rootProject.extra
-  val dockerComposeJunitRuleVersion:String by rootProject.extra
-  val kotlinVersion:String by rootProject.extra
-  val mockitoVersion:String by rootProject.extra
-
   implementation(project(":prime-modules"))
+  api(project(":kts-engine"))
 
-  implementation("com.google.cloud:google-cloud-pubsub:$googleCloudVersion")
+  implementation("com.google.cloud:google-cloud-pubsub:${Version.googleCloudPubSub}")
 
-  testImplementation("com.palantir.docker.compose:docker-compose-rule-junit4:$dockerComposeJunitRuleVersion")
+  testImplementation("com.palantir.docker.compose:docker-compose-rule-junit4:${Version.dockerComposeJunitRule}")
 
   testImplementation(kotlin("test"))
   testImplementation(kotlin("test-junit"))
   
-  testImplementation("org.mockito:mockito-core:$mockitoVersion")
+  testImplementation("org.mockito:mockito-core:${Version.mockito}")
 
 }
 
-apply(from = "../gradle/jacoco.gradle")
+apply(from = "../gradle/jacoco.gradle.kts")

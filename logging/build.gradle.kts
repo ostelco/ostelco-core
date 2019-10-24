@@ -1,20 +1,17 @@
+import org.ostelco.prime.gradle.Version
+
 plugins {
   kotlin("jvm")
   `java-library`
 }
 
 dependencies {
-
-  val kotlinVersion:String by rootProject.extra
-  val dropwizardVersion:String by rootProject.extra
-  val jacksonVersion:String by rootProject.extra
-
   implementation(kotlin("stdlib-jdk8"))
 
-  implementation("io.dropwizard:dropwizard-logging:$dropwizardVersion")
+  implementation("io.dropwizard:dropwizard-logging:${Version.dropwizard}")
 
-  implementation("com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion")
-  implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
+  implementation("com.fasterxml.jackson.core:jackson-annotations:${Version.jackson}")
+  implementation("com.fasterxml.jackson.core:jackson-databind:${Version.jacksonDatabind}")
 }
 
-apply(from = "../gradle/jacoco.gradle")
+apply(from = "../gradle/jacoco.gradle.kts")

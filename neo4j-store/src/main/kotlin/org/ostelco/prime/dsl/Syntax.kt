@@ -10,9 +10,11 @@ import org.ostelco.prime.model.Region
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.customerToBundleRelation
+import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.customerToSegmentRelation
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.customerToSimProfileRelation
+import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.forPurchaseByRelation
+import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.forPurchaseOfRelation
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.identifiesRelation
-import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.purchaseRecordRelation
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.referredRelation
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.scanInformationRelation
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.simProfileRegionRelation
@@ -22,6 +24,7 @@ import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.subscriptionSimProfil
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.subscriptionToBundleRelation
 import org.ostelco.prime.storage.graph.RelationType
 import org.ostelco.prime.storage.graph.model.Identity
+import org.ostelco.prime.storage.graph.model.Segment
 import org.ostelco.prime.storage.graph.model.SimProfile
 import kotlin.reflect.KClass
 
@@ -113,10 +116,10 @@ data class CustomerContext(override val id: String) : EntityContext<Customer>(Cu
             fromId = id,
             toId = plan.id)
 
-    infix fun purchased(product: ProductContext) = PartialRelationExpression(
-            relationType = purchaseRecordRelation,
+    infix fun belongsToSegment(segment: SegmentContext) = RelationExpression(
+            relationType = customerToSegmentRelation,
             fromId = id,
-            toId = product.id)
+            toId = segment.id)
 }
 
 data class BundleContext(override val id: String) : EntityContext<Bundle>(Bundle::class, id)
@@ -146,6 +149,22 @@ data class SubscriptionContext(override val id: String) : EntityContext<Subscrip
 data class ScanInfoContext(override val id: String) : EntityContext<ScanInformation>(ScanInformation::class, id)
 data class PlanContext(override val id: String) : EntityContext<Plan>(Plan::class, id)
 data class ProductContext(override val id: String) : EntityContext<Product>(Product::class, id)
+data class SegmentContext(override val id: String) : EntityContext<Segment>(Segment::class, id)
+
+data class PurchaseRecordContext(override val id: String) : EntityContext<PurchaseRecord>(PurchaseRecord::class, id) {
+
+    infix fun forPurchaseBy(customer: CustomerContext) = RelationExpression(
+                    relationType = forPurchaseByRelation,
+                    fromId = id,
+                    toId = customer.id
+            )
+
+    infix fun forPurchaseOf(product: ProductContext) = RelationExpression(
+                    relationType = forPurchaseOfRelation,
+                    fromId = id,
+                    toId = product.id
+            )
+}
 
 //
 // Identity
@@ -273,17 +292,24 @@ infix fun Plan.Companion.forCustomer(customer: CustomerContext) =
 
 infix fun Product.Companion.withSku(id: String): ProductContext = ProductContext(id)
 
-infix fun Product.Companion.purchasedBy(customer: CustomerContext) =
-        RelatedFromClause(
-                relationType = purchaseRecordRelation,
-                fromId = customer.id
-        )
-
 //
 // Purchase Record
 //
-infix fun PurchaseRecord.Companion.forPurchasesBy(customer: CustomerContext) =
-        RelationFromClause(
-                relationType = purchaseRecordRelation,
-                fromId = customer.id
+infix fun PurchaseRecord.Companion.withId(id: String): PurchaseRecordContext = PurchaseRecordContext(id)
+
+infix fun PurchaseRecord.Companion.forPurchaseBy(customer: CustomerContext) =
+        RelatedToClause(
+                relationType = forPurchaseByRelation,
+                toId = customer.id
         )
+
+infix fun PurchaseRecord.Companion.forPurchaseOf(product: ProductContext) =
+        RelatedToClause(
+                relationType = forPurchaseOfRelation,
+                toId = product.id
+        )
+
+//
+// Segment
+//
+infix fun Segment.Companion.withId(id: String): SegmentContext = SegmentContext(id)
