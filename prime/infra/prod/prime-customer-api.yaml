@@ -875,7 +875,7 @@ definitions:
       status:
         description: "Customer Status for this region"
         type: string
-        enum: [ PENDING, APPROVED ]
+        enum: [ PENDING, APPROVED, AVAILABLE ]
       kycStatusMap:
         description: "Map of status for each KYC"
         type: object

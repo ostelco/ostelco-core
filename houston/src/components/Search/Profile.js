@@ -96,10 +96,10 @@ Profile.propTypes = {
 };
 
 function mapStateToProps(state) {
-  const { subscriber } = state;
   const { subscriptions } = state;
+  const { customer } = state
   return {
-    profile: subscriber,
+    profile: customer,
     subscriptions
   };
 }

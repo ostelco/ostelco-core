@@ -12,12 +12,6 @@ import java.text.DecimalFormatSymbols
 
 val adminStore by lazy { getResource<AdminDataSource>() }
 
-// Helper for naming of default segments based on country code.
-fun getSegmentNameFromCountryCode(countryCode: String): String = "country-$countryCode".toLowerCase()
-
-// Helper for naming of default plan segments based on country code.
-fun getPlanSegmentNameFromCountryCode(countryCode: String): String = "plan-country-$countryCode".toLowerCase()
-
 private val dfs = DecimalFormatSymbols().apply {
     groupingSeparator = '_'
 }

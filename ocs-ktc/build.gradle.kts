@@ -7,6 +7,7 @@ plugins {
 
 dependencies {
   implementation(project(":prime-modules"))
+  api(project(":kts-engine"))
 
   implementation("com.google.cloud:google-cloud-pubsub:${Version.googleCloudPubSub}")
 
@@ -19,4 +20,4 @@ dependencies {
 
 }
 
-apply(from = "../gradle/jacoco.gradle")
+apply(from = "../gradle/jacoco.gradle.kts")

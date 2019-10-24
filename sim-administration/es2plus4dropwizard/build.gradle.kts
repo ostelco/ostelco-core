@@ -17,4 +17,4 @@ dependencies {
   testImplementation("org.mockito:mockito-core:${Version.mockito}")
 }
 
-apply(from = "../../gradle/jacoco.gradle")
+apply(from = "../../gradle/jacoco.gradle.kts")

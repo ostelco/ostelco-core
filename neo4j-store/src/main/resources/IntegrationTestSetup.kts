@@ -11,7 +11,6 @@ import org.ostelco.prime.model.Segment
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.atomicCreateOffer
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.createIndex
 import org.ostelco.prime.storage.graph.createProduct
-import org.ostelco.prime.storage.graph.getSegmentNameFromCountryCode
 
 
 private val logger by getLogger()
@@ -52,7 +51,7 @@ job {
 
 atomicCreateOffer(
         offer = Offer(id = "default_offer"),
-        segments = listOf(Segment(id = getSegmentNameFromCountryCode("NO"))),
+        segments = listOf(Segment(id = "country-no")),
         products = listOf(
                 createProduct(sku = "1GB_249NOK"),
                 createProduct(sku = "2GB_299NOK"),

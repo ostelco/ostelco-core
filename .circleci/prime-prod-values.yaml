@@ -25,7 +25,7 @@ cronjobs:
   shredder:
     enabled: true
     image: eu.gcr.io/pi-ostelco-dev/scaninfo-shredder
-    tag: "1.0.0-efbf05a64-dev"
+    tag: "" # it will be set from CI
     dataset_project: pi-ostelco-prod
     dev: false
 
@@ -150,7 +150,9 @@ prime:
       cpu: 300m
       memory: 1Gi
   livenessProbe: {}
-  readinessProbe: {}
+  readinessProbe:
+    path: /ping
+    port: 8080
   annotations:
     prometheus.io/scrape: 'true'
     prometheus.io/path: '/prometheus-metrics'

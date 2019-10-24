@@ -1,25 +1,28 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
+import _ from 'lodash';
 
 import { subscriberActions } from '../../actions/subscriber.actions';
 import SearchForm from './SearchForm';
+import CustomerList from './CustomerList';
 import SearchResults from './SearchResults';
 import AlertMessage from './Alert';
 
 class Search extends React.Component {
 
   onSubmit = (text) => {
-    this.props.getSubscriberAndBundlesByEmail(text);
+    this.props.getSubscriberList(text);
   }
 
   render() {
-    const hasResults = this.props.profile.nickname || false;
+    const hasResults = (this.props.profile && this.props.profile.nickname) || false;
     return (
       <div className="container">
         <AlertMessage />
         <SearchForm onSubmit={this.onSubmit} />
         <br />
+        <CustomerList />
         {
           hasResults && (
             <SearchResults />
@@ -38,7 +41,7 @@ Search.propTypes = {
 
 function mapStateToProps(state) {
   const { loggedIn } = state.authentication;
-  const { subscriber } = state;
+  const subscriber = _.get(state, 'customer')
   return {
     loggedIn,
     profile: subscriber
@@ -46,6 +49,6 @@ function mapStateToProps(state) {
 };
 
 const mapDispatchToProps = {
-  getSubscriberAndBundlesByEmail: subscriberActions.getSubscriberAndBundlesByEmail
+  getSubscriberList: subscriberActions.getSubscriberList
 };
 export default connect(mapStateToProps, mapDispatchToProps)(Search);

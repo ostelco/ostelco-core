@@ -45,16 +45,26 @@ modules:
     config:
       host: neo4j
       protocol: bolt
-      hssNameLookupService:
-        serviceInterface: org.ostelco.prime.storage.graph.HssNameLookupService
-        textReader:
-          type: classpathResource
-          filename: /HssNameLookupService.kts
       onNewCustomerAction:
         serviceInterface: org.ostelco.prime.storage.graph.OnNewCustomerAction
         textReader:
           type: classpathResource
           filename: /OnNewCustomerAction.kts
+      allowedRegionsService:
+        serviceInterface: org.ostelco.prime.storage.graph.AllowedRegionsService
+        textReader:
+          type: classpathResource
+          filename: /AllowedRegionsService.kts
+      onRegionApprovedAction:
+        serviceInterface: org.ostelco.prime.storage.graph.OnRegionApprovedAction
+        textReader:
+          type: classpathResource
+          filename: /OnRegionApprovedAction.kts
+      hssNameLookupService:
+        serviceInterface: org.ostelco.prime.storage.graph.HssNameLookupService
+        textReader:
+          type: classpathResource
+          filename: /HssNameLookupService.kts
   - type: analytics
     config:
       projectId: ${GCP_PROJECT_ID}
@@ -71,19 +81,11 @@ modules:
         projectId: ${GCP_PROJECT_ID}
         activateTopicId: ocs-activate
         ccrSubscriptionId: ocs-ccr-sub
-      rating:
-          - serviceId: 1
-            ratingGroup: 10
-            rate: Normal
-          - serviceId: 2
-            ratingGroup: 12
-            rate: Normal
-          - serviceId: 4
-            ratingGroup: 14
-            rate: Normal
-          - serviceId: -1
-            ratingGroup: 10
-            rate: Normal
+      consumptionPolicyService:
+        serviceInterface: org.ostelco.prime.ocs.core.ConsumptionPolicy
+        textReader:
+          type: classpathResource
+          filename: /ConsumptionPolicyService.kts
   - type: api
   - type: firebase-app-notifier
     config:
