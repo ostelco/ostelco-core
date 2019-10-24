@@ -57,17 +57,18 @@ class DelegatePubSubPublisher(
         ApiFutures.addCallback(future, object : ApiFutureCallback<String> {
 
             override fun onFailure(throwable: Throwable) {
+                logger.warn("Error publishing message in topic: $topicId")
                 if (throwable is ApiException) {
                     // details on the API exception
-                    logger.warn("Status code: {}", throwable.statusCode.code)
-                    logger.warn("Retrying: {}", throwable.isRetryable)
+                    logger.warn("Pubsub topic: $topicId\n" +
+                            "Status code: ${throwable.statusCode.code}\n" +
+                            "Retrying: ${throwable.isRetryable}")
                 }
-                logger.warn("Error publishing message in topic: $topicId")
             }
 
             override fun onSuccess(messageId: String) {
                 // Once published, returns server-assigned message ids (unique within the topic)
-                logger.debug("Published message $messageId")
+                logger.debug("Published message $messageId to topic $topicId")
             }
         }, DataConsumptionInfoPublisher.singleThreadScheduledExecutor)
     }
