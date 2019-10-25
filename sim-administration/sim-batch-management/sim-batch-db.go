@@ -30,7 +30,7 @@ type Person struct {
 	Lastname  string `db:"lastname" json:"lastname"`
 }
 
-func main() {
+func main_not() {
 
 	// Get a reference to the database, create a table if it
 	// doesn't exist already.

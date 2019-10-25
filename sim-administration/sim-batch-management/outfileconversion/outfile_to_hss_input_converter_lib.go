@@ -5,32 +5,13 @@ import (
 	"flag"
 	"fmt"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/loltelutils"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
 	"log"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 )
-
-///
-/// Data structures
-///
-
-type OutputFileRecord struct {
-	Filename          string
-	inputVariables    map[string]string
-	headerDescription map[string]string
-	Entries           []SimEntry
-	// TODO: As it is today, the noOfEntries is just the number of Entries,
-	//       but I may want to change that to be the declared number of Entries,
-	//       and then later, dynamically, read in the individual Entries
-	//       in a channel that is just piped to the goroutine that writes
-	//       them to file, and fails if the number of declared Entries
-	//       differs from the actual number of Entries.  .... but that is
-	//       for another day.
-	noOfEntries    int
-	OutputFileName string
-}
 
 const (
 	INITIAL            = "initial"
@@ -40,21 +21,6 @@ const (
 	UNKNOWN_HEADER     = "unknown"
 )
 
-type SimEntry struct {
-	rawIccid             string
-	iccidWithChecksum    string
-	iccidWithoutChecksum string
-	imsi                 string
-	ki                   string
-	outputFileName       string
-}
-
-type ParserState struct {
-	currentState      string
-	inputVariables    map[string]string
-	headerDescription map[string]string
-	entries           []SimEntry
-}
 
 ///
 ///  Functions
@@ -87,7 +53,15 @@ func ParseLineIntoKeyValueMap(line string, theMap map[string]string) {
 	theMap[key] = value
 }
 
-func ReadOutputFile(filename string) OutputFileRecord {
+
+type ParserState struct {
+	currentState      string
+	inputVariables    map[string]string
+	headerDescription map[string]string
+	entries           []model.SimEntry
+}
+
+func ReadOutputFile(filename string) model.OutputFileRecord {
 
 	_, err := os.Stat(filename)
 
@@ -164,12 +138,12 @@ func ReadOutputFile(filename string) OutputFileRecord {
 
 			var iccidWithoutChecksum = loltelutils.TrimSuffix(iccidWithChecksum, 1)
 			// TODO: Enable this!! checkICCIDSyntax(iccidWithChecksum)
-			entry := SimEntry{
-				rawIccid:             rawIccid,
-				iccidWithChecksum:    iccidWithChecksum,
-				iccidWithoutChecksum: iccidWithoutChecksum,
-				imsi:                 imsi,
-				ki:                   ki}
+			entry := model.SimEntry{
+				RawIccid:             rawIccid,
+				IccidWithChecksum:    iccidWithChecksum,
+				IccidWithoutChecksum: iccidWithoutChecksum,
+				Imsi:                 imsi,
+				Ki:                   ki}
 			state.entries = append(state.entries, entry)
 
 		case UNKNOWN_HEADER:
@@ -197,12 +171,12 @@ func ReadOutputFile(filename string) OutputFileRecord {
 			countedNoOfEntries)
 	}
 
-	result := OutputFileRecord{
+	result := model.OutputFileRecord{
 		Filename:          filename,
-		inputVariables:    state.inputVariables,
-		headerDescription: state.headerDescription,
+		InputVariables:    state.inputVariables,
+		HeaderDescription: state.headerDescription,
 		Entries:           state.entries,
-		noOfEntries:       declaredNoOfEntities,
+		NoOfEntries:       declaredNoOfEntities,
 		OutputFileName:    getOutputFileName(state),
 	}
 
@@ -274,7 +248,7 @@ func fileExists(filename string) bool {
 }
 
 // TODO: Consider rewriting using https://golang.org/pkg/encoding/csv/
-func WriteHssCsvFile(filename string, entries []SimEntry) error {
+func WriteHssCsvFile(filename string, entries []model.SimEntry) error {
 
 	if fileExists(filename) {
 		log.Fatal("Output file already exists. '", filename, "'.")
@@ -292,7 +266,7 @@ func WriteHssCsvFile(filename string, entries []SimEntry) error {
 
 	max := 0
 	for i, entry := range entries {
-		s := fmt.Sprintf("%s, %s, %s\n", entry.iccidWithChecksum, entry.imsi, entry.ki)
+		s := fmt.Sprintf("%s, %s, %s\n", entry.IccidWithChecksum, entry.Imsi, entry.Ki)
 		_, err = f.WriteString(s)
 		if err != nil {
 			log.Fatal("Couldn't write to  hss csv file '", filename, "': ", err)

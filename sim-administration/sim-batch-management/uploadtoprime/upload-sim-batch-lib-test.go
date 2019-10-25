@@ -9,13 +9,13 @@ import (
 func TestParseInputFileGeneratorCommmandline(t *testing.T) {
 
 	parsedBatch := ParseInputFileGeneratorCommmandline()
-	assert.Equal(t, "Footel", parsedBatch.customer)
-	assert.Equal(t, "BAR_FOOTEL_STD", parsedBatch.profileType)
-	assert.Equal(t, "20191007", parsedBatch.orderDate)
-	assert.Equal(t, "2019100701", parsedBatch.batchNo)
-	assert.Equal(t, 10, parsedBatch.quantity)
-	assert.Equal(t, 894700000000002214, parsedBatch.firstIccid)
-	assert.Equal(t, 242017100012213, parsedBatch.firstImsi)
+	assert.Equal(t, "Footel", parsedBatch.Customer)
+	assert.Equal(t, "BAR_FOOTEL_STD", parsedBatch.ProfileType)
+	assert.Equal(t, "20191007", parsedBatch.OrderDate)
+	assert.Equal(t, "2019100701", parsedBatch.BatchNo)
+	assert.Equal(t, 10, parsedBatch.Quantity)
+	assert.Equal(t, 894700000000002214, parsedBatch.FirstIccid)
+	assert.Equal(t, 242017100012213, parsedBatch.FirstImsi)
 }
 
 // TODO: Make a test that checks that the correct number of things are made,

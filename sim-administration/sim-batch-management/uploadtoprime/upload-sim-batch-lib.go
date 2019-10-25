@@ -14,6 +14,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/loltelutils"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
 	"log"
 	"net/url"
 	"regexp"
@@ -66,23 +67,23 @@ func LuhnChecksum(number int) int {
 	return generateControlDigit(strconv.Itoa(number))
 }
 
-func GenerateCsvPayload(batch OutputBatch) string {
+func GenerateCsvPayload(batch model.OutputBatch) string {
 	var sb strings.Builder
 	sb.WriteString("ICCID, IMSI, MSISDN, PIN1, PIN2, PUK1, PUK2, PROFILE\n")
 
-	var iccidWithoutLuhnChecksum = batch.firstIccid
+	var iccidWithoutLuhnChecksum = batch.FirstIccid
 
-	var imsi = batch.firstImsi
-	var msisdn = batch.firstMsisdn
-	for i := 0; i < batch.length; i++ {
+	var imsi = batch.FirstImsi
+	var msisdn = batch.FirstMsisdn
+	for i := 0; i < batch.Length; i++ {
 
 		iccid := fmt.Sprintf("%d%1d", iccidWithoutLuhnChecksum, LuhnChecksum(iccidWithoutLuhnChecksum))
-		line := fmt.Sprintf("%s, %d, %d,,,,,%s\n", iccid, imsi, msisdn, batch.profileType)
+		line := fmt.Sprintf("%s, %d, %d,,,,,%s\n", iccid, imsi, msisdn, batch.ProfileType)
 		sb.WriteString(line)
 
-		iccidWithoutLuhnChecksum += batch.iccidIncrement
-		imsi += batch.imsiIncrement
-		msisdn += batch.msisdnIncrement
+		iccidWithoutLuhnChecksum += batch.IccidIncrement
+		imsi += batch.ImsiIncrement
+		msisdn += batch.MsisdnIncrement
 	}
 
 	return sb.String()
@@ -146,23 +147,13 @@ func checkProfileType(name string, potentialProfileName string) {
 	}
 }
 
-type OutputBatch struct {
-	profileType     string
-	Url             string
-	length          int
-	firstMsisdn     int
-	msisdnIncrement int
-	firstIccid      int
-	iccidIncrement  int
-	firstImsi       int
-	imsiIncrement   int
-}
+
 
 func IccidWithoutLuhnChecksum(s string) string {
 	return loltelutils.TrimSuffix(s, 1)
 }
 
-func ParseUploadFileGeneratorCommmandline() OutputBatch {
+func ParseUploadFileGeneratorCommmandline() model.OutputBatch {
 
 	//
 	// Set up command line parsing
@@ -179,8 +170,8 @@ func ParseUploadFileGeneratorCommmandline() OutputBatch {
 	lastMsisdn := flag.String("last-msisdn", "Not a valid MSISDN", "Last MSISDN in batch")
 	profileType := flag.String("profile-type", "Not a valid sim profile type", "SIM profile type")
 	batchLengthString := flag.String(
-		"batch-quantity",
-		"Not a valid batch-quantity, must be an integer",
+		"batch-Quantity",
+		"Not a valid batch-Quantity, must be an integer",
 		"Number of sim cards in batch")
 
 	// XXX Legal values are Loltel and M1 at this time, how to configure that
@@ -221,11 +212,11 @@ func ParseUploadFileGeneratorCommmandline() OutputBatch {
 
 	batchLength, err := strconv.Atoi(*batchLengthString)
 	if err != nil {
-		log.Fatalf("Not a valid batch quantity string '%s'.\n", *batchLengthString)
+		log.Fatalf("Not a valid batch Quantity string '%s'.\n", *batchLengthString)
 	}
 
 	if batchLength <= 0 {
-		log.Fatalf("OutputBatch quantity must be positive, but was '%d'", batchLength)
+		log.Fatalf("OutputBatch Quantity must be positive, but was '%d'", batchLength)
 	}
 
 	uploadUrl := fmt.Sprintf("http://%s:%s/ostelco/sim-inventory/%s/import-batch/profilevendor/%s?initialHssState=%s",
@@ -242,7 +233,7 @@ func ParseUploadFileGeneratorCommmandline() OutputBatch {
 
 	log.Println("firstmsisdn     = ", *firstMsisdn)
 	log.Println("lastmsisdn      = ", *lastMsisdn)
-	log.Println("msisdnIncrement = ", msisdnIncrement)
+	log.Println("MsisdnIncrement = ", msisdnIncrement)
 
 	var firstMsisdnInt, _ = strconv.Atoi(*firstMsisdn)
 	var lastMsisdnInt, _ = strconv.Atoi(*lastMsisdn)
@@ -275,16 +266,16 @@ func ParseUploadFileGeneratorCommmandline() OutputBatch {
 	}
 
 	// Return a correctly parsed batch
-	return OutputBatch{
-		profileType:     *profileType,
+	return model.OutputBatch{
+		ProfileType:     *profileType,
 		Url:             uploadUrl,
-		length:          loltelutils.Abs(iccidlen),
-		firstIccid:      firstIccidInt,
-		iccidIncrement:  loltelutils.Sign(iccidlen),
-		firstImsi:       firstImsiInt,
-		imsiIncrement:   loltelutils.Sign(imsiLen),
-		firstMsisdn:     firstMsisdnInt,
-		msisdnIncrement: msisdnIncrement,
+		Length:          loltelutils.Abs(iccidlen),
+		FirstIccid:      firstIccidInt,
+		IccidIncrement:  loltelutils.Sign(iccidlen),
+		FirstImsi:       firstImsiInt,
+		ImsiIncrement:   loltelutils.Sign(imsiLen),
+		FirstMsisdn:     firstMsisdnInt,
+		MsisdnIncrement: msisdnIncrement,
 	}
 }
 
@@ -292,37 +283,35 @@ func ParseUploadFileGeneratorCommmandline() OutputBatch {
 ///    Input batch management
 ///
 
-type InputBatch struct {
-	customer    string
-	profileType string
-	orderDate   string
-	batchNo     string
-	quantity    int
-	firstIccid  int
-	firstImsi   int
-}
+func ParseInputFileGeneratorCommmandline() model.InputBatch {
 
-func ParseInputFileGeneratorCommmandline() InputBatch {
 	// TODO: This function should be rewritten to parse a string array and send it to flags.
 	//       we need to up our Go-Fu before we can make flag.Parse(arguments) work
 
-	return InputBatch{customer: "Footel", profileType: "BAR_FOOTEL_STD", orderDate: "20191007", batchNo: "2019100701", quantity: 10, firstIccid: 894700000000002214, firstImsi: 242017100012213}
+	return model.InputBatch{
+		Customer: "Footel",
+		ProfileType: "BAR_FOOTEL_STD",
+		OrderDate: "20191007",
+		BatchNo: "2019100701",
+		Quantity: 10,
+		FirstIccid: 894700000000002214,
+		FirstImsi: 242017100012213}
 }
 
-func GenerateInputFile(batch InputBatch) string {
+func GenerateInputFile(batch model.InputBatch) string {
 	result := "*HEADER DESCRIPTION\n" +
 		"***************************************\n" +
-		fmt.Sprintf("Customer        :%s\n", batch.customer) +
-		fmt.Sprintf("ProfileType     : %s\n", batch.profileType) +
-		fmt.Sprintf("Order Date      : %s\n", batch.orderDate) +
-		fmt.Sprintf("Batch No        : %s\n", batch.batchNo) +
-		fmt.Sprintf("Quantity        : %d\n", batch.quantity) +
+		fmt.Sprintf("Customer        :%s\n", batch.Customer) +
+		fmt.Sprintf("ProfileType     : %s\n", batch.ProfileType) +
+		fmt.Sprintf("Order Date      : %s\n", batch.OrderDate) +
+		fmt.Sprintf("Batch No        : %s\n", batch.BatchNo) +
+		fmt.Sprintf("Quantity        : %d\n", batch.Quantity) +
 		"***************************************\n" +
 		"*INPUT VARIABLES\n" +
 		"***************************************\n" +
 		"var_In:\n" +
-		fmt.Sprintf(" ICCID: %d\n", batch.firstIccid) +
-		fmt.Sprintf("IMSI: %d\n", batch.firstImsi) +
+		fmt.Sprintf(" ICCID: %d\n", batch.FirstIccid) +
+		fmt.Sprintf("IMSI: %d\n", batch.FirstImsi) +
 		"***************************************\n" +
 		"*OUTPUT VARIABLES\n" +
 		"***************************************\n" +
