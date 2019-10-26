@@ -156,7 +156,6 @@ class ProfileKycResource(private val regionCode: String, private val dao: Subscr
 
     @EnableTracing
     @PUT
-    @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     fun saveProfile(@Auth token: AccessTokenPrincipal?,
                     @NotNull
