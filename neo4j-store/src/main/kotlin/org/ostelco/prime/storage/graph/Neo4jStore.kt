@@ -931,7 +931,7 @@ object Neo4jStoreSingleton : GraphStore {
                             -[:${customerToSegmentRelation.name}]->(:${segmentEntity.name})
                             <-[:${offerToSegmentRelation.name}]-(:${offerEntity.name})
                             -[:${offerToProductRelation.name}]->(product:${productEntity.name})
-                            RETURN product;
+                            RETURN DISTINCT product;
                             """.trimIndent(),
                                 transaction) { statementResult ->
                             Either.right(statementResult
