@@ -64,7 +64,6 @@ CustomerRow.propTypes = {
 
 export const CustomerList = props => {
   // If customer is set, remove the list.
-  console.log(JSON.stringify(props))
   if (props.customer.id || !Array.isArray(props.subscribers)) {
     return null;
   }
