@@ -2,15 +2,15 @@
 package main
 
 import (
-	"encoding/json"
 	"bytes"
+	"crypto/tls"
+	"encoding/json"
 	"flag"
 	"fmt"
-	"net/http"
-	"log"
 	"io/ioutil"
+	"log"
+	"net/http"
 	"strings"
-	"crypto/tls"
 )
 
 //
@@ -139,7 +139,7 @@ func getProfileInfo(certFilePath string, keyFilePath string, hostport string, re
 
 	resp, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	// TODO Should check response headers here!
@@ -147,13 +147,15 @@ func getProfileInfo(certFilePath string, keyFilePath string, hostport string, re
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		panic(err.Error())
+		return nil, err
 	}
 
 	bodyB := []byte(body)
 	var result = new(ES2ProfileStatusResponse)
 	err = json.Unmarshal(bodyB, &result)
 	if (err != nil) {
+		// TODO: This actually fails, so it's not good. Continuing
+		//        just to get progress, but this needs to be fixed.
 		fmt.Println("whoops:", err)
 	}
 	return result, err
