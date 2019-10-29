@@ -2,15 +2,15 @@
 package main
 
 import (
-	"bytes"
-	"crypto/tls"
 	"encoding/json"
+	"bytes"
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
-	"strings"
+	"log"
 	"io/ioutil"
+	"strings"
+	"crypto/tls"
 )
 
 //
@@ -32,38 +32,35 @@ type ES2PlusIccid struct {
 }
 
 type FunctionExecutionStatus struct {
-	FunctionExecutionStatusType string                   `json:"status"` // Should be an enumeration type
-	StatusCodeData              ES2PlusStatusCodeData    `json:"statusCodeData"`
+	FunctionExecutionStatusType string                `json:"status"` // Should be an enumeration type
+	StatusCodeData              ES2PlusStatusCodeData `json:"statusCodeData"`
 }
 
 type ES2PlusStatusCodeData struct {
-	SubjectCode string `json:"subjectCode"`
-	ReasonCode string `json:"reasonCode"`
+	SubjectCode       string `json:"subjectCode"`
+	ReasonCode        string `json:"reasonCode"`
 	SubjectIdentifier string `json:"subjectIdentifier"`
-	Message string `json:"message"`
+	Message           string `json:"message"`
 }
-
 
 type ES2PlusResponseHeader struct {
 	FunctionExecutionStatus string `json:"functionExecutionStatus"`
 }
 
 type ES2ProfileStatusResponse struct {
-	Header ES2PlusResponseHeader `json:"header"`
-	ProfileStatusList []ProfileStatus  `json:"profileStatusList"`
-	CompletionTimestamp string `json:"completionTimestamp"`
+	Header              ES2PlusResponseHeader `json:"header"`
+	ProfileStatusList   []ProfileStatus       `json:"profileStatusList"`
+	CompletionTimestamp string                `json:"completionTimestamp"`
 }
 
 type ProfileStatus struct {
-	StatusLastUpdateTimestamp string  `json:"status_last_update_timestamp"`
-	ACToken string  `json:"acToken"`
-	State string  	`json:"state"`
-	Eid string 		`json:"eid"`
-	Iccid string  `json:"iccid"`
-	LockFlag bool  	`json:"lockFlag"`
+	StatusLastUpdateTimestamp string `json:"status_last_update_timestamp"`
+	ACToken                   string `json:"acToken"`
+	State                     string `json:"state"`
+	Eid                       string `json:"eid"`
+	Iccid                     string `json:"iccid"`
+	LockFlag                  bool   `json:"lockFlag"`
 }
-
-
 
 //
 //  Protocol code
@@ -83,14 +80,15 @@ func main() {
 	hostport := flag.String("hostport", "", "host:port of ES2+ endpoint.")
 	requesterId := flag.String("requesterid", "", "ES2+ requester ID.")
 
-	fmt.Println("certFilePath = '", *certFilePath, "'")
-	fmt.Println("keyFilePath  = '", *keyFilePath, "'")
-	fmt.Println("hostport     = '", *hostport, "'")
-	fmt.Println("requesterId  = '", *requesterId, "'")
+	fmt.Printf("certFilePath = '%s'\n", *certFilePath)
+	fmt.Printf("keyFilePath  = '%s'\n", *keyFilePath)
+	fmt.Printf("hostport     = '%s'\n", *hostport)
+	fmt.Printf("requesterId  = '%s'\n", *requesterId)
 
 	flag.Parse()
 
-	funcName(*certFilePath, *keyFilePath, *hostport, *requesterId)
+	info, _ := getProfileInfo(*certFilePath, *keyFilePath, *hostport, *requesterId, "8947000000000000038", "Applecart")
+	fmt.Println("Info -> ", info)
 }
 
 // formatRequest generates ascii representation of a request
@@ -120,7 +118,7 @@ func formatRequest(r *http.Request) string {
 	return strings.Join(request, "\n")
 }
 
-func funcName(certFilePath string, keyFilePath string, hostport string, requesterId string) {
+func getProfileInfo(certFilePath string, keyFilePath string, hostport string, requesterId string, iccid string, functionCallIdentifier string) (*ES2ProfileStatusResponse, error) {
 	cert, err := tls.LoadX509KeyPair(
 		certFilePath,
 		keyFilePath)
@@ -137,7 +135,7 @@ func funcName(certFilePath string, keyFilePath string, hostport string, requeste
 	}
 
 	// Generate a "hole in the wall" getProfileStatus request, to be generalized later.
-	payload := NewStatusRequest("8947000000000000038", requesterId, "banana")
+	payload := NewStatusRequest(iccid, requesterId, functionCallIdentifier)
 	jsonStrB, _ := json.Marshal(&payload)
 	fmt.Println(string(jsonStrB))
 
@@ -154,7 +152,6 @@ func funcName(certFilePath string, keyFilePath string, hostport string, requeste
 		panic(err)
 	}
 
-
 	// TODO Should check response headers here!
 
 	body, err := ioutil.ReadAll(resp.Body)
@@ -162,17 +159,11 @@ func funcName(certFilePath string, keyFilePath string, hostport string, requeste
 		panic(err.Error())
 	}
 
-	s, err := parseProfileStatusResponse([]byte(body))
-
-	fmt.Println("S ->", s)
-}
-
-
-func parseProfileStatusResponse(body []byte) (*ES2ProfileStatusResponse, error) {
-	var s = new(ES2ProfileStatusResponse)
-	err := json.Unmarshal(body, &s)
-	if(err != nil){
+	bodyB := []byte(body)
+	var result = new(ES2ProfileStatusResponse)
+	err = json.Unmarshal(bodyB, &result)
+	if (err != nil) {
 		fmt.Println("whoops:", err)
 	}
-	return s, err
+	return result, err
 }
