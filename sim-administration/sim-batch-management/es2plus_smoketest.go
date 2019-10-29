@@ -1,14 +1,13 @@
 //usr/bin/env go run "$0" "$@"; exit "$?"
 package main
 
-
 import (
-"crypto/tls"
-"crypto/x509"
-"fmt"
-"io"
-"log"
-"flag"
+	"crypto/tls"
+	"crypto/x509"
+	"flag"
+	"fmt"
+	"io"
+	"log"
 )
 
 // ES2PLUS_ENDPOINT="https://mconnect-es2-005.staging.oberthur.net:1034"f
