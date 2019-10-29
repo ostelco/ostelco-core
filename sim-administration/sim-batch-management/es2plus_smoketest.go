@@ -44,7 +44,7 @@ type ES2PlusStatusCodeData struct {
 }
 
 type ES2PlusResponseHeader struct {
-	FunctionExecutionStatus string `json:"functionExecutionStatus"`
+	FunctionExecutionStatus FunctionExecutionStatus `json:"functionExecutionStatus"`
 }
 
 type ES2ProfileStatusResponse struct {
@@ -138,9 +138,7 @@ func getProfileInfo(certFilePath string, keyFilePath string, hostport string, re
 	var result = new(ES2ProfileStatusResponse)
 	err = json.Unmarshal(responseBytes, &result)
 	if err != nil {
-		// TODO: This actually fails, so it's not good. Continuing
-		//        just to get progress, but this needs to be fixed.
-		fmt.Println("whoops:", err)
+		return nil, err
 	}
 	return result, err
 }
