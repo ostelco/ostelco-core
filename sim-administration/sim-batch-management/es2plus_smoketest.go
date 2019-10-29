@@ -124,8 +124,6 @@ func getProfileInfo(certFilePath string, keyFilePath string, hostport string, re
 	client := newClient(certFilePath, keyFilePath)
 	es2plusCommand := "getProfileStatus"
 
-
-	// Generate a "hole in the wall" getProfileStatus request, to be generalized later.
 	payload := NewStatusRequest(iccid, requesterId, functionCallIdentifier)
 	jsonStrB, err := json.Marshal(&payload)
 	if err != nil {
@@ -150,7 +148,6 @@ func getProfileInfo(certFilePath string, keyFilePath string, hostport string, re
 func executeGenericEs2plusCommand(jsonStrB []byte, hostport string, es2plusCommand string, client *http.Client) ([]byte, error) {
 	fmt.Println(string(jsonStrB))
 	url := fmt.Sprintf("https://%s/gsma/rsp2/es2plus/%s", hostport, es2plusCommand)
-	// TODO: Consider also https://github.com/parnurzeal/gorequest
 	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonStrB))
 	req.Header.Set("X-Admin-Protocol", "gsma/rsp/v2.0.0")
 	req.Header.Set("Content-Type", "application/json")
