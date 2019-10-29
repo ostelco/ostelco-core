@@ -7,27 +7,70 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"encoding/json"
 	"log"
 )
 
-// ES2PLUS_ENDPOINT="https://mconnect-es2-005.staging.oberthur.net:1034"f
+//
+//   Our new ES2+ library
+//
+
+type ES2PlusHeader struct {
+	FunctionRequesterIdentifier   string  `json:"functionRequesterIdentifier"`
+	FunctionCallIdentifier        string  `json:"functionCallIdentifier"`
+}
+
+type ES2PlusGetProfileStatusRequest struct {
+	Header    ES2PlusHeader     `json:"header"`
+	IccidList []ES2PlusIccid    `json:"iccidList"`
+}
+
+
+type ES2PlusIccid struct {
+	Iccid    string     `json:"iccid"`
+}
+
+
+func NewStatusRequest(iccid string, functionRequesterIdentifier string, functionCallIdentifier string) ES2PlusGetProfileStatusRequest {
+	return ES2PlusGetProfileStatusRequest {
+		Header: ES2PlusHeader{ FunctionCallIdentifier: functionCallIdentifier, FunctionRequesterIdentifier:functionRequesterIdentifier },
+		IccidList: [] ES2PlusIccid {ES2PlusIccid{Iccid: iccid}},
+	}
+}
 
 func main() {
+
 
 	certFilePath := flag.String("cert", "", "Certificate pem file.")
 	keyFilePath := flag.String("key", "", "Certificate key file.")
 	hostport := flag.String("hostport", "", "host:port of ES2+ endpoint.")
+	requesterId := flag.String("requesterid", "", "ES2+ requester ID.")
+
+
+	fmt.Println("certFilePath = ", *certFilePath)
+	fmt.Println("keyFilePath  = ", *keyFilePath)
+	fmt.Println("hostport     = ", *hostport)
+	fmt.Println("requesterId  = ", *requesterId)
 
 	flag.Parse()
 
+	foo := NewStatusRequest("8947000000000000038", *requesterId, "banana")
+	fooB, _  := json.Marshal(&foo)
+	fmt.Println(string(fooB))
+
+
+	// funcName(*certFilePath, *keyFilePath, *hostport)
+}
+
+func funcName(certFilePath string, keyFilePath string, hostport string) {
 	cert, err := tls.LoadX509KeyPair(
-		*certFilePath,
-		*keyFilePath)
+		certFilePath,
+		keyFilePath)
 	if err != nil {
 		log.Fatalf("server: loadkeys: %s", err)
 	}
 	config := tls.Config{Certificates: []tls.Certificate{cert}, InsecureSkipVerify: true}
-	conn, err := tls.Dial("tcp", *hostport, &config)
+	conn, err := tls.Dial("tcp", hostport, &config)
 	if err != nil {
 		log.Fatalf("client: dial: %s", err)
 	}
