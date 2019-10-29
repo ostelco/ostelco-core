@@ -438,19 +438,55 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
 
-    // TODO vihang: When we read and then delete, it fails when deserialization does not work.
     override fun removeCustomer(identity: org.ostelco.prime.model.Identity): Either<StoreError, Unit> = writeTransaction {
-        write(query = """
-            MATCH (i:${identityEntity.name} {id:'${identity.id}'})-[:${identifiesRelation.name}]->(c:${customerEntity.name})
-            OPTIONAL MATCH (c)-[:${customerToBundleRelation.name}]->(b:${bundleEntity.name})
-            OPTIONAL MATCH (c)-[:${scanInformationRelation.name}]->(s:${scanInformationEntity.name})
-            DETACH DELETE i, c, b, s;
-        """.trimIndent(), transaction = transaction) { statementResult ->
-            Either.cond(
-                    test = statementResult.summary().counters().nodesDeleted() > 0,
-                    ifTrue = {},
-                    ifFalse = { NotFoundError(type = identityEntity.name, id = identity.id) })
-        }
+        IO {
+            Either.monad<StoreError>().binding {
+                // get customer id
+                val customerId = getCustomerId(identity).bind()
+                // create ex-customer with same id
+                create { ExCustomer(id = customerId, terminationDate = LocalDate.now().toString()) }.bind()
+                // get all subscriptions and link them to ex-customer
+                val subscriptions = get(Subscription subscribedBy (Customer withId customerId)).bind()
+                for (subscription in subscriptions) {
+                    fact { (ExCustomer withId customerId) subscribedTo (Subscription withMsisdn subscription.msisdn) }.bind()
+                }
+                // get all SIM profiles and link them to ex-customer.
+                val simProfiles = get(SimProfile forCustomer (Customer withId customerId)).bind()
+                val simProfileRegions = mutableSetOf<Region>()
+                for (simProfile in simProfiles) {
+                    fact { (ExCustomer withId customerId) had (SimProfile withId simProfile.id) }.bind()
+                    // also get regions linked to those SimProfiles.
+                    simProfileRegions.addAll(get(Region linkedToSimProfile (SimProfile withId simProfile.id)).bind())
+                }
+                // get Regions linked to Customer
+                val regions = get(Region linkedToCustomer (Customer withId customerId)).bind()
+                // TODO vihang: clear eKYC data for Regions without any SimProfile
+//                val regionsWithoutSimProfile = regions - simProfileRegions
+//                // Link regions with SIM profiles to ExCustomer
+//                for (region in simProfileRegions) {
+//                    fact { (ExCustomer withId customerId) belongedTo (Region withCode region.id) }
+//                }
+                // (For now) Link regions to ExCustomer
+                for (region in regions) {
+                    fact { (ExCustomer withId customerId) belongedTo (Region withCode region.id) }
+                }
+
+                // TODO vihang: When we read and then delete, it fails when deserialization does not work.
+                write(query = """
+                    MATCH (i:${identityEntity.name} {id:'${identity.id}'})-[:${identifiesRelation.name}]->(c:${customerEntity.name})
+                    OPTIONAL MATCH (c)-[:${customerToBundleRelation.name}]->(b:${bundleEntity.name})
+                    OPTIONAL MATCH (c)<-[:${forPurchaseByRelation.name}]-(pr:${purchaseRecordEntity.name})
+                    OPTIONAL MATCH (c)-[:${scanInformationRelation.name}]->(s:${scanInformationEntity.name})
+                    DETACH DELETE i, c, b, pr, s;
+                """.trimIndent(), transaction = transaction) { statementResult ->
+                    Either.cond(
+                            test = statementResult.summary().counters().nodesDeleted() > 0,
+                            ifTrue = {},
+                            ifFalse = { NotFoundError(type = identityEntity.name, id = identity.id) })
+                }.bind()
+            }.fix()
+        }.unsafeRunSync()
+                .ifFailedThenRollback(transaction)
     }
 
     //
