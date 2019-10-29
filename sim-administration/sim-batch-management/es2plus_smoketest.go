@@ -130,13 +130,13 @@ func getProfileInfo(certFilePath string, keyFilePath string, hostport string, re
 		return nil, err
 	}
 
-	response, err := executeGenericEs2plusCommand(jsonStrB, hostport, es2plusCommand,  client)
+	responseBytes, err := executeGenericEs2plusCommand(jsonStrB, hostport, es2plusCommand,  client)
 	if err != nil {
 		return nil, err
 	}
 
 	var result = new(ES2ProfileStatusResponse)
-	err = json.Unmarshal(response, &result)
+	err = json.Unmarshal(responseBytes, &result)
 	if err != nil {
 		// TODO: This actually fails, so it's not good. Continuing
 		//        just to get progress, but this needs to be fixed.
