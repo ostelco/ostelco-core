@@ -131,6 +131,24 @@ func getProfileInfo(certFilePath string, keyFilePath string, hostport string, re
 	return result, err
 }
 
+func marshalUnmarshalGeneriEs2plusCommand(certFilePath string, keyFilePath string,  hostport string, es2plusCommand string,  payload interface{}, result interface{}) error {
+	client := newClient(certFilePath, keyFilePath)
+
+	jsonStrB, err := json.Marshal(payload)
+	if err != nil {
+		return  err
+	}
+
+	responseBytes, err := executeGenericEs2plusCommand(jsonStrB, hostport, es2plusCommand,  client)
+	if err != nil {
+		return  err
+	}
+
+	err = json.Unmarshal(responseBytes, result)
+	return err
+}
+
+
 func executeGenericEs2plusCommand(jsonStrB []byte, hostport string, es2plusCommand string, client *http.Client) ([]byte, error) {
 	fmt.Println(string(jsonStrB))
 	url := fmt.Sprintf("https://%s/gsma/rsp2/es2plus/%s", hostport, es2plusCommand)
@@ -185,8 +203,17 @@ func main() {
 	fmt.Printf("hostport     = '%s'\n", *hostport)
 	fmt.Printf("requesterId  = '%s'\n", *requesterId)
 
+
 	flag.Parse()
 
-	info, _ := getProfileInfo(*certFilePath, *keyFilePath, *hostport, *requesterId, "8947000000000000038", "Applecart")
-	fmt.Println("Info -> ", info)
+	result :=  new(ES2ProfileStatusResponse)
+	functionCallIdentifier := "kadkjfad"
+	iccid := "8965030119040000067"
+	statusRequest := newStatusRequest(iccid, *requesterId, functionCallIdentifier)
+	err:= marshalUnmarshalGeneriEs2plusCommand(*certFilePath, *keyFilePath, *hostport,   "getProfileStatus", statusRequest, result)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("result -> ", result)
 }
