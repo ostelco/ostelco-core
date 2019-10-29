@@ -112,7 +112,7 @@ func getProfileInfo(certFilePath string, keyFilePath string, hostport string, re
 	client := newClient(certFilePath, keyFilePath)
 	es2plusCommand := "getProfileStatus"
 
-	payload := NewStatusRequest(iccid, requesterId, functionCallIdentifier)
+	payload := newStatusRequest(iccid, requesterId, functionCallIdentifier)
 	jsonStrB, err := json.Marshal(&payload)
 	if err != nil {
 		return nil, err
