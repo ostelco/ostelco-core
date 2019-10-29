@@ -76,7 +76,6 @@ class AuditLogs extends React.Component {
     return (
       <Card>
         <CardBody>
-          <CardTitle>Audit Logs</CardTitle>
           <ReactTable
             data={props.auditLogs}
             columns={columns}
