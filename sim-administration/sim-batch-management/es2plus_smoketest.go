@@ -73,24 +73,6 @@ func NewStatusRequest(iccid string, functionRequesterIdentifier string, function
 	}
 }
 
-func main() {
-
-	certFilePath := flag.String("cert", "", "Certificate pem file.")
-	keyFilePath := flag.String("key", "", "Certificate key file.")
-	hostport := flag.String("hostport", "", "host:port of ES2+ endpoint.")
-	requesterId := flag.String("requesterid", "", "ES2+ requester ID.")
-
-	fmt.Printf("certFilePath = '%s'\n", *certFilePath)
-	fmt.Printf("keyFilePath  = '%s'\n", *keyFilePath)
-	fmt.Printf("hostport     = '%s'\n", *hostport)
-	fmt.Printf("requesterId  = '%s'\n", *requesterId)
-
-	flag.Parse()
-
-	info, _ := getProfileInfo(*certFilePath, *keyFilePath, *hostport, *requesterId, "8947000000000000038", "Applecart")
-	fmt.Println("Info -> ", info)
-}
-
 // formatRequest generates ascii representation of a request
 func formatRequest(r *http.Request) string {
 	// Create return string
@@ -177,4 +159,28 @@ func newClient(certFilePath string, keyFilePath string) *http.Client {
 		},
 	}
 	return client
+}
+
+
+///
+///   Main.  The rest should be put into a library.
+///
+
+
+func main() {
+
+	certFilePath := flag.String("cert", "", "Certificate pem file.")
+	keyFilePath := flag.String("key", "", "Certificate key file.")
+	hostport := flag.String("hostport", "", "host:port of ES2+ endpoint.")
+	requesterId := flag.String("requesterid", "", "ES2+ requester ID.")
+
+	fmt.Printf("certFilePath = '%s'\n", *certFilePath)
+	fmt.Printf("keyFilePath  = '%s'\n", *keyFilePath)
+	fmt.Printf("hostport     = '%s'\n", *hostport)
+	fmt.Printf("requesterId  = '%s'\n", *requesterId)
+
+	flag.Parse()
+
+	info, _ := getProfileInfo(*certFilePath, *keyFilePath, *hostport, *requesterId, "8947000000000000038", "Applecart")
+	fmt.Println("Info -> ", info)
 }
