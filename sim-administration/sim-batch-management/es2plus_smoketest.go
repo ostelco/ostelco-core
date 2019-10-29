@@ -153,6 +153,7 @@ func getProfileInfo(certFilePath string, keyFilePath string, hostport string, re
 	}
 
 	// TODO Should check response headers here!
+	// (in particular X-admin-protocol)
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
