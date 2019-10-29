@@ -59,8 +59,7 @@ export default class Subscription extends React.Component {
           <Col xs={2} md={2}>{'Phone number:'}</Col>
           <Col xs={12} md={8}>{`${subscription.msisdn}`}</Col>
         </Row>
-        <br />
-        <Row>
+        {/* <Row>
           <Col xs={6} md={4}>
             <Button color="danger" onClick={this.handleShowBlock}>
               {'Block current SIM card'}
@@ -71,7 +70,7 @@ export default class Subscription extends React.Component {
               {'Order new SIM card'}
             </Button>
           </Col>
-        </Row>
+        </Row> */}
         <WarningModal
           heading={blockHeading}
           warningText={blockText}

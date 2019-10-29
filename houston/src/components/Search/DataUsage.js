@@ -45,9 +45,9 @@ class DataUsage extends React.Component {
             <Col xs={6} md={4}>
               {`Remaining ${props.balance}.`}
             </Col>
-            <Col xs={6} md={4}>
+            {/* <Col xs={6} md={4}>
               <Button onClick={this.handleShowModal}>{'Give additional 1 GB'}</Button>
-            </Col>
+            </Col> */}
           </Row>
           <WarningModal
             heading={modalHeading}
