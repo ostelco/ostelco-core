@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Table, Card, CardBody, CardTitle, Button, UncontrolledTooltip } from 'reactstrap';
+import { Table, Card, CardBody, CardHeader, Button, UncontrolledTooltip } from 'reactstrap';
 
 import { subscriberActions } from '../../actions/subscriber.actions';
 import { convertTimestampToDate } from '../../helpers';
@@ -114,8 +114,8 @@ class PaymentHistory extends React.Component {
 
     return (
       <Card>
+        <CardHeader>Payment History</CardHeader>
         <CardBody>
-          <CardTitle>Payment History</CardTitle>
           <Table striped bordered>
             <thead>
               <tr>
