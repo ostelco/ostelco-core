@@ -131,6 +131,7 @@ data class Es2ProfileStatusResponse(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ProfileStatus(
         @JsonProperty("status_last_update_timestamp") val lastUpdateTimestamp:String? = null,
+        // TODO: Should the next line be deleted?
         @JsonProperty("profileStatusList") val profileStatusList: List<ProfileStatus>? = listOf(),
         @JsonProperty("acToken") val acToken: String? = null,
         @JsonProperty("state") val state: String? = null,

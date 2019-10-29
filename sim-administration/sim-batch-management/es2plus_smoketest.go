@@ -2,14 +2,15 @@
 package main
 
 import (
-	"crypto/tls"
-	"flag"
-	"encoding/json"
 	"bytes"
+	"crypto/tls"
+	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"strings"
+	"io/ioutil"
 )
 
 //
@@ -29,6 +30,44 @@ type ES2PlusGetProfileStatusRequest struct {
 type ES2PlusIccid struct {
 	Iccid string `json:"iccid"`
 }
+
+type FunctionExecutionStatus struct {
+	FunctionExecutionStatusType string                   `json:"status"` // Should be an enumeration type
+	StatusCodeData              ES2PlusStatusCodeData    `json:"statusCodeData"`
+}
+
+type ES2PlusStatusCodeData struct {
+	SubjectCode string `json:"subjectCode"`
+	ReasonCode string `json:"reasonCode"`
+	SubjectIdentifier string `json:"subjectIdentifier"`
+	Message string `json:"message"`
+}
+
+
+type ES2PlusResponseHeader struct {
+	FunctionExecutionStatus string `json:"functionExecutionStatus"`
+}
+
+type ES2ProfileStatusResponse struct {
+	Header ES2PlusResponseHeader `json:"header"`
+	ProfileStatusList []ProfileStatus  `json:"profileStatusList"`
+	CompletionTimestamp string `json:"completionTimestamp"`
+}
+
+type ProfileStatus struct {
+	StatusLastUpdateTimestamp string  `json:"status_last_update_timestamp"`
+	ACToken string  `json:"acToken"`
+	State string  	`json:"state"`
+	Eid string 		`json:"eid"`
+	Iccid string  `json:"iccid"`
+	LockFlag bool  	`json:"lockFlag"`
+}
+
+
+
+//
+//  Protocol code
+//
 
 func NewStatusRequest(iccid string, functionRequesterIdentifier string, functionCallIdentifier string) ES2PlusGetProfileStatusRequest {
 	return ES2PlusGetProfileStatusRequest{
@@ -97,7 +136,6 @@ func funcName(certFilePath string, keyFilePath string, hostport string, requeste
 		},
 	}
 
-
 	// Generate a "hole in the wall" getProfileStatus request, to be generalized later.
 	payload := NewStatusRequest("8947000000000000038", requesterId, "banana")
 	jsonStrB, _ := json.Marshal(&payload)
@@ -111,46 +149,30 @@ func funcName(certFilePath string, keyFilePath string, hostport string, requeste
 	req.Header.Set("X-Admin-Protocol", "gsma/rsp/v2.0.0")
 	req.Header.Set("Content-Type", "application/json")
 
-	fmt.Print(" request --> ", formatRequest(req))
-
-
-
 	resp, err := client.Do(req)
 	if err != nil {
 		panic(err)
 	}
 
 
-	fmt.Print(" Response --> ", resp)
+	// TODO Should check response headers here!
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	s, err := parseProfileStatusResponse([]byte(body))
+
+	fmt.Println("S ->", s)
+}
 
 
-
-	/*
-
-	   conn, err := tls.Dial("tcp", hostport, &config)
-
-	   if err != nil {
-	   	log.Fatalf("client: dial: %s", err)
-	   }
-	   defer conn.Close()
-	   log.Println("client: connected to: ", conn.RemoteAddr())
-	   state := conn.ConnectionState()
-	   for _, v := range state.PeerCertificates {
-	   	fmt.Println("Client: Server public key is:")
-	   	fmt.Println(x509.MarshalPKIXPublicKey(v.PublicKey))
-	   }
-
-	   log.Println("client: handshake: ", state.HandshakeComplete)
-	   log.Println("client: mutual: ", state.NegotiatedProtocolIsMutual)
-	   message := "Hello\n"
-	   n, err := io.WriteString(conn, message)
-	   if err != nil {
-	   	log.Fatalf("client: write: %s", err)
-	   }
-	   log.Printf("client: wrote %q (%d bytes)", message, n)
-	   reply := make([]byte, 256)
-	   n, err = conn.Read(reply)
-	   log.Printf("client: read %q (%d bytes)", string(reply[:n]), n)
-	   log.Print("client: exiting")
-	*/
+func parseProfileStatusResponse(body []byte) (*ES2ProfileStatusResponse, error) {
+	var s = new(ES2ProfileStatusResponse)
+	err := json.Unmarshal(body, &s)
+	if(err != nil){
+		fmt.Println("whoops:", err)
+	}
+	return s, err
 }
