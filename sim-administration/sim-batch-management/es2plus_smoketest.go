@@ -4,11 +4,14 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"bytes"
+	"strings"
 	"io"
-	"encoding/json"
 	"log"
+	"net/http"
 )
 
 //
@@ -40,27 +43,63 @@ func NewStatusRequest(iccid string, functionRequesterIdentifier string, function
 
 func main() {
 
-
 	certFilePath := flag.String("cert", "", "Certificate pem file.")
 	keyFilePath := flag.String("key", "", "Certificate key file.")
 	hostport := flag.String("hostport", "", "host:port of ES2+ endpoint.")
 	requesterId := flag.String("requesterid", "", "ES2+ requester ID.")
 
-
-	fmt.Println("certFilePath = ", *certFilePath)
-	fmt.Println("keyFilePath  = ", *keyFilePath)
-	fmt.Println("hostport     = ", *hostport)
-	fmt.Println("requesterId  = ", *requesterId)
+	fmt.Println("certFilePath = '", *certFilePath, "'")
+	fmt.Println("keyFilePath  = '", *keyFilePath, "'")
+	fmt.Println("hostport     = '", *hostport, "'")
+	fmt.Println("requesterId  = '", *requesterId, "'")
 
 	flag.Parse()
 
-	foo := NewStatusRequest("8947000000000000038", *requesterId, "banana")
-	fooB, _  := json.Marshal(&foo)
-	fmt.Println(string(fooB))
+	// Generate a "hole in the wall" getProfileStatus request, to be generalized later.
+	payload := NewStatusRequest("8947000000000000038", *requesterId, "banana")
+	jsonStrB, _ := json.Marshal(&payload)
+	fmt.Println(string(jsonStrB))
 
+	url := fmt.Sprintf("https://%s/gsma/rsp2/es2plus/getProfileStatus", hostport)
+
+	// TODO: Consider also https://github.com/parnurzeal/gorequest
+	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonStrB))
+
+	req.Header.Set("X-Admin-Protocol:", "gsma/rsp/v2.0.0")
+	req.Header.Set("Content-Type", "application/json")
+
+	fmt.Print(" --> ", formatRequest(req))
 
 	// funcName(*certFilePath, *keyFilePath, *hostport)
 }
+
+// formatRequest generates ascii representation of a request
+func formatRequest(r *http.Request) string {
+	// Create return string
+	var request []string
+	// Add the request string
+	url := fmt.Sprintf("%v %v %v", r.Method, r.URL, r.Proto)
+	request = append(request, url)
+	// Add the host
+	request = append(request, fmt.Sprintf("Host: %v", r.Host))
+	// Loop through headers
+	for name, headers := range r.Header {
+		name = strings.ToLower(name)
+		for _, h := range headers {
+			request = append(request, fmt.Sprintf("%v: %v", name, h))
+		}
+	}
+
+	// If this is a POST, add post data
+	if r.Method == "POST" {
+		r.ParseForm()
+		request = append(request, "\n")
+		request = append(request, r.Form.Encode())
+	}
+	// Return the request as a string
+	return strings.Join(request, "\n")
+}
+
 
 func funcName(certFilePath string, keyFilePath string, hostport string) {
 	cert, err := tls.LoadX509KeyPair(
@@ -81,6 +120,9 @@ func funcName(certFilePath string, keyFilePath string, hostport string) {
 		fmt.Println("Client: Server public key is:")
 		fmt.Println(x509.MarshalPKIXPublicKey(v.PublicKey))
 	}
+
+
+
 	log.Println("client: handshake: ", state.HandshakeComplete)
 	log.Println("client: mutual: ", state.NegotiatedProtocolIsMutual)
 	message := "Hello\n"
