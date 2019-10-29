@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Col, Row, Card, CardBody, CardHeader, Button } from 'reactstrap';
+import { Col, Row, Card, CardBody, CardHeader } from 'reactstrap';
 
 import WarningModal from '../Shared/WarningModal';
 import { humanReadableBytes } from '../../helpers';
