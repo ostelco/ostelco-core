@@ -131,8 +131,8 @@ func getProfileInfo(certFilePath string, keyFilePath string, hostport string, re
 	return result, err
 }
 
-func marshalUnmarshalGeneriEs2plusCommand(certFilePath string, keyFilePath string,  hostport string, es2plusCommand string,  payload interface{}, result interface{}) error {
-	client := newClient(certFilePath, keyFilePath)
+func marshalUnmarshalGeneriEs2plusCommand(client *http.Client, hostport string, es2plusCommand string,  payload interface{}, result interface{}) error {
+
 
 	jsonStrB, err := json.Marshal(payload)
 	if err != nil {
@@ -210,7 +210,8 @@ func main() {
 	functionCallIdentifier := "kadkjfad"
 	iccid := "8965030119040000067"
 	statusRequest := newStatusRequest(iccid, *requesterId, functionCallIdentifier)
-	err:= marshalUnmarshalGeneriEs2plusCommand(*certFilePath, *keyFilePath, *hostport,   "getProfileStatus", statusRequest, result)
+	client := newClient(*certFilePath, *keyFilePath)
+	err:= marshalUnmarshalGeneriEs2plusCommand(client,   *hostport, "getProfileStatus", statusRequest, result)
 	if err != nil {
 		panic(err)
 	}
