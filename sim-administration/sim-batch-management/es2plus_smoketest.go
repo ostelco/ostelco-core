@@ -13,9 +13,9 @@ import (
 	"strings"
 )
 
-//
-//   Our new ES2+ library
-//
+///
+///  Generic headers for invocations and responses
+///
 
 type ES2PlusHeader struct {
 	FunctionRequesterIdentifier string `json:"functionRequesterIdentifier"`
@@ -36,15 +36,21 @@ type FunctionExecutionStatus struct {
 	StatusCodeData              ES2PlusStatusCodeData `json:"statusCodeData"`
 }
 
+
+type ES2PlusResponseHeader struct {
+	FunctionExecutionStatus FunctionExecutionStatus `json:"functionExecutionStatus"`
+}
+
+
+//
+//  Status code invocation.
+//
+
 type ES2PlusStatusCodeData struct {
 	SubjectCode       string `json:"subjectCode"`
 	ReasonCode        string `json:"reasonCode"`
 	SubjectIdentifier string `json:"subjectIdentifier"`
 	Message           string `json:"message"`
-}
-
-type ES2PlusResponseHeader struct {
-	FunctionExecutionStatus FunctionExecutionStatus `json:"functionExecutionStatus"`
 }
 
 type ES2ProfileStatusResponse struct {
@@ -62,11 +68,11 @@ type ProfileStatus struct {
 	LockFlag                  bool   `json:"lockFlag"`
 }
 
-//
-//  Protocol code
-//
+///
+///  Protocol code
+///
 
-func NewStatusRequest(iccid string, functionRequesterIdentifier string, functionCallIdentifier string) ES2PlusGetProfileStatusRequest {
+func newStatusRequest(iccid string, functionRequesterIdentifier string, functionCallIdentifier string) ES2PlusGetProfileStatusRequest {
 	return ES2PlusGetProfileStatusRequest{
 		Header:    ES2PlusHeader{FunctionCallIdentifier: functionCallIdentifier, FunctionRequesterIdentifier: functionRequesterIdentifier},
 		IccidList: [] ES2PlusIccid{ES2PlusIccid{Iccid: iccid}},
