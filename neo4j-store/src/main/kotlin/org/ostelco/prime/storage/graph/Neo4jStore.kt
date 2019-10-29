@@ -19,6 +19,7 @@ import org.ostelco.prime.dsl.WriteTransaction
 import org.ostelco.prime.dsl.forCustomer
 import org.ostelco.prime.dsl.forPurchaseBy
 import org.ostelco.prime.dsl.identifiedBy
+import org.ostelco.prime.dsl.linkedToCustomer
 import org.ostelco.prime.dsl.linkedToRegion
 import org.ostelco.prime.dsl.linkedToSimProfile
 import org.ostelco.prime.dsl.readTransaction
@@ -106,6 +107,8 @@ import org.ostelco.prime.storage.graph.Graph.writeSuspended
 import org.ostelco.prime.storage.graph.Relation.BELONG_TO_SEGMENT
 import org.ostelco.prime.storage.graph.Relation.FOR_PURCHASE_BY
 import org.ostelco.prime.storage.graph.Relation.FOR_PURCHASE_OF
+import org.ostelco.prime.storage.graph.Relation.HAD_SIM_PROFILE
+import org.ostelco.prime.storage.graph.Relation.HAD_SUBSCRIPTION
 import org.ostelco.prime.storage.graph.Relation.HAS_BUNDLE
 import org.ostelco.prime.storage.graph.Relation.HAS_SIM_PROFILE
 import org.ostelco.prime.storage.graph.Relation.HAS_SUBSCRIPTION
@@ -115,6 +118,7 @@ import org.ostelco.prime.storage.graph.Relation.OFFERED_TO_SEGMENT
 import org.ostelco.prime.storage.graph.Relation.OFFER_HAS_PRODUCT
 import org.ostelco.prime.storage.graph.Relation.REFERRED
 import org.ostelco.prime.storage.graph.model.CustomerRegion
+import org.ostelco.prime.storage.graph.model.ExCustomer
 import org.ostelco.prime.storage.graph.model.Identifies
 import org.ostelco.prime.storage.graph.model.Identity
 import org.ostelco.prime.storage.graph.model.Offer
@@ -124,6 +128,7 @@ import org.ostelco.prime.storage.graph.model.SimProfile
 import org.ostelco.prime.storage.graph.model.SubscriptionToBundle
 import org.ostelco.prime.tracing.Trace
 import java.time.Instant
+import java.time.LocalDate
 import java.util.*
 import java.util.stream.Collectors
 import javax.ws.rs.core.MultivaluedMap
@@ -142,9 +147,13 @@ enum class Relation(
 
     HAS_SUBSCRIPTION(from = Customer::class, to = Subscription::class),                 // (Customer) -[HAS_SUBSCRIPTION]-> (Subscription)
 
+    HAD_SUBSCRIPTION(from = ExCustomer::class, to = Subscription::class),               // (ExCustomer) -[HAD_SUBSCRIPTION]-> (Subscription)
+
     HAS_BUNDLE(from = Customer::class, to = Bundle::class),                             // (Customer) -[HAS_BUNDLE]-> (Bundle)
 
     HAS_SIM_PROFILE(from = Customer::class, to = SimProfile::class),                    // (Customer) -[HAS_SIM_PROFILE]-> (SimProfile)
+
+    HAD_SIM_PROFILE(from = ExCustomer::class, to = SimProfile::class),                  // (ExCustomer) -[HAD_SIM_PROFILE]-> (SimProfile)
 
     SUBSCRIBES_TO_PLAN(from = Customer::class, to = Plan::class),                       // (Customer) -[SUBSCRIBES_TO_PLAN]-> (Plan)
 
@@ -166,6 +175,8 @@ enum class Relation(
 
     BELONG_TO_REGION(from = Customer::class, to = Region::class),                       // (Customer) -[BELONG_TO_REGION]-> (Region)
 
+    BELONGED_TO_REGION(from = ExCustomer::class, to = Region::class),                   // (ExCustomer) -[BELONGED_TO_REGION]-> (Region)
+
     SIM_PROFILE_FOR_REGION(from = SimProfile::class, to = Region::class),               // (SimProfile) -[SIM_PROFILE_FOR_REGION]-> (Region)
 
     SUBSCRIPTION_UNDER_SIM_PROFILE(from = Subscription::class, to = SimProfile::class), // (Subscription) -[SUBSCRIPTION_UNDER_SIM_PROFILE]-> (SimProfile)
@@ -186,6 +197,8 @@ object Neo4jStoreSingleton : GraphStore {
     private val identityEntity = Identity::class.entityType
 
     private val customerEntity = Customer::class.entityType
+
+    private val exCustomerEntity = ExCustomer::class.entityType
 
     private val productEntity = Product::class.entityType
 
@@ -221,6 +234,13 @@ object Neo4jStoreSingleton : GraphStore {
             dataClass = None::class.java)
             .also { RelationStore(it) }
 
+    val exSubscriptionRelation = RelationType(
+            relation = HAD_SUBSCRIPTION,
+            from = exCustomerEntity,
+            to = subscriptionEntity,
+            dataClass = None::class.java)
+            .also { RelationStore(it) }
+
     val customerToBundleRelation = RelationType(
             relation = HAS_BUNDLE,
             from = customerEntity,
@@ -238,6 +258,13 @@ object Neo4jStoreSingleton : GraphStore {
     val customerToSimProfileRelation = RelationType(
             relation = HAS_SIM_PROFILE,
             from = customerEntity,
+            to = simProfileEntity,
+            dataClass = None::class.java)
+            .also { RelationStore(it) }
+
+    val exCustomerToSimProfileRelation = RelationType(
+            relation = HAD_SIM_PROFILE,
+            from = exCustomerEntity,
             to = simProfileEntity,
             dataClass = None::class.java)
             .also { RelationStore(it) }
@@ -270,12 +297,19 @@ object Neo4jStoreSingleton : GraphStore {
             dataClass = PlanSubscription::class.java)
     private val subscribesToPlanRelationStore = UniqueRelationStore(subscribesToPlanRelation)
 
-    private val customerRegionRelation = RelationType(
+    val customerRegionRelation = RelationType(
             relation = Relation.BELONG_TO_REGION,
             from = customerEntity,
             to = regionEntity,
             dataClass = CustomerRegion::class.java)
     private val customerRegionRelationStore = UniqueRelationStore(customerRegionRelation)
+
+    val exCustomerRegionRelation = RelationType(
+            relation = Relation.BELONGED_TO_REGION,
+            from = exCustomerEntity,
+            to = regionEntity,
+            dataClass = None::class.java)
+            .also { UniqueRelationStore(it) }
 
     val scanInformationRelation = RelationType(
             relation = Relation.EKYC_SCAN,
