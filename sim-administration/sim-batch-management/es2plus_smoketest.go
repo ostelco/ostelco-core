@@ -124,41 +124,48 @@ func getProfileInfo(certFilePath string, keyFilePath string, hostport string, re
 	client := newClient(certFilePath, keyFilePath)
 	es2plusCommand := "getProfileStatus"
 
+
 	// Generate a "hole in the wall" getProfileStatus request, to be generalized later.
 	payload := NewStatusRequest(iccid, requesterId, functionCallIdentifier)
-	jsonStrB, _ := json.Marshal(&payload)
-	fmt.Println(string(jsonStrB))
-
-	url := fmt.Sprintf("https://%s/gsma/rsp2/es2plus/%s", hostport, es2plusCommand)
-
-	// TODO: Consider also https://github.com/parnurzeal/gorequest
-	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonStrB))
-
-	req.Header.Set("X-Admin-Protocol", "gsma/rsp/v2.0.0")
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := client.Do(req)
+	jsonStrB, err := json.Marshal(&payload)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO Should check response headers here!
-	// (in particular X-admin-protocol)
-
-	body, err := ioutil.ReadAll(resp.Body)
+	response, err := executeGenericEs2plusCommand(jsonStrB, hostport, es2plusCommand,  client)
 	if err != nil {
 		return nil, err
 	}
 
-	bodyB := []byte(body)
 	var result = new(ES2ProfileStatusResponse)
-	err = json.Unmarshal(bodyB, &result)
-	if (err != nil) {
+	err = json.Unmarshal(response, &result)
+	if err != nil {
 		// TODO: This actually fails, so it's not good. Continuing
 		//        just to get progress, but this needs to be fixed.
 		fmt.Println("whoops:", err)
 	}
 	return result, err
+}
+
+func executeGenericEs2plusCommand(jsonStrB []byte, hostport string, es2plusCommand string, client *http.Client) ([]byte, error) {
+	fmt.Println(string(jsonStrB))
+	url := fmt.Sprintf("https://%s/gsma/rsp2/es2plus/%s", hostport, es2plusCommand)
+	// TODO: Consider also https://github.com/parnurzeal/gorequest
+	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonStrB))
+	req.Header.Set("X-Admin-Protocol", "gsma/rsp/v2.0.0")
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	// TODO Should check response headers here!
+	// (in particular X-admin-protocol)
+	response, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	responseBytes := []byte(response)
+	return responseBytes, nil
 }
 
 func newClient(certFilePath string, keyFilePath string) *http.Client {
