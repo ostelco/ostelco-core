@@ -118,21 +118,13 @@ func formatRequest(r *http.Request) string {
 	return strings.Join(request, "\n")
 }
 
+
+
+
+
+
 func getProfileInfo(certFilePath string, keyFilePath string, hostport string, requesterId string, iccid string, functionCallIdentifier string) (*ES2ProfileStatusResponse, error) {
-	cert, err := tls.LoadX509KeyPair(
-		certFilePath,
-		keyFilePath)
-	if err != nil {
-		log.Fatalf("server: loadkeys: %s", err)
-	}
-
-	config := tls.Config{Certificates: []tls.Certificate{cert}, InsecureSkipVerify: true}
-
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &config,
-		},
-	}
+	client := newClient(certFilePath, keyFilePath)
 
 	// Generate a "hole in the wall" getProfileStatus request, to be generalized later.
 	payload := NewStatusRequest(iccid, requesterId, functionCallIdentifier)
@@ -167,4 +159,20 @@ func getProfileInfo(certFilePath string, keyFilePath string, hostport string, re
 		fmt.Println("whoops:", err)
 	}
 	return result, err
+}
+
+func newClient(certFilePath string, keyFilePath string) *http.Client {
+	cert, err := tls.LoadX509KeyPair(
+		certFilePath,
+		keyFilePath)
+	if err != nil {
+		log.Fatalf("server: loadkeys: %s", err)
+	}
+	config := tls.Config{Certificates: []tls.Certificate{cert}, InsecureSkipVerify: true}
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &config,
+		},
+	}
+	return client
 }
