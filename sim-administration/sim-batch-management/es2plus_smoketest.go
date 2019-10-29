@@ -120,18 +120,16 @@ func formatRequest(r *http.Request) string {
 
 
 
-
-
-
 func getProfileInfo(certFilePath string, keyFilePath string, hostport string, requesterId string, iccid string, functionCallIdentifier string) (*ES2ProfileStatusResponse, error) {
 	client := newClient(certFilePath, keyFilePath)
+	es2plusCommand := "getProfileStatus"
 
 	// Generate a "hole in the wall" getProfileStatus request, to be generalized later.
 	payload := NewStatusRequest(iccid, requesterId, functionCallIdentifier)
 	jsonStrB, _ := json.Marshal(&payload)
 	fmt.Println(string(jsonStrB))
 
-	url := fmt.Sprintf("https://%s/gsma/rsp2/es2plus/getProfileStatus", hostport)
+	url := fmt.Sprintf("https://%s/gsma/rsp2/es2plus/%s", hostport, es2plusCommand)
 
 	// TODO: Consider also https://github.com/parnurzeal/gorequest
 	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonStrB))
