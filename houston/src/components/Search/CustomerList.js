@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Col, Row, Card, CardBody, Button } from 'reactstrap';
+import { Button, Card, CardBody, CardText, Col, Row } from 'reactstrap';
 import Highlighter from "react-highlight-words";
 
 import { subscriberActions } from '../../actions/subscriber.actions';
@@ -31,26 +31,17 @@ export const CustomerRow = props => {
   }
 
   return (
-      <div>
-      <Row>
-        <Col xs={2} md={2}>{'Name:'}</Col>
-        <Col xs={12} md={8}>{convertToHighlightedText(props.customer.nickname, query)}</Col>
-      </Row>
-      <Row>
-        <Col xs={2} md={2}>{'Email:'}</Col>
-        <Col xs={12} md={8}>{convertToHighlightedText(props.customer.contactEmail, query)}</Col>
-      </Row>
-      <Row>
-        <Col xs={2} md={2}>{'ID:'}</Col>
-        <Col xs={12} md={8}>{convertToHighlightedText(props.customer.id, query)}</Col>
-      </Row>
-      <br />
-      <Row>
-        <Col xs={6} md={4}>
-          <Button color="light" onClick={onSelect}>{'Show details'}</Button>
-        </Col>
-      </Row>
-      </div>);
+    <Card>
+      <CardBody>
+        <CardText>
+          {convertToHighlightedText(props.customer.nickname, query)}<br />
+          {convertToHighlightedText(props.customer.contactEmail, query)}<br />
+          {convertToHighlightedText(props.customer.id, query)}<br />
+          <br />
+          <Button color="primary" onClick={onSelect}>{'Show details'}</Button>
+        </CardText>
+      </CardBody>
+    </Card>);
 }
 
 CustomerRow.propTypes = {
@@ -72,18 +63,15 @@ export const CustomerList = props => {
     listItems = props.subscribers.map((customer, index) =>
       <div key={index}>
         <CustomerRow customer={customer} selectCustomer={props.selectCustomer} key={index} />
-        <hr />
+        <br />
+
       </div>
     );
   }
   return (
     <div>
       <h6>Found following matching records... </h6>
-      <Card>
-      <CardBody>
-        {listItems}
-        </CardBody>
-      </Card>
+      {listItems}
     </div>
   );
 }
