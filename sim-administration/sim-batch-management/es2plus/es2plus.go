@@ -211,6 +211,14 @@ func executeGenericEs2plusCommand(jsonStrB []byte, hostport string, es2plusComma
 ///  Externally visible API for Es2Plus protocol
 ///
 
+func newUuid() (string, error) {
+    uuid, err := uuid.NewRandom()
+    if err != nil {
+    		return "", err
+    	}
+    return uuid.URN(), nil
+}
+
 func newEs2PlusStatusRequest(iccid string, functionRequesterIdentifier string, functionCallIdentifier string) *ES2PlusGetProfileStatusRequest {
 	return &ES2PlusGetProfileStatusRequest{
 		Header:    ES2PlusHeader{FunctionCallIdentifier: functionCallIdentifier, FunctionRequesterIdentifier: functionRequesterIdentifier},
@@ -221,13 +229,12 @@ func newEs2PlusStatusRequest(iccid string, functionRequesterIdentifier string, f
 func GetStatus(client *Es2PlusClient, iccid string) (*ES2ProfileStatusResponse, error) {
     var result = new(ES2ProfileStatusResponse)
     es2plusCommand := "getProfileStatus"
-    uuid, err := uuid.NewRandom()
-    if err != nil {
-    		return nil, err
-    	}
-    	functionCallIdentifier := uuid.URN()
+    functionCallIdentifier, err := newUuid()
+    if err != nil  {
+        return nil, err
+    }
     payload := newEs2PlusStatusRequest(iccid, client.requesterId, functionCallIdentifier)
-    err = marshalUnmarshalGeneriEs2plusCommand(client, es2plusCommand,  payload, result)
+    err = marshalUnmarshalGeneriEs2plusCommand(client, es2plusCommand, payload, result)
     return result, err
 }
 
