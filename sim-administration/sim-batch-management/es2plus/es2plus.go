@@ -245,7 +245,33 @@ func GetStatus(client *Es2PlusClient, iccid string) (*ProfileStatus, error) {
     if (len(result.ProfileStatusList) == 0) {
         return nil, nil
     } else if (len(result.ProfileStatusList)  == 1) {
-        return &(result.ProfileStatusList[0]), nil
+        returnvalue := result.ProfileStatusList[0]
+        return &returnvalue, nil
+    } else {
+       return nil, errors.New("GetStatus returned more than one profile!")
+    }
+}
+
+
+
+func RecoverProfile(client *Es2PlusClient, iccid string) (*ProfileStatus, error) {
+    result := new(ES2ProfileStatusResponse)
+    es2plusCommand := "getProfileStatus"
+    header := newEs2plusHeader(client)
+    payload := &ES2PlusGetProfileStatusRequest{
+               		Header:    *header,
+               		IccidList: [] ES2PlusIccid{ES2PlusIccid{Iccid: iccid}},
+               	}
+    err := marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result)
+    if err != nil {
+        return nil, err
+    }
+
+    if (len(result.ProfileStatusList) == 0) {
+        return nil, nil
+    } else if (len(result.ProfileStatusList)  == 1) {
+        returnvalue := result.ProfileStatusList[0]
+        return &returnvalue, nil
     } else {
        return nil, errors.New("GetStatus returned more than one profile!")
     }

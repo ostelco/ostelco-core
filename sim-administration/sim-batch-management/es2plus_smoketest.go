@@ -36,7 +36,7 @@ func main() {
 
 	// TODO:  Assert that the state is "AVAILABLE"
 
-	fmt.Println("result -> ", result)
+	fmt.Println("result -> ", result.State)
 
 	/**
 	// TODO:   Generate a full roundtrip taking some suitable profile through a proper
