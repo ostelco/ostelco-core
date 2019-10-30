@@ -2293,7 +2293,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     override fun getPurchaseTransactions(start: Long, end: Long): Either<StoreError, List<PurchaseRecord>> = readTransaction {
         read("""
-                MATCH(:${customerEntity.name})<-[:${forPurchaseByRelation.name}]-(pr:${purchaseRecordEntity.name})
+                MATCH(pr:${purchaseRecordEntity.name})-[:${forPurchaseOfRelation.name}]->(:${productEntity.name})
                 WHERE toInteger(pr.timestamp) >= ${start} AND toInteger(pr.timestamp) <= ${end} AND toInteger(pr.`product/price/amount`) > 0
                 RETURN pr
                 """.trimIndent(), transaction) { statementResult ->
