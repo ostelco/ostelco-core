@@ -25,6 +25,10 @@ comments near the top of the files for instructions on how to use them.
 # TODO
 * Make a build command that runs tests and reports test coverage (etc),
   make it part of the "build-all.go" script.
+* Write some code that allows sim-batches to be kept in database.
+  - Pick up the location of the database and also other
+    secrets via an environment variable.
+  - Figure out if we can make multiple command-line programs that have equal value
 
 
 
