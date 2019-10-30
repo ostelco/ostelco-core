@@ -2,7 +2,7 @@ import React from 'react';
 import _ from 'lodash';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Card, CardBody, CardTitle } from 'reactstrap';
+import { Card, CardBody } from 'reactstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import ReactTable from "react-table"
 import "react-table/react-table.css";
@@ -76,7 +76,6 @@ class AuditLogs extends React.Component {
     return (
       <Card>
         <CardBody>
-          <CardTitle>Audit Logs</CardTitle>
           <ReactTable
             data={props.auditLogs}
             columns={columns}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Col, Row, Card, CardBody, CardTitle, Button } from 'reactstrap';
+import { Col, Row, Card, CardBody, CardHeader, Button } from 'reactstrap';
 
 import { subscriberActions } from '../../actions/subscriber.actions';
 import Subscription from './Subscription';
@@ -41,15 +41,15 @@ class Profile extends React.Component {
     if (Array.isArray(props.subscriptions.items)) {
       listItems = props.subscriptions.items.map((subscription, index) =>
         <div key={index}>
-          <Subscription subscription={subscription}  key={index}/>
+          <Subscription subscription={subscription} key={index} />
           <hr />
         </div>
       );
     }
     return (
       <Card>
+        <CardHeader>Customer</CardHeader>
         <CardBody>
-          <CardTitle>User Profile</CardTitle>
           <Row>
             <Col xs={2} md={2}>{'Name:'}</Col>
             <Col xs={12} md={8}>{`${props.profile.nickname}`}</Col>
@@ -92,7 +92,7 @@ Profile.propTypes = {
   subscriptions: PropTypes.shape({
     items: PropTypes.array,
   }),
-  deleteUser:PropTypes.func.isRequired
+  deleteUser: PropTypes.func.isRequired
 };
 
 function mapStateToProps(state) {

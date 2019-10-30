@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardBody, CardTitle, Nav, NavItem, NavLink, TabContent, TabPane } from 'reactstrap';
+import { Card, CardBody, CardHeader, Nav, NavItem, NavLink, TabContent, TabPane } from 'reactstrap';
 import classnames from 'classnames';
 
 import Context from "./Context";
@@ -63,13 +63,14 @@ class SearchResults extends React.Component {
         </Nav>
         <TabContent activeTab={this.state.activeTab}>
           <TabPane tabId="1">
+            <br />
             <Profile />
             <br />
             <DataUsage />
             <br />
             <Card>
+              <CardHeader>Push Notifications</CardHeader>
               <CardBody>
-                <CardTitle>Push Notifications</CardTitle>
                 <NotificationEditor
                   submitLabel="Send a message"
                   titleLabel="Title"
@@ -80,12 +81,15 @@ class SearchResults extends React.Component {
             <br />
           </TabPane>
           <TabPane tabId="2">
+            <br />
             <PaymentHistory />
           </TabPane>
           <TabPane tabId="3">
+            <br />
             <Context />
           </TabPane>
           <TabPane tabId="4">
+            <br />
             <AuditLogs />
           </TabPane>
         </TabContent>

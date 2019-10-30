@@ -63,6 +63,8 @@ class ProfilesResource {
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
                 val trimmedQuery = query.trim()
+                        .replace("'", "")
+                        .replace("\"", "")
                 if (isMsisdn(trimmedQuery)) {
                     logger.info("${token.name} Accessing profile for msisdn: $query")
                     getProfileListForMsisdn(trimmedQuery)
