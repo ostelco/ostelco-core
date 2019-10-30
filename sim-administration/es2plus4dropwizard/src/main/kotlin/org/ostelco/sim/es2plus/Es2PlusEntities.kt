@@ -76,7 +76,7 @@ data class Es2PlusDownloadOrder(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Es2DownloadOrderResponse(
         @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader(),
-        @JsonProperty("iccid") val iccid: String? = null
+        @JsonProperty("iccid")  val iccid: String? = null
 ): Es2Response(header)
 
 

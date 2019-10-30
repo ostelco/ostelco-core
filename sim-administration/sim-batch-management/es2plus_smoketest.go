@@ -29,7 +29,7 @@ func main() {
 	fmt.Printf("iccidInput   = '%s'\n", *iccidInput)
 
 	iccid := *iccidInput
-	
+
 	client := es2plus.Client(*certFilePath, *keyFilePath, *hostport, *requesterId)
 
 	result, err := es2plus.GetStatus(client, iccid)
@@ -67,10 +67,23 @@ func main() {
 
 	fmt.Println("result5 -> ", result.State)
 
+	if result.State != "AVAILABLE" {
+		panic("Couldn't convert state of iccid into AVAILABLE")
+	}
 
 
-	// TODO:  Assert that the state is "AVAILABLE"
+	result6, err := es2plus.DownloadOrder(client, iccid)
+	fmt.Println("result6 -> ", result6)
+	if err != nil {
+		panic(err)
+	}
 
+
+	result7, err := es2plus.GetStatus(client, iccid)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("result7 -> ", result7)
 
 
 	/**
@@ -99,4 +112,6 @@ func main() {
 
 	// Make some assertion about the status at this point
 */
+
+	fmt.Println("Success")
 }

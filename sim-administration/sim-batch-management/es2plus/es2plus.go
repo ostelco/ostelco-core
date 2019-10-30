@@ -32,7 +32,7 @@ type ES2PlusIccid struct {
 }
 
 type FunctionExecutionStatus struct {
-	FunctionExecutionStatusType string                `json:"status"` // Should be an enumeration type
+	FunctionExecutionStatusType string                `json:"status"`
 	StatusCodeData              ES2PlusStatusCodeData `json:"statusCodeData"`
 }
 
@@ -81,7 +81,7 @@ type ES2PlusRecoverProfileRequest struct {
  }
 
 type ES2PlusRecoverProfileResponse struct {
-	Header    ES2PlusHeader  `json:"header"`
+	Header    ES2PlusResponseHeader  `json:"header"`
 }
 
 
@@ -97,9 +97,24 @@ type ES2PlusCancelOrderRequest struct {
  }
 
 type ES2PlusCancelOrderResponse struct {
-	Header    ES2PlusHeader  `json:"header"`
+	Header    ES2PlusResponseHeader  `json:"header"`
 }
 
+//
+//  Download order invocation
+//
+
+type ES2PlusDownloadOrderRequest struct {
+    Header          ES2PlusHeader  `json:"header"`
+    Iccid           string         `json:"iccid"`
+    Eid             string         `json:"eid,omitempty"`
+    Profiletype     string         `json:"profiletype,omitempty"`
+}
+
+type ES2PlusDownloadOrderResponse struct {
+	Header    ES2PlusResponseHeader  `json:"header"`
+	Iccid     string         `json:"iccid"`
+}
 
 //
 //  Generating new ES2Plus clients
@@ -311,3 +326,25 @@ func CancelOrder(client *Es2PlusClient, iccid string, targetState string) (*ES2P
     return result, marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result)
 }
 
+func DownloadOrder(client *Es2PlusClient, iccid string) (*ES2PlusDownloadOrderResponse, error) {
+    result := new(ES2PlusDownloadOrderResponse)
+    es2plusCommand := "downloadOrder"
+    header := newEs2plusHeader(client)
+    payload := &ES2PlusDownloadOrderRequest {
+               		Header:        *header,
+               		Iccid:         iccid,
+               		Eid:           "",
+               		Profiletype:   "",
+               	}
+    err :=  marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result)
+    if err != nil {
+            return nil, err
+    }
+
+    executionStatus := result.Header.FunctionExecutionStatus.FunctionExecutionStatusType
+    if ("Executed-Success" != executionStatus) {
+        return result, errors.New(fmt.Sprintf("ExecutionStatus was: ''%s'",  executionStatus))
+    } else {
+        return result, nil
+    }
+}
