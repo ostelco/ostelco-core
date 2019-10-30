@@ -228,18 +228,14 @@ func executeGenericEs2plusCommand(jsonStrB []byte, hostport string, es2plusComma
 ///
 
 
-func newEs2PlusStatusRequest(iccid string, header *ES2PlusHeader) (*ES2PlusGetProfileStatusRequest) {
-	return &ES2PlusGetProfileStatusRequest{
-		Header:    *header,
-		IccidList: [] ES2PlusIccid{ES2PlusIccid{Iccid: iccid}},
-	}
-}
-
 func GetStatus(client *Es2PlusClient, iccid string) (*ES2ProfileStatusResponse, error) {
     var result = new(ES2ProfileStatusResponse)
     es2plusCommand := "getProfileStatus"
     header := newEs2plusHeader(client)
-    payload := newEs2PlusStatusRequest(iccid, header)
+    payload := &ES2PlusGetProfileStatusRequest{
+               		Header:    *header,
+               		IccidList: [] ES2PlusIccid{ES2PlusIccid{Iccid: iccid}},
+               	}
     err := marshalUnmarshalGeneriEs2plusCommand(client, es2plusCommand, payload, result)
     return result, err
 }
