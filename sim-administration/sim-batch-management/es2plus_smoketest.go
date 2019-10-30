@@ -25,6 +25,7 @@ func main() {
 
 	flag.Parse()
 
+	// TODO: Move the actual ICCID into the caller function
 	iccid := "8965030119040000067"
 	client := es2plus.Client(*certFilePath, *keyFilePath, *hostport, *requesterId)
 
@@ -33,6 +34,34 @@ func main() {
 		panic(err)
 	}
 
+	// TODO:  Assert that the state is "AVAILABLE"
 
 	fmt.Println("result -> ", result)
+
+	/**
+	// TODO:   Generate a full roundtrip taking some suitable profile through a proper
+	//         activation, and reset.
+	result, err := es2plus.Activate(client, iccid)
+	if err != nil {
+		panic(err)
+	}
+
+	result, err := es2plus.GetStatus(client, iccid)
+	if err != nil {
+		panic(err)
+	}
+
+	// Make some assertion about the status at this point
+	result, err := es2plus.Reset(client, iccid)
+	if err != nil {
+		panic(err)
+	}
+
+	result, err := es2plus.GetStatus(client, iccid)
+	if err != nil {
+		panic(err)
+	}
+
+	// Make some assertion about the status at this point
+*/
 }
