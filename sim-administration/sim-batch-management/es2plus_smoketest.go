@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/es2plus"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/outfileconversion"
-	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 ///
@@ -52,7 +51,7 @@ func main() {
 }
 
 // TODO:  Replace this with a set of commands that are directly useful as
-//        an alternative to the web interface.
+//        an alternative to the web interface (update, prepare, query, etc.)
 func es2PlusSmoketest(certFilePath *string, keyFilePath *string, hostport *string, requesterId *string, iccidInput *string) {
 
 	fmt.Printf("certFilePath = '%s'\n", *certFilePath)
