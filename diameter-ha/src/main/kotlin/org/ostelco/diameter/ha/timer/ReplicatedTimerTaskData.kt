@@ -81,6 +81,7 @@ class ReplicatedTimerTask(val data: ReplicatedTimerTaskData, private val session
             runTask()
         } else {
             // clear local session. As the timer was created by this instance it should be local.
+            logger.debug("Skipping Timer with id ${data.taskID}, removing session ${data.sessionId}")
             sessionDataSource.removeSession(data.sessionId)
         }
     }
