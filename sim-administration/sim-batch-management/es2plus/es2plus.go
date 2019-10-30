@@ -160,7 +160,7 @@ func newEs2plusHeader(client *Es2PlusClient) (*ES2PlusHeader) {
 }
 
 
-func marshalUnmarshalGeneriEs2plusCommand(client *Es2PlusClient, es2plusCommand string,  payload interface{}, result interface{}) error {
+func marshalUnmarshalGenericEs2plusCommand(client *Es2PlusClient, es2plusCommand string,  payload interface{}, result interface{}) error {
 
     // Serialize payload as json.
 	jsonStrB, err := json.Marshal(payload)
@@ -236,7 +236,7 @@ func GetStatus(client *Es2PlusClient, iccid string) (*ES2ProfileStatusResponse, 
                		Header:    *header,
                		IccidList: [] ES2PlusIccid{ES2PlusIccid{Iccid: iccid}},
                	}
-    return result,  marshalUnmarshalGeneriEs2plusCommand(client, es2plusCommand, payload, result)
+    return result,  marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result)
 }
 
 
