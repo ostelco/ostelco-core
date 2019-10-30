@@ -8,7 +8,8 @@ function useFormInput(initialValue, submit) {
   const [value, setValue] = useState(initialValue);
 
   function onChange(e) {
-    setValue(e.target.value);
+    const cleanValue = e.target.value.replace(/['"]+/g,'');
+    setValue(cleanValue);
   }
 
   function onSubmit(e) {
