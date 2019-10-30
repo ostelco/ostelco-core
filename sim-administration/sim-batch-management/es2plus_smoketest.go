@@ -29,6 +29,37 @@ var (
 	// Convert an output (.out) file from an sim profile producer into an input file
 	// for Prime.
 	//
+
+	/**
+	 * OLD COMMENTS: Not yet reworked into doc for this script, but mostly accurate
+	 *  nonetheless.
+	 *
+	 * This program is intended to be used from the command line, and will convert an
+	 * output file from a sim card vendor into an input file for a HSS. The assumptions
+	 * necessary for this to work are:
+	 *
+	 *  * The SIM card vendor produces output files similar to the example .out file
+	 *     found in the same source directory as this program
+	 *
+	 *  * The HSS accepts input as a CSV file, with header line 'ICCID, IMSI, KI' and subsequent
+	 *    lines containing ICCID/IMSI/Ki fields, all separated by commas.
+	 *
+	 * Needless to say, the outmost care should be taken when handling Ki values and
+	 * this program must, as a matter of course, be considered a security risk, as
+	 * must all  software that touch SIM values.
+	 *
+	 * With that caveat in place, the usage of this program typically looks like
+	 * this:
+	 *
+	 *    ./outfile_to_hss_input_converter.go  \
+	 *              -input-file sample_out_file_for_testing.out
+	 *              -output-file-prefix  ./hss-input-for-
+	 *
+	 * (followed by cryptographically strong erasure of the .out file,
+	 *  encapsulation of the .csv file in strong cryptography etc., none
+	 *  of which are handled by this script).
+	 */
+
 	spUpload          = kingpin.Command("sim-profile-upload", "Convert an output (.out) file from an sim profile producer into an input file for an HSS.")
 	spUploadInputFile = smoketest.Flag("input-file", "path to .out file used as input file").Required().String()
 
@@ -46,7 +77,7 @@ func main() {
 	case "simProfilerUpload":
 		outfileconversion.ConvertInputfileToOutputfile(*inputFile, *outputFilePrefix)
 	default:
-		panic("Unknown command")
+		panic("Unknown command.")
 	}
 }
 
