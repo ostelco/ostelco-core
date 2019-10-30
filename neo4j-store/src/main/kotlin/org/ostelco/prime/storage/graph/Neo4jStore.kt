@@ -464,11 +464,11 @@ object Neo4jStoreSingleton : GraphStore {
 //                val regionsWithoutSimProfile = regions - simProfileRegions
 //                // Link regions with SIM profiles to ExCustomer
 //                for (region in simProfileRegions) {
-//                    fact { (ExCustomer withId customerId) belongedTo (Region withCode region.id) }
+//                    fact { (ExCustomer withId customerId) belongedTo (Region withCode region.id) }.bind()
 //                }
                 // (For now) Link regions to ExCustomer
                 for (region in regions) {
-                    fact { (ExCustomer withId customerId) belongedTo (Region withCode region.id) }
+                    fact { (ExCustomer withId customerId) belongedTo (Region withCode region.id) }.bind()
                 }
 
                 // TODO vihang: When we read and then delete, it fails when deserialization does not work.
