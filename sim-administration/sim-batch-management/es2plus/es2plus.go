@@ -69,12 +69,41 @@ type ProfileStatus struct {
 ///  Protocol code
 ///
 
-func NewStatusRequest(iccid string, functionRequesterIdentifier string, functionCallIdentifier string) ES2PlusGetProfileStatusRequest {
+func Es2PlusStatusRequest(iccid string, functionRequesterIdentifier string, functionCallIdentifier string) ES2PlusGetProfileStatusRequest {
 	return ES2PlusGetProfileStatusRequest{
 		Header:    ES2PlusHeader{FunctionCallIdentifier: functionCallIdentifier, FunctionRequesterIdentifier: functionRequesterIdentifier},
 		IccidList: [] ES2PlusIccid{ES2PlusIccid{Iccid: iccid}},
 	}
 }
+
+func GetStatus(client *Es2PlusClient, iccid string) (*ES2ProfileStatusResponse, error) {
+
+
+// func getProfileInfo(certFilePath string, keyFilePath string, hostport string, requesterId string, iccid string, functionCallIdentifier string) (*ES2ProfileStatusResponse, error) {
+	// client := NewClient(certFilePath, keyFilePath)
+	es2plusCommand := "getProfileStatus"
+
+	payload := Es2PlusStatusRequest(iccid, client.requesterId, "oo") // Use a goroutine to generate function call identifiers
+	jsonStrB, err := json.Marshal(&payload)
+	if err != nil {
+		return nil, err
+	}
+
+	responseBytes, err := executeGenericEs2plusCommand(jsonStrB, client.hostport, es2plusCommand,  client.httpClient)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var result = new(ES2ProfileStatusResponse)
+	err = json.Unmarshal(responseBytes, &result)
+	if err != nil {
+		return nil, err
+	}
+	return result, err
+}
+
+
 
 // formatRequest generates ascii representation of a request
 func formatRequest(r *http.Request) string {
@@ -104,12 +133,12 @@ func formatRequest(r *http.Request) string {
 }
 
 
-
+/*
 func getProfileInfo(certFilePath string, keyFilePath string, hostport string, requesterId string, iccid string, functionCallIdentifier string) (*ES2ProfileStatusResponse, error) {
 	client := NewClient(certFilePath, keyFilePath)
 	es2plusCommand := "getProfileStatus"
 
-	payload := NewStatusRequest(iccid, requesterId, functionCallIdentifier)
+	payload := Es2PlusStatusRequest(iccid, requesterId, functionCallIdentifier)
 	jsonStrB, err := json.Marshal(&payload)
 	if err != nil {
 		return nil, err
@@ -127,16 +156,16 @@ func getProfileInfo(certFilePath string, keyFilePath string, hostport string, re
 	}
 	return result, err
 }
+*/
 
-func MarshalUnmarshalGeneriEs2plusCommand(client *http.Client, hostport string, es2plusCommand string,  payload interface{}, result interface{}) error {
-
+func marshalUnmarshalGeneriEs2plusCommand(client *Es2PlusClient, es2plusCommand string,  payload interface{}, result interface{}) error {
 
 	jsonStrB, err := json.Marshal(payload)
 	if err != nil {
 		return  err
 	}
 
-	responseBytes, err := executeGenericEs2plusCommand(jsonStrB, hostport, es2plusCommand,  client)
+	responseBytes, err := executeGenericEs2plusCommand(jsonStrB, client.hostport, es2plusCommand,  client.httpClient)
 	if err != nil {
 		return  err
 	}
@@ -146,13 +175,13 @@ func MarshalUnmarshalGeneriEs2plusCommand(client *http.Client, hostport string, 
 }
 
 
-func executeGenericEs2plusCommand(jsonStrB []byte, hostport string, es2plusCommand string, client *http.Client) ([]byte, error) {
+func executeGenericEs2plusCommand(jsonStrB []byte, hostport string, es2plusCommand string, httpClient *http.Client) ([]byte, error) {
 	fmt.Println(string(jsonStrB))
 	url := fmt.Sprintf("https://%s/gsma/rsp2/es2plus/%s", hostport, es2plusCommand)
 	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonStrB))
 	req.Header.Set("X-Admin-Protocol", "gsma/rsp/v2.0.0")
 	req.Header.Set("Content-Type", "application/json")
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -166,11 +195,27 @@ func executeGenericEs2plusCommand(jsonStrB []byte, hostport string, es2plusComma
 	return responseBytes, nil
 }
 
+
+type Es2PlusClient struct {
+	httpClient *http.Client
+	hostport string
+	requesterId string
+}
+
+func Client (certFilePath string, keyFilePath string, hostport string, requesterId string) (*Es2PlusClient) {
+    return &Es2PlusClient {
+        httpClient: newHttpClient(certFilePath, keyFilePath),
+        hostport: hostport,
+        requesterId: requesterId,
+    }
+}
+
+
 // TODO:   This is now just a http client, but we should extend the _external_ interface
 //         generate a es2plus endpoint, that contains the endpoint url, and a generator
 //         for function invocation IDs.  This will also require som reengineering of the
 //         rest of the API.
-func NewClient(certFilePath string, keyFilePath string) *http.Client {
+func newHttpClient(certFilePath string, keyFilePath string) *http.Client {
 	cert, err := tls.LoadX509KeyPair(
 		certFilePath,
 		keyFilePath)
