@@ -107,8 +107,11 @@ func newHttpClient(certFilePath string, keyFilePath string) *http.Client {
 ///
 
 
-
-// formatRequest generates ascii representation of a request
+//
+// Function used during debugging to print requests before they are
+// sent over the wire.  Very useful, should not be deleted even though it
+// is not used right now.
+//
 func formatRequest(r *http.Request) string {
 	// Create return string
 	var request []string
@@ -154,12 +157,14 @@ func marshalUnmarshalGeneriEs2plusCommand(client *Es2PlusClient, es2plusCommand 
 
 
 func executeGenericEs2plusCommand(jsonStrB []byte, hostport string, es2plusCommand string, httpClient *http.Client) ([]byte, error) {
-	fmt.Println(string(jsonStrB))
+
 	url := fmt.Sprintf("https://%s/gsma/rsp2/es2plus/%s", hostport, es2plusCommand)
 	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonStrB))
 	req.Header.Set("X-Admin-Protocol", "gsma/rsp/v2.0.0")
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := httpClient.Do(req)
+
+
 	if err != nil {
 		return nil, err
 	}
