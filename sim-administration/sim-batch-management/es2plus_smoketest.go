@@ -106,7 +106,7 @@ func main() {
 	fmt.Println("result9 -> ", result9)
 
 
-	if result.State != "RELEASED" {
+	if result9.State != "RELEASED" {
 		panic("Couldn't convert state of iccid into RELEASED")
 	}
 
