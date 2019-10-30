@@ -7,10 +7,16 @@ import (
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/es2plus"
 )
 
-///
-///   Main.  The rest should be put into a library.
-///
-
+//
+// This is a "smoketest", a program that is formulated somewhat as a test,
+// and I've used to develop the es2plus library.  It is not formulated as a
+// unit test, since it requires access to an external resource and I don't feel it
+// is appropriate to run unit tests against that external resource. Some degree of
+// deliberation seems appropriate.
+//
+// The program illustrates the API being used, and logs progress in the state of the
+// profile being manipulated.
+//
 func main() {
 
 	certFilePath := flag.String("cert", "", "Certificate pem file.")
@@ -99,32 +105,11 @@ func main() {
 	}
 	fmt.Println("result9 -> ", result9)
 
-	/**
-	// TODO:   Generate a full roundtrip taking some suitable profile through a proper
-	//         activation, and reset.
-	result, err := es2plus.Activate(client, iccid)
-	if err != nil {
-		panic(err)
+
+	if result.State != "RELEASED" {
+		panic("Couldn't convert state of iccid into RELEASED")
 	}
 
-	result, err := es2plus.GetStatus(client, iccid)
-	if err != nil {
-		panic(err)
-	}
-
-	// Make some assertion about the status at this point
-	result, err := es2plus.Reset(client, iccid)
-	if err != nil {
-		panic(err)
-	}
-
-	result, err := es2plus.GetStatus(client, iccid)
-	if err != nil {
-		panic(err)
-	}
-
-	// Make some assertion about the status at this point
-*/
 
 	fmt.Println("Success")
 }
