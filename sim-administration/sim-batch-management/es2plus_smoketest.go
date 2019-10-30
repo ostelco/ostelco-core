@@ -2,7 +2,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/es2plus"
 )
@@ -11,16 +10,33 @@ import (
 ///   Main.  The rest should be put into a library.
 ///
 
+
+import "gopkg.in/alecthomas/kingpin.v2"
+
+var (
+	debug    = kingpin.Flag("debug", "enable debug mode").Default("false").Bool()
+
+	smoketest   = kingpin.Command("es2plusSmoketest", "Register a new user.")
+	smoketestCertFilePath = smoketest.Arg("cert",  "Certificate pem file.").Required().String()
+	smoketestKeyFilePath = smoketest.Arg("key", "Certificate key file.").Required().String()
+	smoketestHostport = smoketest.Arg("hostport", "host:port of ES2+ endpoint.").Required().String()
+	smoketestRequesterId = smoketest.Arg("requesterid",  "ES2+ requester ID.").Required().String()
+	smoketestIccidInput = smoketest.Arg("iccid",  "Iccid of profile to manipulate").Required().String()
+
+	// TODO: Check if this can be used for the key files.
+	// postImage   = post.Flag("image", "image to post").ExistingFile()
+)
+
 func main() {
+	switch kingpin.Parse() {
 
-	certFilePath := flag.String("cert", "", "Certificate pem file.")
-	keyFilePath := flag.String("key", "", "Certificate key file.")
-	hostport := flag.String("hostport", "", "host:port of ES2+ endpoint.")
-	requesterId := flag.String("requesterid", "", "ES2+ requester ID.")
-	iccidInput := flag.String("iccid", "", "Iccid of profile to manipulate")
+	// Handle the command
+	case "smoketest":
+		es2PlusSmoketest(smoketestCertFilePath, smoketestKeyFilePath, smoketestHostport, smoketestRequesterId, smoketestIccidInput)
+	}
+}
 
-
-	flag.Parse()
+func es2PlusSmoketest(certFilePath *string, keyFilePath *string, hostport *string, requesterId *string, iccidInput *string) {
 
 	fmt.Printf("certFilePath = '%s'\n", *certFilePath)
 	fmt.Printf("keyFilePath  = '%s'\n", *keyFilePath)
