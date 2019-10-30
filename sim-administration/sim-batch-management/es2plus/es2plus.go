@@ -143,6 +143,22 @@ func formatRequest(r *http.Request) string {
 	return strings.Join(request, "\n")
 }
 
+func newUuid() (string, error) {
+    uuid, err := uuid.NewRandom()
+    if err != nil {
+    		return "", err
+    	}
+    return uuid.URN(), nil
+}
+
+func newEs2plusHeader(client *Es2PlusClient) (*ES2PlusHeader, error) {
+   functionCallIdentifier, err := newUuid()
+   if err != nil  {
+        return nil, err
+   }
+   return &ES2PlusHeader{FunctionCallIdentifier: functionCallIdentifier, FunctionRequesterIdentifier: client.requesterId}, nil
+}
+
 
 func marshalUnmarshalGeneriEs2plusCommand(client *Es2PlusClient, es2plusCommand string,  payload interface{}, result interface{}) error {
 
@@ -211,22 +227,10 @@ func executeGenericEs2plusCommand(jsonStrB []byte, hostport string, es2plusComma
 ///  Externally visible API for Es2Plus protocol
 ///
 
-func newUuid() (string, error) {
-    uuid, err := uuid.NewRandom()
-    if err != nil {
-    		return "", err
-    	}
-    return uuid.URN(), nil
-}
 
-func newEs2PlusStatusRequest(iccid string, functionRequesterIdentifier string) (*ES2PlusGetProfileStatusRequest, error) {
-    functionCallIdentifier, err := newUuid()
-    if err != nil  {
-        return nil, err
-    }
-
+func newEs2PlusStatusRequest(iccid string, header *ES2PlusHeader) (*ES2PlusGetProfileStatusRequest, error) {
 	return &ES2PlusGetProfileStatusRequest{
-		Header:    ES2PlusHeader{FunctionCallIdentifier: functionCallIdentifier, FunctionRequesterIdentifier: functionRequesterIdentifier},
+		Header:    *header,
 		IccidList: [] ES2PlusIccid{ES2PlusIccid{Iccid: iccid}},
 	}, nil
 }
@@ -234,8 +238,9 @@ func newEs2PlusStatusRequest(iccid string, functionRequesterIdentifier string) (
 func GetStatus(client *Es2PlusClient, iccid string) (*ES2ProfileStatusResponse, error) {
     var result = new(ES2ProfileStatusResponse)
     es2plusCommand := "getProfileStatus"
+    header,err := newEs2plusHeader(client)
 
-    payload, err := newEs2PlusStatusRequest(iccid, client.requesterId)
+    payload, err := newEs2PlusStatusRequest(iccid, header)
     if err != nil {
         return nil, err
     }
