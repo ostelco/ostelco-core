@@ -65,46 +65,46 @@ type ProfileStatus struct {
 	LockFlag                  bool   `json:"lockFlag"`
 }
 
-///
-///  Protocol code
-///
 
-func Es2PlusStatusRequest(iccid string, functionRequesterIdentifier string, functionCallIdentifier string) ES2PlusGetProfileStatusRequest {
-	return ES2PlusGetProfileStatusRequest{
-		Header:    ES2PlusHeader{FunctionCallIdentifier: functionCallIdentifier, FunctionRequesterIdentifier: functionRequesterIdentifier},
-		IccidList: [] ES2PlusIccid{ES2PlusIccid{Iccid: iccid}},
-	}
+//
+//  Generating new ES2Plus clients
+//
+
+
+type Es2PlusClient struct {
+	httpClient *http.Client
+	hostport string
+	requesterId string
 }
 
-func GetStatus(client *Es2PlusClient, iccid string) (*ES2ProfileStatusResponse, error) {
-
-
-    var result = new(ES2ProfileStatusResponse)
-    es2plusCommand := "getProfileStatus"
-    payload := Es2PlusStatusRequest(iccid, client.requesterId, "oo")
-    err := marshalUnmarshalGeneriEs2plusCommand(client, es2plusCommand,  &payload, result)
-    return result, err
-	/*
-
-	payload := Es2PlusStatusRequest(iccid, client.requesterId, "oo") // Use a goroutine to generate function call identifiers
-	jsonStrB, err := json.Marshal(&payload)
-	if err != nil {
-		return nil, err
-	}
-
-	responseBytes, err := executeGenericEs2plusCommand(jsonStrB, client.hostport, es2plusCommand, client.httpClient)
-
-	if err != nil {
-		return nil, err
-	}
-
-	var result = new(ES2ProfileStatusResponse)
-	err = json.Unmarshal(responseBytes, &result)
-	if err != nil {
-		return nil, err
-	}
-	return result, err */
+func Client (certFilePath string, keyFilePath string, hostport string, requesterId string) (*Es2PlusClient) {
+    return &Es2PlusClient {
+        httpClient: newHttpClient(certFilePath, keyFilePath),
+        hostport: hostport,
+        requesterId: requesterId,
+    }
 }
+
+func newHttpClient(certFilePath string, keyFilePath string) *http.Client {
+	cert, err := tls.LoadX509KeyPair(
+		certFilePath,
+		keyFilePath)
+	if err != nil {
+		log.Fatalf("server: loadkeys: %s", err)
+	}
+	config := tls.Config{Certificates: []tls.Certificate{cert}, InsecureSkipVerify: true}
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &config,
+		},
+	}
+	return client
+}
+
+
+///
+/// Generic protocol code
+///
 
 
 
@@ -174,38 +174,23 @@ func executeGenericEs2plusCommand(jsonStrB []byte, hostport string, es2plusComma
 }
 
 
-type Es2PlusClient struct {
-	httpClient *http.Client
-	hostport string
-	requesterId string
-}
+///
+///  Externally visible API for Es2Plus protocol
+///
 
-func Client (certFilePath string, keyFilePath string, hostport string, requesterId string) (*Es2PlusClient) {
-    return &Es2PlusClient {
-        httpClient: newHttpClient(certFilePath, keyFilePath),
-        hostport: hostport,
-        requesterId: requesterId,
-    }
-}
-
-
-// TODO:   This is now just a http client, but we should extend the _external_ interface
-//         generate a es2plus endpoint, that contains the endpoint url, and a generator
-//         for function invocation IDs.  This will also require som reengineering of the
-//         rest of the API.
-func newHttpClient(certFilePath string, keyFilePath string) *http.Client {
-	cert, err := tls.LoadX509KeyPair(
-		certFilePath,
-		keyFilePath)
-	if err != nil {
-		log.Fatalf("server: loadkeys: %s", err)
+func newEs2PlusStatusRequest(iccid string, functionRequesterIdentifier string, functionCallIdentifier string) ES2PlusGetProfileStatusRequest {
+	return ES2PlusGetProfileStatusRequest{
+		Header:    ES2PlusHeader{FunctionCallIdentifier: functionCallIdentifier, FunctionRequesterIdentifier: functionRequesterIdentifier},
+		IccidList: [] ES2PlusIccid{ES2PlusIccid{Iccid: iccid}},
 	}
-	config := tls.Config{Certificates: []tls.Certificate{cert}, InsecureSkipVerify: true}
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &config,
-		},
-	}
-	return client
 }
+
+func GetStatus(client *Es2PlusClient, iccid string) (*ES2ProfileStatusResponse, error) {
+    var result = new(ES2ProfileStatusResponse)
+    es2plusCommand := "getProfileStatus"
+    payload := newEs2PlusStatusRequest(iccid, client.requesterId, "oo") // TODO: Add a proper function call identifier
+    err := marshalUnmarshalGeneriEs2plusCommand(client, es2plusCommand,  &payload, result)
+    return result, err
+}
+
 
