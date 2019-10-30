@@ -151,12 +151,12 @@ func newUuid() (string, error) {
     return uuid.URN(), nil
 }
 
-func newEs2plusHeader(client *Es2PlusClient) (*ES2PlusHeader, error) {
+func newEs2plusHeader(client *Es2PlusClient) (*ES2PlusHeader) {
    functionCallIdentifier, err := newUuid()
    if err != nil  {
-        return nil, err
+        panic(err)
    }
-   return &ES2PlusHeader{FunctionCallIdentifier: functionCallIdentifier, FunctionRequesterIdentifier: client.requesterId}, nil
+   return &ES2PlusHeader{FunctionCallIdentifier: functionCallIdentifier, FunctionRequesterIdentifier: client.requesterId}
 }
 
 
@@ -228,23 +228,19 @@ func executeGenericEs2plusCommand(jsonStrB []byte, hostport string, es2plusComma
 ///
 
 
-func newEs2PlusStatusRequest(iccid string, header *ES2PlusHeader) (*ES2PlusGetProfileStatusRequest, error) {
+func newEs2PlusStatusRequest(iccid string, header *ES2PlusHeader) (*ES2PlusGetProfileStatusRequest) {
 	return &ES2PlusGetProfileStatusRequest{
 		Header:    *header,
 		IccidList: [] ES2PlusIccid{ES2PlusIccid{Iccid: iccid}},
-	}, nil
+	}
 }
 
 func GetStatus(client *Es2PlusClient, iccid string) (*ES2ProfileStatusResponse, error) {
     var result = new(ES2ProfileStatusResponse)
     es2plusCommand := "getProfileStatus"
-    header,err := newEs2plusHeader(client)
-
-    payload, err := newEs2PlusStatusRequest(iccid, header)
-    if err != nil {
-        return nil, err
-    }
-    err = marshalUnmarshalGeneriEs2plusCommand(client, es2plusCommand, payload, result)
+    header := newEs2plusHeader(client)
+    payload := newEs2PlusStatusRequest(iccid, header)
+    err := marshalUnmarshalGeneriEs2plusCommand(client, es2plusCommand, payload, result)
     return result, err
 }
 
