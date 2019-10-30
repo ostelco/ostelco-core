@@ -17,16 +17,19 @@ func main() {
 	keyFilePath := flag.String("key", "", "Certificate key file.")
 	hostport := flag.String("hostport", "", "host:port of ES2+ endpoint.")
 	requesterId := flag.String("requesterid", "", "ES2+ requester ID.")
+	iccidInput := flag.String("iccid", "", "Iccid of profile to manipulate")
+
+
+	flag.Parse()
 
 	fmt.Printf("certFilePath = '%s'\n", *certFilePath)
 	fmt.Printf("keyFilePath  = '%s'\n", *keyFilePath)
 	fmt.Printf("hostport     = '%s'\n", *hostport)
 	fmt.Printf("requesterId  = '%s'\n", *requesterId)
+	fmt.Printf("iccidInput   = '%s'\n", *iccidInput)
 
-	flag.Parse()
-
-	// TODO: Move the actual ICCID into the caller function
-	iccid := "8965030119040000067"
+	iccid := *iccidInput
+	
 	client := es2plus.Client(*certFilePath, *keyFilePath, *hostport, *requesterId)
 
 	result, err := es2plus.GetStatus(client, iccid)
