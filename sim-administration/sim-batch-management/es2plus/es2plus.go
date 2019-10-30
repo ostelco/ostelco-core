@@ -71,7 +71,7 @@ type ProfileStatus struct {
 
 
 //
-//  Profile reset
+//  Profile reset invocation
 //
 
 type ES2PlusRecoverProfileRequest struct {
@@ -81,6 +81,22 @@ type ES2PlusRecoverProfileRequest struct {
  }
 
 type ES2PlusRecoverProfileResponse struct {
+	Header    ES2PlusHeader  `json:"header"`
+}
+
+
+
+//
+//  Cancel order  invocation
+//
+
+type ES2PlusCancelOrderRequest struct {
+    Header          ES2PlusHeader  `json:"header"`
+    Iccid           string         `json:"iccid"`
+    FinalProfileStatusIndicator   string         `json:"finalProfileStatusIndicator"`
+ }
+
+type ES2PlusCancelOrderResponse struct {
 	Header    ES2PlusHeader  `json:"header"`
 }
 
@@ -282,4 +298,16 @@ func RecoverProfile(client *Es2PlusClient, iccid string, targetState string) (*E
     return result, marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result)
 }
 
+
+func CancelOrder(client *Es2PlusClient, iccid string, targetState string) (*ES2PlusCancelOrderResponse, error) {
+    result := new(ES2PlusCancelOrderResponse)
+    es2plusCommand := "cancelOrder"
+    header := newEs2plusHeader(client)
+    payload := &ES2PlusCancelOrderRequest {
+               		Header:        *header,
+               		Iccid:         iccid,
+               		FinalProfileStatusIndicator: targetState,
+               	}
+    return result, marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result)
+}
 

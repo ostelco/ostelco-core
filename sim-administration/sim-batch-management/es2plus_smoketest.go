@@ -48,6 +48,24 @@ func main() {
 	}
 
 	fmt.Println("result3 -> ", result.State)
+
+
+	result4, err := es2plus.RecoverProfile(client, iccid, "AVAILABLE")
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("result4 -> ", result4)
+
+	result, err = es2plus.GetStatus(client, iccid)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("result5 -> ", result.State)
+
+
+
 	// TODO:  Assert that the state is "AVAILABLE"
 
 
