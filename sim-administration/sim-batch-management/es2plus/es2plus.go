@@ -236,8 +236,7 @@ func GetStatus(client *Es2PlusClient, iccid string) (*ES2ProfileStatusResponse, 
                		Header:    *header,
                		IccidList: [] ES2PlusIccid{ES2PlusIccid{Iccid: iccid}},
                	}
-    err := marshalUnmarshalGeneriEs2plusCommand(client, es2plusCommand, payload, result)
-    return result, err
+    return result,  marshalUnmarshalGeneriEs2plusCommand(client, es2plusCommand, payload, result)
 }
 
 
