@@ -9,9 +9,13 @@ import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Region
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.Subscription
+import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.customerRegionRelation
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.customerToBundleRelation
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.customerToSegmentRelation
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.customerToSimProfileRelation
+import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.exCustomerRegionRelation
+import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.exCustomerToSimProfileRelation
+import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.exSubscriptionRelation
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.forPurchaseByRelation
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.forPurchaseOfRelation
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.identifiesRelation
@@ -23,6 +27,7 @@ import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.subscriptionRelation
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.subscriptionSimProfileRelation
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.subscriptionToBundleRelation
 import org.ostelco.prime.storage.graph.RelationType
+import org.ostelco.prime.storage.graph.model.ExCustomer
 import org.ostelco.prime.storage.graph.model.Identity
 import org.ostelco.prime.storage.graph.model.Segment
 import org.ostelco.prime.storage.graph.model.SimProfile
@@ -122,6 +127,24 @@ data class CustomerContext(override val id: String) : EntityContext<Customer>(Cu
             toId = segment.id)
 }
 
+data class ExCustomerContext(override val id: String) : EntityContext<ExCustomer>(ExCustomer::class, id) {
+
+    infix fun had(simProfile: SimProfileContext) = RelationExpression(
+            relationType = exCustomerToSimProfileRelation,
+            fromId = id,
+            toId = simProfile.id)
+
+    infix fun subscribedTo(subscription: SubscriptionContext) = RelationExpression(
+            relationType = exSubscriptionRelation,
+            fromId = id,
+            toId = subscription.id)
+
+    infix fun belongedTo(region: RegionContext) = RelationExpression(
+            relationType = exCustomerRegionRelation,
+            fromId = id,
+            toId = region.id)
+}
+
 data class BundleContext(override val id: String) : EntityContext<Bundle>(Bundle::class, id)
 data class RegionContext(override val id: String) : EntityContext<Region>(Region::class, id)
 
@@ -203,6 +226,12 @@ infix fun Customer.Companion.referredBy(customer: CustomerContext) =
         )
 
 //
+// ExCustomer
+//
+
+infix fun ExCustomer.Companion.withId(id: String): ExCustomerContext = ExCustomerContext(id)
+
+//
 // Bundle
 //
 
@@ -226,6 +255,18 @@ infix fun Region.Companion.linkedToSimProfile(simProfile: SimProfileContext) =
                 fromId = simProfile.id
         )
 
+infix fun Region.Companion.linkedToCustomer(customer: CustomerContext) =
+        RelatedFromClause(
+                relationType = customerRegionRelation,
+                fromId = customer.id
+        )
+
+infix fun Region.Companion.linkedToExCustomer(exCustomer: ExCustomerContext) =
+        RelatedFromClause(
+                relationType = exCustomerRegionRelation,
+                fromId = exCustomer.id
+        )
+
 //
 // SimProfiles
 //
@@ -244,6 +285,11 @@ infix fun SimProfile.Companion.forCustomer(customer: CustomerContext) =
                 fromId = customer.id
         )
 
+infix fun SimProfile.Companion.forExCustomer(exCustomer: ExCustomerContext) =
+        RelatedFromClause(
+                relationType = exCustomerToSimProfileRelation,
+                fromId = exCustomer.id
+        )
 //
 // Subscription
 //
@@ -260,6 +306,12 @@ infix fun Subscription.Companion.subscribedBy(customer: CustomerContext) =
         RelatedFromClause(
                 relationType = subscriptionRelation,
                 fromId = customer.id
+        )
+
+infix fun Subscription.Companion.wasSubscribedBy(exCustomer: ExCustomerContext) =
+        RelatedFromClause(
+                relationType = exSubscriptionRelation,
+                fromId = exCustomer.id
         )
 
 //
