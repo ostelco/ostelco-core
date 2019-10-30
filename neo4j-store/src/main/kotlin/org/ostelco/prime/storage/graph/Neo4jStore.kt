@@ -2293,7 +2293,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     override fun getPurchaseTransactions(start: Long, end: Long): Either<StoreError, List<PurchaseRecord>> = readTransaction {
         read("""
-                MATCH(:${customerEntity.name})<-[:${forPurchaseByRelation.name}]-(pr:${purchaseRecordEntity.name})
+                MATCH(pr:${purchaseRecordEntity.name})-[:${forPurchaseOfRelation.name}]->(:${productEntity.name})
                 WHERE toInteger(pr.timestamp) >= ${start} AND toInteger(pr.timestamp) <= ${end} AND toInteger(pr.`product/price/amount`) > 0
                 RETURN pr
                 """.trimIndent(), transaction) { statementResult ->
@@ -2338,8 +2338,7 @@ object Neo4jStoreSingleton : GraphStore {
                             "amount" to it.product.price.amount,
                             "currency" to it.product.price.currency.toLowerCase(),
                             "refunded" to (it.refund != null),
-                            "created" to it.timestamp,
-                            "properties" to it.properties)
+                            "created" to it.timestamp)
                 }.plus(
                         paymentRecords.map {
                             mapOf("type" to "paymentRecord",
@@ -2347,8 +2346,7 @@ object Neo4jStoreSingleton : GraphStore {
                                     "amount" to it.amount,
                                     "currency" to it.currency,   /* (Stripe) Always lower case. */
                                     "refunded" to it.refunded,
-                                    "created" to it.created,
-                                    "properties" to it.properties)
+                                    "created" to it.created)
                         }
                 ).groupBy {
                     it["chargeId"].hashCode() + it["amount"].hashCode() +
