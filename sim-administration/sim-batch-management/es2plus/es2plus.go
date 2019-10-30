@@ -141,35 +141,48 @@ func formatRequest(r *http.Request) string {
 
 func marshalUnmarshalGeneriEs2plusCommand(client *Es2PlusClient, es2plusCommand string,  payload interface{}, result interface{}) error {
 
+    // Serialize payload as json.
 	jsonStrB, err := json.Marshal(payload)
 	if err != nil {
 		return  err
 	}
 
+    // Get the result of the HTTP POST as a byte array
+    // that can be deserialized into json.  Fail fast
+    // an error has been detected.
 	responseBytes, err := executeGenericEs2plusCommand(jsonStrB, client.hostport, es2plusCommand,  client.httpClient)
 	if err != nil {
 		return  err
 	}
 
-	err = json.Unmarshal(responseBytes, result)
-	return err
+    // Return error code from deserialisation, result is put into
+    // result via referenced object.
+	return json.Unmarshal(responseBytes, result)
 }
 
 
 func executeGenericEs2plusCommand(jsonStrB []byte, hostport string, es2plusCommand string, httpClient *http.Client) ([]byte, error) {
 
+    // Build and execute an ES2+ protocol request by using the serialised JSON in the
+    // byte array jsonStrB in a POST requrest.   Set up the required
+    // headers for ES2+ and content type.
 	url := fmt.Sprintf("https://%s/gsma/rsp2/es2plus/%s", hostport, es2plusCommand)
 	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonStrB))
 	req.Header.Set("X-Admin-Protocol", "gsma/rsp/v2.0.0")
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := httpClient.Do(req)
 
-
+    // On http protocol failure return quickly
 	if err != nil {
 		return nil, err
 	}
+
 	// TODO Should check response headers here!
-	// (in particular X-admin-protocol)
+	// (in particular X-admin-protocol) and fail if not OK.
+
+
+	// Get payload bytes from response body and return them.
+	// Return an error if the bytes can't be retrieved.
 	response, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
