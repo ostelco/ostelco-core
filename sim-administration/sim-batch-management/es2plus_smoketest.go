@@ -86,6 +86,19 @@ func main() {
 	fmt.Println("result7 -> ", result7)
 
 
+	result8, err := es2plus.ConfirmOrder(client, iccid)
+	fmt.Println("result8 -> ", result8)
+	if err != nil {
+		panic(err)
+	}
+
+
+	result9, err := es2plus.GetStatus(client, iccid)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("result9 -> ", result9)
+
 	/**
 	// TODO:   Generate a full roundtrip taking some suitable profile through a proper
 	//         activation, and reset.

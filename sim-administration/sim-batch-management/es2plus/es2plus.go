@@ -117,6 +117,29 @@ type ES2PlusDownloadOrderResponse struct {
 }
 
 //
+// ConfirmOrder invocation
+//
+
+type ES2PlusConfirmOrderRequest struct {
+	Header            ES2PlusHeader  `json:"header"`
+	Iccid             string         `json:"iccid"`
+	Eid               string         `json:"eid,omitempty"`
+	MatchingId        string         `json:"matchingId,omitempty"`
+	ConfirmationCode  string         `json:"confirmationCode,omitempty"`
+	SmdpAddress       string         `json:"smdpAddress,omitempty"`
+	ReleaseFlag       bool           `json:"releaseFlag"`
+}
+
+type ES2PlusConfirmOrderResponse struct {
+	Header         ES2PlusResponseHeader  `json:"header"`
+	Iccid          string         `json:"iccid"`
+	Eid            string         `json:"eid,omitempty"`
+    MatchingId     string         `json:"matchingId,omitempty"`
+    SmdpAddress    string         `json:"smdpAddress,omitempty"`
+}
+
+
+//
 //  Generating new ES2Plus clients
 //
 
@@ -336,6 +359,34 @@ func DownloadOrder(client *Es2PlusClient, iccid string) (*ES2PlusDownloadOrderRe
                		Eid:           "",
                		Profiletype:   "",
                	}
+    err :=  marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result)
+    if err != nil {
+            return nil, err
+    }
+
+    executionStatus := result.Header.FunctionExecutionStatus.FunctionExecutionStatusType
+    if ("Executed-Success" != executionStatus) {
+        return result, errors.New(fmt.Sprintf("ExecutionStatus was: ''%s'",  executionStatus))
+    } else {
+        return result, nil
+    }
+}
+
+
+func ConfirmOrder(client *Es2PlusClient, iccid string) (*ES2PlusConfirmOrderResponse, error) {
+    result := new(ES2PlusConfirmOrderResponse)
+    es2plusCommand := "confirmOrder"
+    header := newEs2plusHeader(client)
+    payload := &ES2PlusConfirmOrderRequest {
+               		Header:        *header,
+               		Iccid:         iccid,
+               		Eid:           "",
+               		ConfirmationCode: "",
+               		MatchingId: "",
+               		SmdpAddress: "",
+               		ReleaseFlag: true,
+               	}
+
     err :=  marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result)
     if err != nil {
             return nil, err
