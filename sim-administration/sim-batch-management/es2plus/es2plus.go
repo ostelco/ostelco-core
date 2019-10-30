@@ -41,6 +41,8 @@ type ES2PlusResponseHeader struct {
 	FunctionExecutionStatus FunctionExecutionStatus `json:"functionExecutionStatus"`
 }
 
+
+
 //
 //  Status code invocation.
 //
@@ -65,6 +67,21 @@ type ProfileStatus struct {
 	Eid                       string `json:"eid"`
 	Iccid                     string `json:"iccid"`
 	LockFlag                  bool   `json:"lockFlag"`
+}
+
+
+//
+//  Profile reset
+//
+
+type ES2PlusRecoverProfileRequest struct {
+    Header          ES2PlusHeader  `json:"header"`
+    Iccid           string         `json:"iccid"`
+    ProfileStatus   string         `json:"profileStatus"`
+ }
+
+type ES2PlusRecoverProfileResponse struct {
+	Header    ES2PlusHeader  `json:"header"`
 }
 
 
@@ -253,28 +270,16 @@ func GetStatus(client *Es2PlusClient, iccid string) (*ProfileStatus, error) {
 }
 
 
-
-func RecoverProfile(client *Es2PlusClient, iccid string) (*ProfileStatus, error) {
-    result := new(ES2ProfileStatusResponse)
-    es2plusCommand := "getProfileStatus"
+func RecoverProfile(client *Es2PlusClient, iccid string, targetState string) (*ES2PlusRecoverProfileResponse, error) {
+    result := new(ES2PlusRecoverProfileResponse)
+    es2plusCommand := "recoverProfile"
     header := newEs2plusHeader(client)
-    payload := &ES2PlusGetProfileStatusRequest{
-               		Header:    *header,
-               		IccidList: [] ES2PlusIccid{ES2PlusIccid{Iccid: iccid}},
+    payload := &ES2PlusRecoverProfileRequest{
+               		Header:        *header,
+               		Iccid:         iccid,
+               		ProfileStatus: targetState,
                	}
-    err := marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result)
-    if err != nil {
-        return nil, err
-    }
-
-    if (len(result.ProfileStatusList) == 0) {
-        return nil, nil
-    } else if (len(result.ProfileStatusList)  == 1) {
-        returnvalue := result.ProfileStatusList[0]
-        return &returnvalue, nil
-    } else {
-       return nil, errors.New("GetStatus returned more than one profile!")
-    }
+    return result, marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result)
 }
 
 
