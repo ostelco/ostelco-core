@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { Button, Form, FormGroup, Label, Input } from 'reactstrap';
+import { Button, Col, Form, FormGroup, Input, Label, Row } from 'reactstrap';
 
 import { getTextType } from '../../helpers';
 
@@ -39,15 +39,21 @@ export default function SearchForm(props) {
       <Form onSubmit={input.onSubmit}>
         <FormGroup>
           <br />
-          <Label>Search user by phone number or email</Label>
-          <Input
-            type="text"
-            value={input.value}
-            onChange={input.onChange}
-            placeholder="Enter text"
-          />
+          <Label>Search user by contact Email or phone number</Label>
+          <Row>
+            <Col>
+              <Input
+                type="text"
+                value={input.value}
+                onChange={input.onChange}
+                placeholder="Enter text"
+              />
+            </Col>
+            <Col xs={"auto"} md={"auto"}>
+              <Button color="outline-primary" type="submit">Search</Button>
+            </Col>
+          </Row>
         </FormGroup>
-        <Button color="outline-primary" type="submit">Search</Button>
       </Form>
     </div>
   );

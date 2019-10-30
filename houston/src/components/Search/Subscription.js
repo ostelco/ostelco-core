@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Col, Row, Button } from 'reactstrap';
+import { Col, Row } from 'reactstrap';
 
 import WarningModal from '../Shared/WarningModal';
 

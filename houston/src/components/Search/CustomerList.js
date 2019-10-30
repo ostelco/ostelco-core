@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Button, Card, CardBody, CardText, Col, Row } from 'reactstrap';
+import { Button, Card, CardBody, CardText } from 'reactstrap';
 import Highlighter from "react-highlight-words";
 
 import { subscriberActions } from '../../actions/subscriber.actions';
