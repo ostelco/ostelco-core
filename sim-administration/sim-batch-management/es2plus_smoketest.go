@@ -33,10 +33,24 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println("result1 -> ", result.State)
 
+	result2, err := es2plus.RecoverProfile(client, iccid, "AVAILABLE")
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("result2 -> ", result2)
+
+	result, err = es2plus.GetStatus(client, iccid)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("result3 -> ", result.State)
 	// TODO:  Assert that the state is "AVAILABLE"
 
-	fmt.Println("result -> ", result.State)
+
 
 	/**
 	// TODO:   Generate a full roundtrip taking some suitable profile through a proper
