@@ -79,9 +79,12 @@ func Es2PlusStatusRequest(iccid string, functionRequesterIdentifier string, func
 func GetStatus(client *Es2PlusClient, iccid string) (*ES2ProfileStatusResponse, error) {
 
 
-// func getProfileInfo(certFilePath string, keyFilePath string, hostport string, requesterId string, iccid string, functionCallIdentifier string) (*ES2ProfileStatusResponse, error) {
-	// client := NewClient(certFilePath, keyFilePath)
-	es2plusCommand := "getProfileStatus"
+    var result = new(ES2ProfileStatusResponse)
+    es2plusCommand := "getProfileStatus"
+    payload := Es2PlusStatusRequest(iccid, client.requesterId, "oo")
+    err := marshalUnmarshalGeneriEs2plusCommand(client, es2plusCommand,  &payload, result)
+    return result, err
+	/*
 
 	payload := Es2PlusStatusRequest(iccid, client.requesterId, "oo") // Use a goroutine to generate function call identifiers
 	jsonStrB, err := json.Marshal(&payload)
@@ -89,7 +92,7 @@ func GetStatus(client *Es2PlusClient, iccid string) (*ES2ProfileStatusResponse, 
 		return nil, err
 	}
 
-	responseBytes, err := executeGenericEs2plusCommand(jsonStrB, client.hostport, es2plusCommand,  client.httpClient)
+	responseBytes, err := executeGenericEs2plusCommand(jsonStrB, client.hostport, es2plusCommand, client.httpClient)
 
 	if err != nil {
 		return nil, err
@@ -100,7 +103,7 @@ func GetStatus(client *Es2PlusClient, iccid string) (*ES2ProfileStatusResponse, 
 	if err != nil {
 		return nil, err
 	}
-	return result, err
+	return result, err */
 }
 
 
@@ -132,31 +135,6 @@ func formatRequest(r *http.Request) string {
 	return strings.Join(request, "\n")
 }
 
-
-/*
-func getProfileInfo(certFilePath string, keyFilePath string, hostport string, requesterId string, iccid string, functionCallIdentifier string) (*ES2ProfileStatusResponse, error) {
-	client := NewClient(certFilePath, keyFilePath)
-	es2plusCommand := "getProfileStatus"
-
-	payload := Es2PlusStatusRequest(iccid, requesterId, functionCallIdentifier)
-	jsonStrB, err := json.Marshal(&payload)
-	if err != nil {
-		return nil, err
-	}
-
-	responseBytes, err := executeGenericEs2plusCommand(jsonStrB, hostport, es2plusCommand,  client)
-	if err != nil {
-		return nil, err
-	}
-
-	var result = new(ES2ProfileStatusResponse)
-	err = json.Unmarshal(responseBytes, &result)
-	if err != nil {
-		return nil, err
-	}
-	return result, err
-}
-*/
 
 func marshalUnmarshalGeneriEs2plusCommand(client *Es2PlusClient, es2plusCommand string,  payload interface{}, result interface{}) error {
 
