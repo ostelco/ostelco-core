@@ -31,7 +31,6 @@ package main
 import (
 	"fmt"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/outfileconversion"
-	"log"
 )
 
 func main() {
@@ -39,13 +38,5 @@ func main() {
 
 	fmt.Println("inputFile = ", inputFile)
 	fmt.Println("outputFilePrefix = ", outputFilePrefix)
-
-	outRecord := outfileconversion.ReadOutputFile(inputFile)
-	outputFile := outputFilePrefix + outRecord.OutputFileName + ".csv"
-	fmt.Println("outputFile = ", outputFile)
-
-	err := outfileconversion.WriteHssCsvFile(outputFile, outRecord.Entries)
-	if err != nil {
-		log.Fatal("Couldn't close output file '", outputFilePrefix, "'.  Error = '", err, "'")
-	}
+	outfileconversion.ConvertInputfileToOutputfile(inputFile, outputFilePrefix)
 }

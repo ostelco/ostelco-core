@@ -21,11 +21,9 @@ const (
 	UNKNOWN_HEADER     = "unknown"
 )
 
-
 ///
 ///  Functions
 ///
-
 
 func ParseOutputToHssConverterCommandLine() (string, string) {
 	inputFile := flag.String("input-file",
@@ -52,7 +50,6 @@ func ParseLineIntoKeyValueMap(line string, theMap map[string]string) {
 	value := strings.TrimSpace(splitString[1])
 	theMap[key] = value
 }
-
 
 type ParserState struct {
 	currentState      string
@@ -235,8 +232,6 @@ func isComment(s string) bool {
 	return match
 }
 
-
-
 // fileExists checks if a file exists and is not a directory before we
 // try using it to prevent further errors.
 func fileExists(filename string) bool {
@@ -277,3 +272,17 @@ func WriteHssCsvFile(filename string, entries []model.SimEntry) error {
 	return f.Close()
 }
 
+//
+// Entrypoint
+//
+
+func ConvertInputfileToOutputfile(inputFile string, outputFilePrefix string) {
+	outRecord := outfileconversion.ReadOutputFile(inputFile)
+	outputFile := outputFilePrefix + outRecord.OutputFileName + ".csv"
+	fmt.Println("outputFile = ", outputFile)
+
+	err := outfileconversion.WriteHssCsvFile(outputFile, outRecord.Entries)
+	if err != nil {
+		log.Fatal("Couldn't close output file '", outputFilePrefix, "'.  Error = '", err, "'")
+	}
+}
