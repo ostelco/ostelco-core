@@ -6,22 +6,22 @@ import { Alert } from 'reactstrap';
 import { alertActions } from '../../actions/alert.actions';
 import { authConstants } from '../../actions/auth.actions';
 
-function AlertMessage(props) {
+function AlertMessage({ alert, clearAlert }) {
+
   function onDismiss(e) {
-    props.clearAlert();
+    clearAlert();
   }
 
-  const visible = (props.alert && props.alert.type === 'alert-danger');
-  if (!visible) {
+  const { code, message, type } = alert;
+  console.log(`Alert Type = ${type}`);
+  if (type !== 'error' || code === authConstants.AUTHENTICATION_FAILURE) {
+    // Don't show Authentication failed message
     return null;
   }
-  // Don't show Authentication failed message
-  if (props.alert.code === authConstants.AUTHENTICATION_FAILURE) {
-    return null;
-  }
+
   return (
-    <Alert color="danger" isOpen={visible} toggle={onDismiss}>
-      {props.alert.message}
+    <Alert color="danger" toggle={onDismiss}>
+      {message}
       <hr />
     </Alert>
   );
