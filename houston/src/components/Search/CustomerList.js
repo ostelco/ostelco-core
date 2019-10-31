@@ -27,7 +27,9 @@ const CustomerRow = ({ customer, select, query }) => (
         {convertToHighlightedText(customer.contactEmail, query)}<br />
         {convertToHighlightedText(customer.id, query)}<br />
         <br />
-        <Button color="primary" onClick={() => select(customer)}>{'Show details'}</Button>
+        <Button color="primary" onClick={() => select(customer)}>
+          {'Show details'}
+        </Button>
       </CardText>
     </CardBody>
   </Card>);
@@ -43,8 +45,7 @@ CustomerRow.propTypes = {
 };
 
 const CustomerList = props => {
-  let query = localStorage.getItem('searchedEmail')
-
+  let query = localStorage.getItem('searchedEmail');
   // If customer is set, remove the list.
   if (props.customer.id || !Array.isArray(props.subscribers)) {
     return null;
@@ -55,7 +56,7 @@ const CustomerList = props => {
       <CustomerRow
         customer={customer}
         query={query}
-        select={props.selectCustomer}
+        select={props.select}
         key={index} />
       <br />
     </div>
@@ -78,8 +79,7 @@ CustomerList.propTypes = {
 };
 
 function mapStateToProps(state) {
-  const { subscribers, customer } = state
-
+  const { subscribers, customer } = state;
   return {
     subscribers,
     customer
@@ -87,5 +87,5 @@ function mapStateToProps(state) {
 }
 const mapDispatchToProps = {
   select: subscriberActions.selectCustomer
-}
+};
 export default connect(mapStateToProps, mapDispatchToProps)(CustomerList);
