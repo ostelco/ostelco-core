@@ -1,23 +1,39 @@
 package storage
 
 import (
+	"fmt"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
+	"os"
 	"testing"
 )
 
-func TestMemoryDbPing(t *testing.T) {
+var db *sqlx.DB
+var err error
 
-	var db *sqlx.DB
+func TestMain(m *testing.M) {
+	setup()
+	code := m.Run()
+	shutdown()
+	os.Exit(code)
+}
 
+func setup() {
 	// exactly the same as the built-in
-	db, err := sqlx.Open("sqlite3", ":memory:")
+	db, err = sqlx.Open("sqlite3", ":memory:")
 	if err != nil {
-		t.Errorf("Didn't manage to open sqlite3 in-memory database. '%s'", err)
+		fmt.Errorf("Didn't manage to open sqlite3 in-memory database. '%s'", err)
 	}
-	// from a pre-existing sql.DB; note the required driverName
-	// db = sqlx.NewDb(sql.Open("sqlite3", ":memory:"), "sqlite3")
+}
 
+func shutdown() {
+}
+
+// ... just to know that everything is sane.
+func TestMemoryDbPing(t *testing.T) {
 	// force a connection and test that it worked
 	err = db.Ping()
+	if err != nil {
+		fmt.Errorf("Could not ping in-memory database. '%s'", err)
+	}
 }
