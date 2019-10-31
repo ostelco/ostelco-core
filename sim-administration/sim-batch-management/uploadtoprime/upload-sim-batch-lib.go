@@ -147,8 +147,6 @@ func checkProfileType(name string, potentialProfileName string) {
 	}
 }
 
-
-
 func IccidWithoutLuhnChecksum(s string) string {
 	return loltelutils.TrimSuffix(s, 1)
 }
@@ -197,6 +195,36 @@ func ParseUploadFileGeneratorCommmandline() model.OutputBatch {
 	// Parse input according to spec above
 	//
 	flag.Parse()
+
+	return OutputBatchFromCommandLineParameters(
+		firstIccid,
+		lastIccid,
+		lastIMSI,
+		firstIMSI,
+		lastMsisdn,
+		firstMsisdn,
+		uploadHostname,
+		uploadPortnumber,
+		hssVendor,
+		initialHlrActivationStatusOfProfiles,
+		profileType,
+		profileVendor,
+		batchLengthString)
+}
+
+func OutputBatchFromCommandLineParameters(firstIccid *string,
+	lastIccid *string,
+	lastIMSI *string,
+	firstIMSI *string,
+	lastMsisdn *string,
+	firstMsisdn *string,
+	uploadHostname *string,
+	uploadPortnumber *string,
+	hssVendor *string,
+	initialHlrActivationStatusOfProfiles *string,
+	profileType *string,
+	profileVendor *string,
+	batchLengthString *string) model.OutputBatch {
 
 	//
 	// Check parameters for syntactic correctness and
@@ -289,13 +317,13 @@ func ParseInputFileGeneratorCommmandline() model.InputBatch {
 	//       we need to up our Go-Fu before we can make flag.Parse(arguments) work
 
 	return model.InputBatch{
-		Customer: "Footel",
+		Customer:    "Footel",
 		ProfileType: "BAR_FOOTEL_STD",
-		OrderDate: "20191007",
-		BatchNo: "2019100701",
-		Quantity: 10,
-		FirstIccid: 894700000000002214,
-		FirstImsi: 242017100012213}
+		OrderDate:   "20191007",
+		BatchNo:     "2019100701",
+		Quantity:    10,
+		FirstIccid:  894700000000002214,
+		FirstImsi:   242017100012213}
 }
 
 func GenerateInputFile(batch model.InputBatch) string {
