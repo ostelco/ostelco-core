@@ -7,20 +7,11 @@ import { alertActions } from '../../actions/alert.actions';
 import { authConstants } from '../../actions/auth.actions';
 
 function AlertMessage({ alert, clearAlert }) {
-
-  function onDismiss(e) {
-    clearAlert();
-  }
-
   const { code, message, type } = alert;
-  console.log(`Alert Type = ${type}`);
-  if (type !== 'error' || code === authConstants.AUTHENTICATION_FAILURE) {
-    // Don't show Authentication failed message
-    return null;
-  }
+  const isOpen = (type === 'error' || code === authConstants.AUTHENTICATION_FAILURE)
 
   return (
-    <Alert color="danger" toggle={onDismiss}>
+    <Alert color="danger" isOpen={isOpen} toggle={() => clearAlert()}>
       {message}
       <hr />
     </Alert>
