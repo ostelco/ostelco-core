@@ -10,6 +10,6 @@ require (
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/mattn/go-sqlite3 v1.11.0
 	github.com/pkg/errors v0.8.1 // indirect
-	gopkg.in/alecthomas/kingpin.v2 v2.2.6 // indirect
+	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gotest.tools v2.2.0+incompatible
 )
