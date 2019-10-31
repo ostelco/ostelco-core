@@ -57,7 +57,7 @@ type InputBatch struct {
 
 func TestGenerateInputBatchTable(t *testing.T) {
 	GenerateInputBatchTable(sdb)
-	// Try a CRUD here, spread it out over multiple methods, and our work is done.
+	// TODO: Try a CRUD here, spread it out over multiple methods, and our work is done.
 }
 
 //
