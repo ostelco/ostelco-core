@@ -9,10 +9,6 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-///
-///   Main.  The rest should be put into a library.
-///
-
 var (
 	// TODO: Enable, but also make it have an effect.
 	// debug    = kingpin.Flag("debug", "enable debug mode").Default("false").Bool()
