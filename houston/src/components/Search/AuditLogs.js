@@ -97,7 +97,7 @@ function mapStateToProps(state) {
   let auditLogs = state.auditLogs;
   // Pass only arrays
   if (!Array.isArray(auditLogs)) {
-    auditLogs = null;
+    auditLogs = [];
   }
   return {
     auditLogs
