@@ -140,7 +140,7 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
                 try {
                     OcsServer.INSTANCE.handleRequest$ocsgw(session, request);
                 } catch (Exception e) {
-                    LOG.error("[><] Failure processing Credit-Control-Request [" + RequestType.getTypeAsString(request.getRequestTypeAVPValue()) + "]", e);
+                    LOG.error("[><] Failure processing Credit-Control-Request [" + RequestType.getTypeAsString(request.getRequestTypeAVPValue()) + "] + [session.getSessionId()]", e);
                 }
                 break;
             case RequestType.EVENT_REQUEST:
