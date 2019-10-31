@@ -7,6 +7,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/es2plus"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/outfileconversion"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/storage"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/uploadtoprime"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"strconv"
@@ -178,7 +179,7 @@ func main() {
 		}
 	case "batch":
 		fmt.Println("Doing the batch thing.")
-		doTheBatchThing()
+		storage.doTheBatchThing()
 	default:
 		panic(fmt.Sprintf("Unknown command: '%s'\n", cmd))
 	}
@@ -187,67 +188,6 @@ func main() {
 func checkEs2TargetState(target *string) {
 	if *target != "AVAILABLE" {
 		panic("Target ES2+ state unexpected, legal value(s) is(are): 'AVAILABLE'")
-	}
-}
-
-//  Sqlx https://jmoiron.github.io/sqlx/
-// Person represents a person.
-type Person struct {
-	ID        int    `db:"id" json:"id"`
-	Firstname string `db:"firstname" json:"firstname"`
-	Lastname  string `db:"lastname" json:"lastname"`
-}
-
-func doTheBatchThing() {
-
-	fmt.Println("The batching getting started")
-
-	// Get a reference to the database, create a table if it
-	// doesn't exist already.
-
-	var db *sqlx.DB
-
-	// exactly the same as the built-in
-	db, err := sqlx.Open("sqlite3", "./nraboy.db")
-
-	database, err := sql.Open("sqlite3", "./nraboy.db")
-	if err != nil {
-		fmt.Errorf("open sql", err)
-	}
-
-	//
-	statement, _ := database.Prepare("CREATE TABLE IF NOT EXISTS people (id INTEGER PRIMARY KEY, firstname TEXT, lastname TEXT)")
-	_, err = statement.Exec()
-	if err != nil {
-		fmt.Errorf("Failed to create table: ", err)
-	}
-
-	// Insert a row.
-	statement, _ = database.Prepare("INSERT INTO people (firstname, lastname) VALUES (?, ?)")
-	_, err = statement.Exec("Nic", "Raboy")
-	if err != nil {
-		fmt.Errorf("Failed to  insert row: ", err)
-	}
-
-	// Query all the rows.
-	rows, _ := database.Query("SELECT id, firstname, lastname FROM people")
-	var id int
-	var firstname string
-	var lastname string
-	for rows.Next() {
-		rows.Scan(&id, &firstname, &lastname)
-		if err != nil {
-			fmt.Errorf("Failed to  scan row: ", err)
-		}
-		fmt.Println(strconv.Itoa(id) + ": " + firstname + " " + lastname)
-	}
-
-	fmt.Print("Foo->")
-	rowz, err := db.Queryx("SELECT * FROM people")
-	for rowz.Next() {
-		var p Person
-		err = rowz.StructScan(&p)
-		fmt.Println("The p = ", p)
 	}
 }
 

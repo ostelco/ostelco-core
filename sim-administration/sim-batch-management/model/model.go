@@ -4,8 +4,8 @@ package model
 //       package, then build a DAO interface a "store" package
 
 type OutputBatch struct {
-	ProfileType     string
-	Url             string
+	ProfileType     string `db:"profileType" json:"profileType"`
+	Url             string `db:"url" json:"url"`
 	Length          int
 	FirstMsisdn     int
 	MsisdnIncrement int
@@ -25,7 +25,6 @@ type InputBatch struct {
 	FirstImsi   int
 }
 
-
 type OutputFileRecord struct {
 	Filename          string
 	InputVariables    map[string]string
@@ -42,7 +41,6 @@ type OutputFileRecord struct {
 	OutputFileName string
 }
 
-
 type SimEntry struct {
 	RawIccid             string
 	IccidWithChecksum    string
@@ -51,4 +49,3 @@ type SimEntry struct {
 	Ki                   string
 	OutputFileName       string
 }
-
