@@ -1147,7 +1147,7 @@ class Neo4jStoreTest {
 
                     val exCustomer = get(ExCustomer withId CUSTOMER.id).bind()
                     assertEquals(
-                            expected = ExCustomer(id = CUSTOMER.id, terminationDate = "%d-%d-%d".format(LocalDate.now().year, LocalDate.now().monthValue, LocalDate.now().dayOfMonth)),
+                            expected = ExCustomer(id = CUSTOMER.id, terminationDate = "%d-%02d-%02d".format(LocalDate.now().year, LocalDate.now().monthValue, LocalDate.now().dayOfMonth)),
                             actual = exCustomer,
                             message = "ExCustomer does not match")
 
