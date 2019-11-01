@@ -19,6 +19,22 @@ type SimBatchDB struct {
 	Db *sqlx.DB
 }
 
+func NewInMemoryDatabase() *SimBatchDB {
+	db, err := sqlx.Open("sqlite3", ":memory:")
+	if err != nil {
+		fmt.Errorf("Didn't manage to open sqlite3 in-memory database. '%s'", err)
+	}
+	return &SimBatchDB{Db: db}
+}
+
+func NewFileSqliteDatabase(path string) *SimBatchDB {
+	db, err := sqlx.Open("sqlite3", "foobar.db")
+	if err != nil {
+		fmt.Errorf("Didn't manage to open sqlite3 file database. '%s'", err)
+	}
+	return &SimBatchDB{Db: db}
+}
+
 func (sdb SimBatchDB) GetAllInputBatches() ([]model.InputBatch, error) {
 	result := []model.InputBatch{}
 	return result, sdb.Db.Select(&result, "SELECT * from INPUT_BATCH")

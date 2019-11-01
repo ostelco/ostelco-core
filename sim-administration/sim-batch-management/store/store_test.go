@@ -2,7 +2,6 @@ package store
 
 import (
 	"fmt"
-	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/store"
@@ -23,13 +22,7 @@ func TestMain(m *testing.M) {
 }
 
 func setup() {
-	db, err := sqlx.Open("sqlite3", ":memory:")
-	// db, err := sqlx.Open("sqlite3", "foobar.db")
-	if err != nil {
-		fmt.Errorf("Didn't manage to open sqlite3 in-memory database. '%s'", err)
-	}
-
-	sdb = &store.SimBatchDB{Db: db}
+	sdb = store.NewInMemoryDatabase()
 	sdb.GenerateTables()
 }
 
