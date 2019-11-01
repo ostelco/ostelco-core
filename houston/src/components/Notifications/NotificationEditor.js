@@ -1,4 +1,5 @@
 import React from 'react';
+import { bindActionCreators } from 'redux'
 import { useDispatch, useSelector } from 'react-redux';
 import { Button, Form, FormGroup, Label, Input } from 'reactstrap';
 
@@ -8,12 +9,14 @@ import { notifyActions } from '../../actions/notifiy.actions';
 
 function NotificationEditor({ messageLabel, submitLabel, titleLabel }) {
   const dispatch = useDispatch();
+  const actions = bindActionCreators(notifyActions, dispatch);
+
   const notification = useSelector(state => state.notification);
   const { message, title } = notification;
 
   function onSubmit(e) {
     e.preventDefault();
-    dispatch(notifyActions.sendNotificationToSubscriber(title, message));
+    actions.sendNotificationToSubscriber(title, message);
   }
   return (
     <Form onSubmit={onSubmit}>
@@ -23,7 +26,7 @@ function NotificationEditor({ messageLabel, submitLabel, titleLabel }) {
           name="text"
           id="inputTitle"
           value={title}
-          onChange={(e) => dispatch(notifyActions.setNotificationTitle(e.target.value))}
+          onChange={(e) => actions.setNotificationTitle(e.target.value)}
           placeholder="Enter title"
         />
       </FormGroup>
@@ -34,7 +37,7 @@ function NotificationEditor({ messageLabel, submitLabel, titleLabel }) {
           name="text"
           id="inputMessage"
           value={message}
-          onChange={(e) => dispatch(notifyActions.setNotificationMessage(e.target.value))}
+          onChange={(e) => actions.setNotificationMessage(e.target.value)}
           placeholder="Enter message"
         />
       </FormGroup>
@@ -42,4 +45,5 @@ function NotificationEditor({ messageLabel, submitLabel, titleLabel }) {
     </Form>
   );
 }
+
 export default NotificationEditor;

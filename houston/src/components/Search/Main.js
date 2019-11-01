@@ -9,7 +9,7 @@ import AlertMessage from './Alert';
 
 const Main = () => {
   const dispatch = useDispatch();
-  const currentSubscriber = useSelector(state => state.currentSubscriber)
+  const currentSubscriber = useSelector(state => state.currentSubscriber);
   const hasCurrentSubscriber = (currentSubscriber.id) || false;
 
   return (
