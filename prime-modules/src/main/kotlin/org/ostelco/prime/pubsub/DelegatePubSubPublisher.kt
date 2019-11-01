@@ -10,6 +10,7 @@ import com.google.pubsub.v1.PubsubMessage
 import io.grpc.ManagedChannelBuilder
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 
 
 class DelegatePubSubPublisher(
@@ -45,6 +46,7 @@ class DelegatePubSubPublisher(
 
     override fun stop() {
         publisher.shutdown()
+        publisher.awaitTermination(1, TimeUnit.MINUTES)
         singleThreadScheduledExecutor.shutdown()
     }
 

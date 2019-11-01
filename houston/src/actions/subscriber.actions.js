@@ -3,7 +3,7 @@ import { createActions } from 'redux-actions';
 
 import { CALL_API } from '../helpers/api';
 import { alertActions } from './alert.actions';
-import { customerActions } from './cutomer.actions';
+import { currentSubscriberActions } from './currentSubscriber.actions';
 import { encodeEmail } from '../helpers/utils';
 
 const SUBSCRIBER_BY_EMAIL_REQUEST = 'SUBSCRIBER_BY_EMAIL_REQUEST';
@@ -162,10 +162,10 @@ const deleteUserById = (id) => ({
     method: 'DELETE'
   }
 });
-
+const { selectSubscriber, clearSubscriber } = currentSubscriberActions;
 // TODO: API based implementaion. Reference: https://github.com/reduxjs/redux/issues/1676
 const getSubscriberList = (email) => (dispatch, getState) => {
-  dispatch(customerActions.clearCustomer());
+  dispatch(clearSubscriber());
   localStorage.setItem('searchedEmail', email)
 
   email = encodeEmail(email);
@@ -178,30 +178,27 @@ const getSubscriberList = (email) => (dispatch, getState) => {
     .then(() => {
       const subscribers = _.get(getState(), 'subscribers');
       if (Array.isArray(subscribers) && subscribers.length === 1) {
-        dispatch(selectCustomer(subscribers[0]));
+        dispatch(selectCurrentSubscriber(subscribers[0]));
       }
     })
     .catch(handleError);
 };
 
-const selectCustomer = (customer) => (dispatch, getState) => {
-  dispatch(customerActions.selectCustomer(customer));
+const selectCurrentSubscriber = (subscriber) => (dispatch, getState) => {
+  dispatch(selectSubscriber(subscriber));
   const handleError = (error) => {
     console.log('Error reported.', error);
     dispatch(alertActions.alertError(error));
   };
 
-  const customerId = _.get(getState(), 'customer.id');;
-  if (customerId) {
-    dispatch(fetchContextById(customerId)).catch(handleError);
-    dispatch(fetchAuditLogsById(customerId)).catch(handleError);
-    dispatch(fetchSubscriptionsById(customerId)).catch(handleError);
-    return dispatch(fetchBundlesById(customerId))
-      .then(() => {
-        return dispatch(fetchPaymentHistoryById(customerId));
-      })
-      .catch(handleError);
-  }
+  dispatch(fetchContextById(subscriber.id)).catch(handleError);
+  dispatch(fetchAuditLogsById(subscriber.id)).catch(handleError);
+  dispatch(fetchSubscriptionsById(subscriber.id)).catch(handleError);
+  return dispatch(fetchBundlesById(subscriber.id))
+    .then(() => {
+      return dispatch(fetchPaymentHistoryById(subscriber.id));
+    })
+    .catch(handleError);
 };
 
 const refundPurchase = (purchaseRecordId, reason) => (dispatch, getState) => {
@@ -211,7 +208,7 @@ const refundPurchase = (purchaseRecordId, reason) => (dispatch, getState) => {
   };
 
   // Get the id from the fetched user
-  const subscriberId = _.get(getState(), 'customer.id');
+  const subscriberId = _.get(getState(), 'currentSubscriber.id');
   if (subscriberId) {
     return dispatch(putRefundPurchaseById(subscriberId, purchaseRecordId, reason))
       .then(() => {
@@ -223,12 +220,12 @@ const refundPurchase = (purchaseRecordId, reason) => (dispatch, getState) => {
 const deleteUser = () => (dispatch, getState) => {
   const handleError = (error) => {
     console.log('Error reported.', error.message);
-    let message = "Failed to delete user (" +error.message+")"
-    dispatch(alertActions.alertError({message}));
+    let message = "Failed to delete user (" + error.message + ")"
+    dispatch(alertActions.alertError({ message }));
   };
 
   // Get the id from the fetched user
-  const subscriberId = _.get(getState(), 'customer.id');
+  const subscriberId = _.get(getState(), 'currentSubscriber.id');
   if (subscriberId) {
     return dispatch(deleteUserById(subscriberId))
       .catch(handleError);
@@ -236,7 +233,7 @@ const deleteUser = () => (dispatch, getState) => {
 };
 export const subscriberActions = {
   getSubscriberList,
-  selectCustomer,
+  selectCurrentSubscriber,
   refundPurchase,
   deleteUser
 };

@@ -9,7 +9,7 @@ import Profile from "./Profile";
 import PaymentHistory from "./PaymentHistory";
 import AuditLogs from "./AuditLogs";
 
-class SearchResults extends React.Component {
+class SubscriberDetails extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -98,4 +98,4 @@ class SearchResults extends React.Component {
   }
 }
 
-export default SearchResults;
+export default SubscriberDetails;

@@ -82,5 +82,5 @@ export const auditLogs = handleActions(
       ...action.payload
     })
   },
-  defaultState
+  []
 );
