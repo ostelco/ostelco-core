@@ -24,8 +24,8 @@ func TestMain(m *testing.M) {
 }
 
 func setup() {
-	// exactly the same as the built-in
 	db, err := sqlx.Open("sqlite3", ":memory:")
+	// db, err := sqlx.Open("sqlite3", "foobar.db")
 	if err != nil {
 		fmt.Errorf("Didn't manage to open sqlite3 in-memory database. '%s'", err)
 	}
@@ -85,7 +85,7 @@ func TestGenerateInputBatchTable(t *testing.T) {
 
 	fmt.Println("The batch = ", insertionResult)
 
-	rows, err := sdb.db.Query("select CUSTOMER, PROFILE_TYPE, ORDER_DATE, BATCH_NO, QUANTITY, FIRST_ICCID, FIRST_IMSI ")
+	rows, err := sdb.db.Query("select CUSTOMER, PROFILE_TYPE, ORDER_DATE, BATCH_NO, QUANTITY, FIRST_ICCID, FIRST_IMSI FROM INPUT_BATCH")
 	if err != nil {
 		fmt.Errorf("Reading query failed '%s'", err)
 	}
