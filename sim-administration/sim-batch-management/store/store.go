@@ -80,7 +80,7 @@ func (sdb SimBatchDB) Create(theBatch *model.InputBatch) {
 func (sdb *SimBatchDB) GenerateTables() error {
 	foo := `CREATE TABLE IF NOT EXISTS INPUT_BATCH (
     id integer primary key autoincrement,
-    name VARCHAR NOT NULL,
+    name VARCHAR NOT NULL UNIQUE,
 	customer VARCHAR NOT NULL,
 	profileType VARCHAR NOT NULL,
 	orderDate VARCHAR NOT NULL,
