@@ -87,7 +87,6 @@ func InsertInputBatch(theBatch *model.InputBatch) {
 
 func TestGenerateInputBatchTable(t *testing.T) {
 	GenerateInputBatchTable(sdb)
-	// TODO: Try a CRUD here, spread it out over multiple methods, and our work is done.
 
 	theBatch := model.InputBatch{
 		Name:        "SOME UNIQUE NAME",
@@ -102,6 +101,10 @@ func TestGenerateInputBatchTable(t *testing.T) {
 
 	InsertInputBatch(&theBatch)
 
+	// XXX Refactor into some "get all", "getById", "getByName" methods
+	//     and it will all be awsome.   Continue that to completion for input
+	//     batches. Wrap it in  an interface, and hook that interface up to
+	//     the command line processor.  Rinse&repeat.
 	rows, err := sdb.db.Query("select id, name, customer, profileType, orderDate, batchNo, quantity, firstIccid, firstImsi FROM INPUT_BATCH")
 	if err != nil {
 		fmt.Errorf("Reading query failed '%s'", err)
