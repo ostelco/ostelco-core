@@ -22,7 +22,10 @@ func TestMain(m *testing.M) {
 }
 
 func setup() {
-	sdb = store.NewInMemoryDatabase()
+	sdb, err = store.NewInMemoryDatabase()
+	if err != nil {
+		fmt.Errorf("Couldn't open new in memory database")
+	}
 	sdb.GenerateTables()
 }
 

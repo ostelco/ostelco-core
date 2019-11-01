@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
+	"os"
 )
 
 type Store interface {
@@ -19,20 +20,26 @@ type SimBatchDB struct {
 	Db *sqlx.DB
 }
 
-func NewInMemoryDatabase() *SimBatchDB {
+func NewInMemoryDatabase() (*SimBatchDB, error) {
 	db, err := sqlx.Open("sqlite3", ":memory:")
 	if err != nil {
-		fmt.Errorf("Didn't manage to open sqlite3 in-memory database. '%s'", err)
+		return nil, err
 	}
-	return &SimBatchDB{Db: db}
+	return &SimBatchDB{Db: db}, nil
 }
 
-func NewFileSqliteDatabase(path string) *SimBatchDB {
+func OpenFileSqliteDatabaseFromPathInEnvironmentVariable(variablename string) (*SimBatchDB, error) {
+	variableValue := os.Getenv(variablename)
+	db, err := OpenFileSqliteDatabase(variableValue)
+	return db, err
+}
+
+func OpenFileSqliteDatabase(path string) (*SimBatchDB, error) {
 	db, err := sqlx.Open("sqlite3", "foobar.db")
 	if err != nil {
-		fmt.Errorf("Didn't manage to open sqlite3 file database. '%s'", err)
+		return nil, err
 	}
-	return &SimBatchDB{Db: db}
+	return &SimBatchDB{Db: db}, nil
 }
 
 func (sdb SimBatchDB) GetAllInputBatches() ([]model.InputBatch, error) {

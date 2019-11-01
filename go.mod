@@ -10,7 +10,7 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/mattn/go-sqlite3 v1.11.0
-	github.com/pkg/errors v0.8.1 // indirect
+	github.com/pkg/errors v0.8.1
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gotest.tools v2.2.0+incompatible
 )
