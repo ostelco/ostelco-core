@@ -5,18 +5,18 @@ import PropTypes from 'prop-types';
 import { subscriberActions } from '../../actions/subscriber.actions';
 import SearchForm from './SearchForm';
 import SubscriberList from './SubscriberList';
-import SearchResults from './SearchResults';
+import SubscriberDetails from './SubscriberDetails';
 import AlertMessage from './Alert';
 
 const Search = ({ currentSubscriber, getSubscriberList }) => {
-  const hasResults = (currentSubscriber.id) || false;
+  const hasSubscriber = (currentSubscriber.id) || false;
   return (
     <div className="container">
       <AlertMessage />
       <SearchForm onSubmit={(text) => getSubscriberList(text)} />
       <br />
       <SubscriberList />
-      { hasResults && (<SearchResults />)}
+      { hasSubscriber && (<SubscriberDetails />)}
     </div>
   );
 }
