@@ -47,26 +47,74 @@ func TestMemoryDbPing(t *testing.T) {
 	}
 }
 
-/* TODO: Just for reference, use the one in model instead.
-type InputBatch struct {
-	Customer    string
-	ProfileType string
-	OrderDate   string
-	BatchNo     string
-	Quantity    int
-	FirstIccid  int
-	FirstImsi   int
+
+func TestInputBatchRoundtrip(t *testing.T) {
+	GenerateTables(sdb)
+
+	theBatch := model.InputBatch{
+		Name:        "SOME UNIQUE NAME",
+		Customer:    "firstInputBatch",
+		ProfileType: "banana",
+		OrderDate:   "apple",
+		BatchNo:     "100",
+		Quantity:    100,
+		FirstIccid:  "1234567890123456789",
+		FirstImsi:   "123456789012345",
+	}
+
+	sdb.Create(&theBatch)
+	allBatches, err := sdb.GetAllInputBatches()
+	if err != nil {
+		fmt.Errorf("Reading query failed '%s'", err)
+	}
+
+	assert.Equal(t, len(allBatches), 1)
+
+	firstInputBatch, _ := sdb.GetInputBatchById(1)
+	if !reflect.DeepEqual(firstInputBatch, theBatch) {
+		fmt.Errorf("getBatchById failed")
+	}
 }
 
-course := Course{}
-courses := []Course{}
+//
+//  GROWTH ZONE: Where the implementation grows, eventually being moved into
+//               its appropriate location.
+//
 
-db.Get(&course, "SELECT name AS course_name FROM courses LIMIT 1")
-db.Select(&courses, "SELECT name AS course_name FROM courses")
+type SimBatchDB struct {
+	db *sqlx.DB
+	mu sync.Mutex
+}
 
-*/
+// Store is the storage interface for ds.
+type Store interface {
 
-func InsertInputBatch(theBatch *model.InputBatch) {
+	//Generate all the tables if not already there.
+	GenerateTables() error
+
+	// Input Batches
+	Create(doc *model.InputBatch) error
+	GetAllInputBatches(id string) ([]model.InputBatch, error)
+	GetInputBatchById(id int64) (*model.InputBatch, error)
+	GetInputBatchByName(id string) (*model.InputBatch, error)
+}
+
+func (sdb SimBatchDB) GetAllInputBatches() ([]model.InputBatch, error) {
+	result := []model.InputBatch{}
+	return result, sdb.db.Select(&result, "SELECT * from INPUT_BATCH")
+}
+
+func (sdb SimBatchDB) GetInputBatchById(id int64) (*model.InputBatch, error) {
+	var result model.InputBatch
+	return &result, sdb.db.Get(&result, "select * from INPUT_BATCH where id = ?", id)
+}
+
+func (sdb SimBatchDB) GetInputBatchByName(name string) (*model.InputBatch, error) {
+	var result model.InputBatch
+	return &result, sdb.db.Get(&result, "select * from INPUT_BATCH where name = ?", name)
+}
+
+func (sdb SimBatchDB) Create(theBatch *model.InputBatch) {
 
 	res := sdb.db.MustExec("INSERT INTO INPUT_BATCH (name, customer, profileType, orderDate, batchNo, quantity, firstIccid, firstImsi) values (?,?,?,?,?,?,?,?) ",
 		(*theBatch).Name,
@@ -85,69 +133,7 @@ func InsertInputBatch(theBatch *model.InputBatch) {
 	}
 }
 
-func TestGenerateInputBatchTable(t *testing.T) {
-	GenerateInputBatchTable(sdb)
-
-	theBatch := model.InputBatch{
-		Name:        "SOME UNIQUE NAME",
-		Customer:    "foo",
-		ProfileType: "banana",
-		OrderDate:   "apple",
-		BatchNo:     "100",
-		Quantity:    100,
-		FirstIccid:  "1234567890123456789",
-		FirstImsi:   "123456789012345",
-	}
-
-	InsertInputBatch(&theBatch)
-
-	// XXX Refactor into some "get all", "getById", "getByName" methods
-	//     and it will all be awsome.   Continue that to completion for input
-	//     batches. Wrap it in  an interface, and hook that interface up to
-	//     the command line processor.  Rinse&repeat.
-	allBatches, err := getAllInputBatches()
-	if err != nil {
-		fmt.Errorf("Reading query failed '%s'", err)
-	}
-
-	assert.Equal(t, len(allBatches), 1)
-
-	var result2 model.InputBatch
-	err = sdb.db.Get(&result2, "select * from INPUT_BATCH limit 1")
-	if err != nil {
-		fmt.Errorf("Get query failed '%s'", err)
-	}
-	if !reflect.DeepEqual(theBatch, result2) {
-		fmt.Errorf("Read/write inequality for input batch")
-	}
-
-	foo, _ := getInputBatchById(1)
-	if !reflect.DeepEqual(foo, theBatch) {
-		fmt.Errorf("getBatchById failed")
-	}
-}
-
-func getAllInputBatches() ([]model.InputBatch, error) {
-	result := []model.InputBatch{}
-	return result, sdb.db.Select(&result, "SELECT * from INPUT_BATCH")
-}
-
-func getInputBatchById(id int64) (*model.InputBatch, error) {
-	var result model.InputBatch
-	return &result, sdb.db.Get(&result, "select * from INPUT_BATCH where id = ?", id)
-}
-
-//
-//  GROWTH ZONE: Where the implementation grows, eventually being moved into
-//               its appropriate location.
-//
-
-type SimBatchDB struct {
-	db *sqlx.DB
-	mu sync.Mutex
-}
-
-func GenerateInputBatchTable(sdb *SimBatchDB) {
+func (sdb *SimBatchDB) GenerateTables error {
 	sdb.mu.Lock()
 	defer sdb.mu.Unlock()
 	foo := `CREATE TABLE IF NOT EXISTS INPUT_BATCH (
@@ -162,8 +148,6 @@ func GenerateInputBatchTable(sdb *SimBatchDB) {
 	firstImsi VARCHAR
 	)`
 
-	result, err := sdb.db.Exec(foo)
-	if err != nil {
-		fmt.Errorf("Table creation failed. '%s', '%s'", err, result)
-	}
+	_, err := sdb.db.Exec(foo)
+	return err
 }
