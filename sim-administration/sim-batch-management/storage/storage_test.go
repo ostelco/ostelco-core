@@ -57,6 +57,13 @@ type InputBatch struct {
 	FirstIccid  int
 	FirstImsi   int
 }
+
+course := Course{}
+courses := []Course{}
+
+db.Get(&course, "SELECT name AS course_name FROM courses LIMIT 1")
+db.Select(&courses, "SELECT name AS course_name FROM courses")
+
 */
 
 func TestGenerateInputBatchTable(t *testing.T) {
