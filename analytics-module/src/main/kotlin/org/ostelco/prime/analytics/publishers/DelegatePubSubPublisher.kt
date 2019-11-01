@@ -15,6 +15,7 @@ import org.ostelco.prime.analytics.events.Event
 import org.ostelco.prime.getLogger
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 
 class DelegatePubSubPublisher(
         private val topicId: String,
@@ -47,6 +48,7 @@ class DelegatePubSubPublisher(
     override fun stop() {
         // When finished with the publisher, shutdown to free up resources.
         publisher.shutdown()
+        publisher.awaitTermination(1, TimeUnit.MINUTES)
         singleThreadScheduledExecutor.shutdown()
     }
 
