@@ -4,26 +4,18 @@ import PropTypes from 'prop-types';
 import { Card, CardBody } from 'reactstrap';
 import ReactJson from 'react-json-view';
 
-class Context extends React.Component {
-
-  render() {
-    const { props } = this;
-    if (!props.context) {
-      return null;
-    }
-
-    return (
-      <Card>
-        <CardBody>
-          <ReactJson
-            src={props.context}
-            displayDataTypes={false}
-            displayObjectSize={false}
-            theme={"bright:inverted"} />
-        </CardBody>
-      </Card>
-    );
-  }
+function Context({ context }) {
+  return (
+    <Card>
+      <CardBody>
+        <ReactJson
+          src={context}
+          displayDataTypes={false}
+          displayObjectSize={false}
+          theme={"bright:inverted"} />
+      </CardBody>
+    </Card>
+  );
 }
 
 Context.propTypes = {
@@ -31,7 +23,7 @@ Context.propTypes = {
 };
 
 function mapStateToProps(state) {
-  let context = state.context;
+  const { context } = state;
   return {
     context
   };
