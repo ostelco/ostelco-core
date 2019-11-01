@@ -1,6 +1,7 @@
 package org.ostelco.ocsgw.datasource.proxy;
 
 import org.ostelco.ocsgw.datasource.DataSource;
+import org.ostelco.ocsgw.datasource.DataSourceOperations;
 import org.ostelco.ocsgw.datasource.local.LocalDataSource;
 import org.ostelco.diameter.CreditControlContext;
 import org.ostelco.ocs.api.CreditControlRequestType;
@@ -27,8 +28,8 @@ public class ProxyDataSource implements DataSource {
     }
 
     @Override
-    public void init() {
-        // No init needed
+    public void init(DataSourceOperations operations) {
+        local.init(operations);
     }
 
     @Override

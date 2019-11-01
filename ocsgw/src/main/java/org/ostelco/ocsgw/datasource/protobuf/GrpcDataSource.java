@@ -16,6 +16,7 @@ import org.ostelco.ocs.api.CreditControlRequestInfo;
 import org.ostelco.ocs.api.CreditControlRequestType;
 import org.ostelco.ocs.api.OcsServiceGrpc;
 import org.ostelco.ocsgw.datasource.DataSource;
+import org.ostelco.ocsgw.datasource.DataSourceOperations;
 import org.ostelco.ocsgw.metrics.OcsgwMetrics;
 import org.ostelco.ocsgw.utils.EventConsumer;
 import org.ostelco.ocsgw.utils.EventProducer;
@@ -98,15 +99,30 @@ public class GrpcDataSource implements DataSource {
     }
 
     @Override
-    public void init() {
+    public void init(DataSourceOperations operations) {
 
         setupChannel();
-        initCreditControlRequestStream();
-        initActivateStream();
-        initKeepAlive();
-        ocsgwAnalytics.initAnalyticsRequestStream();
 
-        setupEventConsumer();
+        switch (operations) {
+            case activate:
+                initActivateStream();
+                break;
+            case creditControl:
+                initCreditControl();
+                break;
+            case creditControlAndActivate:
+                initCreditControl();
+                initActivateStream();
+                break;
+            default:
+        }
+
+        ocsgwAnalytics.initAnalyticsRequestStream();
+    }
+
+    private void initCreditControl() {
+        initCreditControlRequestStream();
+        initCcrKeepAlive();
     }
 
     private void setupEventConsumer() {
@@ -129,7 +145,7 @@ public class GrpcDataSource implements DataSource {
         // Set up a channel to be used to communicate as an OCS instance,
         // to a gRPC instance.
 
-        final boolean disableTls = Boolean.valueOf(System.getenv("DISABLE_TLS"));
+        final boolean disableTls = Boolean.parseBoolean(System.getenv("DISABLE_TLS"));
 
         try {
             if (disableTls) {
@@ -198,6 +214,7 @@ public class GrpcDataSource implements DataSource {
                         // Nothing to do here
                     }
                 });
+        setupEventConsumer();
     }
 
     /**
@@ -232,7 +249,7 @@ public class GrpcDataSource implements DataSource {
      * The keep alive messages are sent on the creditControlRequestStream
      * to force it to stay open avoiding reconnects on the gRPC channel.
      */
-    private void initKeepAlive() {
+    private void initCcrKeepAlive() {
         // this is used to keep connection alive
         executorService.scheduleWithFixedDelay(() -> {
                     final CreditControlRequestInfo ccr = CreditControlRequestInfo.newBuilder()

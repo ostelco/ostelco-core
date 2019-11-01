@@ -3,6 +3,7 @@ package org.ostelco.ocsgw.datasource.multi;
 import org.ostelco.diameter.CreditControlContext;
 import org.ostelco.ocs.api.CreditControlRequestType;
 import org.ostelco.ocsgw.datasource.DataSource;
+import org.ostelco.ocsgw.datasource.DataSourceOperations;
 
 /**
  * Proxy DataSource is a combination of multiple DataSources
@@ -14,18 +15,24 @@ public class MultiDataSource implements DataSource {
     private DataSource initDatasource = null;
     private DataSource updateDatasource = null;
     private DataSource terminateDatasource = null;
+    private DataSource activateDatasource = null;
 
-    public MultiDataSource(DataSource initDatasource, DataSource updateDatasource, DataSource terminateDatasource) {
+    public MultiDataSource(DataSource initDatasource,
+                           DataSource updateDatasource,
+                           DataSource terminateDatasource,
+                           DataSource activateDataSource) {
         this.initDatasource = initDatasource;
         this.updateDatasource = updateDatasource;
         this.terminateDatasource = terminateDatasource;
+        this.activateDatasource = activateDataSource;
     }
 
     @Override
-    public void init() {
-        initDatasource.init();
-        updateDatasource.init();
-        terminateDatasource.init();
+    public void init(DataSourceOperations dataSourceOperations) {
+        initDatasource.init(DataSourceOperations.creditControl);
+        updateDatasource.init(DataSourceOperations.creditControl);
+        terminateDatasource.init(DataSourceOperations.creditControl);
+        activateDatasource.init(DataSourceOperations.activate);
     }
 
     @Override

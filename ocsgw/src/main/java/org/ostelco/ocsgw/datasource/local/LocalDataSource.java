@@ -10,6 +10,7 @@ import org.ostelco.diameter.model.*;
 import org.ostelco.ocs.api.CreditControlRequestType;
 import org.ostelco.ocsgw.OcsServer;
 import org.ostelco.ocsgw.datasource.DataSource;
+import org.ostelco.ocsgw.datasource.DataSourceOperations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +28,7 @@ public class LocalDataSource implements DataSource {
     private static final Logger LOG = LoggerFactory.getLogger(LocalDataSource.class);
 
     @Override
-    public void init() {
+    public void init(DataSourceOperations operations) {
         // No init needed
     }
 

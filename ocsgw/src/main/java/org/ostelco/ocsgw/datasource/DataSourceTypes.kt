@@ -7,3 +7,9 @@ enum class DataSourceType {
     Proxy,
     Multi
 }
+
+enum class DataSourceOperations {
+    activate,
+    creditControl,
+    creditControlAndActivate
+}

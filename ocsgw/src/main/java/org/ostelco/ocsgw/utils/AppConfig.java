@@ -46,6 +46,10 @@ public class AppConfig {
         return getDataSourceType("OCS_MULTI_TERMINATE_DATASOURCE_TYPE", "MultiTerminateDataSourceType", "PubSub");
     }
 
+    public DataSourceType getMultiActivateDataSourceType () {
+        return getDataSourceType("OCS_MULTI_ACTIVATE_DATASOURCE_TYPE", "MultiActivateDataSourceType", "PubSub");
+    }
+
     private DataSourceType getDataSourceType(final String envName, final String propertyName, final String defaultSourceType) {
         // env has higher preference over config.properties
         final String dataSource = System.getenv(envName);

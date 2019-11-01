@@ -16,6 +16,7 @@ import org.ostelco.diameter.getLogger
 import org.ostelco.diameter.model.ReAuthRequestType
 import org.ostelco.diameter.model.SessionContext
 import org.ostelco.ocsgw.datasource.DataSource
+import org.ostelco.ocsgw.datasource.DataSourceOperations
 import org.ostelco.ocsgw.datasource.DataSourceType
 import org.ostelco.ocsgw.datasource.DataSourceType.Local
 import org.ostelco.ocsgw.datasource.DataSourceType.Proxy
@@ -129,7 +130,7 @@ object OcsServer {
         this.defaultRequestedServiceUnit = appConfig.defaultRequestedServiceUnit
 
         source = setupDataSource(appConfig.dataStoreType, appConfig)
-        source?.init()
+        source?.init(DataSourceOperations.creditControlAndActivate)
     }
 
     private fun setupDataSource(dataSourceType: DataSourceType, appConfig: AppConfig) : DataSource {
@@ -173,7 +174,7 @@ object OcsServer {
                 getPubSubDataSource(protobufDataSource, appConfig)
             }
         }
-        secondary.init()
+        secondary.init(DataSourceOperations.creditControlAndActivate)
         return ProxyDataSource(secondary)
     }
 
@@ -181,25 +182,41 @@ object OcsServer {
         logger.info("Setting up InitDataSource")
         val initDataSource = setupDataSource(appConfig.multiInitDataSourceType, appConfig)
         logger.info("Setting up UpdateDataSource")
-        val updateDataSource = setupUnitDataSource(appConfig, initDataSource)
+        val updateDataSource = setupUpdateDataSource(appConfig, initDataSource)
         logger.info("Setting up TerminateDataSource")
         val terminateDataSource : DataSource
         terminateDataSource = setupTerminateDataSource(appConfig, initDataSource, updateDataSource)
-        return MultiDataSource(initDataSource, updateDataSource, terminateDataSource)
+        logger.info("Setting up ActivateDataSource")
+        val activateDataSouce = setupActivateDataSource(appConfig, initDataSource, updateDataSource, terminateDataSource)
+        return MultiDataSource(initDataSource, updateDataSource, terminateDataSource, activateDataSouce)
     }
 
-    private fun setupUnitDataSource(appConfig: AppConfig, initDataSource: DataSource) : DataSource {
+    private fun setupUpdateDataSource(appConfig: AppConfig, initDataSource: DataSource) : DataSource {
         return when {
             appConfig.multiInitDataSourceType == appConfig.multiUpdateDataSourceType -> initDataSource
             else -> setupDataSource(appConfig.multiUpdateDataSourceType, appConfig)
         }
     }
 
-    private fun setupTerminateDataSource(appConfig: AppConfig, initDataSource: DataSource, updateDataSource: DataSource): DataSource {
+    private fun setupTerminateDataSource(appConfig: AppConfig,
+                                         initDataSource: DataSource,
+                                         updateDataSource: DataSource): DataSource {
         return when {
-            appConfig.multiInitDataSourceType == appConfig.multiUpdateDataSourceType -> initDataSource
+            appConfig.multiInitDataSourceType == appConfig.multiTerminateDataSourceType -> initDataSource
             appConfig.multiUpdateDataSourceType == appConfig.multiTerminateDataSourceType -> updateDataSource
             else -> setupDataSource(appConfig.multiTerminateDataSourceType, appConfig)
+        }
+    }
+
+    private fun setupActivateDataSource(appConfig: AppConfig,
+                                        initDataSource: DataSource,
+                                        updateDataSource: DataSource,
+                                        terminateDataSource: DataSource): DataSource {
+        return when {
+            appConfig.multiInitDataSourceType == appConfig.multiActivateDataSourceType -> initDataSource
+            appConfig.multiUpdateDataSourceType == appConfig.multiActivateDataSourceType -> updateDataSource
+            appConfig.multiTerminateDataSourceType == appConfig.multiActivateDataSourceType -> terminateDataSource
+            else -> setupDataSource(appConfig.multiActivateDataSourceType, appConfig)
         }
     }
 
