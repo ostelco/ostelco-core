@@ -8,7 +8,7 @@ import SubscriberList from './SubscriberList';
 import SubscriberDetails from './SubscriberDetails';
 import AlertMessage from './Alert';
 
-const Search = ({ hasCurrentSubscriber, getSubscriberList }) => {
+const Main = ({ hasCurrentSubscriber, getSubscriberList }) => {
   return (
     <div className="container">
       <AlertMessage />
@@ -20,7 +20,7 @@ const Search = ({ hasCurrentSubscriber, getSubscriberList }) => {
   );
 }
 
-Search.propTypes = {
+Main.propTypes = {
   hasSubscriber: PropTypes.bool,
 };
 
@@ -35,4 +35,4 @@ function mapStateToProps(state) {
 const mapDispatchToProps = {
   getSubscriberList: subscriberActions.getSubscriberList
 };
-export default connect(mapStateToProps, mapDispatchToProps)(Search);
+export default connect(mapStateToProps, mapDispatchToProps)(Main);
