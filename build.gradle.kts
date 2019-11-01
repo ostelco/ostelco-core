@@ -8,7 +8,7 @@ plugins {
   base
   java
   id("project-report")
-  id("com.github.ben-manes.versions") version "0.26.0"
+  id("com.github.ben-manes.versions") version "0.27.0"
   jacoco
   kotlin("jvm") version "1.3.50" apply false
   id("com.google.protobuf") version "0.8.10" apply false

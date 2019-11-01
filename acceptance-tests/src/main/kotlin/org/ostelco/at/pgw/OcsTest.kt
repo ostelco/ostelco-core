@@ -9,6 +9,7 @@ import org.ostelco.at.common.getLogger
 import org.ostelco.at.common.randomInt
 import org.ostelco.at.jersey.get
 import org.ostelco.diameter.model.FinalUnitAction
+import org.ostelco.diameter.model.ReportingReason
 import org.ostelco.diameter.model.RequestType
 import org.ostelco.diameter.test.TestClient
 import org.ostelco.diameter.test.TestHelper
@@ -79,7 +80,7 @@ class OcsTest {
                 session
         ) ?: fail("Failed to create request")
 
-        TestHelper.createUpdateRequest(request.avps, msisdn, requestedBucketSize, usedBucketSize, ratingGroup, serviceIdentifier)
+        TestHelper.createUpdateRequest(request.avps, msisdn, requestedBucketSize, usedBucketSize, ratingGroup, serviceIdentifier, ReportingReason.QUOTA_EXHAUSTED)
 
         testClient.sendNextRequest(request, session)
 
@@ -413,7 +414,7 @@ class OcsTest {
                 session
         ) ?: fail("Failed to create request")
 
-        TestHelper.createUpdateRequest(updateRequest.avps, msisdn, BUCKET_SIZE, INITIAL_BALANCE, ratingGroup, serviceIdentifier)
+        TestHelper.createUpdateRequest(updateRequest.avps, msisdn, BUCKET_SIZE, INITIAL_BALANCE, ratingGroup, serviceIdentifier, ReportingReason.QUOTA_EXHAUSTED)
 
         testClient.sendNextRequest(updateRequest, session)
 
@@ -686,7 +687,7 @@ class OcsTest {
                 session
         ) ?: fail("Failed to create request")
 
-        TestHelper.createUpdateRequest(updateRequest.avps, msisdn, INITIAL_BALANCE + BUCKET_SIZE, 0L, ratingGroup, serviceIdentifier)
+        TestHelper.createUpdateRequest(updateRequest.avps, msisdn, INITIAL_BALANCE + BUCKET_SIZE, 0L, ratingGroup, serviceIdentifier, ReportingReason.QUOTA_EXHAUSTED)
 
         testClient.sendNextRequest(updateRequest, session)
 
@@ -713,7 +714,7 @@ class OcsTest {
                 session
         ) ?: fail("Failed to create request")
 
-        TestHelper.createUpdateRequest(updateRequest2.avps, msisdn, INITIAL_BALANCE, INITIAL_BALANCE, ratingGroup, serviceIdentifier)
+        TestHelper.createUpdateRequest(updateRequest2.avps, msisdn, INITIAL_BALANCE, INITIAL_BALANCE, ratingGroup, serviceIdentifier, ReportingReason.QUOTA_EXHAUSTED)
 
         testClient.sendNextRequest(updateRequest2, session)
 
@@ -787,7 +788,7 @@ class OcsTest {
                 session2
         )
 
-        TestHelper.createUpdateRequest(updateRequest3!!.avps, msisdn, 0L, -1L, ratingGroup, serviceIdentifier)
+        TestHelper.createUpdateRequest(updateRequest3!!.avps, msisdn, 0L, -1L, ratingGroup, serviceIdentifier, ReportingReason.QUOTA_EXHAUSTED)
 
         testClient.sendNextRequest(updateRequest3, session2)
 
@@ -973,7 +974,7 @@ class OcsTest {
                 session
         )
 
-        TestHelper.createUpdateRequest(request!!.avps, msisdn, -1L, DEFAULT_REQUESTED_SERVICE_UNIT, ratingGroup, serviceIdentifier)
+        TestHelper.createUpdateRequest(request!!.avps, msisdn, -1L, DEFAULT_REQUESTED_SERVICE_UNIT, ratingGroup, serviceIdentifier, ReportingReason.QUOTA_EXHAUSTED)
 
         testClient.sendNextRequest(request, session)
 
@@ -984,6 +985,51 @@ class OcsTest {
         val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
         assertEquals(RequestType.UPDATE_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
         assertEquals(86400L, resultAvps.getAvp(Avp.VALIDITY_TIME).integer32.toLong())
+    }
+
+
+    /**
+     * Test that CCR-U with Reporting-Reason QHT ( no new Requested-Service-Unit ) works.
+     */
+
+    @Test
+    fun testNoMsccInCcrU() {
+
+        val email = "ocs-${randomInt()}@test.com"
+        createCustomer(name = "Test OCS User", email = email)
+
+        val msisdn = createSubscription(email = email)
+
+        val ratingGroup = 10
+        val serviceIdentifier = -1
+
+        val session = testClient.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
+
+        // This test assume that the default bucket size is set to 4000000L
+        simpleCreditControlRequestInit(session, msisdn,0L, DEFAULT_REQUESTED_SERVICE_UNIT, ratingGroup, serviceIdentifier)
+
+        val updateRequest = testClient.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session
+        )
+
+        TestHelper.createUpdateRequest(updateRequest!!.getAvps(), msisdn, -1L, 500_000L, ratingGroup, serviceIdentifier, ReportingReason.QHT)
+
+        testClient.sendNextRequest(updateRequest, session)
+
+        waitForAnswer(session.getSessionId())
+
+        val result = testClient.getAnswer(session.getSessionId())
+        assertEquals(DIAMETER_SUCCESS, result!!.resultCode!!.toLong())
+        val resultAvps = result.resultAvps
+        assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String())
+        assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String())
+        assertEquals(RequestType.UPDATE_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32().toLong())
+        val resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
+        assertNull(resultMSCC, "No requested MSCC")
+        assertEquals(86400, resultAvps.getAvp(Avp.VALIDITY_TIME).getInteger32().toLong())
+
     }
 
 

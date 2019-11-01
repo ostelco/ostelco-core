@@ -584,10 +584,7 @@ class StripePaymentProcessor : PaymentProcessor {
                                         amount = it.amount.toInt(),     /* Note: 'int' is used internally for amounts. */
                                         currency = it.currency,
                                         created = Instant.ofEpochSecond(it.created).toEpochMilli(),
-                                        refunded = it.refunded,
-                                        properties = mapOf("invoiceId" to intent.invoice,
-                                                "customerId" to intent.customer)
-                                )
+                                        refunded = it.refunded)
                             }
                         }.flatMap {
                             it

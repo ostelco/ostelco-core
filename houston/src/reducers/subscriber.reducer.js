@@ -3,14 +3,12 @@ import { actions } from '../actions/subscriber.actions';
 
 const defaultState = {};
 
-export const subscriber = handleActions(
+export const subscribers = handleActions(
   {
     [actions.subscriberByEmailRequest]: (state, action) => ({
       loading: true
     }),
-    [actions.subscriberByEmailSuccess]: (state, action) => ({
-      ...action.payload
-    }),
+    [actions.subscriberByEmailSuccess]: (state, action) => (action.payload), // Array of subscribers
     [actions.subscriberByEmailFailure]: (state, action) => ({
       ...action.payload
     })
@@ -84,5 +82,5 @@ export const auditLogs = handleActions(
       ...action.payload
     })
   },
-  defaultState
+  []
 );

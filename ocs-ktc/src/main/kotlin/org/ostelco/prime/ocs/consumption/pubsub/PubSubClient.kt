@@ -72,6 +72,7 @@ class PubSubClient(
     override fun stop() {
         activatePublisher?.shutdown()
         activatePublisher?.awaitTermination(1, TimeUnit.MINUTES)
+        singleThreadScheduledExecutor.shutdown()
     }
 
     override fun activate(msisdn: String) {
@@ -101,10 +102,13 @@ class PubSubClient(
             override fun onFailure(throwable: Throwable) {
                 if (throwable is ApiException) {
                     // details on the API exception
-                    logger.error("Status code: {}", throwable.statusCode.code)
-                    logger.error("Retrying: {}", throwable.isRetryable)
+                    logger.warn("Pubsub messageId: $messageId\n" +
+                            "Message : ${throwable.message}\n" +
+                            "Status code: ${throwable.statusCode.code}\n" +
+                            "Retrying: ${throwable.isRetryable}")
+                } else {
+                    logger.error("Error sending CCR Request to PubSub topic ${publisher.topicName}. messageId: $messageId")
                 }
-                logger.error("Error sending message on PubSub topic ${publisher.topicName}")
             }
 
             override fun onSuccess(messageId: String) {

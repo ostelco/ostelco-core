@@ -2,7 +2,7 @@ swagger: "2.0"
 info:
   title: "Houston Admin API"
   description: "The APIs for the Houston Admin Client."
-  version: "1.0.0"
+  version: "2.0.0"
 host: "houston-api.oya.world"
 x-google-endpoints:
   - name: "houston-api.oya.world"
@@ -10,28 +10,28 @@ x-google-endpoints:
 schemes:
   - "https"
 paths:
-  "/support/profiles/{id}":
+  "/support/profiles/{query}":
     get:
-      description: "Get profile for the given email-id or msisdn (url encoded)."
+      description: "Get list of customers for the given email-id or msisdn (url encoded)."
       produces:
       - application/json
-      operationId: "getCustomer"
+      operationId: "getCustomerList"
       responses:
         200:
           description: "Get the profile for this user."
           schema:
-            $ref: '#/definitions/Profile'
+            $ref: '#/definitions/CustomerList'
         404:
           description: "Profile not found."
       security:
       - auth0_jwt: []
       parameters:
-      - name: id
+      - name: query
         in: path
         description: "The id of the user (msisdn or email)"
         required: true
         type: string
-  "/support/profiles/{email}/subscriptions":
+  "/support/profiles/{id}/subscriptions":
     get:
       description: "Get subscription (msisdn) for the user."
       produces:
@@ -47,12 +47,12 @@ paths:
       security:
         - auth0_jwt: []
       parameters:
-        - name: email
+        - name: id
           in: path
-          description: "The email of the user"
+          description: "The customerId of the user"
           required: true
           type: string
-  "/support/profiles/{email}/scans":
+  "/support/profiles/{id}/scans":
     get:
       description: "Get eKYC scan information for the user."
       produces:
@@ -68,87 +68,17 @@ paths:
       security:
         - auth0_jwt: []
       parameters:
-        - name: email
+        - name: id
           in: path
-          description: "The email of the user"
+          description: "The customerId of the user"
           required: true
           type: string
-  "/support/profiles/{email}/plans":
-    get:
-      description: "Get all plans subscribed to by a customer"
-      produces:
-        - application/json
-      operationId: "getPlans"
-      security:
-        - auth0_jwt: []
-      responses:
-        200:
-          description: "Plans subscribed to"
-          schema:
-            $ref: '#/definitions/PlanList'
-        404:
-          description: "No plans found"
-      parameters:
-        - name: email
-          in: path
-          description: "The email of the customer"
-          required: true
-          type: string
-  "/support/profiles/{email}/plans/{planId}":
-    post:
-      description: "Subscribe a customer to a plan"
-      produces:
-        - application/json
-        - text/plain
-      operationId: "attachPlan"
-      responses:
-        201:
-          description: "The subscription was created successfully"
-        400:
-          description: "Failed to create subscription"
-      security:
-        - auth0_jwt: []
-      parameters:
-        - name: email
-          in: path
-          description: "The email of the customer"
-          required: true
-          type: string
-        - name: planId
-          in: path
-          description: "The name of the plan to subscribe to"
-          required: true
-          type: string
-    delete:
-      description: "Remove a customer from a plan"
-      produces:
-        - application/json
-        - text/plain
-      operationId: "detachPlan"
-      responses:
-        200:
-          description: "The subscription was removed successfully"
-        400:
-          description: "Failed to remove subscription"
-      security:
-        - auth0_jwt: []
-      parameters:
-        - name: email
-          in: path
-          description: "The email of the customer"
-          required: true
-          type: string
-        - name: planId
-          in: path
-          description: "The name of the plan to remove the subscription for"
-          required: true
-          type: string
-  "/support/bundles/{email}":
+  "/support/bundles/{id}":
     get:
       description: "Get bundles (balance) for the user (identified by email)."
       produces:
       - application/json
-      operationId: "getBundlesByEmail"
+      operationId: "getBundlesById"
       responses:
         200:
           description: "Get bundles for this user."
@@ -159,18 +89,18 @@ paths:
       security:
       - auth0_jwt: []
       parameters:
-      - name: email
+      - name: id
         in: path
-        description: "The email of the user"
+        description: "The customerId of the user"
         required: true
         type: string
-  "/support/purchases/{email}":
+  "/support/purchases/{id}":
     get:
       description: "Get list of all purchases."
       produces:
       - application/json
       - text/plain
-      operationId: "getPurchaseHistoryByEmail"
+      operationId: "getPurchaseHistoryById"
       responses:
         200:
           description: "List of Purchase Records."
@@ -185,18 +115,18 @@ paths:
       security:
       - auth0_jwt: []
       parameters:
-      - name: email
+      - name: id
         in: path
-        description: "The email of the user"
+        description: "The customerId of the user"
         required: true
         type: string
-  "/support/refund/{email}":
+  "/support/refund/{id}":
     put:
       description: "Full refund of a purchase."
       produces:
       - application/json
       - text/plain
-      operationId: "refundPurchaseByEmail"
+      operationId: "refundPurchaseById"
       responses:
         200:
           description: "Purchase is refunded."
@@ -211,9 +141,9 @@ paths:
       security:
       - auth0_jwt: []
       parameters:
-      - name: email
+      - name: id
         in: path
-        description: "The email of the user"
+        description: "The customerId of the user"
         required: true
         type: string
       - name: purchaseRecordId
@@ -226,13 +156,13 @@ paths:
         description: "The reason for refund"
         required: true
         type: string
-  "/support/notify/{email}":
+  "/support/notify/{id}":
     put:
       description: "Send notification to a customer."
       produces:
         - application/json
         - text/plain
-      operationId: "sendNotificationByEmail"
+      operationId: "sendNotificationById"
       responses:
         200:
           description: "Sent notification."
@@ -243,9 +173,9 @@ paths:
       security:
         - auth0_jwt: []
       parameters:
-        - name: email
+        - name: id
           in: path
-          description: "The email of the user"
+          description: "The customerId of the user"
           required: true
           type: string
         - name: title
@@ -258,99 +188,12 @@ paths:
           description: "The notification message"
           required: true
           type: string
-  "/support/plans":
-    get:
-      description: "Get plan details"
-      produces:
-        - application/json
-        - text/plain
-      operationId: "getPlan"
-      responses:
-        200:
-          description: "Plan details is returned"
-          schema:
-            $ref: '#/definitions/Plan'
-        404:
-          description: "No such plan"
-      parameters:
-        - name: planId
-          in: path
-          description: "Name of plan to get"
-          required: true
-          type: string
-      security:
-        - auth0_jwt: []
-    post:
-      description: "Create a plan"
-      produces:
-        - application/json
-        - text/plain
-      operationId: "createPlan"
-      responses:
-        201:
-          description: "Successfully purchased the plan."
-          schema:
-            $ref: '#/definitions/Plan'
-        400:
-          description: "Failed to create the plan"
-      parameters:
-        - name: createPlanRequest
-          in: body
-          description: Plan details
-          schema:
-            $ref: '#/definitions/CreatePlanRequest'
-      security:
-        - auth0_jwt: []
-    delete:
-      description: "Removes a plan"
-      produces:
-        - application/json
-        - text/plain
-      operationId: "deletePlan"
-      responses:
-        200:
-          description: "Plan is removed"
-          schema:
-            $ref: '#/definitions/Plan'
-        400:
-          description: "Failed to remove plan"
-        404:
-          description: "No such plan"
-      parameters:
-        - name: planId
-          in: path
-          description: "The name of the plan to remove"
-          required: true
-          type: string
-      security:
-        - auth0_jwt: []
-  "/support/profiles/{email}/state":
-    get:
-      description: "Get state of the user."
-      produces:
-        - application/json
-      operationId: "getCustomerState"
-      responses:
-        200:
-          description: "Successfully retrieved the state."
-          schema:
-            $ref: '#/definitions/SubscriberState'
-        404:
-          description: "No state information available for this user."
-      security:
-        - auth0_jwt: []
-      parameters:
-        - name: email
-          in: path
-          description: "The email of the user"
-          required: true
-          type: string
-  "/support/context/{email}":
+  "/support/context/{id}":
     get:
       description: "Get context which is customer and region details."
       produces:
         - application/json
-      operationId: "getContext"
+      operationId: "getContextById"
       responses:
         200:
           description: "Get the customer context."
@@ -361,18 +204,18 @@ paths:
       security:
         - auth0_jwt: []
       parameters:
-        - name: email
+        - name: id
           in: path
-          description: "The email of the user"
+          description: "The customerId of the user"
           required: true
           type: string
-  "/support/auditLog/{email}":
+  "/support/auditLog/{id}":
     get:
       description: "Get list of all audit logs."
       produces:
         - application/json
         - text/plain
-      operationId: "getAuditLogsByEmail"
+      operationId: "queryAuditLogs"
       responses:
         200:
           description: "List of AuditLog records."
@@ -383,12 +226,12 @@ paths:
       security:
         - auth0_jwt: []
       parameters:
-        - name: email
+        - name: id
           in: path
-          description: "The email of the user"
+          description: "The customerId of the user"
           required: true
           type: string
-  "/support/customer/{email}":
+  "/support/customer/{id}":
     delete:
       description: "Remove the customer from the backend."
       produces:
@@ -402,9 +245,9 @@ paths:
       security:
         - auth0_jwt: []
       parameters:
-        - name: email
+        - name: id
           in: path
-          description: "The contact email of the customer"
+          description: "The customerId of the customer"
           required: true
           type: string
 
@@ -416,6 +259,10 @@ definitions:
         $ref: '#/definitions/Customer'
       regions:
         $ref: '#/definitions/RegionDetailsList'
+  CustomerList:
+    type: array
+    items:
+      $ref: '#/definitions/Customer'
   Customer:
     type: object
     properties:
@@ -431,8 +278,8 @@ definitions:
       referralId:
         type: string
     required:
-      - name
-      - email
+      - id
+      - contactEmail
   RegionDetailsList:
     type: array
     items:
@@ -467,12 +314,6 @@ definitions:
   KycStatus:
     type: string
     enum: [ PENDING, REJECTED, APPROVED ]
-  MyInfoConfig:
-    type: object
-    properties:
-      url:
-        type: string
-        description: "URL for MyInfo authorise"
   Region:
     type: object
     properties:
@@ -504,26 +345,6 @@ definitions:
       - iccId
       - activationCode
       - status
-  Profile:
-    type: object
-    properties:
-      name:
-        type: string
-      address:
-        type: string
-      postCode:
-        type: string
-      city:
-        type: string
-      country:
-        type: string
-      email:
-        type: string
-        format: email
-      referralId:
-        type: string
-    required:
-    - email
   SubscriptionList:
     type: array
     items:
@@ -623,60 +444,6 @@ definitions:
     required:
     - amount
     - currency
-  Plan:
-    type: object
-    properties:
-      id:
-        description: "An unique id representing the plan"
-        type: string
-      stripePlanId:
-        type: string
-      stripeProductId:
-        type: string
-      interval:
-        description: "The recurring period for the plan"
-        type: string
-        enum: [ day, week, month, year ]
-      intervalCount:
-        description: "Number of intervals in a period"
-        type: integer
-        default: 1
-        minimum: 1
-    required:
-      - id
-  PlanList:
-    type: array
-    items:
-      $ref: '#/definitions/Plan'
-  CreatePlanRequest:
-    type: object
-    properties:
-      plan:
-        description: Plan to be created.
-        $ref: '#/definitions/Plan'
-      stripeProductName:
-        description: Name of product in Stripe for this plan.
-        type: string
-      productPlan:
-        description: Product associated with this plan.
-        $ref: '#/definitions/Product'
-  SubscriberState:
-    type: object
-    properties:
-      id:
-        description: "User Id"
-        type: string
-      status:
-        description: "Current status of the customer"
-        type: string
-      modifiedTimestamp:
-        description: "Last modified time for the status (Unix timestamp)"
-        type: integer
-        format: int64
-    required:
-      - id
-      - status
-      - modifiedTimestamp
   ScanInformationList:
     type: array
     items:

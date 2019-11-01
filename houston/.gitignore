@@ -10,6 +10,7 @@
 /build
 
 .firebase/*.cache
+.vscode/
 
 # misc
 .DS_Store

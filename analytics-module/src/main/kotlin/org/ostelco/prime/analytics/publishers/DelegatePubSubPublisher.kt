@@ -15,6 +15,7 @@ import org.ostelco.prime.analytics.events.Event
 import org.ostelco.prime.getLogger
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 
 class DelegatePubSubPublisher(
         private val topicId: String,
@@ -47,6 +48,7 @@ class DelegatePubSubPublisher(
     override fun stop() {
         // When finished with the publisher, shutdown to free up resources.
         publisher.shutdown()
+        publisher.awaitTermination(1, TimeUnit.MINUTES)
         singleThreadScheduledExecutor.shutdown()
     }
 
@@ -59,15 +61,18 @@ class DelegatePubSubPublisher(
             override fun onFailure(throwable: Throwable) {
                 if (throwable is ApiException) {
                     // details on the API exception
-                    logger.warn("Status code: {}", throwable.statusCode.code)
-                    logger.warn("Retrying: {}", throwable.isRetryable)
+                    logger.warn("Error publishing message to Pubsub topic: $topicId\n" +
+                            "Message: ${throwable.message}\n" +
+                            "Status code: ${throwable.statusCode.code}\n" +
+                            "Retrying: ${throwable.isRetryable}")
+                } else {
+                    logger.warn("Error publishing message to Pubsub topic: $topicId")
                 }
-                logger.warn("Error publishing message in topic: $topicId")
             }
 
             override fun onSuccess(messageId: String) {
                 // Once published, returns server-assigned message ids (unique within the topic)
-                logger.debug("Published message $messageId")
+                logger.debug("Published message $messageId to topic $topicId")
             }
         }, DataConsumptionInfoPublisher.singleThreadScheduledExecutor)
     }

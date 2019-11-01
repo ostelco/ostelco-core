@@ -25,10 +25,9 @@ const apiCaller = async (endpoint, method, body, allowEmptyResponse, params = []
   } else if (typeof params === 'string') {
     fullUrl += params;
   }
- 
+
   //console.log('API URL:', fullUrl);
   if (authHeaderResolver === null) {
-    console.log("apiCaller: authHeaderResolver not set");
     return Promise.reject();
   }
   const auth = authHeaderResolver();
@@ -99,6 +98,14 @@ export function transformError(errorObj) {
 // Action key that carries API call info interpreted by this Redux middleware.
 export const CALL_API = 'Call API';
 
+class ApiError extends Error {
+  constructor(message, code) {
+    super(message);
+    this.name = "ApiError";
+    this.code = code;
+  }
+}
+
 // A Redux middleware that interprets actions with CALL_API info specified.
 // Performs the call and promises when such actions are dispatched.
 export default (store) => (next) => (action) => {
@@ -134,7 +141,7 @@ export default (store) => (next) => (action) => {
         errorObj: error,
         error: transformError(error)
       }));
-      throw new Error(transformError(error));
+      throw new ApiError(transformError(error), error.code);
     }
   );
 }

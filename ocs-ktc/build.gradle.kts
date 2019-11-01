@@ -7,6 +7,7 @@ plugins {
 
 dependencies {
   implementation(project(":prime-modules"))
+  api(project(":kts-engine"))
 
   implementation("com.google.cloud:google-cloud-pubsub:${Version.googleCloudPubSub}")
 

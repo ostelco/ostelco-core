@@ -4,19 +4,15 @@ import { connect } from 'react-redux';
 import { Alert } from 'reactstrap';
 
 import { alertActions } from '../../actions/alert.actions';
+import { authConstants } from '../../actions/auth.actions';
 
-function AlertMessage(props) {
-  function onDismiss(e) {
-    props.clearAlert();
-  }
+function AlertMessage({ alert, clearAlert }) {
+  const { code, message, type } = alert;
+  const isOpen = (type === 'error' || code === authConstants.AUTHENTICATION_FAILURE)
 
-  const visible = (props.alert && props.alert.type === 'alert-danger');
-  if (!visible) {
-    return null
-  };
   return (
-    <Alert color="danger" isOpen={visible} toggle={onDismiss}>
-      {props.alert.message}
+    <Alert color="danger" isOpen={isOpen} toggle={() => clearAlert()}>
+      {message}
       <hr />
     </Alert>
   );
