@@ -66,6 +66,25 @@ db.Select(&courses, "SELECT name AS course_name FROM courses")
 
 */
 
+func InsertInputBatch(theBatch *model.InputBatch) {
+
+	res := sdb.db.MustExec("INSERT INTO INPUT_BATCH (name, customer, profileType, orderDate, batchNo, quantity, firstIccid, firstImsi) values (?,?,?,?,?,?,?,?) ",
+		(*theBatch).Name,
+		(*theBatch).Customer,
+		(*theBatch).ProfileType,
+		(*theBatch).OrderDate,
+		(*theBatch).BatchNo,
+		(*theBatch).Quantity,
+		(*theBatch).FirstIccid,
+		(*theBatch).FirstImsi,
+	)
+
+	theBatch.Id, err = res.LastInsertId()
+	if err != nil {
+		fmt.Errorf("Getting last inserted id failed '%s'", err)
+	}
+}
+
 func TestGenerateInputBatchTable(t *testing.T) {
 	GenerateInputBatchTable(sdb)
 	// TODO: Try a CRUD here, spread it out over multiple methods, and our work is done.
@@ -81,21 +100,7 @@ func TestGenerateInputBatchTable(t *testing.T) {
 		FirstImsi:   "123456789012345",
 	}
 
-	res := sdb.db.MustExec("INSERT INTO INPUT_BATCH (name, customer, profileType, orderDate, batchNo, quantity, firstIccid, firstImsi) values (?,?,?,?,?,?,?,?) ",
-		theBatch.Name,
-		theBatch.Customer,
-		theBatch.ProfileType,
-		theBatch.OrderDate,
-		theBatch.BatchNo,
-		theBatch.Quantity,
-		theBatch.FirstIccid,
-		theBatch.FirstImsi,
-	)
-
-	theBatch.Id, err = res.LastInsertId()
-	if err != nil {
-		fmt.Errorf("Getting last inserted id failed '%s'", err)
-	}
+	InsertInputBatch(&theBatch)
 
 	rows, err := sdb.db.Query("select id, name, customer, profileType, orderDate, batchNo, quantity, firstIccid, firstImsi FROM INPUT_BATCH")
 	if err != nil {
