@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/es2plus"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/outfileconversion"
-	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/storage"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/uploadtoprime"
 )
 
@@ -175,7 +174,7 @@ func main() {
 		}
 	case "batch":
 		fmt.Println("Doing the batch thing.")
-		storage.doTheBatchThing()
+		// storage.doTheBatchThing()
 	default:
 		panic(fmt.Sprintf("Unknown command: '%s'\n", cmd))
 	}

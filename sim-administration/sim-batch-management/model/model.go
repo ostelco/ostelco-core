@@ -1,7 +1,27 @@
 package model
 
-// TODO: Put all records used to manage workflows in this
-//       package, then build a DAO interface a "store" package
+// TODO: There are now multiple structs that model batches.
+//       It's probably a good idea to harmonize these so that it's
+//       only one type of batch info that's being read, and then have
+//       various ways to combine the misc. sources of batch information
+//       that lets partial information from multiple records be harmonized
+//       in a common persisted record that is then used for the bulk of the
+//       processing.
+
+//
+// Batches as read from the input files
+//
+type InputBatch struct {
+	Id          int64  `db:"id" json:"id"`
+	Name        string `db:"name" json:"name"`
+	Customer    string `db:"customer" json:"customer"`
+	ProfileType string `db:"profileType" json:"profileType"`
+	OrderDate   string `db:"orderDate" json:"orderDate"`
+	BatchNo     string `db:"batchNo" json:"batchNo"`
+	Quantity    int    `db:"quantity" json:"quantity"`
+	FirstIccid  string `db:"firstIccid" json:"firstIccid"`
+	FirstImsi   string `db:"firstImsi" json:"firstImsi"`
+}
 
 type OutputBatch struct {
 	ProfileType     string `db:"profileType" json:"profileType"`
@@ -13,18 +33,6 @@ type OutputBatch struct {
 	IccidIncrement  int
 	FirstImsi       int
 	ImsiIncrement   int
-}
-
-type InputBatch struct {
-	Id          int64  `db:"id" json:"id"`
-	Name        string `db:"name" json:"name"`
-	Customer    string `db:"customer" json:"customer"`
-	ProfileType string `db:"profileType" json:"profileType"`
-	OrderDate   string `db:"orderDate" json:"orderDate"`
-	BatchNo     string `db:"batchNo" json:"batchNo"`
-	Quantity    int    `db:"quantity" json:"quantity"`
-	FirstIccid  string `db:"firstIccid" json:"firstIccid"`
-	FirstImsi   string `db:"firstImsi" json:"firstImsi"`
 }
 
 type OutputFileRecord struct {
