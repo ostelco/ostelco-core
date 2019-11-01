@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 
 import { subscriberActions } from '../../actions/subscriber.actions';
 import SearchForm from './SearchForm';
-import CustomerList from './CustomerList';
+import SubscriberList from './SubscriberList';
 import SearchResults from './SearchResults';
 import AlertMessage from './Alert';
 
@@ -21,7 +21,7 @@ class Search extends React.Component {
         <AlertMessage />
         <SearchForm onSubmit={this.onSubmit} />
         <br />
-        <CustomerList />
+        <SubscriberList />
         {
           hasResults && (
             <SearchResults />
