@@ -112,7 +112,7 @@ func main() {
 	switch cmd {
 	case "es2plus-smoketest":
 		es2PlusSmoketest(smoketestCertFilePath, smoketestKeyFilePath, smoketestHostport, smoketestRequesterId, smoketestIccidInput)
-	case "simProfilerUpload":
+	case "sim-profile-upload":
 		outfileconversion.ConvertInputfileToOutputfile(*spUploadInputFile, *spUploadOutputFilePrefix)
 	case "sim-profile-upload":
 		// TODO: Combine these two into something inside uploadtoprime.
