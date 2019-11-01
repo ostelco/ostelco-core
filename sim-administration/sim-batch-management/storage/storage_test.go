@@ -1,11 +1,14 @@
 package storage
 
 import (
+	// "database/sql"
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
+	"gotest.tools/assert"
 	"os"
+	"reflect"
 	"sync"
 	"testing"
 )
@@ -70,7 +73,7 @@ func TestGenerateInputBatchTable(t *testing.T) {
 		FirstImsi:   123456789012345,
 	}
 
-	result := sdb.db.MustExec("INSERT INTO INPUT_BATCH (CUSTOMER, PROFILE_TYPE, ORDER_DATE, BATCH_NO, QUANTITY, FIRST_ICCID, FIRST_IMSI) values (?,?,?,?,?,?,?) ",
+	insertionResult := sdb.db.MustExec("INSERT INTO INPUT_BATCH (CUSTOMER, PROFILE_TYPE, ORDER_DATE, BATCH_NO, QUANTITY, FIRST_ICCID, FIRST_IMSI) values (?,?,?,?,?,?,?) ",
 		theBatch.Customer,
 		theBatch.ProfileType,
 		theBatch.OrderDate,
@@ -80,8 +83,42 @@ func TestGenerateInputBatchTable(t *testing.T) {
 		theBatch.FirstImsi,
 	)
 
-	fmt.Println("The batch = ", result)
+	fmt.Println("The batch = ", insertionResult)
 
+	rows, err := sdb.db.Query("select CUSTOMER, PROFILE_TYPE, ORDER_DATE, BATCH_NO, QUANTITY, FIRST_ICCID, FIRST_IMSI ")
+	if err != nil {
+		fmt.Errorf("Reading query failed '%s'", err)
+	}
+
+	assert.Assert(t, rows != nil, "Rows shouldn't be nil")
+
+	noOfRows := 0
+	for rows.Next() {
+		var Customer string
+		var ProfileType string
+		var OrderDate string
+		var BatchNo string
+		var Quantity int
+		var FirstIccid int
+		var FirstImsi int
+		err = rows.Scan(&Customer, &ProfileType, &OrderDate, &BatchNo, &Quantity, &FirstIccid, &FirstImsi)
+
+		queryResult := model.InputBatch{
+			Customer:    Customer,
+			ProfileType: ProfileType,
+			OrderDate:   OrderDate,
+			BatchNo:     BatchNo,
+			Quantity:    Quantity,
+			FirstIccid:  FirstIccid,
+			FirstImsi:   FirstImsi,
+		}
+
+		if !reflect.DeepEqual(theBatch, queryResult) {
+			fmt.Errorf("Read/write inequality for input batch")
+		}
+		noOfRows += 1
+	}
+	assert.Equal(t, noOfRows, 1)
 }
 
 //
