@@ -72,6 +72,7 @@ class PubSubClient(
     override fun stop() {
         activatePublisher?.shutdown()
         activatePublisher?.awaitTermination(1, TimeUnit.MINUTES)
+        singleThreadScheduledExecutor.shutdown()
     }
 
     override fun activate(msisdn: String) {

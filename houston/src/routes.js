@@ -3,7 +3,7 @@ import { Route, BrowserRouter as Router, Redirect, Switch, Link } from 'react-ro
 import { connect } from 'react-redux';
 
 import App from './components/App';
-import Search from './components/Search/Search';
+import Main from './components/Search/Main';
 import Notifications from './components/Notifications/Notifications';
 import Callback from './components/Callback/Callback';
 import { Provider } from 'react-redux';
@@ -81,7 +81,7 @@ export const makeMainRoutes = () => {
           <App />
           <Switch >
             <Route path="/login" component={Login} />
-            <ProtectedRoute path="/" exact component={Search} />
+            <ProtectedRoute path="/" exact component={Main} />
             <ProtectedRoute path="/notifications" component={Notifications} />
             <Route path="/callback" render={(props) => {
               handleAuthentication(props);

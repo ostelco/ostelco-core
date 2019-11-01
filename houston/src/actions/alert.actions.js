@@ -13,10 +13,10 @@ const { alertSuccess, alertError, clearAlert } = alertActions;
 const reducer = handleActions(
   {
     [alertSuccess]: (state, { payload }) => {
-      return { ...state, type: 'alert-success', message: payload };
+      return { ...state, type: 'success', message: payload };
     },
     [alertError]: (state, { payload: { message, code } }) => {
-      return { ...state, type: 'alert-danger', message, code };
+      return { ...state, type: 'error', message, code };
     },
     [clearAlert]: () => defaultState
   },
