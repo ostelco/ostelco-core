@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
 	"os"
 	"sync"
 	"testing"
@@ -58,6 +59,29 @@ type InputBatch struct {
 func TestGenerateInputBatchTable(t *testing.T) {
 	GenerateInputBatchTable(sdb)
 	// TODO: Try a CRUD here, spread it out over multiple methods, and our work is done.
+
+	theBatch := model.InputBatch{
+		Customer:    "foo",
+		ProfileType: "banana",
+		OrderDate:   "apple",
+		BatchNo:     "100",
+		Quantity:    100,
+		FirstIccid:  1234567890123456789,
+		FirstImsi:   123456789012345,
+	}
+
+	result := sdb.db.MustExec("INSERT INTO INPUT_BATCH (CUSTOMER, PROFILE_TYPE, ORDER_DATE, BATCH_NO, QUANTITY, FIRST_ICCID, FIRST_IMSI) values (?,?,?,?,?,?,?) ",
+		theBatch.Customer,
+		theBatch.ProfileType,
+		theBatch.OrderDate,
+		theBatch.BatchNo,
+		theBatch.Quantity,
+		theBatch.FirstIccid,
+		theBatch.FirstImsi,
+	)
+
+	fmt.Println("The batch = ", result)
+
 }
 
 //
@@ -73,8 +97,8 @@ type SimBatchDB struct {
 func GenerateInputBatchTable(sdb *SimBatchDB) {
 	sdb.mu.Lock()
 	defer sdb.mu.Unlock()
-	foo := `CREATE TABLE IF NOT EXISTS SIMBATCH.INPUT_BATCH (
-	CUSTOMER VARCHAR,
+	foo := `CREATE TABLE IF NOT EXISTS INPUT_BATCH (
+	CUSTOMER VARCHAR NOT NULL,
 	PROFILE_TYPE VARCHAR NOT NULL,
 	ORDER_DATE VARCHAR NOT NULL,
 	BATCH_NO VARCHAR NOT NULL,

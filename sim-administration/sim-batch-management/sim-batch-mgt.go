@@ -2,15 +2,11 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
-	"github.com/jmoiron/sqlx"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/es2plus"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/outfileconversion"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/storage"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/uploadtoprime"
-	"gopkg.in/alecthomas/kingpin.v2"
-	"strconv"
 )
 
 var (
