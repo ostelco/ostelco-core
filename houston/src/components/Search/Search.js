@@ -8,29 +8,27 @@ import SubscriberList from './SubscriberList';
 import SubscriberDetails from './SubscriberDetails';
 import AlertMessage from './Alert';
 
-const Search = ({ currentSubscriber, getSubscriberList }) => {
-  const hasSubscriber = (currentSubscriber.id) || false;
+const Search = ({ hasCurrentSubscriber, getSubscriberList }) => {
   return (
     <div className="container">
       <AlertMessage />
       <SearchForm onSubmit={(text) => getSubscriberList(text)} />
       <br />
       <SubscriberList />
-      { hasSubscriber && (<SubscriberDetails />)}
+      { hasCurrentSubscriber && (<SubscriberDetails />)}
     </div>
   );
 }
 
 Search.propTypes = {
-  loggedIn: PropTypes.bool,
-  currentSubscriber: PropTypes.object,
+  hasSubscriber: PropTypes.bool,
 };
 
 function mapStateToProps(state) {
-  const { authentication: { loggedIn }, currentSubscriber } = state;
+  const { currentSubscriber } = state;
+  const hasCurrentSubscriber = (currentSubscriber.id) || false;
   return {
-    loggedIn,
-    currentSubscriber
+    hasCurrentSubscriber
   };
 };
 
