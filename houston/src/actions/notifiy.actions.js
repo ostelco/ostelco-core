@@ -57,7 +57,7 @@ const sendNotificationToSubscriber = (title, message) => (dispatch, getState) =>
   };
 
   // Get the id from the fetched user
-  const subscriberId = _.get(getState(), 'customer.id');
+  const subscriberId = _.get(getState(), 'currentSubscriber.id');
   if (subscriberId) {
     return dispatch(putNotificationById(subscriberId, title, message))
       .catch(handleError);

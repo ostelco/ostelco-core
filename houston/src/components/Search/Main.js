@@ -1,6 +1,5 @@
 import React from 'react';
-import { connect } from 'react-redux';
-import PropTypes from 'prop-types';
+import { useDispatch, useSelector } from 'react-redux';
 
 import { subscriberActions } from '../../actions/subscriber.actions';
 import SearchForm from './SearchForm';
@@ -8,11 +7,15 @@ import SubscriberList from './SubscriberList';
 import SubscriberDetails from './SubscriberDetails';
 import AlertMessage from './Alert';
 
-const Main = ({ hasCurrentSubscriber, getSubscriberList }) => {
+const Main = () => {
+  const dispatch = useDispatch();
+  const currentSubscriber = useSelector(state => state.currentSubscriber);
+  const hasCurrentSubscriber = (currentSubscriber.id) || false;
+
   return (
     <div className="container">
       <AlertMessage />
-      <SearchForm onSubmit={(text) => getSubscriberList(text)} />
+      <SearchForm onSubmit={(text) => dispatch(subscriberActions.getSubscriberList(text))} />
       <br />
       <SubscriberList />
       { hasCurrentSubscriber && (<SubscriberDetails />)}
@@ -20,19 +23,4 @@ const Main = ({ hasCurrentSubscriber, getSubscriberList }) => {
   );
 }
 
-Main.propTypes = {
-  hasSubscriber: PropTypes.bool,
-};
-
-function mapStateToProps(state) {
-  const { currentSubscriber } = state;
-  const hasCurrentSubscriber = (currentSubscriber.id) || false;
-  return {
-    hasCurrentSubscriber
-  };
-};
-
-const mapDispatchToProps = {
-  getSubscriberList: subscriberActions.getSubscriberList
-};
-export default connect(mapStateToProps, mapDispatchToProps)(Main);
+export default Main;
