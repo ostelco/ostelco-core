@@ -8,39 +8,26 @@ import SubscriberList from './SubscriberList';
 import SearchResults from './SearchResults';
 import AlertMessage from './Alert';
 
-class Search extends React.Component {
-
-  onSubmit = (text) => {
-    this.props.getSubscriberList(text);
-  }
-
-  render() {
-    const hasResults = (this.props.currentSubscriber.id) || false;
-    return (
-      <div className="container">
-        <AlertMessage />
-        <SearchForm onSubmit={this.onSubmit} />
-        <br />
-        <SubscriberList />
-        {
-          hasResults && (
-            <SearchResults />
-          )
-        }
-      </div>
-    );
-  }
+const Search = ({ currentSubscriber, getSubscriberList }) => {
+  const hasResults = (currentSubscriber.id) || false;
+  return (
+    <div className="container">
+      <AlertMessage />
+      <SearchForm onSubmit={(text) => getSubscriberList(text)} />
+      <br />
+      <SubscriberList />
+      { hasResults && (<SearchResults />)}
+    </div>
+  );
 }
 
 Search.propTypes = {
   loggedIn: PropTypes.bool,
-  pseudonym: PropTypes.object,
   currentSubscriber: PropTypes.object,
 };
 
 function mapStateToProps(state) {
-  const { loggedIn } = state.authentication;
-  const { currentSubscriber } = state;
+  const { authentication: { loggedIn }, currentSubscriber } = state;
   return {
     loggedIn,
     currentSubscriber
