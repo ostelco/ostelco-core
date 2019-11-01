@@ -105,44 +105,12 @@ func TestGenerateInputBatchTable(t *testing.T) {
 	//     and it will all be awsome.   Continue that to completion for input
 	//     batches. Wrap it in  an interface, and hook that interface up to
 	//     the command line processor.  Rinse&repeat.
-	rows, err := sdb.db.Query("select id, name, customer, profileType, orderDate, batchNo, quantity, firstIccid, firstImsi FROM INPUT_BATCH")
+	allBatches, err := getAllInputBatches()
 	if err != nil {
 		fmt.Errorf("Reading query failed '%s'", err)
 	}
 
-	assert.Assert(t, rows != nil, "Rows shouldn't be nil in prepared roundtrip")
-
-	noOfRows := 0
-	for rows.Next() {
-		var id int64
-		var Name string
-		var Customer string
-		var ProfileType string
-		var OrderDate string
-		var BatchNo string
-		var Quantity int
-		var FirstIccid string
-		var FirstImsi string
-		err = rows.Scan(&id, &Name, &Customer, &ProfileType, &OrderDate, &BatchNo, &Quantity, &FirstIccid, &FirstImsi)
-
-		queryResult := model.InputBatch{
-			Id:          id,
-			Name:        Name,
-			Customer:    Customer,
-			ProfileType: ProfileType,
-			OrderDate:   OrderDate,
-			BatchNo:     BatchNo,
-			Quantity:    Quantity,
-			FirstIccid:  FirstIccid,
-			FirstImsi:   FirstImsi,
-		}
-
-		if !reflect.DeepEqual(theBatch, queryResult) {
-			fmt.Errorf("Read/write inequality for input batch")
-		}
-		noOfRows += 1
-	}
-	assert.Equal(t, noOfRows, 1)
+	assert.Equal(t, len(allBatches), 1)
 
 	var result2 model.InputBatch
 	err = sdb.db.Get(&result2, "select * from INPUT_BATCH limit 1")
@@ -152,6 +120,21 @@ func TestGenerateInputBatchTable(t *testing.T) {
 	if !reflect.DeepEqual(theBatch, result2) {
 		fmt.Errorf("Read/write inequality for input batch")
 	}
+
+	foo, _ := getInputBatchById(1)
+	if !reflect.DeepEqual(foo, theBatch) {
+		fmt.Errorf("getBatchById failed")
+	}
+}
+
+func getAllInputBatches() ([]model.InputBatch, error) {
+	result := []model.InputBatch{}
+	return result, sdb.db.Select(&result, "SELECT * from INPUT_BATCH")
+}
+
+func getInputBatchById(id int64) (*model.InputBatch, error) {
+	var result model.InputBatch
+	return &result, sdb.db.Get(&result, "select * from INPUT_BATCH where id = ?", id)
 }
 
 //
