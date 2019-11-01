@@ -24,8 +24,8 @@ func TestMain(m *testing.M) {
 }
 
 func setup() {
-	db, err := sqlx.Open("sqlite3", ":memory:")
-	// db, err := sqlx.Open("sqlite3", "foobar.db")
+	// db, err := sqlx.Open("sqlite3", ":memory:")
+	db, err := sqlx.Open("sqlite3", "foobar.db")
 	if err != nil {
 		fmt.Errorf("Didn't manage to open sqlite3 in-memory database. '%s'", err)
 	}
@@ -69,11 +69,11 @@ func TestGenerateInputBatchTable(t *testing.T) {
 		OrderDate:   "apple",
 		BatchNo:     "100",
 		Quantity:    100,
-		FirstIccid:  1234567890123456789,
-		FirstImsi:   123456789012345,
+		FirstIccid:  "1234567890123456789",
+		FirstImsi:   "123456789012345",
 	}
 
-	insertionResult := sdb.db.MustExec("INSERT INTO INPUT_BATCH (CUSTOMER, PROFILE_TYPE, ORDER_DATE, BATCH_NO, QUANTITY, FIRST_ICCID, FIRST_IMSI) values (?,?,?,?,?,?,?) ",
+	insertionResult := sdb.db.MustExec("INSERT INTO INPUT_BATCH (customer, profileType, orderDate, batchNo, quantity, firstIccid, firstImsi) values (?,?,?,?,?,?,?) ",
 		theBatch.Customer,
 		theBatch.ProfileType,
 		theBatch.OrderDate,
@@ -85,7 +85,7 @@ func TestGenerateInputBatchTable(t *testing.T) {
 
 	fmt.Println("The batch = ", insertionResult)
 
-	rows, err := sdb.db.Query("select CUSTOMER, PROFILE_TYPE, ORDER_DATE, BATCH_NO, QUANTITY, FIRST_ICCID, FIRST_IMSI FROM INPUT_BATCH")
+	rows, err := sdb.db.Query("select id, customer, profileType, orderDate, batchNo, quantity, firstIccid, firstImsi FROM INPUT_BATCH")
 	if err != nil {
 		fmt.Errorf("Reading query failed '%s'", err)
 	}
@@ -94,16 +94,18 @@ func TestGenerateInputBatchTable(t *testing.T) {
 
 	noOfRows := 0
 	for rows.Next() {
+		var id uint64
 		var Customer string
 		var ProfileType string
 		var OrderDate string
 		var BatchNo string
 		var Quantity int
-		var FirstIccid int
-		var FirstImsi int
-		err = rows.Scan(&Customer, &ProfileType, &OrderDate, &BatchNo, &Quantity, &FirstIccid, &FirstImsi)
+		var FirstIccid string
+		var FirstImsi string
+		err = rows.Scan(&id, &Customer, &ProfileType, &OrderDate, &BatchNo, &Quantity, &FirstIccid, &FirstImsi)
 
 		queryResult := model.InputBatch{
+			Id:          id,
 			Customer:    Customer,
 			ProfileType: ProfileType,
 			OrderDate:   OrderDate,
@@ -119,6 +121,15 @@ func TestGenerateInputBatchTable(t *testing.T) {
 		noOfRows += 1
 	}
 	assert.Equal(t, noOfRows, 1)
+
+	var result2 model.InputBatch
+	err = sdb.db.Get(&result2, "select * from INPUT_BATCH limit 1")
+	if err != nil {
+		fmt.Errorf("Get query failed '%s'", err)
+	}
+	if !reflect.DeepEqual(theBatch, result2) {
+		fmt.Errorf("Read/write inequality for input batch")
+	}
 }
 
 //
@@ -135,17 +146,18 @@ func GenerateInputBatchTable(sdb *SimBatchDB) {
 	sdb.mu.Lock()
 	defer sdb.mu.Unlock()
 	foo := `CREATE TABLE IF NOT EXISTS INPUT_BATCH (
-	CUSTOMER VARCHAR NOT NULL,
-	PROFILE_TYPE VARCHAR NOT NULL,
-	ORDER_DATE VARCHAR NOT NULL,
-	BATCH_NO VARCHAR NOT NULL,
-	QUANTITY INTEGER NOT NULL,
-	FIRST_ICCID BIGINT,
-	FIRST_IMSI BIGINT
+    id integer primary key autoincrement,
+	customer VARCHAR NOT NULL,
+	profileType VARCHAR NOT NULL,
+	orderDate VARCHAR NOT NULL,
+	batchNo VARCHAR NOT NULL,
+	quantity INTEGER NOT NULL,
+	firstIccid VARCHAR,
+	firstImsi VARCHAR
 	)`
 
-	_, err := sdb.db.Exec(foo)
+	result, err := sdb.db.Exec(foo)
 	if err != nil {
-		fmt.Errorf("Table creation failed. '%s'", err)
+		fmt.Errorf("Table creation failed. '%s', '%s'", err, result)
 	}
 }

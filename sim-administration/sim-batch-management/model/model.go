@@ -16,13 +16,14 @@ type OutputBatch struct {
 }
 
 type InputBatch struct {
-	Customer    string
-	ProfileType string
-	OrderDate   string
-	BatchNo     string
-	Quantity    int
-	FirstIccid  int
-	FirstImsi   int
+	Id          uint64 `db:"id" json:"id"`
+	Customer    string `db:"customer" json:"customer"`
+	ProfileType string `db:"profileType" json:"profileType"`
+	OrderDate   string `db:"orderDate" json:"orderDate"`
+	BatchNo     string `db:"batchNo" json:"batchNo"`
+	Quantity    int    `db:"quantity" json:"quantity"`
+	FirstIccid  string `db:"firstIccid" json:"firstIccid"`
+	FirstImsi   string `db:"firstImsi" json:"firstImsi"`
 }
 
 type OutputFileRecord struct {
