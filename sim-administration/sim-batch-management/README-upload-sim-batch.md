@@ -1,6 +1,6 @@
 # How to upload batch information to prime using the 
 
-## Introuduction
+## Introduction
 Prime has  REST endpoint for uploading sim batches.   This is an 
 interface with little error checking (beyond the bare miniumums)
 and a low abstraction layer: It requires a CSV file of ICCID/IMSI/MSISDN/PROFILE tuples.
@@ -59,6 +59,8 @@ and will cause error messages.)
 
 ```
 
+  -batch-length integer
+              The number of profiles in the batch.  Must match with iccid, msisdn and imsi ranges (if present).
   -first-iccid string
     	      An 18 or 19 digit long string.  The 19-th digit being a luhn luhnChecksum digit, if present (default "not  a valid iccid")
   -first-imsi string

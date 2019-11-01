@@ -33,6 +33,15 @@ data class SimProfile(
     companion object
 }
 
-data class Segment(override val id: String) : HasId
+data class Segment(override val id: String) : HasId {
+    companion object
+}
 
 data class Offer(override val id: String) : HasId
+
+data class ExCustomer(
+        override val id:String,
+        val terminationDate: String) : HasId {
+
+    companion object
+}

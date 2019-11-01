@@ -62,6 +62,7 @@ data class RegionDetails(
 enum class CustomerRegionStatus {
     PENDING,   // eKYC initiated, but not yet approved
     APPROVED,  // eKYC approved
+    AVAILABLE  // Region is available for provisioning
 }
 
 enum class KycType {
@@ -202,7 +203,7 @@ enum class VendorScanData(val s: String) {
 }
 
 enum class FCMStrings(val s: String) {
-    NOTIFICATION_TITLE("eKYC Status"),
+    JUMIO_NOTIFICATION_TITLE("eKYC Status"),
     JUMIO_IDENTITY_VERIFIED("Successfully verified the identity"),
     JUMIO_IDENTITY_FAILED("Failed to verify the identity")
 }

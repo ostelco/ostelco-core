@@ -1,4 +1,4 @@
-package main
+package outfileconversion
 
 import (
 	"gotest.tools/assert"
@@ -14,7 +14,7 @@ func testKeywordValueParser(t *testing.T) {
 
 func testReadOutputFile(t *testing.T) {
 	sample_output_file_name := "sample_out_file_for_testing.out"
-	record, _ := ReadOutputFile(sample_output_file_name)
+	record := ReadOutputFile(sample_output_file_name)
 
 	// First parameter to check
 	assert.Equal(t, sample_output_file_name, record.Filename)
@@ -31,6 +31,6 @@ func testReadOutputFile(t *testing.T) {
 	assert.Equal(t, record.inputVariables["IMSI"], "242017100011213")
 
 	// Check that the output entry set looks legit.
-	assert.Equal(t, 3, len(record.entries))
+	assert.Equal(t, 3, len(record.Entries))
 	assert.Equal(t, 3, record.noOfEntries)
 }

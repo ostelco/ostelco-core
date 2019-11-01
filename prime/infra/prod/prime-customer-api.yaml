@@ -71,7 +71,6 @@ paths:
           schema:
             type: string
       security:
-        - auth0_jwt: []
         - firebase: []
   "/context":
     get:
@@ -87,7 +86,6 @@ paths:
         404:
           description: "Customer not found."
       security:
-        - auth0_jwt: []
         - firebase: []
   "/customer":
     get:
@@ -103,7 +101,6 @@ paths:
         404:
           description: "Customer not found."
       security:
-        - auth0_jwt: []
         - firebase: []
     post:
       description: "Create a new customer."
@@ -137,7 +134,6 @@ paths:
         500:
           description: "Failed to store customer"
       security:
-        - auth0_jwt: []
         - firebase: []
     put:
       description: "Update an existing customer."
@@ -167,7 +163,6 @@ paths:
         500:
           description: "Failed to update customer info."
       security:
-        - auth0_jwt: []
         - firebase: []
     delete:
       description: "Remove customer."
@@ -180,7 +175,6 @@ paths:
         404:
           description: "Customer not found."
       security:
-        - auth0_jwt: []
         - firebase: []
   "/regions":
     get:
@@ -194,7 +188,6 @@ paths:
           schema:
             $ref: '#/definitions/RegionDetailsList'
       security:
-        - auth0_jwt: []
         - firebase: []
   "/regions/{regionCode}":
     get:
@@ -216,7 +209,6 @@ paths:
         404:
           description: "Region not found."
       security:
-        - auth0_jwt: []
         - firebase: []
   "/regions/{regionCode}/kyc/jumio/scans":
     post:
@@ -238,7 +230,6 @@ paths:
         404:
           description: "Region not found."
       security:
-        - auth0_jwt: []
         - firebase: []
   "/regions/{regionCode}/kyc/jumio/scans/{scanId}":
     get:
@@ -265,7 +256,6 @@ paths:
         404:
           description: "Region or Scan not found."
       security:
-        - auth0_jwt: []
         - firebase: []
   "/regions/sg/kyc/myInfoConfig":
     get:
@@ -281,7 +271,6 @@ paths:
         404:
           description: "Config not found."
       security:
-        - auth0_jwt: []
         - firebase: []
   "/regions/sg/kyc/myInfo/{authorisationCode}":
     get:
@@ -303,7 +292,6 @@ paths:
         404:
           description: "Person Data not found."
       security:
-        - auth0_jwt: []
         - firebase: []
   "/regions/sg/kyc/myInfo/v3/config":
     get:
@@ -319,7 +307,6 @@ paths:
         404:
           description: "Config not found."
       security:
-        - auth0_jwt: []
         - firebase: []
   "/regions/sg/kyc/myInfo/v3/personData/{authorisationCode}":
     get:
@@ -341,7 +328,6 @@ paths:
         404:
           description: "Person Data not found."
       security:
-        - auth0_jwt: []
         - firebase: []
   "/regions/sg/kyc/dave/{nricFinId}":
     get:
@@ -361,14 +347,13 @@ paths:
         400:
           description: "Invalid NRIC/FIN ID"
       security:
-        - auth0_jwt: []
         - firebase: []
   "/regions/sg/kyc/profile":
     put:
-      description: "Update Singapore Customer's address and phone number."
+      description: "Update address for Singapore region."
       produces:
         - application/json
-      operationId: "updateDetails"
+      operationId: "updateDetailsForSG"
       parameters:
         - name: address
           in: query
@@ -379,7 +364,23 @@ paths:
         204:
           description: "Successfully updated customer's details."
       security:
-        - auth0_jwt: []
+        - firebase: []
+  "/regions/my/kyc/profile":
+    put:
+      description: "Update address for Malaysia region."
+      produces:
+        - application/json
+      operationId: "updateDetailsForMY"
+      parameters:
+        - name: address
+          in: query
+          description: "Customer's Address"
+          required: true
+          type: string
+      responses:
+        204:
+          description: "Successfully updated customer's details."
+      security:
         - firebase: []
   "/regions/{regionCode}/simProfiles":
     get:
@@ -403,7 +404,6 @@ paths:
         500:
           description: "Service Unavailable"
       security:
-        - auth0_jwt: []
         - firebase: []
     post:
       description: "Provision SIM Profile for the user (identified by bearer token)."
@@ -430,7 +430,6 @@ paths:
         500:
           description: "Service Unavailable"
       security:
-        - auth0_jwt: []
         - firebase: []
   "/regions/{regionCode}/simProfiles/{iccId}":
     put:
@@ -488,7 +487,6 @@ paths:
         500:
           description: "Service Unavailable"
       security:
-        - auth0_jwt: []
         - firebase: []
   "/regions/{regionCode}/subscriptions":
     get:
@@ -510,7 +508,6 @@ paths:
         404:
           description: "No subscription found for this user."
       security:
-        - auth0_jwt: []
         - firebase: []
   "/subscriptions":
     get:
@@ -526,7 +523,6 @@ paths:
         404:
           description: "No subscription found for this user."
       security:
-        - auth0_jwt: []
         - firebase: []
   "/applicationToken":
     post:
@@ -554,7 +550,6 @@ paths:
         500:
           description: "Not able to store token."
       security:
-        - auth0_jwt: []
         - firebase: []
   "/paymentSources":
     get:
@@ -572,7 +567,6 @@ paths:
         503:
           description: "Service Unavailable"
       security:
-        - auth0_jwt: []
         - firebase: []
     post:
       description: "Add a new payment source for user"
@@ -597,7 +591,6 @@ paths:
         500:
           description: "Service Unavailable"
       security:
-        - auth0_jwt: []
         - firebase: []
     put:
       description: "Set the source as default for user"
@@ -622,7 +615,6 @@ paths:
         500:
           description: "Service Unavailable"
       security:
-        - auth0_jwt: []
         - firebase: []
     delete:
       description: "Remove a payment source for user"
@@ -647,7 +639,6 @@ paths:
         500:
           description: "Service Unavailable"
       security:
-        - auth0_jwt: []
         - firebase: []
   "/products":
     get:
@@ -663,7 +654,6 @@ paths:
         404:
           description: "No products found for the user."
       security:
-        - auth0_jwt: []
         - firebase: []
   "/products/{sku}/purchase":
     post:
@@ -696,7 +686,6 @@ paths:
         404:
           description: "Product not found."
       security:
-        - auth0_jwt: []
         - firebase: []
   "/purchases":
     get:
@@ -717,7 +706,6 @@ paths:
         500:
           description: "Service Unavailable"
       security:
-        - auth0_jwt: []
         - firebase: []
   "/bundles":
     get:
@@ -733,7 +721,6 @@ paths:
         404:
           description: "No bundle found for this user."
       security:
-        - auth0_jwt: []
         - firebase: []
   "/referred":
     get:
@@ -749,7 +736,6 @@ paths:
         404:
           description: "No referrals found for this user."
       security:
-        - auth0_jwt: []
         - firebase: []
   "/referred/by":
     get:
@@ -765,7 +751,6 @@ paths:
         404:
           description: "No 'referred by' found for this user."
       security:
-        - auth0_jwt: []
         - firebase: []
   "/graphql":
     get:
@@ -787,7 +772,6 @@ paths:
         404:
           description: "Not found"
       security:
-        - auth0_jwt: []
         - firebase: []
     post:
       description: "GraphQL POST endpoint"
@@ -810,7 +794,6 @@ paths:
         404:
           description: "Not found"
       security:
-        - auth0_jwt: []
         - firebase: []
 
 definitions:
@@ -875,7 +858,7 @@ definitions:
       status:
         description: "Customer Status for this region"
         type: string
-        enum: [ PENDING, APPROVED ]
+        enum: [ PENDING, APPROVED, AVAILABLE ]
       kycStatusMap:
         description: "Map of status for each KYC"
         type: object

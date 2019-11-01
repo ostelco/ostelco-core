@@ -104,22 +104,19 @@ class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(regionCo
         }.build()
     }
 
-    @EnableTracing
-    @PUT
     @Path("/profile")
-    @Produces(MediaType.APPLICATION_JSON)
-    fun saveProfile(@Auth token: AccessTokenPrincipal?,
-                    @NotNull
-                    @QueryParam("address")
-                    address: String): Response =
-            if (token == null) {
-                Response.status(Response.Status.UNAUTHORIZED)
-            } else {
-                dao.saveAddress(
-                        identity = token.identity,
-                        address = address)
-                        .responseBuilder(Response.Status.NO_CONTENT)
-            }.build()
+    fun saveProfile(): ProfileKycResource = ProfileKycResource(regionCode = "sg", dao = dao)
+}
+
+/**
+ * [MalaysiaKycResource] uses [JumioKycResource] via parent class [KycResource].
+ * It has Malaysia specific eKYC APIs.
+ *
+ */
+class MalaysiaKycResource(private val dao: SubscriberDAO): KycResource(regionCode = "my", dao = dao) {
+
+    @Path("/profile")
+    fun saveProfile(): ProfileKycResource = ProfileKycResource(regionCode = "my", dao = dao)
 }
 
 class MyInfoResource(private val dao: SubscriberDAO,
@@ -152,6 +149,26 @@ class MyInfoResource(private val dao: SubscriberDAO,
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
                 Response.status(Response.Status.OK).entity(myInfoKycService.getConfig())
+            }.build()
+}
+
+class ProfileKycResource(private val regionCode: String, private val dao: SubscriberDAO) {
+
+    @EnableTracing
+    @PUT
+    @Produces(MediaType.APPLICATION_JSON)
+    fun saveProfile(@Auth token: AccessTokenPrincipal?,
+                    @NotNull
+                    @QueryParam("address")
+                    address: String): Response =
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                dao.saveAddress(
+                        identity = token.identity,
+                        address = address,
+                        regionCode = regionCode)
+                        .responseBuilder(Response.Status.NO_CONTENT)
             }.build()
 }
 

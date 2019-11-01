@@ -9,12 +9,14 @@ import org.ostelco.at.common.getLogger
 import org.ostelco.at.common.randomInt
 import org.ostelco.at.jersey.get
 import org.ostelco.diameter.model.FinalUnitAction
+import org.ostelco.diameter.model.ReportingReason
 import org.ostelco.diameter.model.RequestType
 import org.ostelco.diameter.test.TestClient
 import org.ostelco.diameter.test.TestHelper
 import org.ostelco.prime.customer.model.Bundle
 import java.lang.Thread.sleep
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.fail
 
 /**
@@ -78,7 +80,7 @@ class OcsTest {
                 session
         ) ?: fail("Failed to create request")
 
-        TestHelper.createUpdateRequest(request.avps, msisdn, requestedBucketSize, usedBucketSize, ratingGroup, serviceIdentifier)
+        TestHelper.createUpdateRequest(request.avps, msisdn, requestedBucketSize, usedBucketSize, ratingGroup, serviceIdentifier, ReportingReason.QUOTA_EXHAUSTED)
 
         testClient.sendNextRequest(request, session)
 
@@ -109,6 +111,9 @@ class OcsTest {
         }.first().balance
     }
 
+    /**
+     * Test that the OCS will correctly handle CCR with Requested-Service-Units for multiple Rating-Groups
+     */
 
     @Test
     fun multiRatingGroupsInit() {
@@ -356,6 +361,9 @@ class OcsTest {
         }
     }
 
+    /**
+     * Test that a users gets correctly denied when the balance on the OCS is used up
+     */
 
     @Test
     fun creditControlRequestInitTerminateNoCredit() {
@@ -400,14 +408,13 @@ class OcsTest {
         }
 
         // Next request should deny request and grant no quota
-
         val updateRequest = testClient.createRequest(
                 DEST_REALM,
                 DEST_HOST,
                 session
         ) ?: fail("Failed to create request")
 
-        TestHelper.createUpdateRequest(updateRequest.avps, msisdn, BUCKET_SIZE, INITIAL_BALANCE, ratingGroup, serviceIdentifier)
+        TestHelper.createUpdateRequest(updateRequest.avps, msisdn, BUCKET_SIZE, INITIAL_BALANCE, ratingGroup, serviceIdentifier, ReportingReason.QUOTA_EXHAUSTED)
 
         testClient.sendNextRequest(updateRequest, session)
 
@@ -450,7 +457,6 @@ class OcsTest {
         }
 
         // If UE attach again and P-GW tries another CCR-I we should get DIAMETER_CREDIT_LIMIT_REACHED
-
         session = testClient.createSession(object{}.javaClass.enclosingMethod.name + "-2") ?: fail("Failed to create session")
         request = testClient.createRequest(
                 DEST_REALM,
@@ -485,6 +491,10 @@ class OcsTest {
     }
 
 
+    /**
+     * Test that the OCS will deny service for users not in the system
+     */
+
     @Test
     fun creditControlRequestInitUnknownUser() {
 
@@ -512,6 +522,10 @@ class OcsTest {
             assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
         }
     }
+
+    /**
+     * Test CCR with Requested-Service-Units for a Rating-Group only ( no Service-Identifier set )
+     */
 
     @Test
     fun creditControlRequestInitNoServiceId() {
@@ -552,6 +566,352 @@ class OcsTest {
         }
     }
 
+
+    /**
+     * This test CCR-I without any Requested-Service-Units
+     */
+
+    @Test
+    fun creditControlRequestInitNoRSU() {
+
+        val email = "ocs-${randomInt()}@test.com"
+        createCustomer(name = "Test OCS User", email = email)
+
+        val msisdn = createSubscription(email = email)
+
+        val session = testClient.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
+        val request = testClient.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session
+        ) ?: fail("Failed to create request")
+
+        TestHelper.createInitRequest(request.avps, msisdn)
+
+        testClient.sendNextRequest(request, session)
+
+        waitForAnswer(session.sessionId)
+
+        run {
+            val result = testClient.getAnswer(session.sessionId)
+            assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+            val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
+            assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
+            assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
+            assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+            val resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
+            assertNull(resultMSCC, "There should not be any MSCC if there is no MSCC in the CCR")
+        }
+    }
+
+    /**
+     * This test CCR-I without any Requested-Service-Units
+     */
+
+    @Test
+    fun creditControlRequestInitNoRsuUnknownUser() {
+
+        val session = testClient.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
+        val request = testClient.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session
+        ) ?: fail("Failed to create request")
+
+        TestHelper.createInitRequest(request.avps, "1337")
+
+        testClient.sendNextRequest(request, session)
+
+        waitForAnswer(session.sessionId)
+
+        run {
+            val result = testClient.getAnswer(session.sessionId)
+            assertEquals(DIAMETER_USER_UNKNOWN, result?.resultCode)
+            val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
+            assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
+            assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
+            assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+            val resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
+            assertNull(resultMSCC, "There should not be any MSCC if there is no MSCC in the CCR")
+        }
+    }
+
+
+    /**
+     * Test with:
+     *     CCR-I that has no MSCC or Requested-Service-Units.
+     *     CCR-U with MSCC and Requested-Service-Units.
+     *     The user should not have any balance, so we should se DIAMETER_CREDIT_LIMIT_REACHED
+     */
+    @Test
+    fun creditControlRequestInitNoRsuUpdateWithRsuNoBalance() {
+
+        val email = "ocs-${randomInt()}@test.com"
+        createCustomer(name = "Test OCS User", email = email)
+
+        val msisdn = createSubscription(email = email)
+
+        val session = testClient.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
+        val initRequest = testClient.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session
+        ) ?: fail("Failed to create request")
+
+        val ratingGroup = 10
+        val serviceIdentifier = -1
+
+        // Authenticate
+        TestHelper.createInitRequest(initRequest.avps, msisdn)
+
+        testClient.sendNextRequest(initRequest, session)
+
+        waitForAnswer(session.sessionId)
+
+        run {
+            val result = testClient.getAnswer(session.sessionId)
+            assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+            val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
+            assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
+            assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
+            assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+            val resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
+            assertNull(resultMSCC, "There should not be any MSCC if there is no MSCC in the CCR")
+        }
+
+
+        // Use up all quota
+        val updateRequest = testClient.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session
+        ) ?: fail("Failed to create request")
+
+        TestHelper.createUpdateRequest(updateRequest.avps, msisdn, INITIAL_BALANCE + BUCKET_SIZE, 0L, ratingGroup, serviceIdentifier, ReportingReason.QUOTA_EXHAUSTED)
+
+        testClient.sendNextRequest(updateRequest, session)
+
+        waitForAnswer(session.sessionId)
+
+        // First bucket request should reserve at least the default bucket balance
+        run {
+            val result = testClient.getAnswer(session.sessionId)
+            assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+            val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
+            assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
+            assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
+            assertEquals(RequestType.UPDATE_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+            val resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
+            assertEquals(DIAMETER_SUCCESS, resultMSCC.grouped.getAvp(Avp.RESULT_CODE).integer32.toLong())
+            assertEquals(ratingGroup.toLong(), resultMSCC.grouped.getAvp(Avp.RATING_GROUP).integer32.toLong())
+            val granted = resultMSCC.grouped.getAvp(Avp.GRANTED_SERVICE_UNIT)
+            assertEquals(INITIAL_BALANCE, granted.grouped.getAvp(Avp.CC_TOTAL_OCTETS).unsigned64)
+        }
+
+        val updateRequest2 = testClient.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session
+        ) ?: fail("Failed to create request")
+
+        TestHelper.createUpdateRequest(updateRequest2.avps, msisdn, INITIAL_BALANCE, INITIAL_BALANCE, ratingGroup, serviceIdentifier, ReportingReason.QUOTA_EXHAUSTED)
+
+        testClient.sendNextRequest(updateRequest2, session)
+
+        waitForAnswer(session.sessionId)
+
+        run {
+            val result = testClient.getAnswer(session.sessionId)
+            assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+            val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
+            assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
+            assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
+            assertEquals(RequestType.UPDATE_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+            val resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
+            assertEquals(ratingGroup.toLong(), resultMSCC.grouped.getAvp(Avp.RATING_GROUP).integer32.toLong())
+            assertEquals(DIAMETER_CREDIT_LIMIT_REACHED, resultMSCC.grouped.getAvp(Avp.RESULT_CODE).integer32.toLong())
+        }
+
+        // Simulate UE disconnect by P-GW sending CCR-Terminate
+        val terminateRequest = testClient.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session
+        ) ?: fail("Failed to create request")
+        TestHelper.createTerminateRequest(terminateRequest.avps, msisdn)
+
+        testClient.sendNextRequest(terminateRequest, session)
+
+        waitForAnswer(session.sessionId)
+
+        run {
+            val result = testClient.getAnswer(session.sessionId)
+            assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+            val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
+            assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
+            assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
+            assertEquals(RequestType.TERMINATION_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+        }
+
+
+        // Now restart again to get denied on first bucket request
+        val session2 = testClient.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
+
+        val initRequest2 = testClient.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session2
+        ) ?: fail("Failed to create request")
+
+
+        TestHelper.createInitRequest(initRequest2.avps, msisdn)
+
+        testClient.sendNextRequest(initRequest2, session2)
+
+        waitForAnswer(session2.sessionId)
+
+        run {
+            val result = testClient.getAnswer(session2.sessionId)
+            assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+            val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
+            assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
+            assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
+            assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+            val resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
+            assertNull(resultMSCC, "There should not be any MSCC if there is no MSCC in the CCR")
+        }
+
+        // First Update Request with Requested-Service-Units ( no Used-Service-Units ), this should now be denied
+        val updateRequest3 = testClient.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session2
+        )
+
+        TestHelper.createUpdateRequest(updateRequest3!!.avps, msisdn, 0L, -1L, ratingGroup, serviceIdentifier, ReportingReason.QUOTA_EXHAUSTED)
+
+        testClient.sendNextRequest(updateRequest3, session2)
+
+        waitForAnswer(session2.sessionId)
+
+        run {
+            val result = testClient.getAnswer(session2.sessionId)
+            assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+            val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
+            assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
+            assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
+            assertEquals(RequestType.UPDATE_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+            val resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
+            assertEquals(DIAMETER_CREDIT_LIMIT_REACHED, resultMSCC.grouped.getAvp(Avp.RESULT_CODE).integer32.toLong())
+            assertEquals(ratingGroup.toLong(), resultMSCC.grouped.getAvp(Avp.RATING_GROUP).integer32.toLong())
+            val granted = resultMSCC.grouped.getAvp(Avp.GRANTED_SERVICE_UNIT)
+            assertEquals(0L, granted.grouped.getAvp(Avp.CC_TOTAL_OCTETS).unsigned64)
+        }
+    }
+
+    /**
+     * This test will check that we can handle CCR-U requests that also report CC-Time and CC-Service-Specific-Units
+     * in separate Used-Service-Units in the MSCC
+     */
+
+    @Test
+    fun creditControlRequestInitUpdateCCTime() {
+        val email = "ocs-${randomInt()}@test.com"
+        createCustomer(name = "Test OCS User", email = email)
+
+        val msisdn = createSubscription(email = email)
+
+        val ratingGroup = 10
+        val serviceIdentifier = -1
+
+        val session = testClient.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
+        val initRequest = testClient.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session
+        ) ?: fail("Failed to create request")
+
+        // CCR-I is without any Requested-Service-Unints
+        TestHelper.createInitRequest(initRequest.avps, msisdn)
+
+        testClient.sendNextRequest(initRequest, session)
+
+        waitForAnswer(session.sessionId)
+
+        run {
+            val result = testClient.getAnswer(session.sessionId)
+            assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+            val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
+            assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
+            assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
+            assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+            val resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
+            assertNull(resultMSCC, "There should not be any MSCC if there is no MSCC in the CCR")
+        }
+
+
+        // First Update Request with Requested-Service-Units ( no Used-Service-Units )
+        val updateRequest1 = testClient.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session
+        )
+
+        TestHelper.createUpdateRequest(updateRequest1!!.avps, msisdn, 0L, 0L, ratingGroup, serviceIdentifier, 725L, 1L)
+
+        testClient.sendNextRequest(updateRequest1, session)
+
+        waitForAnswer(session.sessionId)
+
+        run {
+            val result = testClient.getAnswer(session.sessionId)
+            assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+            val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
+            assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
+            assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
+            assertEquals(RequestType.UPDATE_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+            val resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
+            assertEquals(DIAMETER_SUCCESS, resultMSCC.grouped.getAvp(Avp.RESULT_CODE).integer32.toLong())
+            assertEquals(ratingGroup.toLong(), resultMSCC.grouped.getAvp(Avp.RATING_GROUP).integer32.toLong())
+            val granted = resultMSCC.grouped.getAvp(Avp.GRANTED_SERVICE_UNIT)
+            assertEquals(DEFAULT_REQUESTED_SERVICE_UNIT, granted.grouped.getAvp(Avp.CC_TOTAL_OCTETS).unsigned64)
+        }
+
+
+        // Second Update Request with Requested-Service-Units and Used-Service-Units
+        val updateRequest2 = testClient.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session
+        )
+
+        TestHelper.createUpdateRequest(updateRequest2!!.avps, msisdn, 0L, DEFAULT_REQUESTED_SERVICE_UNIT, ratingGroup, serviceIdentifier, 725L, 1L)
+
+        testClient.sendNextRequest(updateRequest2, session)
+
+        waitForAnswer(session.sessionId)
+
+        run {
+            val result = testClient.getAnswer(session.sessionId)
+            assertEquals(DIAMETER_SUCCESS, result?.resultCode)
+            val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
+            assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
+            assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
+            assertEquals(RequestType.UPDATE_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+            val resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
+            assertEquals(DIAMETER_SUCCESS, resultMSCC.grouped.getAvp(Avp.RESULT_CODE).integer32.toLong())
+            assertEquals(ratingGroup.toLong(), resultMSCC.grouped.getAvp(Avp.RATING_GROUP).integer32.toLong())
+            val granted = resultMSCC.grouped.getAvp(Avp.GRANTED_SERVICE_UNIT)
+            assertEquals(DEFAULT_REQUESTED_SERVICE_UNIT, granted.grouped.getAvp(Avp.CC_TOTAL_OCTETS).unsigned64)
+        }
+
+    }
+
+    /**
+     * Test that the default bucket size is used by the OCS when the CCR only contain
+     * Requested-Service-Unit without specified value.
+     */
+
     @Test
     fun creditControlRequestInitUpdateAndTerminateNoRequestedServiceUnit() {
 
@@ -588,6 +948,9 @@ class OcsTest {
     }
 
 
+    /**
+     * Test that the OCS will handle CCR-U that does not contain any Requested-Service-Units only Used-Service-Units
+     */
 
     @Test
     fun simpleCreditControlRequestInitUpdateNoRSU() {
@@ -611,7 +974,7 @@ class OcsTest {
                 session
         )
 
-        TestHelper.createUpdateRequest(request!!.avps, msisdn, -1L, DEFAULT_REQUESTED_SERVICE_UNIT, ratingGroup, serviceIdentifier)
+        TestHelper.createUpdateRequest(request!!.avps, msisdn, -1L, DEFAULT_REQUESTED_SERVICE_UNIT, ratingGroup, serviceIdentifier, ReportingReason.QUOTA_EXHAUSTED)
 
         testClient.sendNextRequest(request, session)
 
@@ -622,6 +985,51 @@ class OcsTest {
         val resultAvps = result?.resultAvps ?: fail("Missing AVPs")
         assertEquals(RequestType.UPDATE_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
         assertEquals(86400L, resultAvps.getAvp(Avp.VALIDITY_TIME).integer32.toLong())
+    }
+
+
+    /**
+     * Test that CCR-U with Reporting-Reason QHT ( no new Requested-Service-Unit ) works.
+     */
+
+    @Test
+    fun testNoMsccInCcrU() {
+
+        val email = "ocs-${randomInt()}@test.com"
+        createCustomer(name = "Test OCS User", email = email)
+
+        val msisdn = createSubscription(email = email)
+
+        val ratingGroup = 10
+        val serviceIdentifier = -1
+
+        val session = testClient.createSession(object{}.javaClass.enclosingMethod.name) ?: fail("Failed to create session")
+
+        // This test assume that the default bucket size is set to 4000000L
+        simpleCreditControlRequestInit(session, msisdn,0L, DEFAULT_REQUESTED_SERVICE_UNIT, ratingGroup, serviceIdentifier)
+
+        val updateRequest = testClient.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session
+        )
+
+        TestHelper.createUpdateRequest(updateRequest!!.getAvps(), msisdn, -1L, 500_000L, ratingGroup, serviceIdentifier, ReportingReason.QHT)
+
+        testClient.sendNextRequest(updateRequest, session)
+
+        waitForAnswer(session.getSessionId())
+
+        val result = testClient.getAnswer(session.getSessionId())
+        assertEquals(DIAMETER_SUCCESS, result!!.resultCode!!.toLong())
+        val resultAvps = result.resultAvps
+        assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String())
+        assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String())
+        assertEquals(RequestType.UPDATE_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32().toLong())
+        val resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
+        assertNull(resultMSCC, "No requested MSCC")
+        assertEquals(86400, resultAvps.getAvp(Avp.VALIDITY_TIME).getInteger32().toLong())
+
     }
 
 

@@ -5,6 +5,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.ostelco.diameter.model.ReportingReason;
 import org.ostelco.diameter.model.RequestType;
 import org.ostelco.diameter.test.Result;
 import org.ostelco.diameter.test.TestClient;
@@ -230,7 +231,7 @@ public class OcsHATest {
                 session
         );
 
-        TestHelper.createUpdateRequest(request.getAvps(), MSISDN, 400000L, 500000L, 1, 10);
+        TestHelper.createUpdateRequest(request.getAvps(), MSISDN, 400000L, 500000L, 1, 10, ReportingReason.QUOTA_EXHAUSTED);
 
         testPGW.sendNextRequest(request, session);
 

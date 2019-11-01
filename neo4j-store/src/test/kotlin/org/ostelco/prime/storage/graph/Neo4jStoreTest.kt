@@ -1,6 +1,10 @@
 package org.ostelco.prime.storage.graph
 
+import arrow.core.Either
+import arrow.core.fix
 import arrow.core.right
+import arrow.effects.IO
+import arrow.instances.either.monad.monad
 import com.palantir.docker.compose.DockerComposeRule
 import com.palantir.docker.compose.connection.waiting.HealthChecks
 import kotlinx.coroutines.runBlocking
@@ -14,10 +18,16 @@ import org.neo4j.driver.v1.AccessMode.WRITE
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.appnotifier.AppNotifier
 import org.ostelco.prime.dsl.DSL.job
+import org.ostelco.prime.dsl.forExCustomer
+import org.ostelco.prime.dsl.linkedToExCustomer
+import org.ostelco.prime.dsl.readTransaction
+import org.ostelco.prime.dsl.wasSubscribedBy
+import org.ostelco.prime.dsl.withId
 import org.ostelco.prime.kts.engine.KtsServiceFactory
 import org.ostelco.prime.kts.engine.reader.ClasspathResourceTextReader
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.CustomerRegionStatus.APPROVED
+import org.ostelco.prime.model.CustomerRegionStatus.AVAILABLE
 import org.ostelco.prime.model.CustomerRegionStatus.PENDING
 import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.JumioScanData
@@ -41,6 +51,7 @@ import org.ostelco.prime.model.ScanStatus
 import org.ostelco.prime.model.SimEntry
 import org.ostelco.prime.model.SimProfile
 import org.ostelco.prime.model.SimProfileStatus.AVAILABLE_FOR_DOWNLOAD
+import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.notifications.EmailNotifier
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.InvoiceInfo
@@ -49,9 +60,12 @@ import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.sim.SimManager
 import org.ostelco.prime.storage.NotFoundError
 import org.ostelco.prime.storage.ScanInformationStore
+import org.ostelco.prime.storage.StoreError
+import org.ostelco.prime.storage.graph.model.ExCustomer
 import org.ostelco.prime.storage.graph.model.Segment
 import org.ostelco.prime.tracing.Trace
 import java.time.Instant
+import java.time.LocalDate
 import java.util.*
 import javax.ws.rs.core.MultivaluedHashMap
 import javax.ws.rs.core.MultivaluedMap
@@ -116,7 +130,7 @@ class Neo4jStoreTest {
                 )
             }
             create {
-                Segment(id = getSegmentNameFromCountryCode(REGION))
+                Segment(id = "country-${REGION.toLowerCase()}")
             }
         }
     }
@@ -149,9 +163,10 @@ class Neo4jStoreTest {
                 referredBy = null)
                 .mapLeft { fail(it.message) }
 
-        Neo4jStoreSingleton.getIdentityForContactEmail(contactEmail = EMAIL).bimap(
+        Neo4jStoreSingleton.getIdentitiesFor(queryString = EMAIL).bimap(
                 { fail(it.message) },
-                { identity: Identity ->
+                { list->
+                    val identity: Identity  = list.first()
                     Neo4jStoreSingleton.getCustomer(identity).bimap(
                             { fail(it.message) },
                             { assertEquals(CUSTOMER, it) })})
@@ -166,9 +181,10 @@ class Neo4jStoreTest {
                 referredBy = null)
                 .mapLeft { fail(it.message) }
 
-        Neo4jStoreSingleton.getIdentityForContactEmail(contactEmail = EMAIL).bimap(
+        Neo4jStoreSingleton.getIdentitiesFor(queryString = EMAIL).bimap(
                 { fail(it.message) },
-                { identity: Identity ->
+                { list ->
+                    val identity: Identity = list.first()
                     assertEquals("EMAIL", identity.type)
                     assertEquals(EMAIL, identity.id)
                     assertEquals(IDENTITY.provider, identity.provider)
@@ -231,10 +247,10 @@ class Neo4jStoreTest {
         val chargeId = UUID.randomUUID().toString()
 
         // mock
-        Mockito.`when`(mockPaymentProcessor.getPaymentProfile(customerId = CUSTOMER.id))
+        `when`(mockPaymentProcessor.getPaymentProfile(customerId = CUSTOMER.id))
                 .thenReturn(ProfileInfo(EMAIL).right())
 
-        Mockito.`when`(mockPaymentProcessor.createInvoice(
+        `when`(mockPaymentProcessor.createInvoice(
                 customerId = CUSTOMER.id,
                 amount = 24900,
                 currency = "NOK",
@@ -243,7 +259,7 @@ class Neo4jStoreTest {
                 sourceId = null)
         ).thenReturn(InvoiceInfo(invoiceId).right())
 
-        Mockito.`when`(mockPaymentProcessor.payInvoice(
+        `when`(mockPaymentProcessor.payInvoice(
                 invoiceId = invoiceId)
         ).thenReturn(InvoicePaymentInfo(invoiceId, chargeId).right())
 
@@ -255,7 +271,7 @@ class Neo4jStoreTest {
 
         val offer = Offer(
                 id = "NEW_OFFER",
-                segments = listOf(getSegmentNameFromCountryCode(REGION)),
+                segments = listOf("country-${REGION.toLowerCase()}"),
                 products = listOf(sku))
 
         Neo4jStoreSingleton.createOffer(offer)
@@ -270,7 +286,7 @@ class Neo4jStoreTest {
                 .mapLeft { fail(it.message) }
 
         Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 status = APPROVED,
                 regionCode = REGION_CODE)
 
@@ -343,9 +359,10 @@ class Neo4jStoreTest {
 
     @Test
     fun `set and get Purchase record`() {
-        assert(Neo4jStoreSingleton.addCustomer(
+        Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
-                customer = CUSTOMER).isRight())
+                customer = CUSTOMER)
+                .mapLeft { fail(it.message) }
 
         val product = createProduct("1GB_249NOK")
         val now = Instant.now().toEpochMilli()
@@ -370,9 +387,10 @@ class Neo4jStoreTest {
 
     @Test
     fun `create products, offer, segment and then get products for a customer`() {
-        assert(Neo4jStoreSingleton.addCustomer(
+        Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
-                customer = CUSTOMER).isRight())
+                customer = CUSTOMER)
+                .mapLeft { fail(it.message) }
 
         // prep
         job {
@@ -474,9 +492,10 @@ class Neo4jStoreTest {
             create { Region(REGION_CODE, "Norway") }
         }.mapLeft { fail(it.message) }
 
-        assert(Neo4jStoreSingleton.addCustomer(
+        Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
-                customer = CUSTOMER).isRight())
+                customer = CUSTOMER)
+                .mapLeft { fail(it.message) }
 
         // test
         Neo4jStoreSingleton.createNewJumioKycScanId(identity = IDENTITY, regionCode = REGION_CODE).map {
@@ -496,9 +515,10 @@ class Neo4jStoreTest {
             create { Region(REGION_CODE, "Norway") }
         }.mapLeft { fail(it.message) }
 
-        assert(Neo4jStoreSingleton.addCustomer(
+        Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
-                customer = CUSTOMER).isRight())
+                customer = CUSTOMER)
+                .mapLeft { fail(it.message) }
 
         // test
         Neo4jStoreSingleton.createNewJumioKycScanId(identity = IDENTITY, regionCode = REGION_CODE).map { newScan ->
@@ -520,9 +540,10 @@ class Neo4jStoreTest {
             create { Region(REGION_CODE, "Norway") }
         }.mapLeft { fail(it.message) }
 
-        assert(Neo4jStoreSingleton.addCustomer(
+        Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
-                customer = CUSTOMER).isRight())
+                customer = CUSTOMER)
+                .mapLeft { fail(it.message) }
 
         Neo4jStoreSingleton.createNewJumioKycScanId(identity = IDENTITY, regionCode = REGION_CODE).map {
             val newScanInformation = ScanInformation(
@@ -549,7 +570,7 @@ class Neo4jStoreTest {
             vendorData.add(JumioScanData.SCAN_IMAGE.s, imgUrl)
             vendorData.add(JumioScanData.SCAN_IMAGE_BACKSIDE.s, imgUrl2)
 
-            Mockito.`when`(mockScanInformationStore.upsertVendorScanInformation(customerId = CUSTOMER.id, countryCode = REGION, vendorData = vendorData))
+            `when`(mockScanInformationStore.upsertVendorScanInformation(customerId = CUSTOMER.id, countryCode = REGION, vendorData = vendorData))
                     .thenReturn(Unit.right())
 
             Neo4jStoreSingleton.updateScanInformation(newScanInformation, vendorData).mapLeft {
@@ -568,9 +589,10 @@ class Neo4jStoreTest {
             create { Region(REGION_CODE, "Norway") }
         }.mapLeft { fail(it.message) }
 
-        assert(Neo4jStoreSingleton.addCustomer(
+        Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
-                customer = CUSTOMER).isRight())
+                customer = CUSTOMER)
+                .mapLeft { fail(it.message) }
 
         // test
         Neo4jStoreSingleton.createNewJumioKycScanId(identity = IDENTITY, regionCode = REGION_CODE).map {
@@ -615,12 +637,14 @@ class Neo4jStoreTest {
 
         val fakeEmail = "fake-$EMAIL"
         val fakeIdentity = Identity(id = fakeEmail, type = "EMAIL", provider = "email")
-        assert(Neo4jStoreSingleton.addCustomer(
+        Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
-                customer = CUSTOMER).isRight())
-        assert(Neo4jStoreSingleton.addCustomer(
+                customer = CUSTOMER)
+                .mapLeft { fail(it.message) }
+        Neo4jStoreSingleton.addCustomer(
                 identity = fakeIdentity,
-                customer = Customer(contactEmail = fakeEmail, nickname = NAME)).isRight())
+                customer = Customer(contactEmail = fakeEmail, nickname = NAME))
+                .mapLeft { fail(it.message) }
 
         // test
         Neo4jStoreSingleton.createNewJumioKycScanId(fakeIdentity, REGION_CODE).mapLeft {
@@ -646,19 +670,21 @@ class Neo4jStoreTest {
             create { Region(REGION_CODE, "Norway") }
         }.mapLeft { fail(it.message) }
 
-        assert(Neo4jStoreSingleton.addCustomer(
+        Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
-                customer = CUSTOMER).isRight())
+                customer = CUSTOMER)
+                .mapLeft { fail(it.message) }
 
-        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+        Neo4jStoreSingleton.createCustomerRegionSetting(
+                customer = CUSTOMER,
                 status = APPROVED,
-                regionCode = REGION_CODE).isRight())
+                regionCode = REGION_CODE)
+                .mapLeft { fail(it.message) }
 
-        Mockito.`when`(mockSimManager.allocateNextEsimProfile("Loltel", "default"))
+        `when`(mockSimManager.allocateNextEsimProfile("Loltel", "default"))
                 .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList(), status = AVAILABLE_FOR_DOWNLOAD).right())
 
-        Mockito.`when`(mockSimManager.getSimProfile("Loltel", "iccId"))
+        `when`(mockSimManager.getSimProfile("Loltel", "iccId"))
                 .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList(), status = AVAILABLE_FOR_DOWNLOAD).right())
 
         // test
@@ -699,15 +725,20 @@ class Neo4jStoreTest {
             create { Region(REGION_CODE, "Norway") }
         }.mapLeft { fail(it.message) }
 
-        assert(Neo4jStoreSingleton.addCustomer(
+        Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
-                customer = CUSTOMER).isRight())
+                customer = CUSTOMER)
+                .mapLeft { fail(it.message) }
 
         // test
         Neo4jStoreSingleton.getAllRegionDetails(identity = IDENTITY)
                 .bimap(
-                        { fail("Failed to fetch regions empty list") },
-                        { assert(it.isEmpty()) { "Regions list should be empty" } })
+                        { fail("Failed to fetch regions list") },
+                        {
+                            for (region in it) {
+                                assert(region.status == AVAILABLE) { "All regions should be marked available" }
+                            }
+                        })
     }
 
     @Test
@@ -717,9 +748,10 @@ class Neo4jStoreTest {
             create { Region(REGION_CODE, "Norway") }
         }.mapLeft { fail(it.message) }
 
-        assert(Neo4jStoreSingleton.addCustomer(
+        Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
-                customer = CUSTOMER).isRight())
+                customer = CUSTOMER)
+                .mapLeft { fail(it.message) }
 
         // test
         Neo4jStoreSingleton.getRegionDetails(identity = IDENTITY, regionCode = REGION_CODE)
@@ -740,18 +772,21 @@ class Neo4jStoreTest {
             create { Region("sg", "Singapore") }
         }.mapLeft { fail(it.message) }
 
-        assert(Neo4jStoreSingleton.addCustomer(
+        Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
-                customer = CUSTOMER).isRight())
+                customer = CUSTOMER)
+                .mapLeft { fail(it.message) }
 
-        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+        Neo4jStoreSingleton.createCustomerRegionSetting(
+                customer = CUSTOMER,
                 status = APPROVED,
-                regionCode = "no").isRight())
-        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+                regionCode = "no")
+                .mapLeft { fail(it.message) }
+        Neo4jStoreSingleton.createCustomerRegionSetting(
+                customer = CUSTOMER,
                 status = PENDING,
-                regionCode = "sg").isRight())
+                regionCode = "sg")
+                .mapLeft { fail(it.message) }
 
         // test
         Neo4jStoreSingleton.getAllRegionDetails(identity = IDENTITY)
@@ -784,18 +819,22 @@ class Neo4jStoreTest {
             create { Region("sg", "Singapore") }
         }.mapLeft { fail(it.message) }
 
-        assert(Neo4jStoreSingleton.addCustomer(
+        Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
-                customer = CUSTOMER).isRight())
+                customer = CUSTOMER)
+                .mapLeft { fail(it.message) }
 
-        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+        Neo4jStoreSingleton.createCustomerRegionSetting(
+                customer = CUSTOMER,
                 status = APPROVED,
-                regionCode = "no").isRight())
-        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+                regionCode = "no")
+                .mapLeft { fail(it.message) }
+
+        Neo4jStoreSingleton.createCustomerRegionSetting(
+                customer = CUSTOMER,
                 status = PENDING,
-                regionCode = "sg").isRight())
+                regionCode = "sg")
+                .mapLeft { fail(it.message) }
 
         // test
         Neo4jStoreSingleton.getRegionDetails(identity = IDENTITY, regionCode = REGION_CODE)
@@ -823,29 +862,34 @@ class Neo4jStoreTest {
             create { Region("sg", "Singapore") }
         }.mapLeft { fail(it.message) }
 
-        assert(Neo4jStoreSingleton.addCustomer(
+        Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
-                customer = CUSTOMER).isRight())
+                customer = CUSTOMER)
+                .mapLeft { fail(it.message) }
 
-        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+        Neo4jStoreSingleton.createCustomerRegionSetting(
+                customer = CUSTOMER,
                 status = APPROVED,
-                regionCode = "no").isRight())
-        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+                regionCode = "no")
+                .mapLeft { fail(it.message) }
+
+        Neo4jStoreSingleton.createCustomerRegionSetting(
+                customer = CUSTOMER,
                 status = PENDING,
-                regionCode = "sg").isRight())
+                regionCode = "sg")
+                .mapLeft { fail(it.message) }
 
-        Mockito.`when`(mockSimManager.allocateNextEsimProfile("Loltel", "default"))
+        `when`(mockSimManager.allocateNextEsimProfile("Loltel", "default"))
                 .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList(), status = AVAILABLE_FOR_DOWNLOAD).right())
 
-        Mockito.`when`(mockSimManager.getSimProfile("Loltel", "iccId"))
+        `when`(mockSimManager.getSimProfile("Loltel", "iccId"))
                 .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList(), status = AVAILABLE_FOR_DOWNLOAD).right())
 
-        assert(Neo4jStoreSingleton.provisionSimProfile(
+        Neo4jStoreSingleton.provisionSimProfile(
                 identity = IDENTITY,
                 regionCode = REGION_CODE,
-                profileType = "default").isRight())
+                profileType = "default")
+                .mapLeft { fail(it.message) }
 
         // test
         Neo4jStoreSingleton.getAllRegionDetails(identity = IDENTITY)
@@ -887,29 +931,33 @@ class Neo4jStoreTest {
             create { Region("sg", "Singapore") }
         }.mapLeft { fail(it.message) }
 
-        assert(Neo4jStoreSingleton.addCustomer(
+        Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
-                customer = CUSTOMER).isRight())
+                customer = CUSTOMER)
+                .mapLeft { fail(it.message) }
 
-        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+        Neo4jStoreSingleton.createCustomerRegionSetting(
+                customer = CUSTOMER,
                 status = APPROVED,
-                regionCode = "no").isRight())
-        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
-                customerId = CUSTOMER.id,
+                regionCode = "no")
+                .mapLeft { fail(it.message) }
+        Neo4jStoreSingleton.createCustomerRegionSetting(
+                customer = CUSTOMER,
                 status = PENDING,
-                regionCode = "sg").isRight())
+                regionCode = "sg")
+                .mapLeft { fail(it.message) }
 
-        Mockito.`when`(mockSimManager.allocateNextEsimProfile("Loltel", "default"))
+        `when`(mockSimManager.allocateNextEsimProfile("Loltel", "default"))
                 .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList(), status = AVAILABLE_FOR_DOWNLOAD).right())
 
-        Mockito.`when`(mockSimManager.getSimProfile("Loltel", "iccId"))
+        `when`(mockSimManager.getSimProfile("Loltel", "iccId"))
                 .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList(), status = AVAILABLE_FOR_DOWNLOAD).right())
 
-        assert(Neo4jStoreSingleton.provisionSimProfile(
+        Neo4jStoreSingleton.provisionSimProfile(
                 identity = IDENTITY,
                 regionCode = REGION_CODE,
-                profileType = "default").isRight())
+                profileType = "default")
+                .mapLeft { fail(it.message) }
 
         // test
         Neo4jStoreSingleton.getRegionDetails(identity = IDENTITY, regionCode = REGION_CODE)
@@ -937,13 +985,13 @@ class Neo4jStoreTest {
             create { Region("sg", "Singapore") }
         }.mapLeft { fail(it.message) }
 
-        /* Note: (kmm) For 'sg' the first segment offered is always a plan. */
-        Neo4jStoreSingleton.createSegment(org.ostelco.prime.model.Segment(id = getPlanSegmentNameFromCountryCode("sg")))
+        Neo4jStoreSingleton.createSegment(org.ostelco.prime.model.Segment(id = "country-sg"))
                 .mapLeft { fail(it.message) }
 
-        assert(Neo4jStoreSingleton.addCustomer(
+        Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
-                customer = CUSTOMER).isRight())
+                customer = CUSTOMER)
+                .mapLeft { fail(it.message) }
 
         Neo4jStoreSingleton.getRegionDetails(
                 identity = IDENTITY,
@@ -953,7 +1001,7 @@ class Neo4jStoreTest {
                 }
 
         Neo4jStoreSingleton.setKycStatus(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 regionCode = "sg",
                 kycType = MY_INFO)
                 .mapLeft { fail(it.message) }
@@ -968,7 +1016,7 @@ class Neo4jStoreTest {
                 })
 
         Neo4jStoreSingleton.setKycStatus(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 regionCode = "sg",
                 kycType = ADDRESS)
                 .mapLeft { fail(it.message) }
@@ -986,16 +1034,16 @@ class Neo4jStoreTest {
     @Test
     fun `test NRIC_FIN JUMIO and ADDRESS_PHONE status`() {
 
-        /* Note: (kmm) For 'sg' the first segment offered is always a plan. */
-        Neo4jStoreSingleton.createSegment(org.ostelco.prime.model.Segment(id = getPlanSegmentNameFromCountryCode("sg")))
+        Neo4jStoreSingleton.createSegment(org.ostelco.prime.model.Segment(id = "country-sg"))
 
         job {
             create { Region("sg", "Singapore") }
         }.mapLeft { fail(it.message) }
 
-        assert(Neo4jStoreSingleton.addCustomer(
+        Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
-                customer = CUSTOMER).isRight())
+                customer = CUSTOMER)
+                .mapLeft { fail(it.message) }
 
         Neo4jStoreSingleton.getRegionDetails(
                 identity = IDENTITY,
@@ -1005,9 +1053,12 @@ class Neo4jStoreTest {
                 }
 
         Neo4jStoreSingleton.setKycStatus(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 regionCode = "sg",
                 kycType = NRIC_FIN)
+                .mapLeft {
+                    fail(it.message)
+                }
 
         Neo4jStoreSingleton.getRegionDetails(
                 identity = IDENTITY,
@@ -1019,9 +1070,12 @@ class Neo4jStoreTest {
                 })
 
         Neo4jStoreSingleton.setKycStatus(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 regionCode = "sg",
                 kycType = JUMIO)
+                .mapLeft {
+                    fail(it.message)
+                }
 
         Neo4jStoreSingleton.getRegionDetails(
                 identity = IDENTITY,
@@ -1033,9 +1087,12 @@ class Neo4jStoreTest {
                 })
 
         Neo4jStoreSingleton.setKycStatus(
-                customerId = CUSTOMER.id,
+                customer = CUSTOMER,
                 regionCode = "sg",
                 kycType = ADDRESS)
+                .mapLeft {
+                    fail(it.message)
+                }
 
         Neo4jStoreSingleton.getRegionDetails(
                 identity = IDENTITY,
@@ -1045,6 +1102,86 @@ class Neo4jStoreTest {
                 }, {
                     assertEquals(APPROVED, it.status)
                 })
+    }
+
+    @Test
+    fun `test delete customer`() {
+
+        // setup
+        job {
+            create { Region("sg", "Singapore") }
+            create { Segment(id = "country-sg") }
+        }.mapLeft { fail(it.message) }
+
+        IO {
+            Either.monad<StoreError>().binding {
+
+                Neo4jStoreSingleton.addCustomer(
+                        identity = IDENTITY,
+                        customer = CUSTOMER).bind()
+
+                Neo4jStoreSingleton.approveRegionForCustomer(
+                        customerId = CUSTOMER.id,
+                        regionCode = "sg")
+                        .bind()
+
+                Neo4jStoreSingleton.addSubscription(
+                        identity = IDENTITY,
+                        regionCode = "sg",
+                        iccId = ICC_ID,
+                        alias = ALIAS,
+                        msisdn = MSISDN)
+                        .mapLeft { fail(it.message) }
+                        .bind()
+
+                // test
+                Neo4jStoreSingleton.removeCustomer(identity = IDENTITY).bind()
+            }.fix()
+        }.unsafeRunSync()
+                .mapLeft { fail(it.message) }
+
+        // asserts
+        readTransaction {
+            IO {
+                Either.monad<StoreError>().binding {
+
+                    val exCustomer = get(ExCustomer withId CUSTOMER.id).bind()
+                    assertEquals(
+                            expected = ExCustomer(id = CUSTOMER.id, terminationDate = "%d-%02d-%02d".format(LocalDate.now().year, LocalDate.now().monthValue, LocalDate.now().dayOfMonth)),
+                            actual = exCustomer,
+                            message = "ExCustomer does not match")
+
+                    val simProfiles = get(org.ostelco.prime.storage.graph.model.SimProfile forExCustomer (ExCustomer withId CUSTOMER.id)).bind()
+                    assertEquals(expected = 1, actual = simProfiles.size, message = "No SIM profiles found for ExCustomer")
+
+                    val simProfile = simProfiles[0]
+                    assertEquals(
+                            expected = simProfile.iccId,
+                            actual = ICC_ID,
+                            message = "ICC ID of simProfile for ExCustomer do not match")
+
+                    val subscriptions = get(Subscription wasSubscribedBy (ExCustomer withId CUSTOMER.id)).bind()
+                    assertEquals(expected = 1, actual = subscriptions.size, message = "No subscriptions found for ExCustomer")
+
+                    val subscription = subscriptions[0]
+                    assertEquals(
+                            expected = subscription.msisdn,
+                            actual = MSISDN,
+                            message = "MSISDN of subscription for ExCustomer do not match")
+
+                    val regions = get(Region linkedToExCustomer (ExCustomer withId CUSTOMER.id)).bind()
+                    assertEquals(expected = 1, actual = regions.size, message = "No regions found for ExCustomer")
+
+                    val region = regions[0]
+                    assertEquals(
+                            expected = Region("sg", "Singapore"),
+                            actual = region,
+                            message = "Region for ExCustomer do not match")
+
+                }.fix()
+            }.unsafeRunSync()
+                    .mapLeft { fail(it.message) }
+        }
     }
 
     companion object {
@@ -1076,16 +1213,28 @@ class Neo4jStoreTest {
             ConfigRegistry.config = Config(
                     host = "0.0.0.0",
                     protocol = "bolt",
-                    hssNameLookupService = KtsServiceFactory(
-                            serviceInterface = "org.ostelco.prime.storage.graph.HssNameLookupService",
-                            textReader = ClasspathResourceTextReader(
-                                    filename = "/HssNameLookupService.kts"
-                            )
-                    ),
                     onNewCustomerAction = KtsServiceFactory(
                             serviceInterface = "org.ostelco.prime.storage.graph.OnNewCustomerAction",
                             textReader = ClasspathResourceTextReader(
                                     filename = "/OnNewCustomerAction.kts"
+                            )
+                    ),
+                    allowedRegionsService = KtsServiceFactory(
+                            serviceInterface = "org.ostelco.prime.storage.graph.AllowedRegionsService",
+                            textReader = ClasspathResourceTextReader(
+                                    filename = "/AllowedRegionsService.kts"
+                            )
+                    ),
+                    onRegionApprovedAction = KtsServiceFactory(
+                            serviceInterface = "org.ostelco.prime.storage.graph.OnRegionApprovedAction",
+                            textReader = ClasspathResourceTextReader(
+                                    filename = "/OnRegionApprovedAction.kts"
+                            )
+                    ),
+                    hssNameLookupService = KtsServiceFactory(
+                            serviceInterface = "org.ostelco.prime.storage.graph.HssNameLookupService",
+                            textReader = ClasspathResourceTextReader(
+                                    filename = "/HssNameLookupService.kts"
                             )
                     )
             )

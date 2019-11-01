@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Col, Row, Card, CardBody, CardTitle, Button } from 'reactstrap';
+import { Col, Row, Card, CardBody, CardHeader } from 'reactstrap';
 
 import WarningModal from '../Shared/WarningModal';
 import { humanReadableBytes } from '../../helpers';
@@ -39,15 +39,15 @@ class DataUsage extends React.Component {
     }
     return (
       <Card>
+        <CardHeader>Data balance</CardHeader>
         <CardBody>
-          <CardTitle>Data balance</CardTitle>
           <Row >
             <Col xs={6} md={4}>
               {`Remaining ${props.balance}.`}
             </Col>
-            <Col xs={6} md={4}>
+            {/* <Col xs={6} md={4}>
               <Button onClick={this.handleShowModal}>{'Give additional 1 GB'}</Button>
-            </Col>
+            </Col> */}
           </Row>
           <WarningModal
             heading={modalHeading}

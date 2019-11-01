@@ -245,7 +245,7 @@ public class GrpcDataSource implements DataSource {
         if (!isReconnecting()) {
 
             reconnectStreamFuture = executorService.schedule((Callable<Object>) () -> {
-                        LOG.debug("Reconnecting GRPC streams");
+                        LOG.debug("Reconnecting gRPC streams");
                         setupChannel();
                         initCreditControlRequestStream();
                         setupEventConsumer();

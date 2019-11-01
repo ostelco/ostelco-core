@@ -8,34 +8,25 @@
 //     considered technical debt, and the debt can be paid back e.g. by
 //     internalizing the logic into prime.
 
-package main
+package uploadtoprime
 
 import (
 	"flag"
 	"fmt"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/loltelutils"
 	"log"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
-import (
-	. "strconv"
-)
-
-func main() {
-	batch := parseCommandLine()
-	var csvPayload string = generateCsvPayload(batch)
-
-	generatePostingCurlscript(batch.url, csvPayload)
-}
-
-func generatePostingCurlscript(url string, payload string) {
+func GeneratePostingCurlscript(url string, payload string) {
 	fmt.Printf("#!/bin/bash\n")
 
 	fmt.Printf("curl  -H 'Content-Type: text/plain' -X PUT --data-binary @-  %s <<EOF\n", url)
 	fmt.Printf("%s", payload)
-	fmt.Print(("EOF\n"))
+	fmt.Print("EOF\n")
 }
 
 func generateControlDigit(luhnString string) int {
@@ -53,7 +44,7 @@ func calculateChecksum(luhnString string, double bool) int {
 	checksum := 0
 
 	for i := len(source) - 1; i > -1; i-- {
-		t, _ := ParseInt(source[i], 10, 8)
+		t, _ := strconv.ParseInt(source[i], 10, 8)
 		n := int(t)
 
 		if double {
@@ -72,10 +63,10 @@ func calculateChecksum(luhnString string, double bool) int {
 }
 
 func LuhnChecksum(number int) int {
-	return generateControlDigit(Itoa(number))
+	return generateControlDigit(strconv.Itoa(number))
 }
 
-func generateCsvPayload(batch Batch) string {
+func GenerateCsvPayload(batch OutputBatch) string {
 	var sb strings.Builder
 	sb.WriteString("ICCID, IMSI, MSISDN, PIN1, PIN2, PUK1, PUK2, PROFILE\n")
 
@@ -83,7 +74,7 @@ func generateCsvPayload(batch Batch) string {
 
 	var imsi = batch.firstImsi
 	var msisdn = batch.firstMsisdn
-	for i := 0; i <= batch.length; i++ {
+	for i := 0; i < batch.length; i++ {
 
 		iccid := fmt.Sprintf("%d%1d", iccidWithoutLuhnChecksum, LuhnChecksum(iccidWithoutLuhnChecksum))
 		line := fmt.Sprintf("%s, %d, %d,,,,,%s\n", iccid, imsi, msisdn, batch.profileType)
@@ -155,9 +146,9 @@ func checkProfileType(name string, potentialProfileName string) {
 	}
 }
 
-type Batch struct {
+type OutputBatch struct {
 	profileType     string
-	url             string
+	Url             string
 	length          int
 	firstMsisdn     int
 	msisdnIncrement int
@@ -168,32 +159,10 @@ type Batch struct {
 }
 
 func IccidWithoutLuhnChecksum(s string) string {
-	return trimSuffix(s, 1)
+	return loltelutils.TrimSuffix(s, 1)
 }
 
-func trimSuffix(s string, suffixLen int) string {
-	return s[:len(s)-suffixLen]
-}
-
-func Sign(x int) int {
-	if x < 0 {
-		return -1
-	} else if x > 0 {
-		return 1
-	} else {
-		return 0
-	}
-}
-
-// Abs returns the absolute value of x.
-func Abs(x int) int {
-	if x < 0 {
-		return -x
-	}
-	return x
-}
-
-func parseCommandLine() Batch {
+func ParseUploadFileGeneratorCommmandline() OutputBatch {
 
 	//
 	// Set up command line parsing
@@ -209,6 +178,10 @@ func parseCommandLine() Batch {
 	firstMsisdn := flag.String("first-msisdn", "Not a valid MSISDN", "First MSISDN in batch")
 	lastMsisdn := flag.String("last-msisdn", "Not a valid MSISDN", "Last MSISDN in batch")
 	profileType := flag.String("profile-type", "Not a valid sim profile type", "SIM profile type")
+	batchLengthString := flag.String(
+		"batch-quantity",
+		"Not a valid batch-quantity, must be an integer",
+		"Number of sim cards in batch")
 
 	// XXX Legal values are Loltel and M1 at this time, how to configure that
 	//     flexibly?  Eventually by puttig them in a database and consulting it during
@@ -246,6 +219,15 @@ func parseCommandLine() Batch {
 	checkMSISDNSyntax("last-msisdn", *lastMsisdn)
 	checkMSISDNSyntax("first-msisdn", *firstMsisdn)
 
+	batchLength, err := strconv.Atoi(*batchLengthString)
+	if err != nil {
+		log.Fatalf("Not a valid batch quantity string '%s'.\n", *batchLengthString)
+	}
+
+	if batchLength <= 0 {
+		log.Fatalf("OutputBatch quantity must be positive, but was '%d'", batchLength)
+	}
+
 	uploadUrl := fmt.Sprintf("http://%s:%s/ostelco/sim-inventory/%s/import-batch/profilevendor/%s?initialHssState=%s",
 		*uploadHostname, *uploadPortnumber, *hssVendor, *profileVendor, *initialHlrActivationStatusOfProfiles)
 
@@ -253,28 +235,34 @@ func parseCommandLine() Batch {
 	checkProfileType("profile-type", *profileType)
 
 	// Convert to integers, and get lengths
+	msisdnIncrement := -1
+	if *firstMsisdn <= *lastMsisdn {
+		msisdnIncrement = 1
+	}
 
-	log.Println("firstmsisdn =", *firstMsisdn)
-	log.Println("lastmsisdn  =", *lastMsisdn)
+	log.Println("firstmsisdn     = ", *firstMsisdn)
+	log.Println("lastmsisdn      = ", *lastMsisdn)
+	log.Println("msisdnIncrement = ", msisdnIncrement)
 
-	var firstMsisdnInt, _ = Atoi(*firstMsisdn)
-	var lastMsisdnInt, _ = Atoi(*lastMsisdn)
+	var firstMsisdnInt, _ = strconv.Atoi(*firstMsisdn)
+	var lastMsisdnInt, _ = strconv.Atoi(*lastMsisdn)
 	var msisdnLen = lastMsisdnInt - firstMsisdnInt + 1
 	if msisdnLen < 0 {
 		msisdnLen = -msisdnLen
 	}
 
-	var firstImsiInt, _ = Atoi(*firstIMSI)
-	var lastImsiInt, _ = Atoi(*lastIMSI)
+	var firstImsiInt, _ = strconv.Atoi(*firstIMSI)
+	var lastImsiInt, _ = strconv.Atoi(*lastIMSI)
 	var imsiLen = lastImsiInt - firstImsiInt + 1
 
-	var firstIccidInt, _ = Atoi(IccidWithoutLuhnChecksum(*firstIccid))
-	var lastIccidInt, _ = Atoi(IccidWithoutLuhnChecksum(*lastIccid))
+	var firstIccidInt, _ = strconv.Atoi(IccidWithoutLuhnChecksum(*firstIccid))
+	var lastIccidInt, _ = strconv.Atoi(IccidWithoutLuhnChecksum(*lastIccid))
 	var iccidlen = lastIccidInt - firstIccidInt + 1
 
 	// Validate that lengths of sequences are equal in absolute
 	// values.
-	if Abs(msisdnLen) != Abs(iccidlen) || Abs(msisdnLen) != Abs(imsiLen) {
+	// TODO: Perhaps use some varargs trick of some sort here?
+	if loltelutils.Abs(msisdnLen) != loltelutils.Abs(iccidlen) || loltelutils.Abs(msisdnLen) != loltelutils.Abs(imsiLen) || batchLength != loltelutils.Abs(imsiLen) {
 		log.Printf("msisdnLen   = %10d\n", msisdnLen)
 		log.Printf("iccidLen    = %10d\n", iccidlen)
 		log.Printf("imsiLen     = %10d\n", imsiLen)
@@ -287,15 +275,57 @@ func parseCommandLine() Batch {
 	}
 
 	// Return a correctly parsed batch
-	return Batch{
+	return OutputBatch{
 		profileType:     *profileType,
-		url:             uploadUrl,
-		length:          Abs(iccidlen),
+		Url:             uploadUrl,
+		length:          loltelutils.Abs(iccidlen),
 		firstIccid:      firstIccidInt,
-		iccidIncrement:  Sign(iccidlen),
+		iccidIncrement:  loltelutils.Sign(iccidlen),
 		firstImsi:       firstImsiInt,
-		imsiIncrement:   Sign(imsiLen),
+		imsiIncrement:   loltelutils.Sign(imsiLen),
 		firstMsisdn:     firstMsisdnInt,
-		msisdnIncrement: Sign(msisdnLen),
+		msisdnIncrement: msisdnIncrement,
 	}
+}
+
+///
+///    Input batch management
+///
+
+type InputBatch struct {
+	customer    string
+	profileType string
+	orderDate   string
+	batchNo     string
+	quantity    int
+	firstIccid  int
+	firstImsi   int
+}
+
+func ParseInputFileGeneratorCommmandline() InputBatch {
+	// TODO: This function should be rewritten to parse a string array and send it to flags.
+	//       we need to up our Go-Fu before we can make flag.Parse(arguments) work
+
+	return InputBatch{customer: "Footel", profileType: "BAR_FOOTEL_STD", orderDate: "20191007", batchNo: "2019100701", quantity: 10, firstIccid: 894700000000002214, firstImsi: 242017100012213}
+}
+
+func GenerateInputFile(batch InputBatch) string {
+	result := "*HEADER DESCRIPTION\n" +
+		"***************************************\n" +
+		fmt.Sprintf("Customer        :%s\n", batch.customer) +
+		fmt.Sprintf("ProfileType     : %s\n", batch.profileType) +
+		fmt.Sprintf("Order Date      : %s\n", batch.orderDate) +
+		fmt.Sprintf("Batch No        : %s\n", batch.batchNo) +
+		fmt.Sprintf("Quantity        : %d\n", batch.quantity) +
+		"***************************************\n" +
+		"*INPUT VARIABLES\n" +
+		"***************************************\n" +
+		"var_In:\n" +
+		fmt.Sprintf(" ICCID: %d\n", batch.firstIccid) +
+		fmt.Sprintf("IMSI: %d\n", batch.firstImsi) +
+		"***************************************\n" +
+		"*OUTPUT VARIABLES\n" +
+		"***************************************\n" +
+		"var_Out: ICCID/IMSI/KI\n"
+	return result
 }
