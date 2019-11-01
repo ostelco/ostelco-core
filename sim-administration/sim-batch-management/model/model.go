@@ -16,7 +16,8 @@ type OutputBatch struct {
 }
 
 type InputBatch struct {
-	Id          uint64 `db:"id" json:"id"`
+	Id          int64  `db:"id" json:"id"`
+	Name        string `db:"name" json:"name"`
 	Customer    string `db:"customer" json:"customer"`
 	ProfileType string `db:"profileType" json:"profileType"`
 	OrderDate   string `db:"orderDate" json:"orderDate"`

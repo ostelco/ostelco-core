@@ -24,8 +24,8 @@ func TestMain(m *testing.M) {
 }
 
 func setup() {
-	// db, err := sqlx.Open("sqlite3", ":memory:")
-	db, err := sqlx.Open("sqlite3", "foobar.db")
+	db, err := sqlx.Open("sqlite3", ":memory:")
+	// db, err := sqlx.Open("sqlite3", "foobar.db")
 	if err != nil {
 		fmt.Errorf("Didn't manage to open sqlite3 in-memory database. '%s'", err)
 	}
@@ -71,6 +71,7 @@ func TestGenerateInputBatchTable(t *testing.T) {
 	// TODO: Try a CRUD here, spread it out over multiple methods, and our work is done.
 
 	theBatch := model.InputBatch{
+		Name:        "SOME UNIQUE NAME",
 		Customer:    "foo",
 		ProfileType: "banana",
 		OrderDate:   "apple",
@@ -80,7 +81,8 @@ func TestGenerateInputBatchTable(t *testing.T) {
 		FirstImsi:   "123456789012345",
 	}
 
-	insertionResult := sdb.db.MustExec("INSERT INTO INPUT_BATCH (customer, profileType, orderDate, batchNo, quantity, firstIccid, firstImsi) values (?,?,?,?,?,?,?) ",
+	res := sdb.db.MustExec("INSERT INTO INPUT_BATCH (name, customer, profileType, orderDate, batchNo, quantity, firstIccid, firstImsi) values (?,?,?,?,?,?,?,?) ",
+		theBatch.Name,
 		theBatch.Customer,
 		theBatch.ProfileType,
 		theBatch.OrderDate,
@@ -90,9 +92,12 @@ func TestGenerateInputBatchTable(t *testing.T) {
 		theBatch.FirstImsi,
 	)
 
-	fmt.Println("The batch = ", insertionResult)
+	theBatch.Id, err = res.LastInsertId()
+	if err != nil {
+		fmt.Errorf("Getting last inserted id failed '%s'", err)
+	}
 
-	rows, err := sdb.db.Query("select id, customer, profileType, orderDate, batchNo, quantity, firstIccid, firstImsi FROM INPUT_BATCH")
+	rows, err := sdb.db.Query("select id, name, customer, profileType, orderDate, batchNo, quantity, firstIccid, firstImsi FROM INPUT_BATCH")
 	if err != nil {
 		fmt.Errorf("Reading query failed '%s'", err)
 	}
@@ -101,7 +106,8 @@ func TestGenerateInputBatchTable(t *testing.T) {
 
 	noOfRows := 0
 	for rows.Next() {
-		var id uint64
+		var id int64
+		var Name string
 		var Customer string
 		var ProfileType string
 		var OrderDate string
@@ -109,10 +115,11 @@ func TestGenerateInputBatchTable(t *testing.T) {
 		var Quantity int
 		var FirstIccid string
 		var FirstImsi string
-		err = rows.Scan(&id, &Customer, &ProfileType, &OrderDate, &BatchNo, &Quantity, &FirstIccid, &FirstImsi)
+		err = rows.Scan(&id, &Name, &Customer, &ProfileType, &OrderDate, &BatchNo, &Quantity, &FirstIccid, &FirstImsi)
 
 		queryResult := model.InputBatch{
 			Id:          id,
+			Name:        Name,
 			Customer:    Customer,
 			ProfileType: ProfileType,
 			OrderDate:   OrderDate,
@@ -154,6 +161,7 @@ func GenerateInputBatchTable(sdb *SimBatchDB) {
 	defer sdb.mu.Unlock()
 	foo := `CREATE TABLE IF NOT EXISTS INPUT_BATCH (
     id integer primary key autoincrement,
+    name VARCHAR NOT NULL,
 	customer VARCHAR NOT NULL,
 	profileType VARCHAR NOT NULL,
 	orderDate VARCHAR NOT NULL,
