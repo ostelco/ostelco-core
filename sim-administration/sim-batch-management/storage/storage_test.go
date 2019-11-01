@@ -47,9 +47,8 @@ func TestMemoryDbPing(t *testing.T) {
 	}
 }
 
-
 func TestInputBatchRoundtrip(t *testing.T) {
-	GenerateTables(sdb)
+	sdb.GenerateTables()
 
 	theBatch := model.InputBatch{
 		Name:        "SOME UNIQUE NAME",
@@ -133,7 +132,7 @@ func (sdb SimBatchDB) Create(theBatch *model.InputBatch) {
 	}
 }
 
-func (sdb *SimBatchDB) GenerateTables error {
+func (sdb *SimBatchDB) GenerateTables() error {
 	sdb.mu.Lock()
 	defer sdb.mu.Unlock()
 	foo := `CREATE TABLE IF NOT EXISTS INPUT_BATCH (
