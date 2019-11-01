@@ -2,7 +2,6 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Button, Form, FormGroup, Label, Input } from 'reactstrap';
-import _ from 'lodash';
 
 import { notifyActions } from '../../actions/notifiy.actions';
 
@@ -11,7 +10,6 @@ function NotificationEditor(props) {
     e.preventDefault();
     props.sendNotificationToSubscriber(props.title, props.message);
   }
-  const { email } = props;
   return (
     <Form onSubmit={onSubmit}>
       <FormGroup>
@@ -35,20 +33,6 @@ function NotificationEditor(props) {
           placeholder="Enter message"
         />
       </FormGroup>
-      {
-        email && (
-          <FormGroup check>
-            <Label check>
-              <Input
-                type="checkbox" 
-                checked={props.type}
-                onChange={(e) => props.setNotificationType(e.target.checked)}
-              />{' '}
-              Send notification only to {email}
-            </Label>
-            <hr/>
-          </FormGroup>
-      )}
       <Button bsstyle="primary" type="submit">{props.submitLabel}</Button>
     </Form>
   );
@@ -62,12 +46,10 @@ NotificationEditor.propTypes = {
 
 function mapStateToProps(state) {
   let notification = state.notification;
-  const email = _.get(state, 'subscriber.email');
   return {
     message: notification.message,
     title: notification.title,
-    type: notification.type,
-    email
+    type: notification.type
   };
 }
 const mapDispatchToProps = {
