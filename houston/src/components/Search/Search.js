@@ -1,7 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import _ from 'lodash';
 
 import { subscriberActions } from '../../actions/subscriber.actions';
 import SearchForm from './SearchForm';
@@ -16,7 +15,7 @@ class Search extends React.Component {
   }
 
   render() {
-    const hasResults = (this.props.profile && this.props.profile.nickname) || false;
+    const hasResults = (this.props.currentSubscriber.id) || false;
     return (
       <div className="container">
         <AlertMessage />
@@ -36,15 +35,15 @@ class Search extends React.Component {
 Search.propTypes = {
   loggedIn: PropTypes.bool,
   pseudonym: PropTypes.object,
-  profile: PropTypes.object,
+  currentSubscriber: PropTypes.object,
 };
 
 function mapStateToProps(state) {
   const { loggedIn } = state.authentication;
-  const subscriber = _.get(state, 'customer')
+  const { currentSubscriber } = state;
   return {
     loggedIn,
-    profile: subscriber
+    currentSubscriber
   };
 };
 

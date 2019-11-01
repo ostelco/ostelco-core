@@ -19,23 +19,23 @@ const convertToHighlightedText = (text, query) => (
     highlightTag={Highlight}
   />);
 
-const CustomerRow = ({ customer, select, query }) => (
+const SubscriberRow = ({ subscriber, select, query }) => (
   <Card>
     <CardBody>
       <CardText>
-        {convertToHighlightedText(customer.nickname, query)}<br />
-        {convertToHighlightedText(customer.contactEmail, query)}<br />
-        {convertToHighlightedText(customer.id, query)}<br />
+        {convertToHighlightedText(subscriber.nickname, query)}<br />
+        {convertToHighlightedText(subscriber.contactEmail, query)}<br />
+        {convertToHighlightedText(subscriber.id, query)}<br />
         <br />
-        <Button color="primary" onClick={() => select(customer)}>
+        <Button color="primary" onClick={() => select(subscriber)}>
           {'Show details'}
         </Button>
       </CardText>
     </CardBody>
   </Card>);
 
-CustomerRow.propTypes = {
-  customer: PropTypes.shape({
+SubscriberRow.propTypes = {
+  subscriber: PropTypes.shape({
     id: PropTypes.string,
     nickname: PropTypes.string,
     contactEmail: PropTypes.string,
@@ -44,17 +44,17 @@ CustomerRow.propTypes = {
   select: PropTypes.func.isRequired
 };
 
-const CustomerList = props => {
+const SubscriberList = props => {
   let query = localStorage.getItem('searchedEmail');
-  // If customer is set, remove the list.
-  if (props.customer.id || !Array.isArray(props.subscribers)) {
+  // If subscriber is set, remove the list.
+  if (props.currentSubscriber.id || !Array.isArray(props.subscribers)) {
     return null;
   }
 
-  const listItems = props.subscribers.map((customer, index) =>
+  const listItems = props.subscribers.map((subscriber, index) =>
     <div key={index}>
-      <CustomerRow
-        customer={customer}
+      <SubscriberRow
+        subscriber={subscriber}
         query={query}
         select={props.select}
         key={index} />
@@ -69,23 +69,23 @@ const CustomerList = props => {
   );
 }
 
-CustomerList.propTypes = {
+SubscriberList.propTypes = {
   subscribers: PropTypes.oneOfType([
     PropTypes.object,
     PropTypes.array
   ]),
-  customer: PropTypes.object,
+  currentSubscriber: PropTypes.object,
   select: PropTypes.func.isRequired
 };
 
 function mapStateToProps(state) {
-  const { subscribers, customer } = state;
+  const { subscribers, currentSubscriber } = state;
   return {
     subscribers,
-    customer
+    currentSubscriber
   };
 }
 const mapDispatchToProps = {
-  select: subscriberActions.selectCustomer
+  select: subscriberActions.selectCurrentSubscriber
 };
-export default connect(mapStateToProps, mapDispatchToProps)(CustomerList);
+export default connect(mapStateToProps, mapDispatchToProps)(SubscriberList);
