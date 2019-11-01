@@ -90,7 +90,7 @@ func TestGenerateInputBatchTable(t *testing.T) {
 		fmt.Errorf("Reading query failed '%s'", err)
 	}
 
-	assert.Assert(t, rows != nil, "Rows shouldn't be nil")
+	assert.Assert(t, rows != nil, "Rows shouldn't be nil in prepared roundtrip")
 
 	noOfRows := 0
 	for rows.Next() {
