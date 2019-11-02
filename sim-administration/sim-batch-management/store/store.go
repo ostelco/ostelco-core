@@ -44,22 +44,22 @@ func OpenFileSqliteDatabase(path string) (*SimBatchDB, error) {
 
 func (sdb SimBatchDB) GetAllInputBatches() ([]model.Batch, error) {
 	result := []model.Batch{}
-	return result, sdb.Db.Select(&result, "SELECT * from INPUT_BATCH")
+	return result, sdb.Db.Select(&result, "SELECT * from BATCH")
 }
 
 func (sdb SimBatchDB) GetInputBatchById(id int64) (*model.Batch, error) {
 	var result model.Batch
-	return &result, sdb.Db.Get(&result, "select * from INPUT_BATCH where id = ?", id)
+	return &result, sdb.Db.Get(&result, "select * from BATCH where id = ?", id)
 }
 
 func (sdb SimBatchDB) GetInputBatchByName(name string) (*model.Batch, error) {
 	var result model.Batch
-	return &result, sdb.Db.Get(&result, "select * from INPUT_BATCH where name = ?", name)
+	return &result, sdb.Db.Get(&result, "select * from BATCH where name = ?", name)
 }
 
 func (sdb SimBatchDB) Create(theBatch *model.Batch) {
 
-	res := sdb.Db.MustExec("INSERT INTO INPUT_BATCH (name, customer, profileType, orderDate, batchNo, quantity, firstIccid, firstImsi) values (?,?,?,?,?,?,?,?) ",
+	res := sdb.Db.MustExec("INSERT INTO BATCH (name, customer, profileType, orderDate, batchNo, quantity, firstIccid, firstImsi) values (?,?,?,?,?,?,?,?) ",
 		(*theBatch).Name,
 		(*theBatch).Customer,
 		(*theBatch).ProfileType,
@@ -78,7 +78,7 @@ func (sdb SimBatchDB) Create(theBatch *model.Batch) {
 }
 
 func (sdb *SimBatchDB) GenerateTables() error {
-	foo := `CREATE TABLE IF NOT EXISTS INPUT_BATCH (
+	foo := `CREATE TABLE IF NOT EXISTS BATCH (
     id integer primary key autoincrement,
     name VARCHAR NOT NULL UNIQUE,
 	customer VARCHAR NOT NULL,

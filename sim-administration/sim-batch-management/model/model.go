@@ -51,6 +51,20 @@ type OutputFileRecord struct {
 	OutputFileName string
 }
 
+type SimEntry struct {
+	RawIccid             string
+	IccidWithChecksum    string
+	IccidWithoutChecksum string
+	Imsi                 string
+	Ki                   string // XXX Toxic.  Should never be stored persistently!!
+	OutputFileName       string
+}
+
+//
+//  Below this line we grow the final persistence model. Eventually
+//  nothing below this line should be left.
+//
+
 type Batch struct {
 	Id          int64  `db:"id" json:"id"`
 	Name        string `db:"name" json:"name"`
@@ -61,13 +75,4 @@ type Batch struct {
 	Quantity    int    `db:"quantity" json:"quantity"`
 	FirstIccid  string `db:"firstIccid" json:"firstIccid"`
 	FirstImsi   string `db:"firstImsi" json:"firstImsi"`
-}
-
-type SimEntry struct {
-	RawIccid             string
-	IccidWithChecksum    string
-	IccidWithoutChecksum string
-	Imsi                 string
-	Ki                   string // XXX Toxic.  Should never be stored persistently!!
-	OutputFileName       string
 }
