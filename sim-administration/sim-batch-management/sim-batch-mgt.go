@@ -3,6 +3,7 @@ package main
 
 import (
 	"fmt"
+	"gopkg.in/alecthomas/kingpin.v2"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/es2plus"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/outfileconversion"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/uploadtoprime"
@@ -103,7 +104,40 @@ var (
 		"initial-hlr-activation-status-of-profiles",
 		"Initial hss activation state.  Legal values are ACTIVATED and NOT_ACTIVATED.").Default("ACTIVATED").String()
 
+	// TODO ???
 	batch = kingpin.Command("batch", "Utility for persisting and manipulating sim card batches.")
+
+	declareBatch = kingpin.Command("declare-batch", "Declare a batch to be persisted, and used by other commands")
+
+	//
+	// Set up command line parsing
+	//
+	firstIccid = declareBatch.Flag("first-rawIccid",
+		"An 18 or 19 digit long string.  The 19-th digit being a luhn luhnChecksum digit, if present").Required().String()
+	lastIccid = declareBatch.Flag("last-rawIccid",
+		"An 18 or 19 digit long string.  The 19-th digit being a luhn luhnChecksum digit, if present").Required().String()
+	firstIMSI = declareBatch.Flag("first-imsi", "First IMSI in batch").Required().String()
+	lastIMSI = declareBatch.Flag("last-imsi", "Last IMSI in batch").Required().String()
+	firstMsisdn = declareBatch.Flag("first-msisdn", "First MSISDN in batch").Required().String()
+	lastMsisdn = declareBatch.Flag("last-msisdn", "Last MSISDN in batch").Required().String()
+	profileType = declareBatch.Flag("profile-type", "SIM profile type").Required().String()
+	batchLengthString = declareBatch.Flag(
+		"batch-quantity",
+		"Number of sim cards in batch").Required().String()
+
+	hssVendor = declareBatch.Flag("hss-vendor", "The HSS vendor").Default("M1").String()
+	uploadHostname =
+		declareBatch.Flag("upload-hostname", "host to upload batch to").Default("localhost").String()
+	uploadPortnumber =
+		declareBatch.Flag("upload-portnumber", "port to upload to").Default("8080").String()
+
+	profileVendor =
+		declareBatch.Flag("profile-vendor",  "Vendor of SIM profiles").Default("Idemia",).String()
+
+	initialHlrActivationStatusOfProfiles =
+		declareBatch.Flag(
+			"initial-hlr-activation-status-of-profiles",
+			"Initial hss activation state.  Legal values are ACTIVATED and NOT_ACTIVATED.").Default("ACTIVATED").String()
 )
 
 func main() {
@@ -114,7 +148,9 @@ func main() {
 		es2PlusSmoketest(smoketestCertFilePath, smoketestKeyFilePath, smoketestHostport, smoketestRequesterId, smoketestIccidInput)
 	case "sim-profile-upload":
 		outfileconversion.ConvertInputfileToOutputfile(*spUploadInputFile, *spUploadOutputFilePrefix)
-	case "sim-profile-upload":
+	case "declare-batch":
+		fmt.Println("Declare batch")
+	case "prime-batch-upload":
 		// TODO: Combine these two into something inside uploadtoprime.
 		//       It's unecessary to break the batch thingy open in this way.
 		var batch = uploadtoprime.OutputBatchFromCommandLineParameters(

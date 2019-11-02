@@ -322,8 +322,8 @@ func ParseInputFileGeneratorCommmandline() model.InputBatch {
 		OrderDate:   "20191007",
 		BatchNo:     "2019100701",
 		Quantity:    10,
-		FirstIccid:  894700000000002214,
-		FirstImsi:   242017100012213}
+		FirstIccid:  "894700000000002214",
+		FirstImsi:   "242017100012213"}
 }
 
 func GenerateInputFile(batch model.InputBatch) string {
@@ -338,8 +338,8 @@ func GenerateInputFile(batch model.InputBatch) string {
 		"*INPUT VARIABLES\n" +
 		"***************************************\n" +
 		"var_In:\n" +
-		fmt.Sprintf(" ICCID: %d\n", batch.FirstIccid) +
-		fmt.Sprintf("IMSI: %d\n", batch.FirstImsi) +
+		fmt.Sprintf(" ICCID: %s\n", batch.FirstIccid) +
+		fmt.Sprintf("IMSI: %s\n", batch.FirstImsi) +
 		"***************************************\n" +
 		"*OUTPUT VARIABLES\n" +
 		"***************************************\n" +
