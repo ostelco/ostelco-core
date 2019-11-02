@@ -2,6 +2,7 @@ package store
 
 import (
 	"fmt"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/jmoiron/sqlx"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
 	"os"

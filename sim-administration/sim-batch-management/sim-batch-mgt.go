@@ -10,6 +10,7 @@ import (
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/outfileconversion"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/uploadtoprime"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/store"
 	"log"
 	"strconv"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -144,6 +145,13 @@ var (
 
 func main() {
 
+	db, err := store.OpenFileSqliteDatabase("foobar.db")
+	if err != nil {
+		panic(fmt.Sprintf("Couldn't open sqlite database.  '%s'", err))
+	}
+
+	db.GenerateTables()
+
 	cmd := kingpin.Parse()
 	switch cmd {
 	case "es2plus-smoketest":
@@ -153,6 +161,7 @@ func main() {
 	case "declare-batch":
 		fmt.Println("Declare batch")
 		declareThisBatch(
+			db,
 			*dbFirstIccid,
 			*dbLastIccid,
 			*dbFirstIMSI,
@@ -325,6 +334,7 @@ func es2PlusSmoketest(certFilePath *string, keyFilePath *string, hostport *strin
 // XXX Put this into a separate package at some point, "batch_editor" or something
 //     equally descriptive.
 func declareThisBatch(
+	db *store.SimBatchDB,
 	firstIccid string,
 	lastIccid string,
 	firstIMSI string,
@@ -409,6 +419,7 @@ func declareThisBatch(
 	}
 
 	// Return a correctly parsed batch
+	// TODO: Batch name missing!
 	return model.Batch{
 		ProfileType:     profileType,
 		Url:             uploadUrl,
