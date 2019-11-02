@@ -10,7 +10,7 @@ import (
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/outfileconversion"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/uploadtoprime"
-
+	"gopkg.in/alecthomas/kingpin.v2"
 	"log"
 	"strconv"
 )
