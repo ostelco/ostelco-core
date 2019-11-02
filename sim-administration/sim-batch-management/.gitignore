@@ -1,2 +1,3 @@
 *.sh
 es2pluswrapper.sh
+batch-lifecycle-test.sh

@@ -3,10 +3,11 @@ package main
 
 import (
 	"fmt"
-	"gopkg.in/alecthomas/kingpin.v2"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/es2plus"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/outfileconversion"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/uploadtoprime"
+	// Don' lose this!
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
@@ -107,35 +108,35 @@ var (
 	// TODO ???
 	batch = kingpin.Command("batch", "Utility for persisting and manipulating sim card batches.")
 
-	declareBatch = kingpin.Command("declare-batch", "Declare a batch to be persisted, and used by other commands")
+	db = kingpin.Command("declare-batch", "Declare a batch to be persisted, and used by other commands")
 
 	//
 	// Set up command line parsing
 	//
-	firstIccid = declareBatch.Flag("first-rawIccid",
+	dbFirstIccid = db.Flag("first-rawIccid",
 		"An 18 or 19 digit long string.  The 19-th digit being a luhn luhnChecksum digit, if present").Required().String()
-	lastIccid = declareBatch.Flag("last-rawIccid",
+	dbLastIccid = db.Flag("last-rawIccid",
 		"An 18 or 19 digit long string.  The 19-th digit being a luhn luhnChecksum digit, if present").Required().String()
-	firstIMSI = declareBatch.Flag("first-imsi", "First IMSI in batch").Required().String()
-	lastIMSI = declareBatch.Flag("last-imsi", "Last IMSI in batch").Required().String()
-	firstMsisdn = declareBatch.Flag("first-msisdn", "First MSISDN in batch").Required().String()
-	lastMsisdn = declareBatch.Flag("last-msisdn", "Last MSISDN in batch").Required().String()
-	profileType = declareBatch.Flag("profile-type", "SIM profile type").Required().String()
-	batchLengthString = declareBatch.Flag(
+	dbFirstIMSI = db.Flag("first-imsi", "First IMSI in batch").Required().String()
+	dbLastIMSI = db.Flag("last-imsi", "Last IMSI in batch").Required().String()
+	dbFirstMsisdn = db.Flag("first-msisdn", "First MSISDN in batch").Required().String()
+	dbLastMsisdn = db.Flag("last-msisdn", "Last MSISDN in batch").Required().String()
+	dbProfileType = db.Flag("profile-type", "SIM profile type").Required().String()
+	dbBatchLengthString = db.Flag(
 		"batch-quantity",
 		"Number of sim cards in batch").Required().String()
 
-	hssVendor = declareBatch.Flag("hss-vendor", "The HSS vendor").Default("M1").String()
-	uploadHostname =
-		declareBatch.Flag("upload-hostname", "host to upload batch to").Default("localhost").String()
-	uploadPortnumber =
-		declareBatch.Flag("upload-portnumber", "port to upload to").Default("8080").String()
+	dbHssVendor = db.Flag("hss-vendor", "The HSS vendor").Default("M1").String()
+	dbUploadHostname =
+		db.Flag("upload-hostname", "host to upload batch to").Default("localhost").String()
+	dbUploadPortnumber =
+		db.Flag("upload-portnumber", "port to upload to").Default("8080").String()
 
-	profileVendor =
-		declareBatch.Flag("profile-vendor",  "Vendor of SIM profiles").Default("Idemia",).String()
+	dbProfileVendor =
+		db.Flag("profile-vendor",  "Vendor of SIM profiles").Default("Idemia").String()
 
-	initialHlrActivationStatusOfProfiles =
-		declareBatch.Flag(
+	dbInitialHlrActivationStatusOfProfiles =
+		db.Flag(
 			"initial-hlr-activation-status-of-profiles",
 			"Initial hss activation state.  Legal values are ACTIVATED and NOT_ACTIVATED.").Default("ACTIVATED").String()
 )
@@ -150,6 +151,20 @@ func main() {
 		outfileconversion.ConvertInputfileToOutputfile(*spUploadInputFile, *spUploadOutputFilePrefix)
 	case "declare-batch":
 		fmt.Println("Declare batch")
+		declareThisBatch(
+			*dbFirstIccid,
+			*dbLastIccid,
+			*dbFirstIMSI,
+			*dbLastIMSI,
+			*dbFirstMsisdn,
+			*dbLastMsisdn,
+			*dbProfileType,
+			*dbBatchLengthString,
+			*dbHssVendor,
+			*dbUploadHostname,
+			*dbUploadPortnumber,
+			*dbProfileVendor,
+			*dbInitialHlrActivationStatusOfProfiles)
 	case "prime-batch-upload":
 		// TODO: Combine these two into something inside uploadtoprime.
 		//       It's unecessary to break the batch thingy open in this way.
@@ -304,4 +319,26 @@ func es2PlusSmoketest(certFilePath *string, keyFilePath *string, hostport *strin
 	}
 
 	fmt.Println("Success")
+}
+
+// XXX Put this into a separate package at some point, "batch_editor" or something
+//     equally descriptive.
+func declareThisBatch(
+	firstIccid string,
+	lastIccid string,
+	firstIMSI string,
+	lastIMSI string,
+	firstMsisdn string,
+	lastMsisdn string,
+	profileType string,
+	batchLengthString string,
+	hssVendor string,
+	uploadHostname string,
+	uploadPortnumber string,
+	profileVendor string,
+	initialHlrActivationStatusOfProfiles string) {
+		fmt.Println("HOhoho, now we're declaring a batch!")
+		// 1. Check all the arguments (methods already written).
+		// 2. Check that the name isn't already registred.
+		// 3. If it isn't, then persist it
 }
