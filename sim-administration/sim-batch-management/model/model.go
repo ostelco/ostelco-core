@@ -66,13 +66,18 @@ type SimEntry struct {
 //
 
 type Batch struct {
-	Id          int64  `db:"id" json:"id"`
-	Name        string `db:"name" json:"name"`
-	Customer    string `db:"customer" json:"customer"`
-	ProfileType string `db:"profileType" json:"profileType"`
-	OrderDate   string `db:"orderDate" json:"orderDate"`
-	BatchNo     string `db:"batchNo" json:"batchNo"`
-	Quantity    int    `db:"quantity" json:"quantity"`
-	FirstIccid  string `db:"firstIccid" json:"firstIccid"`
-	FirstImsi   string `db:"firstImsi" json:"firstImsi"`
+	Id          int64   `db:"id" json:"id"`
+	Name        string  `db:"name" json:"name"`
+	Customer    string  `db:"customer" json:"customer"`
+	ProfileType string  `db:"profileType" json:"profileType"`
+	OrderDate   string  `db:"orderDate" json:"orderDate"`
+	BatchNo     string  `db:"batchNo" json:"batchNo"`
+	Quantity    int     `db:"quantity" json:"quantity"`
+	FirstIccid  string  `db:"firstIccid" json:"firstIccid"`
+	FirstImsi   string  `db:"firstImsi" json:"firstImsi"`
+	Url         string  `db:"url" json:"url"`
+	MsisdnIncrement int `db:"msisdnIncrement" json:"msisdnIncrement"`
+	IccidIncrement int `db:"msisdnIncrement" json:"msisdnIncrement"`
+	ImsiIncrement int `db:"imsiIncrement" json:"imsiIncrement"`
+	FirstMsisdn string  `db:"firstMsisdn" json:"firstMsisdn"`
 }

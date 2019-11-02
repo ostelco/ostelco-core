@@ -49,8 +49,10 @@ func TestInputBatchRoundtrip(t *testing.T) {
 		OrderDate:   "apple",
 		BatchNo:     "100",
 		Quantity:    100,
+		Url:         "http://vg.no",
 		FirstIccid:  "1234567890123456789",
 		FirstImsi:   "123456789012345",
+		MsisdnIncrement: -1,
 	}
 
 	sdb.Create(&theBatch)

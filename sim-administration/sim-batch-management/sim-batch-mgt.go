@@ -10,9 +10,9 @@ import (
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/outfileconversion"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/uploadtoprime"
-	"gopkg.in/alecthomas/kingpin.v2"
 	"log"
 	"strconv"
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 //  "gopkg.in/alecthomas/kingpin.v2"
@@ -337,8 +337,7 @@ func declareThisBatch(
 	uploadHostname string,
 	uploadPortnumber string,
 	profileVendor string,
-	initialHlrActivationStatusOfProfiles string) model.OutputBatch {
-	fmt.Println("HOhoho, now we're declaring a batch!")
+	initialHlrActivationStatusOfProfiles string) model.Batch {
 
 	// TODO:
 	// 1. Check all the arguments (methods already written).
@@ -409,17 +408,16 @@ func declareThisBatch(
 		log.Printf("Unknown parameters:  %s", flag.Args())
 	}
 
-	fmt.Println("Correctly parsed a batch")
 	// Return a correctly parsed batch
-	return model.OutputBatch{
+	return model.Batch{
 		ProfileType:     profileType,
 		Url:             uploadUrl,
-		Length:          loltelutils.Abs(iccidlen),
-		FirstIccid:      firstIccidInt,
+		Quantity:        loltelutils.Abs(iccidlen),
+		FirstIccid:      firstIccid,
 		IccidIncrement:  loltelutils.Sign(iccidlen),
-		FirstImsi:       firstImsiInt,
+		FirstImsi:       firstIMSI,
 		ImsiIncrement:   loltelutils.Sign(imsiLen),
-		FirstMsisdn:     firstMsisdnInt,
+		FirstMsisdn:     firstMsisdn,
 		MsisdnIncrement: msisdnIncrement,
 	}
 }

@@ -59,7 +59,7 @@ func (sdb SimBatchDB) GetInputBatchByName(name string) (*model.Batch, error) {
 
 func (sdb SimBatchDB) Create(theBatch *model.Batch) {
 
-	res := sdb.Db.MustExec("INSERT INTO BATCH (name, customer, profileType, orderDate, batchNo, quantity, firstIccid, firstImsi) values (?,?,?,?,?,?,?,?) ",
+	res := sdb.Db.MustExec("INSERT INTO BATCH (name, customer, profileType, orderDate, batchNo, quantity, firstIccid, firstMsisdn, firstImsi, msisdnIncrement, iccidIncrement, firstMsisdn, url) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?) ",
 		(*theBatch).Name,
 		(*theBatch).Customer,
 		(*theBatch).ProfileType,
@@ -68,6 +68,12 @@ func (sdb SimBatchDB) Create(theBatch *model.Batch) {
 		(*theBatch).Quantity,
 		(*theBatch).FirstIccid,
 		(*theBatch).FirstImsi,
+		(*theBatch).FirstMsisdn,
+		(*theBatch).MsisdnIncrement,
+		(*theBatch).IccidIncrement,
+		(*theBatch).ImsiIncrement,
+		(*theBatch).FirstMsisdn,
+		(*theBatch).Url,
 	)
 
 	id, err := res.LastInsertId()
@@ -87,7 +93,14 @@ func (sdb *SimBatchDB) GenerateTables() error {
 	batchNo VARCHAR NOT NULL,
 	quantity INTEGER NOT NULL,
 	firstIccid VARCHAR,
-	firstImsi VARCHAR
+	firstImsi VARCHAR,
+	firstMsisdn VARCHAR,
+	msisdnIncrement INTEGER,
+	imsiIncrement INTEGER,
+	iccidIncrement INTEGER,
+	iccidIncrement INTEGER,
+	firstMsisdn VARCHAR,
+	url VARCHAR
 	)`
 
 	_, err := sdb.Db.Exec(foo)
