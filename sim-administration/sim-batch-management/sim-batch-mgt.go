@@ -353,6 +353,7 @@ func declareThisBatch(
 	fieldsyntaxchecks.CheckICCIDSyntax("first-rawIccid", firstIccid)
 	fieldsyntaxchecks.CheckICCIDSyntax("last-rawIccid", lastIccid)
 	fieldsyntaxchecks.CheckIMSISyntax("last-imsi", lastIMSI)
+
 	fieldsyntaxchecks.CheckIMSISyntax("first-imsi", firstIMSI)
 	fieldsyntaxchecks.CheckMSISDNSyntax("last-msisdn", lastMsisdn)
 	fieldsyntaxchecks.CheckMSISDNSyntax("first-msisdn", firstMsisdn)

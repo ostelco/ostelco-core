@@ -54,14 +54,14 @@ func IsICCID(s string) bool {
 
 func CheckICCIDSyntax(name string, potentialIccid string) {
 	if !IsICCID(potentialIccid) {
-		log.Fatalf("Not a valid %s ICCID: '%s'.  Must be 18 or 19 (or 20) digits (_including_ luhn checksum).", name, potentialIccid)
+		log.Fatalf("Not a valid '%s' ICCID: '%s'.  Must be 18 or 19 (or 20) digits (_including_ luhn checksum).", name, potentialIccid)
 	}
 
 	stringWithoutLuhnChecksum := IccidWithoutLuhnChecksum(potentialIccid)
 	controlDigit := generateControlDigit(stringWithoutLuhnChecksum)
 	checksummedCandidate := fmt.Sprintf("%s%d", stringWithoutLuhnChecksum, controlDigit)
 	if checksummedCandidate != potentialIccid {
-		log.Fatalf("Not a valid  ICCID: '%s'. Expected luhn checksom '%d'", potentialIccid, controlDigit)
+		log.Fatalf("Not a valid '%s'  ICCID: '%s'. Expected luhn checksom '%d'", name, potentialIccid, controlDigit)
 	}
 }
 
