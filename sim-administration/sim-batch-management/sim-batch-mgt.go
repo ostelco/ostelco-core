@@ -2,14 +2,20 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/es2plus"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/fieldsyntaxchecks"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/loltelutils"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/outfileconversion"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/uploadtoprime"
-	// Don' lose this!
-	"gopkg.in/alecthomas/kingpin.v2"
+
+	"log"
+	"strconv"
 )
 
+//  "gopkg.in/alecthomas/kingpin.v2"
 var (
 	// TODO: Enable, but also make it have an effect.
 	// debug    = kingpin.Flag("debug", "enable debug mode").Default("false").Bool()
@@ -108,37 +114,32 @@ var (
 	// TODO ???
 	batch = kingpin.Command("batch", "Utility for persisting and manipulating sim card batches.")
 
-	db = kingpin.Command("declare-batch", "Declare a batch to be persisted, and used by other commands")
-
 	//
-	// Set up command line parsing
+	//    Declare a new batch
 	//
+	db           = kingpin.Command("declare-batch", "Declare a batch to be persisted, and used by other commands")
 	dbFirstIccid = db.Flag("first-rawIccid",
 		"An 18 or 19 digit long string.  The 19-th digit being a luhn luhnChecksum digit, if present").Required().String()
 	dbLastIccid = db.Flag("last-rawIccid",
 		"An 18 or 19 digit long string.  The 19-th digit being a luhn luhnChecksum digit, if present").Required().String()
-	dbFirstIMSI = db.Flag("first-imsi", "First IMSI in batch").Required().String()
-	dbLastIMSI = db.Flag("last-imsi", "Last IMSI in batch").Required().String()
-	dbFirstMsisdn = db.Flag("first-msisdn", "First MSISDN in batch").Required().String()
-	dbLastMsisdn = db.Flag("last-msisdn", "Last MSISDN in batch").Required().String()
-	dbProfileType = db.Flag("profile-type", "SIM profile type").Required().String()
+	dbFirstIMSI         = db.Flag("first-imsi", "First IMSI in batch").Required().String()
+	dbLastIMSI          = db.Flag("last-imsi", "Last IMSI in batch").Required().String()
+	dbFirstMsisdn       = db.Flag("first-msisdn", "First MSISDN in batch").Required().String()
+	dbLastMsisdn        = db.Flag("last-msisdn", "Last MSISDN in batch").Required().String()
+	dbProfileType       = db.Flag("profile-type", "SIM profile type").Required().String()
 	dbBatchLengthString = db.Flag(
 		"batch-quantity",
 		"Number of sim cards in batch").Required().String()
 
-	dbHssVendor = db.Flag("hss-vendor", "The HSS vendor").Default("M1").String()
-	dbUploadHostname =
-		db.Flag("upload-hostname", "host to upload batch to").Default("localhost").String()
-	dbUploadPortnumber =
-		db.Flag("upload-portnumber", "port to upload to").Default("8080").String()
+	dbHssVendor        = db.Flag("hss-vendor", "The HSS vendor").Default("M1").String()
+	dbUploadHostname   = db.Flag("upload-hostname", "host to upload batch to").Default("localhost").String()
+	dbUploadPortnumber = db.Flag("upload-portnumber", "port to upload to").Default("8080").String()
 
-	dbProfileVendor =
-		db.Flag("profile-vendor",  "Vendor of SIM profiles").Default("Idemia").String()
+	dbProfileVendor = db.Flag("profile-vendor", "Vendor of SIM profiles").Default("Idemia").String()
 
-	dbInitialHlrActivationStatusOfProfiles =
-		db.Flag(
-			"initial-hlr-activation-status-of-profiles",
-			"Initial hss activation state.  Legal values are ACTIVATED and NOT_ACTIVATED.").Default("ACTIVATED").String()
+	dbInitialHlrActivationStatusOfProfiles = db.Flag(
+		"initial-hlr-activation-status-of-profiles",
+		"Initial hss activation state.  Legal values are ACTIVATED and NOT_ACTIVATED.").Default("ACTIVATED").String()
 )
 
 func main() {
@@ -336,9 +337,89 @@ func declareThisBatch(
 	uploadHostname string,
 	uploadPortnumber string,
 	profileVendor string,
-	initialHlrActivationStatusOfProfiles string) {
-		fmt.Println("HOhoho, now we're declaring a batch!")
-		// 1. Check all the arguments (methods already written).
-		// 2. Check that the name isn't already registred.
-		// 3. If it isn't, then persist it
+	initialHlrActivationStatusOfProfiles string) model.OutputBatch {
+	fmt.Println("HOhoho, now we're declaring a batch!")
+	// 1. Check all the arguments (methods already written).
+	// 2. Check that the name isn't already registred.
+	// 3. If it isn't, then persist it
+
+	//
+	// Check parameters for syntactic correctness and
+	// semantic sanity.
+	//
+
+	fieldsyntaxchecks.CheckICCIDSyntax("first-rawIccid", firstIccid)
+	fieldsyntaxchecks.CheckICCIDSyntax("last-rawIccid", lastIccid)
+	fieldsyntaxchecks.CheckIMSISyntax("last-imsi", lastIMSI)
+	fieldsyntaxchecks.CheckIMSISyntax("first-imsi", firstIMSI)
+	fieldsyntaxchecks.CheckMSISDNSyntax("last-msisdn", lastMsisdn)
+	fieldsyntaxchecks.CheckMSISDNSyntax("first-msisdn", firstMsisdn)
+
+	batchLength, err := strconv.Atoi(batchLengthString)
+	if err != nil {
+		log.Fatalf("Not a valid batch Quantity string '%s'.\n", batchLengthString)
+	}
+
+	if batchLength <= 0 {
+		log.Fatalf("OutputBatch Quantity must be positive, but was '%d'", batchLength)
+	}
+
+	uploadUrl := fmt.Sprintf("http://%s:%s/ostelco/sim-inventory/%s/import-batch/profilevendor/%s?initialHssState=%s",
+		uploadHostname, uploadPortnumber, hssVendor, profileVendor, initialHlrActivationStatusOfProfiles)
+
+	fieldsyntaxchecks.CheckURLSyntax("uploadUrl", uploadUrl)
+	fieldsyntaxchecks.CheckProfileType("profile-type", profileType)
+
+	// Convert to integers, and get lengths
+	msisdnIncrement := -1
+	if firstMsisdn <= lastMsisdn {
+		msisdnIncrement = 1
+	}
+
+	log.Println("firstmsisdn     = ", firstMsisdn)
+	log.Println("lastmsisdn      = ", lastMsisdn)
+	log.Println("MsisdnIncrement = ", msisdnIncrement)
+
+	var firstMsisdnInt, _ = strconv.Atoi(firstMsisdn)
+	var lastMsisdnInt, _ = strconv.Atoi(lastMsisdn)
+	var msisdnLen = lastMsisdnInt - firstMsisdnInt + 1
+	if msisdnLen < 0 {
+		msisdnLen = -msisdnLen
+	}
+
+	var firstImsiInt, _ = strconv.Atoi(firstIMSI)
+	var lastImsiInt, _ = strconv.Atoi(lastIMSI)
+	var imsiLen = lastImsiInt - firstImsiInt + 1
+
+	var firstIccidInt, _ = strconv.Atoi(fieldsyntaxchecks.IccidWithoutLuhnChecksum(firstIccid))
+	var lastIccidInt, _ = strconv.Atoi(fieldsyntaxchecks.IccidWithoutLuhnChecksum(lastIccid))
+	var iccidlen = lastIccidInt - firstIccidInt + 1
+
+	// Validate that lengths of sequences are equal in absolute
+	// values.
+	// TODO: Perhaps use some varargs trick of some sort here?
+	if loltelutils.Abs(msisdnLen) != loltelutils.Abs(iccidlen) || loltelutils.Abs(msisdnLen) != loltelutils.Abs(imsiLen) || batchLength != loltelutils.Abs(imsiLen) {
+		log.Printf("msisdnLen   = %10d\n", msisdnLen)
+		log.Printf("iccidLen    = %10d\n", iccidlen)
+		log.Printf("imsiLen     = %10d\n", imsiLen)
+		log.Fatal("FATAL: msisdnLen, iccidLen and imsiLen are not identical.")
+	}
+
+	tail := flag.Args()
+	if len(tail) != 0 {
+		log.Printf("Unknown parameters:  %s", flag.Args())
+	}
+
+	// Return a correctly parsed batch
+	return model.OutputBatch{
+		ProfileType:     profileType,
+		Url:             uploadUrl,
+		Length:          loltelutils.Abs(iccidlen),
+		FirstIccid:      firstIccidInt,
+		IccidIncrement:  loltelutils.Sign(iccidlen),
+		FirstImsi:       firstImsiInt,
+		ImsiIncrement:   loltelutils.Sign(imsiLen),
+		FirstMsisdn:     firstMsisdnInt,
+		MsisdnIncrement: msisdnIncrement,
+	}
 }

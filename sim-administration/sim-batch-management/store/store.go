@@ -10,10 +10,10 @@ import (
 type Store interface {
 	GenerateTables() error
 
-	Create(theBatch *model.InputBatch) error
-	GetAllInputBatches(id string) ([]model.InputBatch, error)
-	GetInputBatchById(id int64) (*model.InputBatch, error)
-	GetInputBatchByName(id string) (*model.InputBatch, error)
+	Create(theBatch *model.Batch) error
+	GetAllInputBatches(id string) ([]model.Batch, error)
+	GetInputBatchById(id int64) (*model.Batch, error)
+	GetInputBatchByName(id string) (*model.Batch, error)
 }
 
 type SimBatchDB struct {
@@ -42,22 +42,22 @@ func OpenFileSqliteDatabase(path string) (*SimBatchDB, error) {
 	return &SimBatchDB{Db: db}, nil
 }
 
-func (sdb SimBatchDB) GetAllInputBatches() ([]model.InputBatch, error) {
-	result := []model.InputBatch{}
+func (sdb SimBatchDB) GetAllInputBatches() ([]model.Batch, error) {
+	result := []model.Batch{}
 	return result, sdb.Db.Select(&result, "SELECT * from INPUT_BATCH")
 }
 
-func (sdb SimBatchDB) GetInputBatchById(id int64) (*model.InputBatch, error) {
-	var result model.InputBatch
+func (sdb SimBatchDB) GetInputBatchById(id int64) (*model.Batch, error) {
+	var result model.Batch
 	return &result, sdb.Db.Get(&result, "select * from INPUT_BATCH where id = ?", id)
 }
 
-func (sdb SimBatchDB) GetInputBatchByName(name string) (*model.InputBatch, error) {
-	var result model.InputBatch
+func (sdb SimBatchDB) GetInputBatchByName(name string) (*model.Batch, error) {
+	var result model.Batch
 	return &result, sdb.Db.Get(&result, "select * from INPUT_BATCH where name = ?", name)
 }
 
-func (sdb SimBatchDB) Create(theBatch *model.InputBatch) {
+func (sdb SimBatchDB) Create(theBatch *model.Batch) {
 
 	res := sdb.Db.MustExec("INSERT INTO INPUT_BATCH (name, customer, profileType, orderDate, batchNo, quantity, firstIccid, firstImsi) values (?,?,?,?,?,?,?,?) ",
 		(*theBatch).Name,

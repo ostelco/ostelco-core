@@ -51,6 +51,18 @@ type OutputFileRecord struct {
 	OutputFileName string
 }
 
+type Batch struct {
+	Id          int64  `db:"id" json:"id"`
+	Name        string `db:"name" json:"name"`
+	Customer    string `db:"customer" json:"customer"`
+	ProfileType string `db:"profileType" json:"profileType"`
+	OrderDate   string `db:"orderDate" json:"orderDate"`
+	BatchNo     string `db:"batchNo" json:"batchNo"`
+	Quantity    int    `db:"quantity" json:"quantity"`
+	FirstIccid  string `db:"firstIccid" json:"firstIccid"`
+	FirstImsi   string `db:"firstImsi" json:"firstImsi"`
+}
+
 type SimEntry struct {
 	RawIccid             string
 	IccidWithChecksum    string

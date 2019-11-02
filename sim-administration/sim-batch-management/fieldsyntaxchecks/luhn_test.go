@@ -1,10 +1,8 @@
-package uploadtoprime
-
+package fieldsyntaxchecks
 
 import (
 	"testing"
 )
-
 
 func TestLuhn(t *testing.T) {
 	validNumbers := []int{

@@ -42,7 +42,7 @@ func TestMemoryDbPing(t *testing.T) {
 
 func TestInputBatchRoundtrip(t *testing.T) {
 
-	theBatch := model.InputBatch{
+	theBatch := model.Batch{
 		Name:        "SOME UNIQUE NAME",
 		Customer:    "firstInputBatch",
 		ProfileType: "banana",

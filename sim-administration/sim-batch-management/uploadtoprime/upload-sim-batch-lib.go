@@ -13,11 +13,10 @@ package uploadtoprime
 import (
 	"flag"
 	"fmt"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/fieldsyntaxchecks"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/loltelutils"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
 	"log"
-	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 )
@@ -30,43 +29,6 @@ func GeneratePostingCurlscript(url string, payload string) {
 	fmt.Print("EOF\n")
 }
 
-func generateControlDigit(luhnString string) int {
-	controlDigit := calculateChecksum(luhnString, true) % 10
-
-	if controlDigit != 0 {
-		controlDigit = 10 - controlDigit
-	}
-
-	return controlDigit
-}
-
-func calculateChecksum(luhnString string, double bool) int {
-	source := strings.Split(luhnString, "")
-	checksum := 0
-
-	for i := len(source) - 1; i > -1; i-- {
-		t, _ := strconv.ParseInt(source[i], 10, 8)
-		n := int(t)
-
-		if double {
-			n = n * 2
-		}
-
-		double = !double
-
-		if n >= 10 {
-			n = n - 9
-		}
-
-		checksum += n
-	}
-	return checksum
-}
-
-func LuhnChecksum(number int) int {
-	return generateControlDigit(strconv.Itoa(number))
-}
-
 func GenerateCsvPayload(batch model.OutputBatch) string {
 	var sb strings.Builder
 	sb.WriteString("ICCID, IMSI, MSISDN, PIN1, PIN2, PUK1, PUK2, PROFILE\n")
@@ -77,7 +39,7 @@ func GenerateCsvPayload(batch model.OutputBatch) string {
 	var msisdn = batch.FirstMsisdn
 	for i := 0; i < batch.Length; i++ {
 
-		iccid := fmt.Sprintf("%d%1d", iccidWithoutLuhnChecksum, LuhnChecksum(iccidWithoutLuhnChecksum))
+		iccid := fmt.Sprintf("%d%1d", iccidWithoutLuhnChecksum, fieldsyntaxchecks.LuhnChecksum(iccidWithoutLuhnChecksum))
 		line := fmt.Sprintf("%s, %d, %d,,,,,%s\n", iccid, imsi, msisdn, batch.ProfileType)
 		sb.WriteString(line)
 
@@ -87,68 +49,6 @@ func GenerateCsvPayload(batch model.OutputBatch) string {
 	}
 
 	return sb.String()
-}
-
-func isICCID(s string) bool {
-	match, _ := regexp.MatchString("^\\d{18}\\d?\\d?$", s)
-	return match
-}
-
-func checkICCIDSyntax(name string, potentialIccid string) {
-	if !isICCID(potentialIccid) {
-		log.Fatalf("Not a valid %s ICCID: '%s'.  Must be 18 or 19 (or 20) digits (_including_ luhn checksum).", name, potentialIccid)
-	}
-
-	stringWithoutLuhnChecksum := IccidWithoutLuhnChecksum(potentialIccid)
-	controlDigit := generateControlDigit(stringWithoutLuhnChecksum)
-	checksummedCandidate := fmt.Sprintf("%s%d", stringWithoutLuhnChecksum, controlDigit)
-	if checksummedCandidate != potentialIccid {
-		log.Fatalf("Not a valid  ICCID: '%s'. Expected luhn checksom '%d'", potentialIccid, controlDigit)
-	}
-}
-
-func isIMSI(s string) bool {
-	match, _ := regexp.MatchString("^\\d{15}$", s)
-	return match
-}
-
-func checkIMSISyntax(name string, potentialIMSI string) {
-	if !isIMSI(potentialIMSI) {
-		log.Fatalf("Not a valid %s IMSI: '%s'.  Must be 15 digits.", name, potentialIMSI)
-	}
-}
-
-func isMSISDN(s string) bool {
-	match, _ := regexp.MatchString("^\\d+$", s)
-	return match
-}
-
-func checkMSISDNSyntax(name string, potentialMSISDN string) {
-	if !isMSISDN(potentialMSISDN) {
-		log.Fatalf("Not a valid %s MSISDN: '%s'.  Must be non-empty sequence of digits.", name, potentialMSISDN)
-	}
-}
-
-func checkURLSyntax(name string, theUrl string) {
-	_, err := url.ParseRequestURI(theUrl)
-	if err != nil {
-		log.Fatalf("Not a valid %s URL: '%s'.", name, theUrl)
-	}
-}
-
-func isProfileName(s string) bool {
-	match, _ := regexp.MatchString("^[A-Z][A-Z0-9_]*$", s)
-	return match
-}
-
-func checkProfileType(name string, potentialProfileName string) {
-	if !isProfileName(potentialProfileName) {
-		log.Fatalf("Not a valid %s MSISDN: '%s'. Must be uppercase characters, numbers and underscores. ", name, potentialProfileName)
-	}
-}
-
-func IccidWithoutLuhnChecksum(s string) string {
-	return loltelutils.TrimSuffix(s, 1)
 }
 
 func ParseUploadFileGeneratorCommmandline() model.OutputBatch {
@@ -231,12 +131,12 @@ func OutputBatchFromCommandLineParameters(firstIccid *string,
 	// semantic sanity.
 	//
 
-	checkICCIDSyntax("first-rawIccid", *firstIccid)
-	checkICCIDSyntax("last-rawIccid", *lastIccid)
-	checkIMSISyntax("last-imsi", *lastIMSI)
-	checkIMSISyntax("first-imsi", *firstIMSI)
-	checkMSISDNSyntax("last-msisdn", *lastMsisdn)
-	checkMSISDNSyntax("first-msisdn", *firstMsisdn)
+	fieldsyntaxchecks.CheckICCIDSyntax("first-rawIccid", *firstIccid)
+	fieldsyntaxchecks.CheckICCIDSyntax("last-rawIccid", *lastIccid)
+	fieldsyntaxchecks.CheckIMSISyntax("last-imsi", *lastIMSI)
+	fieldsyntaxchecks.CheckIMSISyntax("first-imsi", *firstIMSI)
+	fieldsyntaxchecks.CheckMSISDNSyntax("last-msisdn", *lastMsisdn)
+	fieldsyntaxchecks.CheckMSISDNSyntax("first-msisdn", *firstMsisdn)
 
 	batchLength, err := strconv.Atoi(*batchLengthString)
 	if err != nil {
@@ -250,8 +150,8 @@ func OutputBatchFromCommandLineParameters(firstIccid *string,
 	uploadUrl := fmt.Sprintf("http://%s:%s/ostelco/sim-inventory/%s/import-batch/profilevendor/%s?initialHssState=%s",
 		*uploadHostname, *uploadPortnumber, *hssVendor, *profileVendor, *initialHlrActivationStatusOfProfiles)
 
-	checkURLSyntax("uploadUrl", uploadUrl)
-	checkProfileType("profile-type", *profileType)
+	fieldsyntaxchecks.CheckURLSyntax("uploadUrl", uploadUrl)
+	fieldsyntaxchecks.CheckProfileType("profile-type", *profileType)
 
 	// Convert to integers, and get lengths
 	msisdnIncrement := -1
@@ -274,8 +174,8 @@ func OutputBatchFromCommandLineParameters(firstIccid *string,
 	var lastImsiInt, _ = strconv.Atoi(*lastIMSI)
 	var imsiLen = lastImsiInt - firstImsiInt + 1
 
-	var firstIccidInt, _ = strconv.Atoi(IccidWithoutLuhnChecksum(*firstIccid))
-	var lastIccidInt, _ = strconv.Atoi(IccidWithoutLuhnChecksum(*lastIccid))
+	var firstIccidInt, _ = strconv.Atoi(fieldsyntaxchecks.IccidWithoutLuhnChecksum(*firstIccid))
+	var lastIccidInt, _ = strconv.Atoi(fieldsyntaxchecks.IccidWithoutLuhnChecksum(*lastIccid))
 	var iccidlen = lastIccidInt - firstIccidInt + 1
 
 	// Validate that lengths of sequences are equal in absolute
