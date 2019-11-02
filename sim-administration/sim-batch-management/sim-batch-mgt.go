@@ -420,7 +420,7 @@ func declareThisBatch(
 
 	// Return a correctly parsed batch
 	// TODO: Batch name missing!
-	return model.Batch{
+	myBatch :=  model.Batch{
 		ProfileType:     profileType,
 		Url:             uploadUrl,
 		Quantity:        loltelutils.Abs(iccidlen),
@@ -431,4 +431,6 @@ func declareThisBatch(
 		FirstMsisdn:     firstMsisdn,
 		MsisdnIncrement: msisdnIncrement,
 	}
+	
+	db.Create(&myBatch)
 }
