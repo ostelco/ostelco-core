@@ -379,10 +379,6 @@ func declareThisBatch(
 		msisdnIncrement = 1
 	}
 
-	log.Println("firstmsisdn     = ", firstMsisdn)
-	log.Println("lastmsisdn      = ", lastMsisdn)
-	log.Println("MsisdnIncrement = ", msisdnIncrement)
-
 	var firstMsisdnInt, _ = strconv.Atoi(firstMsisdn)
 	var lastMsisdnInt, _ = strconv.Atoi(lastMsisdn)
 	var msisdnLen = lastMsisdnInt - firstMsisdnInt + 1
@@ -413,6 +409,7 @@ func declareThisBatch(
 		log.Printf("Unknown parameters:  %s", flag.Args())
 	}
 
+	fmt.Println("Correctly parsed a batch")
 	// Return a correctly parsed batch
 	return model.OutputBatch{
 		ProfileType:     profileType,
