@@ -68,6 +68,6 @@ type SimEntry struct {
 	IccidWithChecksum    string
 	IccidWithoutChecksum string
 	Imsi                 string
-	Ki                   string
+	Ki                   string // XXX Toxic.  Should never be stored persistently!!
 	OutputFileName       string
 }
