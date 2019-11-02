@@ -339,6 +339,8 @@ func declareThisBatch(
 	profileVendor string,
 	initialHlrActivationStatusOfProfiles string) model.OutputBatch {
 	fmt.Println("HOhoho, now we're declaring a batch!")
+
+	// TODO:
 	// 1. Check all the arguments (methods already written).
 	// 2. Check that the name isn't already registred.
 	// 3. If it isn't, then persist it
