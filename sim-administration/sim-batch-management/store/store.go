@@ -16,11 +16,12 @@ import (
 
 type Store interface {
 	GenerateTables() error
+	DropTables() error
 
 	Create(theBatch *model.Batch) error
-	GetAllInputBatches(id string) ([]model.Batch, error)
-	GetInputBatchById(id int64) (*model.Batch, error)
-	GetInputBatchByName(id string) (*model.Batch, error)
+	GetAllBatches(id string) ([]model.Batch, error)
+	GetBatchById(id int64) (*model.Batch, error)
+	GetBatchByName(id string) (*model.Batch, error)
 
 	DeclareBatch(
 		db *SimBatchDB,
@@ -65,17 +66,17 @@ func OpenFileSqliteDatabase(path string) (*SimBatchDB, error) {
 	return &SimBatchDB{Db: db}, nil
 }
 
-func (sdb SimBatchDB) GetAllInputBatches() ([]model.Batch, error) {
+func (sdb SimBatchDB) GetAllBatches() ([]model.Batch, error) {
 	result := []model.Batch{}
 	return result, sdb.Db.Select(&result, "SELECT * from BATCH")
 }
 
-func (sdb SimBatchDB) GetInputBatchById(id int64) (*model.Batch, error) {
+func (sdb SimBatchDB) GetBatchById(id int64) (*model.Batch, error) {
 	var result model.Batch
 	return &result, sdb.Db.Get(&result, "select * from BATCH where id = ?", id)
 }
 
-func (sdb SimBatchDB) GetInputBatchByName(name string) (*model.Batch, error) {
+func (sdb SimBatchDB) GetBatchByName(name string) (*model.Batch, error) {
 	var result model.Batch
 	return &result, sdb.Db.Get(&result, "select * from BATCH where name = ?", name)
 }
@@ -124,6 +125,12 @@ func (sdb *SimBatchDB) GenerateTables() error {
 	iccidIncrement INTEGER,
 	url VARCHAR
 	)`
+	_, err := sdb.Db.Exec(foo)
+	return err
+}
+
+func (sdb *SimBatchDB) DropTables() error {
+	foo := `DROP  TABLE BATCH`
 	_, err := sdb.Db.Exec(foo)
 	return err
 }

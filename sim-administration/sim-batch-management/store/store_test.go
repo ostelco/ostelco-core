@@ -22,6 +22,7 @@ func TestMain(m *testing.M) {
 }
 
 func setup() {
+	// sdb, err = store.OpenFileSqliteDatabase("bazunka.db")
 	sdb, err = store.NewInMemoryDatabase()
 	if err != nil {
 		fmt.Errorf("Couldn't open new in memory database  '%s", err)
@@ -33,6 +34,10 @@ func setup() {
 }
 
 func shutdown() {
+	sdb.DropTables()
+	if err != nil {
+		fmt.Errorf("Couldn't drop tables  '%s'", err)
+	}
 }
 
 // ... just to know that everything is sane.
@@ -43,8 +48,7 @@ func TestMemoryDbPing(t *testing.T) {
 	}
 }
 
-func TestInputBatchRoundtrip(t *testing.T) {
-
+func injectTestBatch() *model.Batch {
 	theBatch := model.Batch{
 		Name:            "SOME UNIQUE NAME",
 		OrderDate:       "20200101",
@@ -58,16 +62,36 @@ func TestInputBatchRoundtrip(t *testing.T) {
 		MsisdnIncrement: -1,
 	}
 
-	sdb.Create(&theBatch)
-	allBatches, err := sdb.GetAllInputBatches()
+	err := sdb.Create(&theBatch)
+	if err != nil {
+		panic(err)
+	}
+	return &theBatch
+}
+
+func TestGetBatchById(t *testing.T) {
+
+	theBatch := injectTestBatch()
+
+	firstInputBatch, _ := sdb.GetBatchById(1)
+	if !reflect.DeepEqual(*firstInputBatch, *theBatch) {
+		fmt.Errorf("getBatchById failed")
+	}
+}
+
+func TestGetAllBatches(t *testing.T) {
+
+	theBatch := injectTestBatch()
+
+	allBatches, err := sdb.GetAllBatches()
 	if err != nil {
 		fmt.Errorf("Reading query failed '%s'", err)
 	}
 
 	assert.Equal(t, len(allBatches), 1)
 
-	firstInputBatch, _ := sdb.GetInputBatchById(1)
-	if !reflect.DeepEqual(*firstInputBatch, theBatch) {
+	firstInputBatch := allBatches[0]
+	if !reflect.DeepEqual(firstInputBatch, theBatch) {
 		fmt.Errorf("getBatchById failed")
 	}
 }
@@ -76,8 +100,8 @@ func TestDeclareBatch(t *testing.T) {
 	theBatch, err := sdb.DeclareBatch(
 		"Name",
 		"Customer",
-		"8778fsda",  // batch number
-		"20200101", // date string
+		"8778fsda",             // batch number
+		"20200101",             // date string
 		"89148000000745809013", // firstIccid string,
 		"89148000000745809013", // lastIccid string,
 		"242017100012213",      // firstIMSI string,
@@ -95,7 +119,7 @@ func TestDeclareBatch(t *testing.T) {
 		panic(err)
 	}
 
-	retrievedValue, _ := sdb.GetInputBatchById(theBatch.Id)
+	retrievedValue, _ := sdb.GetBatchById(theBatch.Id)
 	if !reflect.DeepEqual(*retrievedValue, *theBatch) {
 		fmt.Errorf("getBatchById failed")
 	}
