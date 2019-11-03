@@ -74,6 +74,7 @@ func TestInputBatchRoundtrip(t *testing.T) {
 
 func TestDeclareBatch(t *testing.T) {
 	_, err := sdb.DeclareBatch(
+		"20200101", // date string
 		"89148000000745809013", // firstIccid string,
 		"89148000000745809013", // lastIccid string,
 		"242017100012213",      // firstIMSI string,

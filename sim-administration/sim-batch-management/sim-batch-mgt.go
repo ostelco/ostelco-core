@@ -2,17 +2,12 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/es2plus"
-	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/fieldsyntaxchecks"
-	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/loltelutils"
-	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/outfileconversion"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/store"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/uploadtoprime"
-	"log"
-	"strconv"
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 //  "gopkg.in/alecthomas/kingpin.v2"
@@ -118,6 +113,7 @@ var (
 	//    Declare a new batch
 	//
 	db           = kingpin.Command("declare-batch", "Declare a batch to be persisted, and used by other commands")
+	dbOrderDate = db.Flag("order-date", "Order date in format ddmmyyyy").Required().String()
 	dbFirstIccid = db.Flag("first-rawIccid",
 		"An 18 or 19 digit long string.  The 19-th digit being a luhn luhnChecksum digit, if present").Required().String()
 	dbLastIccid = db.Flag("last-rawIccid",
@@ -159,7 +155,8 @@ func main() {
 		outfileconversion.ConvertInputfileToOutputfile(*spUploadInputFile, *spUploadOutputFilePrefix)
 	case "declare-batch":
 		fmt.Println("Declare batch")
-		DeclareBatch(db,
+		db.DeclareBatch(
+			*dbOrderDate,
 			*dbFirstIccid,
 			*dbLastIccid,
 			*dbFirstIMSI,

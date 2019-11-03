@@ -82,8 +82,9 @@ func (sdb SimBatchDB) GetInputBatchByName(name string) (*model.Batch, error) {
 
 func (sdb SimBatchDB) Create(theBatch *model.Batch) error {
 
-	res := sdb.Db.MustExec("INSERT INTO BATCH (name, customer, profileType, orderDate, batchNo, quantity, firstIccid, firstImsi,  firstMsisdn, msisdnIncrement, iccidIncrement, imsiIncrement, url) values (?,?,?,?,?,?,?,?,?,?,?,?,?) ",
+	res := sdb.Db.MustExec("INSERT INTO BATCH (name, orderDate,  customer, profileType, orderDate, batchNo, quantity, firstIccid, firstImsi,  firstMsisdn, msisdnIncrement, iccidIncrement, imsiIncrement, url) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?) ",
 		(*theBatch).Name,
+		(*theBatch).OrderDate,
 		(*theBatch).Customer,
 		(*theBatch).ProfileType,
 		(*theBatch).OrderDate,
@@ -131,6 +132,7 @@ func (sdb *SimBatchDB) GenerateTables() error {
  * Create a new batch, assuming that it doesn't exist.  Do all kind of checking of fields etc.
  */
 func (sdb SimBatchDB) DeclareBatch(
+	orderDate string,
 	firstIccid string,
 	lastIccid string,
 	firstIMSI string,
@@ -217,6 +219,7 @@ func (sdb SimBatchDB) DeclareBatch(
 	// Return a correctly parsed batch
 	// TODO: Batch name missing!
 	myBatch := model.Batch{
+		OrderDate:       orderDate,
 		Name:            "TODO fixme",
 		ProfileType:     profileType,
 		Url:             uploadUrl,
