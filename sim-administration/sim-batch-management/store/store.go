@@ -1,11 +1,17 @@
 package store
 
 import (
+	"flag"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/fieldsyntaxchecks"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/loltelutils"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
+
+	"log"
 	"os"
+	"strconv"
 )
 
 type Store interface {
@@ -15,6 +21,22 @@ type Store interface {
 	GetAllInputBatches(id string) ([]model.Batch, error)
 	GetInputBatchById(id int64) (*model.Batch, error)
 	GetInputBatchByName(id string) (*model.Batch, error)
+
+	DeclareBatch(
+		db *SimBatchDB,
+		firstIccid string,
+		lastIccid string,
+		firstIMSI string,
+		lastIMSI string,
+		firstMsisdn string,
+		lastMsisdn string,
+		profileType string,
+		batchLengthString string,
+		hssVendor string,
+		uploadHostname string,
+		uploadPortnumber string,
+		profileVendor string,
+		initialHlrActivationStatusOfProfiles string) (*model.Batch, error)
 }
 
 type SimBatchDB struct {
@@ -58,9 +80,9 @@ func (sdb SimBatchDB) GetInputBatchByName(name string) (*model.Batch, error) {
 	return &result, sdb.Db.Get(&result, "select * from BATCH where name = ?", name)
 }
 
-func (sdb SimBatchDB) Create(theBatch *model.Batch) {
+func (sdb SimBatchDB) Create(theBatch *model.Batch) error {
 
-	res := sdb.Db.MustExec("INSERT INTO BATCH (name, customer, profileType, orderDate, batchNo, quantity, firstIccid, firstMsisdn, firstImsi, msisdnIncrement, iccidIncrement, firstMsisdn, url) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?) ",
+	res := sdb.Db.MustExec("INSERT INTO BATCH (name, customer, profileType, orderDate, batchNo, quantity, firstIccid, firstImsi,  firstMsisdn, msisdnIncrement, iccidIncrement, imsiIncrement, url) values (?,?,?,?,?,?,?,?,?,?,?,?,?) ",
 		(*theBatch).Name,
 		(*theBatch).Customer,
 		(*theBatch).ProfileType,
@@ -73,7 +95,6 @@ func (sdb SimBatchDB) Create(theBatch *model.Batch) {
 		(*theBatch).MsisdnIncrement,
 		(*theBatch).IccidIncrement,
 		(*theBatch).ImsiIncrement,
-		(*theBatch).FirstMsisdn,
 		(*theBatch).Url,
 	)
 
@@ -82,6 +103,7 @@ func (sdb SimBatchDB) Create(theBatch *model.Batch) {
 		fmt.Errorf("Getting last inserted id failed '%s'", err)
 	}
 	theBatch.Id = id
+	return err
 }
 
 func (sdb *SimBatchDB) GenerateTables() error {
@@ -99,11 +121,115 @@ func (sdb *SimBatchDB) GenerateTables() error {
 	msisdnIncrement INTEGER,
 	imsiIncrement INTEGER,
 	iccidIncrement INTEGER,
-	iccidIncrement INTEGER,
-	firstMsisdn VARCHAR,
 	url VARCHAR
 	)`
-
 	_, err := sdb.Db.Exec(foo)
 	return err
+}
+
+/**
+ * Create a new batch, assuming that it doesn't exist.  Do all kind of checking of fields etc.
+ */
+func (sdb SimBatchDB) DeclareBatch(
+	firstIccid string,
+	lastIccid string,
+	firstIMSI string,
+	lastIMSI string,
+	firstMsisdn string,
+	lastMsisdn string,
+	profileType string,
+	batchLengthString string,
+	hssVendor string,
+	uploadHostname string,
+	uploadPortnumber string,
+	profileVendor string,
+	initialHlrActivationStatusOfProfiles string) (*model.Batch, error) {
+
+	// TODO:
+	// 1. Check all the arguments (methods already written).
+	// 2. Check that the name isn't already registred.
+	// 3. If it isn't, then persist it
+
+	//
+	// Check parameters for syntactic correctness and
+	// semantic sanity.
+	//
+
+	fieldsyntaxchecks.CheckICCIDSyntax("first-rawIccid", firstIccid)
+	fieldsyntaxchecks.CheckICCIDSyntax("last-rawIccid", lastIccid)
+	fieldsyntaxchecks.CheckIMSISyntax("last-imsi", lastIMSI)
+
+	fieldsyntaxchecks.CheckIMSISyntax("first-imsi", firstIMSI)
+	fieldsyntaxchecks.CheckMSISDNSyntax("last-msisdn", lastMsisdn)
+	fieldsyntaxchecks.CheckMSISDNSyntax("first-msisdn", firstMsisdn)
+
+	batchLength, err := strconv.Atoi(batchLengthString)
+	if err != nil {
+		log.Fatalf("Not a valid batch Quantity string '%s'.\n", batchLengthString)
+	}
+
+	if batchLength <= 0 {
+		log.Fatalf("OutputBatch Quantity must be positive, but was '%d'", batchLength)
+	}
+
+	uploadUrl := fmt.Sprintf("http://%s:%s/ostelco/sim-inventory/%s/import-batch/profilevendor/%s?initialHssState=%s",
+		uploadHostname, uploadPortnumber, hssVendor, profileVendor, initialHlrActivationStatusOfProfiles)
+
+	fieldsyntaxchecks.CheckURLSyntax("uploadUrl", uploadUrl)
+	fieldsyntaxchecks.CheckProfileType("profile-type", profileType)
+
+	// Convert to integers, and get lengths
+	msisdnIncrement := -1
+	if firstMsisdn <= lastMsisdn {
+		msisdnIncrement = 1
+	}
+
+	var firstMsisdnInt, _ = strconv.Atoi(firstMsisdn)
+	var lastMsisdnInt, _ = strconv.Atoi(lastMsisdn)
+	var msisdnLen = lastMsisdnInt - firstMsisdnInt + 1
+	if msisdnLen < 0 {
+		msisdnLen = -msisdnLen
+	}
+
+	var firstImsiInt, _ = strconv.Atoi(firstIMSI)
+	var lastImsiInt, _ = strconv.Atoi(lastIMSI)
+	var imsiLen = lastImsiInt - firstImsiInt + 1
+
+	var firstIccidInt, _ = strconv.Atoi(fieldsyntaxchecks.IccidWithoutLuhnChecksum(firstIccid))
+	var lastIccidInt, _ = strconv.Atoi(fieldsyntaxchecks.IccidWithoutLuhnChecksum(lastIccid))
+	var iccidlen = lastIccidInt - firstIccidInt + 1
+
+	// Validate that lengths of sequences are equal in absolute
+	// values.
+	// TODO: Perhaps use some varargs trick of some sort here?
+	if loltelutils.Abs(msisdnLen) != loltelutils.Abs(iccidlen) || loltelutils.Abs(msisdnLen) != loltelutils.Abs(imsiLen) || batchLength != loltelutils.Abs(imsiLen) {
+		log.Printf("msisdnLen   = %10d\n", msisdnLen)
+		log.Printf("iccidLen    = %10d\n", iccidlen)
+		log.Printf("imsiLen     = %10d\n", imsiLen)
+		log.Fatal("FATAL: msisdnLen, iccidLen and imsiLen are not identical.")
+	}
+
+	tail := flag.Args()
+	if len(tail) != 0 {
+		log.Printf("Unknown parameters:  %s", flag.Args())
+	}
+
+	// Return a correctly parsed batch
+	// TODO: Batch name missing!
+	myBatch := model.Batch{
+		Name:            "TODO fixme",
+		ProfileType:     profileType,
+		Url:             uploadUrl,
+		Quantity:        loltelutils.Abs(iccidlen),
+		FirstIccid:      firstIccid,
+		IccidIncrement:  loltelutils.Sign(iccidlen),
+		FirstImsi:       firstIMSI,
+		ImsiIncrement:   loltelutils.Sign(imsiLen),
+		FirstMsisdn:     firstMsisdn,
+		MsisdnIncrement: msisdnIncrement,
+	}
+
+	// Create the new batch (checking for consistency not done!)
+	err = sdb.Create(&myBatch)
+	return &myBatch, err
 }

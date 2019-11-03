@@ -9,11 +9,10 @@ import (
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/loltelutils"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/outfileconversion"
-	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/uploadtoprime"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/store"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/uploadtoprime"
 	"log"
 	"strconv"
-	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 //  "gopkg.in/alecthomas/kingpin.v2"
@@ -160,8 +159,7 @@ func main() {
 		outfileconversion.ConvertInputfileToOutputfile(*spUploadInputFile, *spUploadOutputFilePrefix)
 	case "declare-batch":
 		fmt.Println("Declare batch")
-		declareThisBatch(
-			db,
+		DeclareBatch(db,
 			*dbFirstIccid,
 			*dbLastIccid,
 			*dbFirstIMSI,
@@ -329,108 +327,4 @@ func es2PlusSmoketest(certFilePath *string, keyFilePath *string, hostport *strin
 	}
 
 	fmt.Println("Success")
-}
-
-// XXX Put this into a separate package at some point, "batch_editor" or something
-//     equally descriptive.
-func declareThisBatch(
-	db *store.SimBatchDB,
-	firstIccid string,
-	lastIccid string,
-	firstIMSI string,
-	lastIMSI string,
-	firstMsisdn string,
-	lastMsisdn string,
-	profileType string,
-	batchLengthString string,
-	hssVendor string,
-	uploadHostname string,
-	uploadPortnumber string,
-	profileVendor string,
-	initialHlrActivationStatusOfProfiles string) model.Batch {
-
-	// TODO:
-	// 1. Check all the arguments (methods already written).
-	// 2. Check that the name isn't already registred.
-	// 3. If it isn't, then persist it
-
-	//
-	// Check parameters for syntactic correctness and
-	// semantic sanity.
-	//
-
-	fieldsyntaxchecks.CheckICCIDSyntax("first-rawIccid", firstIccid)
-	fieldsyntaxchecks.CheckICCIDSyntax("last-rawIccid", lastIccid)
-	fieldsyntaxchecks.CheckIMSISyntax("last-imsi", lastIMSI)
-
-	fieldsyntaxchecks.CheckIMSISyntax("first-imsi", firstIMSI)
-	fieldsyntaxchecks.CheckMSISDNSyntax("last-msisdn", lastMsisdn)
-	fieldsyntaxchecks.CheckMSISDNSyntax("first-msisdn", firstMsisdn)
-
-	batchLength, err := strconv.Atoi(batchLengthString)
-	if err != nil {
-		log.Fatalf("Not a valid batch Quantity string '%s'.\n", batchLengthString)
-	}
-
-	if batchLength <= 0 {
-		log.Fatalf("OutputBatch Quantity must be positive, but was '%d'", batchLength)
-	}
-
-	uploadUrl := fmt.Sprintf("http://%s:%s/ostelco/sim-inventory/%s/import-batch/profilevendor/%s?initialHssState=%s",
-		uploadHostname, uploadPortnumber, hssVendor, profileVendor, initialHlrActivationStatusOfProfiles)
-
-	fieldsyntaxchecks.CheckURLSyntax("uploadUrl", uploadUrl)
-	fieldsyntaxchecks.CheckProfileType("profile-type", profileType)
-
-	// Convert to integers, and get lengths
-	msisdnIncrement := -1
-	if firstMsisdn <= lastMsisdn {
-		msisdnIncrement = 1
-	}
-
-	var firstMsisdnInt, _ = strconv.Atoi(firstMsisdn)
-	var lastMsisdnInt, _ = strconv.Atoi(lastMsisdn)
-	var msisdnLen = lastMsisdnInt - firstMsisdnInt + 1
-	if msisdnLen < 0 {
-		msisdnLen = -msisdnLen
-	}
-
-	var firstImsiInt, _ = strconv.Atoi(firstIMSI)
-	var lastImsiInt, _ = strconv.Atoi(lastIMSI)
-	var imsiLen = lastImsiInt - firstImsiInt + 1
-
-	var firstIccidInt, _ = strconv.Atoi(fieldsyntaxchecks.IccidWithoutLuhnChecksum(firstIccid))
-	var lastIccidInt, _ = strconv.Atoi(fieldsyntaxchecks.IccidWithoutLuhnChecksum(lastIccid))
-	var iccidlen = lastIccidInt - firstIccidInt + 1
-
-	// Validate that lengths of sequences are equal in absolute
-	// values.
-	// TODO: Perhaps use some varargs trick of some sort here?
-	if loltelutils.Abs(msisdnLen) != loltelutils.Abs(iccidlen) || loltelutils.Abs(msisdnLen) != loltelutils.Abs(imsiLen) || batchLength != loltelutils.Abs(imsiLen) {
-		log.Printf("msisdnLen   = %10d\n", msisdnLen)
-		log.Printf("iccidLen    = %10d\n", iccidlen)
-		log.Printf("imsiLen     = %10d\n", imsiLen)
-		log.Fatal("FATAL: msisdnLen, iccidLen and imsiLen are not identical.")
-	}
-
-	tail := flag.Args()
-	if len(tail) != 0 {
-		log.Printf("Unknown parameters:  %s", flag.Args())
-	}
-
-	// Return a correctly parsed batch
-	// TODO: Batch name missing!
-	myBatch :=  model.Batch{
-		ProfileType:     profileType,
-		Url:             uploadUrl,
-		Quantity:        loltelutils.Abs(iccidlen),
-		FirstIccid:      firstIccid,
-		IccidIncrement:  loltelutils.Sign(iccidlen),
-		FirstImsi:       firstIMSI,
-		ImsiIncrement:   loltelutils.Sign(imsiLen),
-		FirstMsisdn:     firstMsisdn,
-		MsisdnIncrement: msisdnIncrement,
-	}
-	
-	db.Create(&myBatch)
 }
