@@ -132,6 +132,9 @@ func (sdb *SimBatchDB) GenerateTables() error {
  * Create a new batch, assuming that it doesn't exist.  Do all kind of checking of fields etc.
  */
 func (sdb SimBatchDB) DeclareBatch(
+	name string,
+	customer string,
+	batchNo string,
 	orderDate string,
 	firstIccid string,
 	lastIccid string,
@@ -220,9 +223,9 @@ func (sdb SimBatchDB) DeclareBatch(
 	// TODO: Batch name missing!
 	myBatch := model.Batch{
 		OrderDate:       orderDate,
-		Customer:        "NOT A CUSTOMER FIXME",
-		Name:            "TODO fixme Name",
-		BatchNo:         "TODO FIXME BatchNo",
+		Customer:        customer,
+		Name:            name,
+		BatchNo:         batchNo,
 		ProfileType:     profileType,
 		Url:             uploadUrl,
 		Quantity:        loltelutils.Abs(iccidlen),

@@ -74,6 +74,9 @@ func TestInputBatchRoundtrip(t *testing.T) {
 
 func TestDeclareBatch(t *testing.T) {
 	theBatch, err := sdb.DeclareBatch(
+		"Name",
+		"Customer",
+		"8778fsda",  // batch number
 		"20200101", // date string
 		"89148000000745809013", // firstIccid string,
 		"89148000000745809013", // lastIccid string,

@@ -7,7 +7,7 @@ import (
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/outfileconversion"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/store"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/uploadtoprime"
-	"gopkg.in/alecthomas/kingpin.v2"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
 //  "gopkg.in/alecthomas/kingpin.v2"
@@ -113,6 +113,9 @@ var (
 	//    Declare a new batch
 	//
 	db           = kingpin.Command("declare-batch", "Declare a batch to be persisted, and used by other commands")
+	dbName = db.Flag("name", "Unique name of this batch").Required().String()
+	dbCustomer = db.Flag("customer", "Name of the customer of this batch (with respect to the sim profile vendor)").Required().String()
+	dbBatchNo = db.Flag("batch-no", "Unique number of this batch (with respect to the profile vendor)").Required().String()
 	dbOrderDate = db.Flag("order-date", "Order date in format ddmmyyyy").Required().String()
 	dbFirstIccid = db.Flag("first-rawIccid",
 		"An 18 or 19 digit long string.  The 19-th digit being a luhn luhnChecksum digit, if present").Required().String()
@@ -156,6 +159,9 @@ func main() {
 	case "declare-batch":
 		fmt.Println("Declare batch")
 		db.DeclareBatch(
+			*dbName,
+			*dbCustomer,
+			*dbBatchNo,
 			*dbOrderDate,
 			*dbFirstIccid,
 			*dbLastIccid,
