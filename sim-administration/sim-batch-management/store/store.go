@@ -82,12 +82,12 @@ func (sdb SimBatchDB) GetInputBatchByName(name string) (*model.Batch, error) {
 
 func (sdb SimBatchDB) Create(theBatch *model.Batch) error {
 
-	res := sdb.Db.MustExec("INSERT INTO BATCH (name, orderDate,  customer, profileType, orderDate, batchNo, quantity, firstIccid, firstImsi,  firstMsisdn, msisdnIncrement, iccidIncrement, imsiIncrement, url) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?) ",
+	res := sdb.Db.MustExec("INSERT INTO BATCH (name, customer, orderDate,  customer, profileType, batchNo, quantity, firstIccid, firstImsi,  firstMsisdn, msisdnIncrement, iccidIncrement, imsiIncrement, url) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?) ",
 		(*theBatch).Name,
+		(*theBatch).Customer,
 		(*theBatch).OrderDate,
 		(*theBatch).Customer,
 		(*theBatch).ProfileType,
-		(*theBatch).OrderDate,
 		(*theBatch).BatchNo,
 		(*theBatch).Quantity,
 		(*theBatch).FirstIccid,
@@ -220,7 +220,9 @@ func (sdb SimBatchDB) DeclareBatch(
 	// TODO: Batch name missing!
 	myBatch := model.Batch{
 		OrderDate:       orderDate,
-		Name:            "TODO fixme",
+		Customer:        "NOT A CUSTOMER FIXME",
+		Name:            "TODO fixme Name",
+		BatchNo:         "TODO FIXME BatchNo",
 		ProfileType:     profileType,
 		Url:             uploadUrl,
 		Quantity:        loltelutils.Abs(iccidlen),

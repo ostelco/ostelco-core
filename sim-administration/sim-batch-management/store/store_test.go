@@ -47,9 +47,9 @@ func TestInputBatchRoundtrip(t *testing.T) {
 
 	theBatch := model.Batch{
 		Name:            "SOME UNIQUE NAME",
+		OrderDate:       "20200101",
 		Customer:        "firstInputBatch",
 		ProfileType:     "banana",
-		OrderDate:       "apple",
 		BatchNo:         "100",
 		Quantity:        100,
 		Url:             "http://vg.no",
@@ -67,13 +67,13 @@ func TestInputBatchRoundtrip(t *testing.T) {
 	assert.Equal(t, len(allBatches), 1)
 
 	firstInputBatch, _ := sdb.GetInputBatchById(1)
-	if !reflect.DeepEqual(firstInputBatch, theBatch) {
+	if !reflect.DeepEqual(*firstInputBatch, theBatch) {
 		fmt.Errorf("getBatchById failed")
 	}
 }
 
 func TestDeclareBatch(t *testing.T) {
-	_, err := sdb.DeclareBatch(
+	theBatch, err := sdb.DeclareBatch(
 		"20200101", // date string
 		"89148000000745809013", // firstIccid string,
 		"89148000000745809013", // lastIccid string,
@@ -90,5 +90,10 @@ func TestDeclareBatch(t *testing.T) {
 		"ACTIVE")               // initialHlrActivationStatusOfProfiles string
 	if err != nil {
 		panic(err)
+	}
+
+	retrievedValue, _ := sdb.GetInputBatchById(theBatch.Id)
+	if !reflect.DeepEqual(*retrievedValue, *theBatch) {
+		fmt.Errorf("getBatchById failed")
 	}
 }
