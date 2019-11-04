@@ -8,7 +8,7 @@ import { authConstants } from '../../actions/auth.actions';
 
 function AlertMessage({ alert, clearAlert }) {
   const { code, message, type } = alert;
-  const isOpen = (type === 'error' || code === authConstants.AUTHENTICATION_FAILURE)
+  const isOpen = (type === 'error' && code !== authConstants.AUTHENTICATION_FAILURE)
 
   return (
     <Alert color="danger" isOpen={isOpen} toggle={() => clearAlert()}>
