@@ -132,8 +132,9 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                 consumptionPolicy.checkConsumption(
                         msisdn = msisdn,
                         multipleServiceCreditControl = mscc,
-                        mccMnc = request.serviceInformation.psInformation.sgsnMccMnc,
-                        apn = request.serviceInformation.psInformation.calledStationId)
+                        sgsnMccMnc = request.serviceInformation.psInformation.sgsnMccMnc,
+                        apn = request.serviceInformation.psInformation.calledStationId,
+                        imsiMccMnc = request.serviceInformation.psInformation.imsiMccMnc)
                         .bimap(
                                 { consumptionResult -> consumptionResultHandler(consumptionResult) },
                                 { consumptionRequest ->  consumeRequestHandler(consumptionRequest) }
