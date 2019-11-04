@@ -182,6 +182,7 @@ func OutputBatchFromCommandLineParameters(firstIccid *string,
 	// values.
 	// TODO: Perhaps use some varargs trick of some sort here?
 	if loltelutils.Abs(msisdnLen) != loltelutils.Abs(iccidlen) || loltelutils.Abs(msisdnLen) != loltelutils.Abs(imsiLen) || batchLength != loltelutils.Abs(imsiLen) {
+		log.Printf("batchLength = %10d\n", batchLength)
 		log.Printf("msisdnLen   = %10d\n", msisdnLen)
 		log.Printf("iccidLen    = %10d\n", iccidlen)
 		log.Printf("imsiLen     = %10d\n", imsiLen)
