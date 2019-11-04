@@ -8,6 +8,7 @@ import org.ostelco.prime.tracing.EnableTracing
 import javax.validation.constraints.NotNull
 import javax.ws.rs.GET
 import javax.ws.rs.POST
+import javax.ws.rs.PUT
 import javax.ws.rs.Path
 import javax.ws.rs.PathParam
 import javax.ws.rs.Produces
@@ -53,5 +54,32 @@ class ProductsResource(private val dao: SubscriberDAO) {
                         sourceId = sourceId,
                         saveCard = saveCard ?: false)
                         .responseBuilder(Response.Status.CREATED)
+            }.build()
+
+    @POST
+    @Path("{sku}/renew")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun renewSubscription(@Auth token: AccessTokenPrincipal?,
+                          @NotNull
+                          @PathParam("sku")
+                          sku: String,
+                          @QueryParam("sourceId")
+                          sourceId: String?,
+                          @QueryParam("saveCard")
+                          saveCard: Boolean?): Response =
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                if (sourceId == null) {
+                    dao.renewSubscriptionToPlan(
+                            identity = token.identity,
+                            sku = sku)
+                } else {
+                    dao.renewSubscriptionToPlan(
+                            identity = token.identity,
+                            sku = sku,
+                            sourceId = sourceId,
+                            saveCard = saveCard ?: false)
+                }.responseBuilder(Response.Status.CREATED)
             }.build()
 }

@@ -687,6 +687,39 @@ paths:
           description: "Product not found."
       security:
         - firebase: []
+  "/products/{sku}/renew":
+    post:
+      description: "Renew subscription"
+      produces:
+        - application/json
+        - text/plain
+      operationId: "renewSubscription"
+      parameters:
+        - name: sku
+          in: path
+          description: "SKU of the subscription product to be renewed"
+          required: true
+          type: string
+        - name: sourceId
+          in: query
+          description: "The stripe-id of the source to be used for this subscription renewal (if empty, use default source)"
+          required: false
+          type: string
+        - name: saveCard
+          in: query
+          description: "Whether to save this card as a source for this user (default = false)"
+          required: false
+          type: boolean
+      responses:
+        201:
+          description: "Successfully renewed the subscription"
+          schema:
+            $ref: '#/definitions/Product'
+        404:
+          description: "Subscription product not found."
+      security:
+        - auth0_jwt: []
+        - firebase: []
   "/purchases":
     get:
       description: "Get list of all purchases."

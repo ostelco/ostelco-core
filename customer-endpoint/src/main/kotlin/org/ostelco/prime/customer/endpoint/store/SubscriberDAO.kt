@@ -84,6 +84,10 @@ interface SubscriberDAO {
 
     fun purchaseProduct(identity: Identity, sku: String, sourceId: String?, saveCard: Boolean): Either<ApiError, ProductInfo>
 
+    fun renewSubscriptionToPlan(identity: Identity, sku: String): Either<ApiError, Product>
+
+    fun renewSubscriptionToPlan(identity: Identity, sku: String, sourceId: String, saveCard: Boolean): Either<ApiError, Product>
+
     //
     // Payment
     //
