@@ -88,6 +88,7 @@ class KYCResource {
             val firstName: String? = dataMap[JumioScanData.ID_FIRSTNAME.s]
             val lastName: String? = dataMap[JumioScanData.ID_LASTNAME.s]
             val dob: String? = dataMap[JumioScanData.ID_DOB.s]
+            val expiry: String? = dataMap[JumioScanData.ID_EXPIRY.s]
             val scanId: String = dataMap[JumioScanData.SCAN_ID.s]!!
             val identityVerificationData: String? = dataMap[JumioScanData.IDENTITY_VERIFICATION.s]
             var rejectReason: IdentityVerification? = null
@@ -124,6 +125,7 @@ class KYCResource {
                                         firstName = firstName,
                                         lastName = lastName,
                                         dob = dob,
+                                        expiry = expiry,
                                         rejectReason = rejectReason
                                 )
                         )
