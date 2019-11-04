@@ -4,7 +4,6 @@ import { connect } from 'react-redux';
 
 import App from './components/App';
 import Main from './components/Search/Main';
-import Notifications from './components/Notifications/Notifications';
 import Callback from './components/Callback/Callback';
 import { Provider } from 'react-redux';
 import { store } from './helpers';
@@ -65,9 +64,6 @@ function NoMatch() {
         <li>
           <Link to="/">Search</Link>
         </li>
-        <li>
-          <Link to="/notifications">Notifications</Link>
-        </li>
       </ul>
     </div>
   );
@@ -82,7 +78,6 @@ export const makeMainRoutes = () => {
           <Switch >
             <Route path="/login" component={Login} />
             <ProtectedRoute path="/" exact component={Main} />
-            <ProtectedRoute path="/notifications" component={Notifications} />
             <Route path="/callback" render={(props) => {
               handleAuthentication(props);
               return <Callback {...props} />
