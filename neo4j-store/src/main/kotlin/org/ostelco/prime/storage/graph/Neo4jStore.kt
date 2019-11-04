@@ -235,21 +235,21 @@ object Neo4jStoreSingleton : GraphStore {
             from = customerEntity,
             to = subscriptionEntity,
             dataClass = None::class.java)
-            .also { RelationStore(it) }
+            .also { UniqueRelationStore(it) }
 
     val exSubscriptionRelation = RelationType(
             relation = HAD_SUBSCRIPTION,
             from = exCustomerEntity,
             to = subscriptionEntity,
             dataClass = None::class.java)
-            .also { RelationStore(it) }
+            .also { UniqueRelationStore(it) }
 
     val customerToBundleRelation = RelationType(
             relation = HAS_BUNDLE,
             from = customerEntity,
             to = bundleEntity,
             dataClass = None::class.java)
-            .also { RelationStore(it) }
+            .also { UniqueRelationStore(it) }
 
     val subscriptionToBundleRelation = RelationType(
             relation = LINKED_TO_BUNDLE,
@@ -263,14 +263,14 @@ object Neo4jStoreSingleton : GraphStore {
             from = customerEntity,
             to = simProfileEntity,
             dataClass = None::class.java)
-            .also { RelationStore(it) }
+            .also { UniqueRelationStore(it) }
 
     val exCustomerToSimProfileRelation = RelationType(
             relation = HAD_SIM_PROFILE,
             from = exCustomerEntity,
             to = simProfileEntity,
             dataClass = None::class.java)
-            .also { RelationStore(it) }
+            .also { UniqueRelationStore(it) }
 
     val forPurchaseByRelation = RelationType(
             relation = FOR_PURCHASE_BY,
@@ -291,7 +291,7 @@ object Neo4jStoreSingleton : GraphStore {
             from = customerEntity,
             to = customerEntity,
             dataClass = None::class.java)
-            .also { RelationStore(it) }
+            .also { UniqueRelationStore(it) }
 
     val subscribesToPlanRelation = RelationType(
             relation = Relation.SUBSCRIBES_TO_PLAN,

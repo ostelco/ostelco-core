@@ -150,7 +150,7 @@ class WriteTransaction(override val transaction: PrimeTransaction) : ReadTransac
                             transaction = transaction
                     )
                 } else {
-                    relationStore.create(
+                    relationStore.createIfAbsent(
                             fromId = relationExpression.fromId,
                             toId = relationExpression.toId,
                             transaction = transaction
