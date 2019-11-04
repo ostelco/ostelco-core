@@ -80,6 +80,16 @@ services:
         ipv4_address: 172.16.238.3
       default:
 
+  ngrok:
+    container_name: ngrok
+    build:
+      context: acceptance-tests
+      dockerfile: Dockerfile.ngrok
+    command: ["./wait.sh"]
+    environment:
+      - STRIPE_API_KEY=${STRIPE_API_KEY}
+      - NGROK_AUTH_TOKEN=${NGROK_AUTH_TOKEN}
+
   acceptance-tests:
     container_name: acceptance-tests
     build: acceptance-tests
@@ -88,6 +98,7 @@ services:
       - "prime"
     command: ["./wait.sh"]
     environment:
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
       - PRIME_SOCKET=prime:8080
       - OCS_SOCKET=prime:8082
       - STRIPE_API_KEY=${STRIPE_API_KEY}

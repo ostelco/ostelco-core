@@ -1,0 +1,18 @@
+FROM azul/zulu-openjdk:13
+
+LABEL maintainer="dev@redotter.sg"
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        unzip \
+    && cd /tmp \
+    && curl -sS -o ngrok.zip https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-amd64.zip \
+    && unzip -q ngrok.zip \
+    && install -v -D ngrok /bin/ngrok \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY script/enable-ngrok-webhook.sh /wait.sh
+
+CMD ["/wait.sh"]

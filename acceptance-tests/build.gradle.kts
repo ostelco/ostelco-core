@@ -35,6 +35,9 @@ dependencies {
   implementation(kotlin("test-junit"))
 
   implementation("io.dropwizard:dropwizard-testing:${Version.dropwizard}")
+
+  implementation("org.junit.jupiter:junit-jupiter-api:${Version.junit5}")
+  runtimeOnly("org.junit.jupiter:junit-jupiter-engine:${Version.junit5}")
 }
 
 application {

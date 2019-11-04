@@ -3,11 +3,14 @@ package org.ostelco.at.okhttp
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.junit.Ignore
 import org.junit.Test
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
+import org.ostelco.at.common.StripeEventListener
 import org.ostelco.at.common.StripePayment
 import org.ostelco.at.common.createCustomer
 import org.ostelco.at.common.createSubscription
 import org.ostelco.at.common.enableRegion
-import org.ostelco.at.common.expectedPlanProduct
+import org.ostelco.at.common.expectedPlanProductSG
+import org.ostelco.at.common.expectedPlanProductUS
 import org.ostelco.at.common.expectedProducts
 import org.ostelco.at.common.getLogger
 import org.ostelco.at.common.graphqlGetQuery
@@ -1059,7 +1062,125 @@ class PlanTest {
             purchaseRecords.sortBy { it.timestamp }
 
             assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
-            assertEquals(expectedPlanProduct, purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
+            assertEquals(expectedPlanProductSG, purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
+        } finally {
+            StripePayment.deleteCustomer(customerId = customerId)
+        }
+    }
+}
+
+class RenewPlanTest {
+
+    @Test
+    fun `okhttp test - POST purchase plan with trial time`() {
+
+        val email = "purchase-${randomInt()}@test.com"
+        val sku = "PLAN_10USD_DAY"
+        var customerId = ""
+
+        try {
+            customerId = createCustomer(name = "Test Purchase Plan User", email = email).id
+            enableRegion(email = email, region = "us")
+
+            val client = clientForSubject(subject = email)
+            val sourceId = StripePayment.createPaymentTokenId()
+
+            client.purchaseProduct(sku, sourceId, false)
+
+            // Wait for DB to be updated.
+            Thread.sleep(200)
+
+            var purchaseRecords = client.purchaseHistory
+            purchaseRecords.sortBy { it.timestamp }
+
+            assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing purchase record" }
+
+            // First record - free product
+            // Second record - product subscribed to
+            assert(2 == purchaseRecords.size) { "Got ${purchaseRecords.size} purchase records, expected 2" }
+            assertEquals(expectedPlanProductUS, purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
+
+            // Actual charge for renewal will first be done after trial time
+            // expires, which will happen after 4 sec. Waiting a bit longer
+            // before checking the outcome.
+            StripeEventListener.waitForSubscriptionPaymentToSucceed(
+                    subscription = "stripe-event-okhttp-purchase-ok-sub",
+                    customerId = customerId,
+                    timeout = 30000L)
+
+            // Wait for DB to be updated.
+            Thread.sleep(200)
+
+            purchaseRecords = client.purchaseHistory
+            assert(3 == purchaseRecords.size) { "Got ${purchaseRecords.size} purchase records, expected 3 after renewal" }
+        } finally {
+            StripePayment.deleteCustomer(customerId = customerId)
+        }
+    }
+
+    @Test
+    fun `okhttp test - POST purchase plan with trial time and with insuffient funds payment source`() {
+
+        val email = "purchase-${randomInt()}@test.com"
+        val sku = "PLAN_10USD_DAY"
+        var customerId = ""
+
+        try {
+            customerId = createCustomer(name = "Test Purchase Plan User", email = email).id
+            enableRegion(email = email, region = "us")
+
+            val client = clientForSubject(subject = email)
+            val sourceId = StripePayment.createPaymentSourceId()
+            val insuffientFundsSourceId = StripePayment.createInsuffientFundsPaymentSourceId()
+            val newSourceId = StripePayment.createPaymentSourceId()
+
+            client.purchaseProduct(sku, sourceId, true)
+
+            Thread.sleep(200) // wait for balance to be updated in DB
+
+            var purchaseRecords = client.purchaseHistory
+            purchaseRecords.sortBy { it.timestamp }
+
+            assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing purchase record" }
+
+            // First record - created when trial time starts (cost is 0).
+            // Second record - actual charge record.
+            assert(2 == purchaseRecords.size) { "Got ${purchaseRecords.size} purchase records, expected 2" }
+            assertEquals(expectedPlanProductUS, purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
+
+            // Switch to a "no funds" card.
+            // This should cause subscription renewal to fail.
+            client.createSource(insuffientFundsSourceId)
+            client.setDefaultSource(insuffientFundsSourceId)
+
+            // Actual charge for renewal will first be done after trial time
+            // expires, which will happen after 4 sec. Waiting a bit longer
+            // before checking the outcome.
+            StripeEventListener.waitForFailedSubscriptionRenewal(
+                    subscription = "stripe-event-okhttp-purchase-fail-sub",
+                    customerId = customerId,
+                    timeout = 30000L)
+
+            // Wait for DB to be updated (creation of the 'pending payment' relation.
+            // (200 ms is too low...)
+            Thread.sleep(2000)
+
+            purchaseRecords = client.purchaseHistory
+            assert(2 == purchaseRecords.size) { "Got ${purchaseRecords.size} purchase records, expected 2 due to renewal failure" }
+
+            // Explicitly renew the subscription with a new card.
+            client.renewSubscription(sku, newSourceId, true)
+
+            StripeEventListener.waitForSubscriptionPaymentToSucceed(
+                    subscription = "stripe-event-okhttp-purchase-fail-sub",
+                    customerId = customerId,
+                    timeout = 30000L)
+
+            // Wait for DB to be updated.
+            Thread.sleep(200)
+
+            purchaseRecords = client.purchaseHistory
+            assert(3 == purchaseRecords.size) { "Got ${purchaseRecords.size} purchase records, expected 3 after renewal completed" }
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
         }

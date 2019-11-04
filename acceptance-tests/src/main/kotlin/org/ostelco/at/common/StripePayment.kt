@@ -4,9 +4,12 @@ import com.stripe.Stripe
 import com.stripe.model.Customer
 import com.stripe.model.Source
 import com.stripe.model.Token
+import com.stripe.model.WebhookEndpoint
 import java.time.Year
 
 object StripePayment {
+
+    private val logger by getLogger()
 
     fun createPaymentTokenId(): String {
 
@@ -66,6 +69,29 @@ object StripePayment {
         return source.id
     }
 
+    fun createInsuffientFundsPaymentSourceId(): String {
+
+        // https://stripe.com/docs/api/java#create_source
+        Stripe.apiKey = System.getenv("STRIPE_API_KEY")
+
+        val sourceMap = mapOf(
+                "type" to "card",
+                "card" to mapOf(
+                        "number" to "4000000000000341",
+                        "exp_month" to 12,
+                        "exp_year" to nextYear(),
+                        "cvc" to "314"),
+                "owner" to mapOf(
+                        "address" to mapOf(
+                                "city" to "Oslo",
+                                "country" to "Norway"
+                        ),
+                        "email" to "me@somewhere.com")
+        )
+        val source = Source.create(sourceMap)
+        return source.id
+    }
+
     fun getCardIdForTokenId(tokenId: String) : String {
 
         // https://stripe.com/docs/api/java#create_source
@@ -105,6 +131,7 @@ object StripePayment {
      * Obtains the Stripe 'customerId' directly from Stripe.
      */
     fun getStripeCustomerId(customerId: String) : String {
+
         // https://stripe.com/docs/api/java#create_card_token
         Stripe.apiKey = System.getenv("STRIPE_API_KEY")
 
@@ -121,16 +148,21 @@ object StripePayment {
     }
 
     fun deleteCustomer(customerId: String) {
+
         // https://stripe.com/docs/api/java#create_card_token
         Stripe.apiKey = System.getenv("STRIPE_API_KEY")
+
         val customers = Customer.list(emptyMap()).data
+
         customers.filter { it.id == customerId }
                 .forEach { it.delete() }
     }
 
     fun deleteAllCustomers() {
+
         // https://stripe.com/docs/api/java#create_card_token
         Stripe.apiKey = System.getenv("STRIPE_API_KEY")
+
         while (true) {
             val customers = Customer.list(emptyMap()).data
             if (customers.isEmpty()) {
@@ -141,6 +173,25 @@ object StripePayment {
                         it.delete()
                     }
         }
+    }
+
+    fun enableWebhook(on: Boolean = true) {
+
+        // https://stripe.com/docs/api/java#create_card_token
+        Stripe.apiKey = System.getenv("STRIPE_API_KEY")
+
+        val endpoint = WebhookEndpoint.list(emptyMap()).data
+                .filter {
+                    it.url.contains("ngrok")
+                }
+
+        if (endpoint.isNotEmpty())
+            endpoint.first()
+                    .update(mapOf(
+                            "disabled" to !on
+                    ))
+        else
+            logger.error("Found no webhook endpoint configured on Stripe using the NGROK service")
     }
 
     private fun nextYear() = Year.now().value + 1
