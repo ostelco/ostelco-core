@@ -4,6 +4,10 @@ package org.ostelco.prime.appnotifier
 enum class NotificationType {
     JUMIO_VERIFICATION_SUCCEEDED,
     JUMIO_VERIFICATION_FAILED,
+    PAYMENT_METHOD_REQUIRED,
+    USER_ACTION_REQUIRED,
+    SUBSCRIPTION_RENEWAL_UPCOMING,
+    SUBSCRIPTION_RENEWAL_STARTING,
 }
 
 interface AppNotifier {

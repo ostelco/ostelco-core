@@ -6,7 +6,6 @@ import com.google.cloud.datastore.Blob
 import com.google.firebase.database.Exclude
 import org.ostelco.prime.model.PaymentProperties.LABEL
 import org.ostelco.prime.model.PaymentProperties.TAX_REGION_ID
-import org.ostelco.prime.model.PaymentProperties.TYPE
 import org.ostelco.prime.model.ProductProperties.NO_OF_BYTES
 import org.ostelco.prime.model.ProductProperties.PRODUCT_CLASS
 import org.ostelco.prime.model.ProductProperties.SEGMENT_IDS
@@ -205,7 +204,9 @@ enum class VendorScanData(val s: String) {
 enum class FCMStrings(val s: String) {
     JUMIO_NOTIFICATION_TITLE("eKYC Status"),
     JUMIO_IDENTITY_VERIFIED("Successfully verified the identity"),
-    JUMIO_IDENTITY_FAILED("Failed to verify the identity")
+    JUMIO_IDENTITY_FAILED("Failed to verify the identity"),
+    SUBSCRIPTION_RENEWAL_TITLE("Subscription Renewal"),
+    SUBSCRIPTION_PAYMENT_METHOD_REQUIRED("Subscription renewal failed due to missing or invalid card. Please add a new card.")
 }
 
 data class ApplicationToken(
@@ -252,13 +253,6 @@ data class Product(
         @JsonIgnore
         get() = sku
 
-    // Values from Payment map
-
-    val paymentType: PaymentType?
-        @Exclude
-        @JsonIgnore
-        get() = payment[TYPE.s]?.let(PaymentType::valueOf)
-
     val paymentLabel: String
         @Exclude
         @JsonIgnore
@@ -297,26 +291,26 @@ enum class ProductProperties(val s: String) {
 
 enum class ProductClass {
     SIMPLE_DATA,
+    SUBSCRIPTION,
     MEMBERSHIP
 }
 
 enum class PaymentProperties(val s: String) {
-    TYPE("type"),
     LABEL("label"),
     TAX_REGION_ID("taxRegionId")
 }
 
-enum class PaymentType {
-    SUBSCRIPTION
-}
-
-// Note: The 'name' value becomes the name (sku) of the corresponding product in Stripe.
+/* Notes:
+   - The 'name' value becomes the name (sku) of the corresponding product
+     in Stripe.
+   - 'trialPeriod' is in milliseconds. Default is no trial period. */
 data class Plan(
         override val id: String,
         val stripePlanId: String? = null,
         val stripeProductId: String? = null,
         val interval: String,
-        val intervalCount: Long = 1L) : HasId {
+        val intervalCount: Long = 1L,
+        val trialPeriod: Long = 0L) : HasId {
 
     companion object
 }
@@ -326,6 +320,9 @@ data class RefundRecord(
         val reason: String, // possible values are duplicate, fraudulent, and requested_by_customer
         val timestamp: Long) : HasId
 
+/* TODO! (kmm) To support prorating with subscriptions, the
+         amount paid values should be taken from the invoice
+         and not from the product class. */
 data class PurchaseRecord(
         override val id: String,           /* 'charge' id. */
         val product: Product,

@@ -7,7 +7,7 @@ sealed class StoreError(val type: String,
                         var message: String,
                         val error: InternalError?) : InternalError()
 
-class NotFoundError(type: String,
+class  NotFoundError(type: String,
                     id: String,
                     error: InternalError? = null) :
         StoreError(type = type,

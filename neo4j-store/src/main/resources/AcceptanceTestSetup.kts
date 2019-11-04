@@ -3,12 +3,11 @@ import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.PaymentProperties.LABEL
 import org.ostelco.prime.model.PaymentProperties.TAX_REGION_ID
-import org.ostelco.prime.model.PaymentProperties.TYPE
-import org.ostelco.prime.model.PaymentType.SUBSCRIPTION
 import org.ostelco.prime.model.Plan
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.ProductClass.MEMBERSHIP
+import org.ostelco.prime.model.ProductClass.SUBSCRIPTION
 import org.ostelco.prime.model.ProductClass.SIMPLE_DATA
 import org.ostelco.prime.model.ProductProperties.NO_OF_BYTES
 import org.ostelco.prime.model.ProductProperties.PRODUCT_CLASS
@@ -77,6 +76,11 @@ job {
     throw Exception(it.message)
 }
 
+adminStore.removeProductAndPricePlans("PLAN_1000SGD_YEAR")
+        .mapLeft {
+            logger.warn(it.message)
+        }
+
 adminStore.createPlan(
         plan = Plan(
                 id = "PLAN_1000SGD_YEAR",
@@ -89,7 +93,6 @@ adminStore.createPlan(
                         PRODUCT_CLASS.s to MEMBERSHIP.name,
                         SEGMENT_IDS.s to "country-sg"),
                 payment = mapOf(
-                        TYPE.s to SUBSCRIPTION.name,
                         LABEL.s to "Annual subscription plan",
                         TAX_REGION_ID.s to "sg"
                 )
@@ -121,6 +124,73 @@ adminStore.atomicCreateOffer(
                         payment = mapOf(
                                 LABEL.s to "1GB",
                                 TAX_REGION_ID.s to "sg"
+                        )
+                )
+        )
+).mapLeft {
+    throw Exception(it.message)
+}
+
+// For US
+
+// Plan is created with trial time, which will cause payment to happen as
+// a result of Stripe events and not due to a synchronous purchase call.
+
+job {
+    create { Region(id = "us", name = "USA") }
+}.mapLeft {
+    throw Exception(it.message)
+}
+
+adminStore.removeProductAndPricePlans("PLAN_10USD_DAY")
+        .mapLeft {
+            logger.warn(it.message)
+        }
+
+adminStore.createPlan(
+        plan = Plan(
+                id = "PLAN_10USD_DAY",
+                interval = "day",
+                trialPeriod = 4000L),      // 4 sec. trial time
+        stripeProductName = "Daily subscription plan",
+        planProduct = Product(
+                sku = "PLAN_10USD_DAY",
+                price = Price(amount = 10_00, currency = "USD"),
+                properties = mapOf(
+                        PRODUCT_CLASS.s to SUBSCRIPTION.name,
+                        SEGMENT_IDS.s to "country-us"),
+                payment = mapOf(
+                        LABEL.s to "Daily subscription plan",
+                        TAX_REGION_ID.s to "us"
+                )
+        )
+).mapLeft {
+    throw Exception(it.message)
+}
+
+adminStore.atomicCreateOffer(
+        offer = Offer(
+                id = "plan-offer-us",
+                products = listOf("PLAN_10USD_DAY")
+        ),
+        segments = listOf(Segment(id = "plan-country-us"))
+).mapLeft {
+    throw Exception(it.message)
+}
+
+adminStore.atomicCreateOffer(
+        offer = Offer(id = "default_offer-us"),
+        segments = listOf(Segment(id = "country-us")),
+        products = listOf(
+                Product(sku = "1GB_5USD",
+                        price = Price(5_00, "USD"),
+                        properties = mapOf(
+                                PRODUCT_CLASS.s to SIMPLE_DATA.name,
+                                NO_OF_BYTES.s to "1_073_741_824"
+                        ),
+                        payment = mapOf(
+                                LABEL.s to "1GB",
+                                TAX_REGION_ID.s to "us"
                         )
                 )
         )

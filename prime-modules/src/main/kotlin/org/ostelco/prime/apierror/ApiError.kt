@@ -35,7 +35,9 @@ object ApiErrorMapper {
         logger.error("description: $description, errorCode: $errorCode, paymentError: ${asJson(paymentError)}")
         return when(paymentError) {
             is org.ostelco.prime.paymentprocessor.core.PlanAlredyPurchasedError -> ForbiddenError(description, errorCode, paymentError)
-            is org.ostelco.prime.paymentprocessor.core.ForbiddenError  ->  ForbiddenError(description, errorCode, paymentError)
+            /* TODO: (kmm) Update to return 'request failed' (402). */
+            is org.ostelco.prime.paymentprocessor.core.PaymentFailedError -> ForbiddenError(description, errorCode, paymentError)
+            is org.ostelco.prime.paymentprocessor.core.ForbiddenError -> ForbiddenError(description, errorCode, paymentError)
             // FIXME vihang: remove PaymentError from BadGatewayError
             is org.ostelco.prime.paymentprocessor.core.BadGatewayError -> InternalServerError(description, errorCode, paymentError)
             is org.ostelco.prime.paymentprocessor.core.NotFoundError -> NotFoundError(description, errorCode, paymentError)

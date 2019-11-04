@@ -11,6 +11,7 @@ import org.ostelco.prime.getLogger
 import org.ostelco.prime.paymentprocessor.core.BadGatewayError
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
 import org.ostelco.prime.paymentprocessor.core.PaymentError
+import org.ostelco.prime.paymentprocessor.core.PaymentFailedError
 
 object StripeUtils {
 
@@ -23,29 +24,33 @@ object StripeUtils {
         return try {
             Either.right(action())
         } catch (e: CardException) {
-            // If something is decline with a card purchase, CardException will be caught
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}")
-            Either.left(ForbiddenError(errorDescription, e.message))
+            /* Something is wrong with the payment source/card.
+               402 indicates that the card is out of funds or expired etc. */
+            logger.warn("Payment error: ${errorDescription}, Stripe Error Code: ${e.code}")
+            Either.left(if (e.statusCode == 402)
+                PaymentFailedError(errorDescription, e.message)
+            else
+                ForbiddenError(errorDescription, e.message))
         } catch (e: RateLimitException) {
             // Too many requests made to the API too quickly
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}")
+            logger.warn("Payment error: ${errorDescription}, Stripe Error Code: ${e.code}")
             Either.left(BadGatewayError(errorDescription, e.message))
         } catch (e: InvalidRequestException) {
             // Invalid parameters were supplied to Stripe's API
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}")
+            logger.warn("Payment error: ${errorDescription}, Stripe Error Code: ${e.code}")
             Either.left(ForbiddenError(errorDescription, e.message))
         } catch (e: AuthenticationException) {
             // Authentication with Stripe's API failed
             // (maybe you changed API keys recently)
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}", e)
+            logger.warn("Payment error: ${errorDescription}, Stripe Error Code: ${e.code}", e)
             Either.left(BadGatewayError(errorDescription))
         } catch (e: ApiConnectionException) {
             // Network communication with Stripe failed
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}", e)
+            logger.warn("Payment error: ${errorDescription}, Stripe Error Code: ${e.code}", e)
             Either.left(BadGatewayError(errorDescription))
         } catch (e: StripeException) {
             // Unknown Stripe error
-            logger.error("Payment error : $errorDescription , Stripe Error Code: ${e.code}", e)
+            logger.error("Payment error: ${errorDescription}, Stripe Error Code: ${e.code}", e)
             Either.left(BadGatewayError(errorDescription))
         } catch (e: Exception) {
             // Something else happened, could be completely unrelated to Stripe

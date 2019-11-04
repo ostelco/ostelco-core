@@ -272,6 +272,14 @@ object Reporter {
                         format("${email(subscription.customer)} subscribed to ${subscription.plan.id}",
                                 event)
                 )
+                event.type == "customer.subscription.updated" -> logger.info(
+                        format("${email(subscription.customer)} subscription to ${subscription.plan.id} got updated",
+                                event)
+                )
+                event.type == "customer.subscription.deleted" -> logger.info(
+                        format("${email(subscription.customer)} subscription to ${subscription.plan.id} got deleted",
+                                event)
+                )
                 else -> logger.warn(format("Unhandled Stripe event ${event.type} (cat: Subscription)",
                         event))
             }

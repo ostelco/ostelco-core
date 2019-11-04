@@ -19,6 +19,7 @@ import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.exSubscriptionRelatio
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.forPurchaseByRelation
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.forPurchaseOfRelation
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.identifiesRelation
+import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.pendingSubscriptionToPlanRelation
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.referredRelation
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.scanInformationRelation
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.simProfileRegionRelation
@@ -29,6 +30,7 @@ import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.subscriptionToBundleR
 import org.ostelco.prime.storage.graph.RelationType
 import org.ostelco.prime.storage.graph.model.ExCustomer
 import org.ostelco.prime.storage.graph.model.Identity
+import org.ostelco.prime.storage.graph.model.PendingSubscriptionToPlan
 import org.ostelco.prime.storage.graph.model.Segment
 import org.ostelco.prime.storage.graph.model.SimProfile
 import kotlin.reflect.KClass
@@ -84,6 +86,7 @@ data class PartialRelationExpression<FROM : HasId, RELATION, TO : HasId>(
 // (Customer) -[BELONG_TO_REGION]-> (Region)
 // (SimProfile) -[SIM_PROFILE_FOR_REGION]-> (Region)
 // (Subscription) -[SUBSCRIPTION_UNDER_SIM_PROFILE]-> (SimProfile)
+// (Customer) -[PENDING_SUBSCRIPTION_TO_PLAN]-> (Plan)
 
 open class EntityContext<E : HasId>(val entityClass: KClass<E>, open val id: String)
 
@@ -125,6 +128,11 @@ data class CustomerContext(override val id: String) : EntityContext<Customer>(Cu
             relationType = customerToSegmentRelation,
             fromId = id,
             toId = segment.id)
+
+    infix fun hasPendingSubscriptionTo(plan: PlanContext) = PartialRelationExpression(
+            relationType = pendingSubscriptionToPlanRelation,
+            fromId = id,
+            toId = plan.id)
 }
 
 data class ExCustomerContext(override val id: String) : EntityContext<ExCustomer>(ExCustomer::class, id) {
