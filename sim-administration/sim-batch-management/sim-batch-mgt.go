@@ -28,7 +28,7 @@ var (
 	es2             = kingpin.Command("es2", "Do things with the ES2+ protocol")
 	es2cmd          = es2.Arg("cmd", "The ES2+ subcommand, one of get-status, recover-profile, download-order, confirm-order, cancel-profile ").Required().String()
 	es2iccid        = es2.Arg("iccid", "Iccid of profile to manipulate").Required().String()
-	es2Target       = es2.Arg("target-state", "Target state of recover-profile or cancel-profile command").Required().String()
+	es2Target       = es2.Arg("target-state", "Target state of recover-profile or cancel-profile command").Default("AVAILABLE").String()
 	es2CertFilePath = es2.Flag("cert", "Certificate pem file.").Required().String()
 	es2KeyFilePath  = es2.Flag("key", "Certificate key file.").Required().String()
 	es2Hostport     = es2.Flag("hostport", "host:port of ES2+ endpoint.").Required().String()
@@ -205,7 +205,7 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			fmt.Println("result -> ", result.State)
+			fmt.Println("iccid='%s', state='%s', acToken='%s'\n", iccid, result.State, result.ACToken)
 		case "recover-profile":
 			checkEs2TargetState(es2Target)
 			result, err := es2plus.RecoverProfile(client, iccid, *es2Target)
@@ -225,6 +225,21 @@ func main() {
 				panic(err)
 			}
 			fmt.Println("result -> ", result)
+		case "activate-iccid":
+			_, err := es2plus.DownloadOrder(client, iccid)
+			if err != nil {
+				panic(err)
+			}
+			_, err = es2plus.ConfirmOrder(client, iccid)
+			if err != nil {
+				panic(err)
+			}
+			result, err := es2plus.GetStatus(client, iccid)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Printf("%s, %s", iccid, result.ACToken)
+
 		case "cancel-profile":
 			checkEs2TargetState(es2Target)
 			_, err := es2plus.CancelOrder(client, iccid, *es2Target)
