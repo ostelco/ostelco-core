@@ -86,7 +86,7 @@ import org.ostelco.prime.paymentprocessor.core.PaymentTransactionInfo
 import org.ostelco.prime.paymentprocessor.core.PlanAlredyPurchasedError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
-import org.ostelco.prime.paymentprocessor.core.SubscriptionStateInfo
+import org.ostelco.prime.paymentprocessor.core.SubscriptionPaymentInfo
 import org.ostelco.prime.securearchive.SecureArchiveService
 import org.ostelco.prime.sim.SimManager
 import org.ostelco.prime.storage.AlreadyExistsError
@@ -1139,7 +1139,7 @@ object Neo4jStoreSingleton : GraphStore {
                 if (product.price.amount > 0) {
                     val purchaseRecord = when (product.productClass) {
                         MEMBERSHIP, SUBSCRIPTION -> {
-                            val subscriptionStateInfo = purchasePlan(
+                            val subscriptionPaymentInfo = purchasePlan(
                                     customer = customer,
                                     sku = product.sku,
                                     sourceId = sourceId,
@@ -1152,12 +1152,12 @@ object Neo4jStoreSingleton : GraphStore {
                                purchase record will be created. */
                             /* TODO! (kmm) 'chargeId' will never be non null on successful purchase.
                                      But should assert this. */
-                            PurchaseRecord(id = subscriptionStateInfo.chargeId ?: UUID.randomUUID().toString(),
+                            PurchaseRecord(id = subscriptionPaymentInfo.chargeId ?: UUID.randomUUID().toString(),
                                     product = product,
                                     timestamp = Instant.now().toEpochMilli(),
                                     properties = mapOf(
-                                            "invoiceId" to (subscriptionStateInfo.invoiceId ?: UUID.randomUUID().toString()),
-                                            "paymentStatus" to subscriptionStateInfo.status.name))
+                                            "invoiceId" to (subscriptionPaymentInfo.invoiceId ?: UUID.randomUUID().toString()),
+                                            "paymentStatus" to subscriptionPaymentInfo.status.name))
                         }
                         SIMPLE_DATA -> {
                             val invoicePaymentInfo = oneTimePurchase(
@@ -1287,7 +1287,7 @@ object Neo4jStoreSingleton : GraphStore {
                                               sku: String,
                                               taxRegionId: String?,
                                               sourceId: String?,
-                                              saveCard: Boolean): Either<PaymentError, SubscriptionStateInfo> {
+                                              saveCard: Boolean): Either<PaymentError, SubscriptionPaymentInfo> {
         return IO {
             Either.monad<PaymentError>().binding {
 
@@ -1345,7 +1345,7 @@ object Neo4jStoreSingleton : GraphStore {
     private fun WriteTransaction.subscribeToPlan(
             customerId: String,
             planId: String,
-            taxRegionId: String?): Either<StoreError, SubscriptionStateInfo> {
+            taxRegionId: String?): Either<StoreError, SubscriptionPaymentInfo> {
 
         return IO {
             Either.monad<StoreError>().binding {
@@ -1369,7 +1369,7 @@ object Neo4jStoreSingleton : GraphStore {
                 else
                     0L
 
-                val subscriptionStateInfo = paymentProcessor.createSubscription(
+                val subscriptionPaymentInfo = paymentProcessor.createSubscription(
                         planId = planStripeId,
                         stripeCustomerId = profileInfo.id,
                         trialEnd = trialEnd,
@@ -1382,7 +1382,7 @@ object Neo4jStoreSingleton : GraphStore {
                         }.bind()
 
                 /* Dispatch according to the charge result. */
-                when (subscriptionStateInfo.status) {
+                when (subscriptionPaymentInfo.status) {
                     PaymentStatus.PAYMENT_SUCCEEDED -> {
                         /* No action required. */
                     }
@@ -1402,7 +1402,7 @@ object Neo4jStoreSingleton : GraphStore {
                         /* No action required. Charge for the subscription will eventually
                            be reported as a Stripe event. */
                         logger.info(
-                                "Pending payment for subscription $planId for customer $customerId (${subscriptionStateInfo.status.name})")
+                                "Pending payment for subscription $planId for customer $customerId (${subscriptionPaymentInfo.status.name})")
                     }
                 }
 
@@ -1410,12 +1410,12 @@ object Neo4jStoreSingleton : GraphStore {
                 fact {
                     (Customer withId customerId) subscribesTo (Plan withId planId) using
                             PlanSubscription(
-                                    subscriptionId = subscriptionStateInfo.id,
-                                    created = subscriptionStateInfo.created,
-                                    trialEnd = subscriptionStateInfo.trialEnd)
+                                    subscriptionId = subscriptionPaymentInfo.id,
+                                    created = subscriptionPaymentInfo.created,
+                                    trialEnd = subscriptionPaymentInfo.trialEnd)
                 }.bind()
 
-                subscriptionStateInfo
+                subscriptionPaymentInfo
             }.fix()
         }.unsafeRunSync()
     }
@@ -2458,7 +2458,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     override fun renewedSubscriptionToPlanSuccessfully(customerId: String,
                                                        sku: String,
-                                                       subscriptionStateInfo: SubscriptionStateInfo): Either<StoreError, Plan> = writeTransaction {
+                                                       subscriptionPaymentInfo: SubscriptionPaymentInfo): Either<StoreError, Plan> = writeTransaction {
         IO {
             Either.monad<StoreError>().binding {
                 val product = get(Product withSku sku)
@@ -2469,20 +2469,20 @@ object Neo4jStoreSingleton : GraphStore {
                 /* For successful purchases it should never be the case that the 'charge-id'
                    is not set. */
                 val dummyChargeId = UUID.randomUUID().toString()
-                if (subscriptionStateInfo.chargeId == null) {
+                if (subscriptionPaymentInfo.chargeId == null) {
                     logger.error("Got no 'charge-id' with successful renewal of subscription " +
-                            "${subscriptionStateInfo.id} to product ${sku} for customer ${customerId} " +
+                            "${subscriptionPaymentInfo.id} to product ${sku} for customer ${customerId} " +
                             "falling back to using the dummy value ${dummyChargeId}")
                 }
-                val chargeId = subscriptionStateInfo.chargeId ?:
+                val chargeId = subscriptionPaymentInfo.chargeId ?:
                     dummyChargeId
                 val purchaseRecord = PurchaseRecord(
                         id = chargeId,
                         product = product,
                         timestamp = Instant.now().toEpochMilli(),
                         properties = mapOf(
-                                "invoiceId" to (subscriptionStateInfo.invoiceId ?: UUID.randomUUID().toString()),
-                                "paymentStatus" to subscriptionStateInfo.status.name)
+                                "invoiceId" to (subscriptionPaymentInfo.invoiceId ?: UUID.randomUUID().toString()),
+                                "paymentStatus" to subscriptionPaymentInfo.status.name)
                 )
 
                 /* Will exit if an existing purchase record matches on 'invoiceId'. */
@@ -2490,7 +2490,7 @@ object Neo4jStoreSingleton : GraphStore {
                         .bind()
 
                 logger.info(
-                        "Customer $customerId completed payment of invoice ${subscriptionStateInfo.invoiceId} " +
+                        "Customer $customerId completed payment of invoice ${subscriptionPaymentInfo.invoiceId} " +
                         "for renewal of subscription to plan ${plan.id}"
                 )
                 plan
@@ -2501,7 +2501,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     override fun subscriptionToPlanRenewalFailed(customerId: String,
                                                  sku: String,
-                                                 subscriptionStateInfo: SubscriptionStateInfo): Either<StoreError, Unit> = writeTransaction {
+                                                 subscriptionPaymentInfo: SubscriptionPaymentInfo): Either<StoreError, Unit> = writeTransaction {
         IO {
             Either.monad<StoreError>().binding {
                 val product = get(Product withSku sku)
@@ -2531,8 +2531,8 @@ object Neo4jStoreSingleton : GraphStore {
                         (Customer withId customerId) hasPendingSubscriptionTo (Plan withId plan.id) using
                                 PendingSubscriptionToPlan(
                                         sku = sku,
-                                        subscriptionId = subscriptionStateInfo.id,
-                                        invoiceId = subscriptionStateInfo.invoiceId)
+                                        subscriptionId = subscriptionPaymentInfo.id,
+                                        invoiceId = subscriptionPaymentInfo.invoiceId)
                     }.bind()
 
                 /* Notify the customer about pending renewal. */

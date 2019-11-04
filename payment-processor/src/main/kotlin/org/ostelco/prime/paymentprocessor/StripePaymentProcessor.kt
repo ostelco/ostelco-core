@@ -37,7 +37,7 @@ import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
-import org.ostelco.prime.paymentprocessor.core.SubscriptionStateInfo
+import org.ostelco.prime.paymentprocessor.core.SubscriptionPaymentInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
 import org.ostelco.prime.paymentprocessor.core.TaxRateInfo
 import java.math.BigDecimal
@@ -265,7 +265,7 @@ class StripePaymentProcessor : PaymentProcessor {
                 ProfileInfo(customer.delete().id)
             }
 
-    override fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long, taxRegionId: String?): Either<PaymentError, SubscriptionStateInfo> =
+    override fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long, taxRegionId: String?): Either<PaymentError, SubscriptionPaymentInfo> =
             either("Failed to subscribe customer $stripeCustomerId to plan $planId") {
                 val item = mapOf("plan" to planId)
                 val taxRates = getTaxRatesForTaxRegionId(taxRegionId)
@@ -286,10 +286,10 @@ class StripePaymentProcessor : PaymentProcessor {
                         else arrayOf()),
                         "payment_behavior" to "allow_incomplete",
                         "prorate" to true)
-                getSubscriptionStateInfo(Subscription.create(params))
+                getSubscriptionPaymentInfo(Subscription.create(params))
             }
 
-    private fun getSubscriptionStateInfo(subscription: Subscription): SubscriptionStateInfo {
+    private fun getSubscriptionPaymentInfo(subscription: Subscription): SubscriptionPaymentInfo {
         val invoice = subscription.latestInvoiceObject
         val intent = invoice?.paymentIntentObject
 
@@ -322,7 +322,7 @@ class StripePaymentProcessor : PaymentProcessor {
                 }
             }
         }.let {
-            SubscriptionStateInfo(id = subscription.id,
+            SubscriptionPaymentInfo(id = subscription.id,
                     status = it,
                     invoiceId = if (invoice != null)
                         invoice.id

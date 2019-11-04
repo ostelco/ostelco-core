@@ -11,7 +11,7 @@ import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
-import org.ostelco.prime.paymentprocessor.core.SubscriptionStateInfo
+import org.ostelco.prime.paymentprocessor.core.SubscriptionPaymentInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
 import org.ostelco.prime.paymentprocessor.core.TaxRateInfo
 import java.math.BigDecimal
@@ -94,7 +94,7 @@ interface PaymentProcessor {
      * @param taxRegion An identifier representing the taxes to be applied to a region
      * @return Stripe SubscriptionId if subscribed
      */
-    fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long = 0L, taxRegionId: String? = null): Either<PaymentError, SubscriptionStateInfo>
+    fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long = 0L, taxRegionId: String? = null): Either<PaymentError, SubscriptionPaymentInfo>
 
     /**
      * @param Stripe Subscription Id

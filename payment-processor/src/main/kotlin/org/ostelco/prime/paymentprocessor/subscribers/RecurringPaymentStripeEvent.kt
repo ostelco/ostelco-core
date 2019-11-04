@@ -10,7 +10,7 @@ import org.ostelco.prime.getLogger
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.paymentprocessor.ConfigRegistry
 import org.ostelco.prime.paymentprocessor.core.PaymentStatus
-import org.ostelco.prime.paymentprocessor.core.SubscriptionStateInfo
+import org.ostelco.prime.paymentprocessor.core.SubscriptionPaymentInfo
 import org.ostelco.prime.pubsub.PubSubSubscriber
 import org.ostelco.prime.storage.AdminDataSource
 import java.time.Instant
@@ -147,7 +147,7 @@ class RecurringPaymentStripeEvent : PubSubSubscriber(
         storage.renewedSubscriptionToPlanSuccessfully(
                 customerId = invoice.customer,
                 sku = plan.product,
-                subscriptionStateInfo = buildSubscriptionStateInfo(
+                subscriptionPaymentInfo = buildSubscriptionPaymentInfo(
                         status = PaymentStatus.PAYMENT_SUCCEEDED,
                         subscription = subscription,
                         plan = plan,
@@ -165,7 +165,7 @@ class RecurringPaymentStripeEvent : PubSubSubscriber(
         storage.subscriptionToPlanRenewalFailed(
                 customerId = subscription.customer,
                 sku = plan.product,
-                subscriptionStateInfo = buildSubscriptionStateInfo(
+                subscriptionPaymentInfo = buildSubscriptionPaymentInfo(
                         status = PaymentStatus.REQUIRES_PAYMENT_METHOD,
                         subscription = subscription,
                         plan = plan,
@@ -182,11 +182,11 @@ class RecurringPaymentStripeEvent : PubSubSubscriber(
         logger.error("Unexpected request for 'user action' on renewal of subscription ${subscription.id}")
     }
 
-    private fun buildSubscriptionStateInfo(status: PaymentStatus,
-                                           subscription: Subscription,
-                                           plan: Plan,
-                                           invoice: Invoice) =
-            SubscriptionStateInfo(
+    private fun buildSubscriptionPaymentInfo(status: PaymentStatus,
+                                             subscription: Subscription,
+                                             plan: Plan,
+                                             invoice: Invoice) =
+            SubscriptionPaymentInfo(
                     id = subscription.id,
                     sku = plan.product,
                     status = status,

@@ -19,7 +19,7 @@ import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.PaymentTransactionInfo
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
-import org.ostelco.prime.paymentprocessor.core.SubscriptionStateInfo
+import org.ostelco.prime.paymentprocessor.core.SubscriptionPaymentInfo
 import javax.ws.rs.core.MultivaluedMap
 
 interface ClientDocumentStore {
@@ -316,22 +316,22 @@ interface AdminGraphStore {
      * Subscription renewed without issues.
      * @param customerId - The identity of the customer
      * @param sku - Id of the product/subscription
-     * @param subscriptionStateInfo - Details about the renewed subscription
+     * @param subscriptionPaymentInfo - Details about the renewed subscription
      */
     fun renewedSubscriptionToPlanSuccessfully(customerId: String,
                                               sku: String,
-                                              subscriptionStateInfo: SubscriptionStateInfo): Either<StoreError, Plan>
+                                              subscriptionPaymentInfo: SubscriptionPaymentInfo): Either<StoreError, Plan>
 
     /**
      * Subscription renewal failed either due to issues with payment source or
      * because additional actions is required (3D secure).
      * @param customerId - The identity of the customer
      * @param sku - Id of the product/subscription
-     * @param subscriptionStateInfo - Details about the renewed subscription
+     * @param subscriptionPaymentInfo - Details about the renewed subscription
      */
     fun subscriptionToPlanRenewalFailed(customerId: String,
                                         sku: String,
-                                        subscriptionStateInfo: SubscriptionStateInfo): Either<StoreError, Unit>
+                                        subscriptionPaymentInfo: SubscriptionPaymentInfo): Either<StoreError, Unit>
     /**
      * Removes a product and associated price plans. Mainly intended for use
      * in test for cleanup.

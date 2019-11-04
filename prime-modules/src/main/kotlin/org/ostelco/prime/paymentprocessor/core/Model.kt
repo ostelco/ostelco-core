@@ -24,15 +24,15 @@ data class SourceDetailsInfo(val id: String,
 
 data class SubscriptionInfo(val id: String)
 
-data class SubscriptionStateInfo(val id: String,                  /* Stripe subscription id. */
-                                 val sku: String,
-                                 val status: PaymentStatus,
-                                 val invoiceId: String,           /* Not set on plans with trial time. */
-                                 val chargeId: String? = null,    /* Only set on successful payment on creation/renewal. */
-                                 val created: Long,
-                                 val currentPeriodStart: Long,
-                                 val currentPeriodEnd: Long,
-                                 val trialEnd: Long = 0L)
+data class SubscriptionPaymentInfo(val id: String,                  /* Stripe subscription id. */
+                                   val sku: String,
+                                   val status: PaymentStatus,
+                                   val invoiceId: String,           /* Not set on plans with trial time. */
+                                   val chargeId: String? = null,    /* Only set on successful payment on creation/renewal. */
+                                   val created: Long,
+                                   val currentPeriodStart: Long,
+                                   val currentPeriodEnd: Long,
+                                   val trialEnd: Long = 0L)
 
 data class TaxRateInfo(val id: String,
                        val percentage: BigDecimal,
