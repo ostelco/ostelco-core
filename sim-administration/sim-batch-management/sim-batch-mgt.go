@@ -241,7 +241,6 @@ func main() {
 			fmt.Printf("%s, %s\n", iccid, result.ACToken)
 
 		case "bulk-activate-iccids":
-			fmt.Printf("Ready to bulk activate some iccids\n")
 
 			file, err := os.Open(iccid)
 			if err != nil {
@@ -256,12 +255,13 @@ func main() {
 				iccid := scanner.Text()
 				waitgroup.Add(1)
 				go func(i string) {
-					mutex.Lock()
+
 					result, err := es2plus.ActivateIccid(client, i)
 					if err != nil {
 						panic(err)
 					}
-					fmt.Println("Iccid = ", i, "activation code = ", result.ACToken)
+					mutex.Lock()
+					fmt.Printf("%s, %s\n", i, result.ACToken)
 					mutex.Unlock()
 					waitgroup.Done()
 				}(iccid)
@@ -272,7 +272,6 @@ func main() {
 			if err := scanner.Err(); err != nil {
 				log.Fatal(err)
 			}
-			fmt.Println("Done")
 
 		case "cancel-profile":
 			checkEs2TargetState(es2Target)
