@@ -7,6 +7,7 @@ import com.google.protobuf.ByteString
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.util.*
+import org.ostelco.common.publisherex.Event
 
 object CommonPubSubJsonSerializer {
     private val gson = Gson()

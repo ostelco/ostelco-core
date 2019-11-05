@@ -10,27 +10,11 @@ import com.google.cloud.pubsub.v1.Publisher
 import com.google.common.util.concurrent.MoreExecutors
 import com.google.pubsub.v1.ProjectTopicName
 import com.google.pubsub.v1.PubsubMessage
-import io.dropwizard.lifecycle.Managed
 import io.grpc.ManagedChannelBuilder
 import org.ostelco.prime.getLogger
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
-import java.time.Instant
-
-/**
- * Abstraction for a point-in-time analytics event.
- *
- * @property timestamp time at which the event occurs
- */
-sealed class Event(val timestamp: Instant = Instant.now()) {
-    fun toJsonByteString() = CommonPubSubJsonSerializer.toJsonByteString(this)
-}
-
-interface PubSubPublisher : Managed {
-    fun publishPubSubMessage(pubsubMessage: PubsubMessage)
-    fun publishEvent(event: Event)
-}
 
 class DelegatePubSubPublisher(
         private val topicId: String,

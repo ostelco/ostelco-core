@@ -11,15 +11,15 @@ import com.google.pubsub.v1.ProjectTopicName
 import com.google.pubsub.v1.PubsubMessage
 import io.grpc.ManagedChannelBuilder
 import org.ostelco.prime.analytics.ConfigRegistry
-import org.ostelco.prime.analytics.events.Event
 import org.ostelco.prime.getLogger
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
+import org.ostelco.common.publisherex.Event
 
-class DelegatePubSubPublisher(
+class DelegatePubSubPublisher1(
         private val topicId: String,
-        private val projectId: String = ConfigRegistry.config.projectId) : PubSubPublisher {
+        private val projectId: String = ConfigRegistry.config.projectId) : PubSubPublisher1 {
 
     private lateinit var publisher: Publisher
     private val logger by getLogger()
@@ -74,7 +74,7 @@ class DelegatePubSubPublisher(
                 // Once published, returns server-assigned message ids (unique within the topic)
                 logger.debug("Published message $messageId to topic $topicId")
             }
-        }, DataConsumptionInfoPublisher.singleThreadScheduledExecutor)
+        }, singleThreadScheduledExecutor)
     }
 
     override fun publishEvent(event: Event) {
