@@ -15,7 +15,6 @@ import org.ostelco.ext.myinfo.MyInfoEmulatorConfig
 import org.ostelco.prime.ekyc.ConfigRegistry
 import org.ostelco.prime.ekyc.MyInfoV3Config
 import org.ostelco.prime.ekyc.Registry
-import org.ostelco.prime.ekyc.myinfo.v2.MyInfoClientSingleton
 import org.ostelco.prime.getLogger
 import java.io.File
 import java.io.FileInputStream
@@ -30,14 +29,14 @@ import java.util.*
 import kotlin.system.measureTimeMillis
 
 /**
- * Ref: https://www.ndi-api.gov.sg/assets/lib/trusted-data/myinfo/specs/myinfo-kyc-v2.1.1.yaml.html#section/Environments
+ * Ref: https://www.ndi-api.gov.sg/assets/lib/trusted-data/myinfo/specs/myinfo-kyc-v3.0.2.html#section/Environments
  *
  *  https://{ENV_DOMAIN_NAME}/{VERSION}/{RESOURCE}
  *
  * ENV_DOMAIN_NAME:
- *  - Sandbox/Dev: https://myinfosgstg.api.gov.sg/dev/
- *  - Staging: https://myinfosgstg.api.gov.sg/test/
- *  - Production: https://myinfosg.api.gov.sg/
+ *  - Sandbox/Dev: https://sandbox.api.myinfo.gov.sg/com/v3
+ *  - Staging: https://test.api.myinfo.gov.sg/com/v3
+ *  - Production: https://api.myinfo.gov.sg/com/v3
  *
  * VERSION: `/v2`
  */

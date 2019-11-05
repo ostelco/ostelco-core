@@ -53,7 +53,6 @@ import org.ostelco.prime.model.KycType.JUMIO
 import org.ostelco.prime.model.KycType.MY_INFO
 import org.ostelco.prime.model.KycType.NRIC_FIN
 import org.ostelco.prime.model.MyInfoApiVersion
-import org.ostelco.prime.model.MyInfoApiVersion.V2
 import org.ostelco.prime.model.MyInfoApiVersion.V3
 import org.ostelco.prime.model.PaymentType.SUBSCRIPTION
 import org.ostelco.prime.model.Plan
@@ -1808,7 +1807,6 @@ object Neo4jStoreSingleton : GraphStore {
 
                 val myInfoData = try {
                     when (version) {
-                        V2 -> myInfoKycV2Service
                         V3 -> myInfoKycV3Service
                     }.getPersonData(authorisationCode)
                 } catch (e: Exception) {
