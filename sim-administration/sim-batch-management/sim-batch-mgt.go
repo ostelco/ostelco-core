@@ -3,6 +3,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/es2plus"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/outfileconversion"
@@ -170,17 +171,20 @@ func main() {
 
 	case "describe-batch":
 
-		fmt.Print("aaa")
 		batch, err := db.GetBatchByName(*describeBatchBatch)
 		if err != nil {
 			panic(err)
 		}
 
-		fmt.Print("yho")
 		if batch == nil {
 			fmt.Printf("No batch found with name '%s'\n", *describeBatchBatch)
 		} else {
-			fmt.Printf("Batch = '%s'\n", batch)
+			bytes, err := json.MarshalIndent(batch, "", "     ")
+			if err != nil {
+				fmt.Println("Can't serialize", batch)
+			}
+
+			fmt.Printf("%v'\n", string(bytes))
 		}
 
 	case "declare-batch":
