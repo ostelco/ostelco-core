@@ -98,6 +98,8 @@ object OnlineCharging : OcsAsyncRequestConsumer {
 
         val doneSignal = CountDownLatch(request.msccList.size)
 
+        var requestCounter = 0
+
         request.msccList.forEach { mscc ->
 
             fun consumptionResultHandler(consumptionResult: ConsumptionResult) {
@@ -129,6 +131,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
 
             val requested = mscc.requested?.totalOctets ?: 0
             if (requested > 0) {
+                requestCounter++
                 consumptionPolicy.checkConsumption(
                         msisdn = msisdn,
                         multipleServiceCreditControl = mscc,
@@ -143,6 +146,10 @@ object OnlineCharging : OcsAsyncRequestConsumer {
             }
         }
         doneSignal.await(2, TimeUnit.SECONDS)
+
+        if (requestCounter == 0) {
+            responseBuilder.validityTime = 86400
+        }
     }
 
     private fun reportAnalytics(consumptionResult: ConsumptionResult, request: CreditControlRequestInfo) {
