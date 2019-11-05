@@ -7,20 +7,34 @@ import com.google.api.gax.grpc.GrpcTransportChannel
 import com.google.api.gax.rpc.ApiException
 import com.google.api.gax.rpc.FixedTransportChannelProvider
 import com.google.cloud.pubsub.v1.Publisher
-import com.google.common.util.concurrent.MoreExecutor
+import com.google.common.util.concurrent.MoreExecutors
 import com.google.pubsub.v1.ProjectTopicName
 import com.google.pubsub.v1.PubsubMessage
+import io.dropwizard.lifecycle.Managed
 import io.grpc.ManagedChannelBuilder
-import org.ostelco.prime.analytics.ConfigRegistry
-import org.ostelco.prime.analytics.events.Event
 import org.ostelco.prime.getLogger
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
+import java.time.Instant
+
+/**
+ * Abstraction for a point-in-time analytics event.
+ *
+ * @property timestamp time at which the event occurs
+ */
+sealed class Event(val timestamp: Instant = Instant.now()) {
+    fun toJsonByteString() = CommonPubSubJsonSerializer.toJsonByteString(this)
+}
+
+interface PubSubPublisher : Managed {
+    fun publishPubSubMessage(pubsubMessage: PubsubMessage)
+    fun publishEvent(event: Event)
+}
 
 class DelegatePubSubPublisher(
         private val topicId: String,
-        private val projectId: String = ConfigRegistry.config.projectId) : PubSubPublisher {
+        private val projectId: String) : PubSubPublisher {
 
     private lateinit var publisher: Publisher
     private val logger by getLogger()
@@ -46,7 +60,6 @@ class DelegatePubSubPublisher(
         // When finished with the publisher, shutdown to free up resources.
         publisher.shutdown()
         publisher.awaitTermination(1, TimeUnit.MINUTES)
-        singleThreadScheduledExecutor.shutdown()
     }
 
     override fun publishPubSubMessage(pubsubMessage: PubsubMessage) {
