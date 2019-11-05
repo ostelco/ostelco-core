@@ -438,6 +438,7 @@ func (client *Es2PlusClientState)  ActivateIccid(iccid string)  (*ProfileStatus,
 			return result, err
 }
 
+// TODO: This shouldn't have to be public, but how can it be avoided?
 func (clientState *Es2PlusClientState)  RequesterId()  (string){
     return clientState.requesterId
  }
