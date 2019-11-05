@@ -37,7 +37,7 @@ val expectedPlanProductUS: Product = Product()
         .price(Price().amount(10_00).currency("USD"))
         .properties(
                 mapOf(
-                        "productClass" to "SUBSCRIPTION",
+                        "productClass" to "MEMBERSHIP",
                         "segmentIds" to "country-us"
                 )
         )

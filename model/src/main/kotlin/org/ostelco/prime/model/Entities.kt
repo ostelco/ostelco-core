@@ -6,6 +6,7 @@ import com.google.cloud.datastore.Blob
 import com.google.firebase.database.Exclude
 import org.ostelco.prime.model.PaymentProperties.LABEL
 import org.ostelco.prime.model.PaymentProperties.TAX_REGION_ID
+import org.ostelco.prime.model.PaymentProperties.TYPE
 import org.ostelco.prime.model.ProductProperties.NO_OF_BYTES
 import org.ostelco.prime.model.ProductProperties.PRODUCT_CLASS
 import org.ostelco.prime.model.ProductProperties.SEGMENT_IDS
@@ -258,6 +259,11 @@ data class Product(
         @JsonIgnore
         get() = payment[LABEL.s] ?: sku
 
+    val paymentType: String
+        @Exclude
+        @JsonIgnore
+        get() = payment[TYPE.s] ?: PaymentTypes.ONE_TIME_PAYMENT.s
+
     val paymentTaxRegionId: String?
         @Exclude
         @JsonIgnore
@@ -291,13 +297,18 @@ enum class ProductProperties(val s: String) {
 
 enum class ProductClass {
     SIMPLE_DATA,
-    SUBSCRIPTION,
     MEMBERSHIP
 }
 
 enum class PaymentProperties(val s: String) {
     LABEL("label"),
-    TAX_REGION_ID("taxRegionId")
+    TAX_REGION_ID("taxRegionId"),
+    TYPE("type")
+}
+
+enum class PaymentTypes(val s: String) {
+    ONE_TIME_PAYMENT("ONE_TIME_PAYMENT"),
+    SUBSCRIPTION("SUBSCRIPTION")
 }
 
 /* Notes:

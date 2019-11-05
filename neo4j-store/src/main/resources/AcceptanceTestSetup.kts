@@ -3,11 +3,12 @@ import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.PaymentProperties.LABEL
 import org.ostelco.prime.model.PaymentProperties.TAX_REGION_ID
+import org.ostelco.prime.model.PaymentProperties.TYPE
+import org.ostelco.prime.model.PaymentTypes.SUBSCRIPTION
 import org.ostelco.prime.model.Plan
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.ProductClass.MEMBERSHIP
-import org.ostelco.prime.model.ProductClass.SUBSCRIPTION
 import org.ostelco.prime.model.ProductClass.SIMPLE_DATA
 import org.ostelco.prime.model.ProductProperties.NO_OF_BYTES
 import org.ostelco.prime.model.ProductProperties.PRODUCT_CLASS
@@ -94,7 +95,8 @@ adminStore.createPlan(
                         SEGMENT_IDS.s to "country-sg"),
                 payment = mapOf(
                         LABEL.s to "Annual subscription plan",
-                        TAX_REGION_ID.s to "sg"
+                        TAX_REGION_ID.s to "sg",
+                        TYPE.s to SUBSCRIPTION.name
                 )
         )
 ).mapLeft {
@@ -157,11 +159,12 @@ adminStore.createPlan(
                 sku = "PLAN_10USD_DAY",
                 price = Price(amount = 10_00, currency = "USD"),
                 properties = mapOf(
-                        PRODUCT_CLASS.s to SUBSCRIPTION.name,
+                        PRODUCT_CLASS.s to MEMBERSHIP.name,
                         SEGMENT_IDS.s to "country-us"),
                 payment = mapOf(
                         LABEL.s to "Daily subscription plan",
-                        TAX_REGION_ID.s to "us"
+                        TAX_REGION_ID.s to "us",
+                        TYPE.s to SUBSCRIPTION.name
                 )
         )
 ).mapLeft {

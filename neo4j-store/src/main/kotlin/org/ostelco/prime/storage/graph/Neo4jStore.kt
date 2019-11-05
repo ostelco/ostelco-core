@@ -55,12 +55,12 @@ import org.ostelco.prime.model.KycType.NRIC_FIN
 import org.ostelco.prime.model.MyInfoApiVersion
 import org.ostelco.prime.model.MyInfoApiVersion.V2
 import org.ostelco.prime.model.MyInfoApiVersion.V3
+import org.ostelco.prime.model.PaymentTypes
 import org.ostelco.prime.model.Plan
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.ProductClass.MEMBERSHIP
 import org.ostelco.prime.model.ProductClass.SIMPLE_DATA
-import org.ostelco.prime.model.ProductClass.SUBSCRIPTION
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.RefundRecord
 import org.ostelco.prime.model.Region
@@ -1137,8 +1137,8 @@ object Neo4jStoreSingleton : GraphStore {
                         .bind()
 
                 if (product.price.amount > 0) {
-                    val purchaseRecord = when (product.productClass) {
-                        MEMBERSHIP, SUBSCRIPTION -> {
+                    val purchaseRecord = when (product.paymentType) {
+                        PaymentTypes.SUBSCRIPTION.s -> {
                             val subscriptionPaymentInfo = purchasePlan(
                                     customer = customer,
                                     sku = product.sku,
@@ -1159,7 +1159,7 @@ object Neo4jStoreSingleton : GraphStore {
                                             "invoiceId" to (subscriptionPaymentInfo.invoiceId ?: UUID.randomUUID().toString()),
                                             "paymentStatus" to subscriptionPaymentInfo.status.name))
                         }
-                        SIMPLE_DATA -> {
+                        PaymentTypes.ONE_TIME_PAYMENT.s -> {
                             val invoicePaymentInfo = oneTimePurchase(
                                     customer = customer,
                                     sourceId = sourceId,
@@ -1226,21 +1226,10 @@ object Neo4jStoreSingleton : GraphStore {
 
     fun WriteTransaction.applyProduct(customerId: String, product: Product) = IO {
         Either.monad<StoreError>().binding {
+            /* Apply the effect of product class. */
             when (product.productClass) {
-                MEMBERSHIP, SUBSCRIPTION -> {
-                    product.segmentIds.forEach { segmentId ->
-                        assignCustomerToSegment(customerId = customerId,
-                                segmentId = segmentId,
-                                transaction = transaction)
-                                .mapLeft {
-                                    SystemError(
-                                            type = "Customer -> Segment",
-                                            id = "$customerId -> $segmentId",
-                                            message = "Failed to assign Membership",
-                                            error = it)
-                                }
-                                .bind()
-                    }
+                MEMBERSHIP -> {
+                    /* No action. */
                 }
                 SIMPLE_DATA -> {
                     /* Topup. */
@@ -1263,6 +1252,35 @@ object Neo4jStoreSingleton : GraphStore {
                             type = "Product",
                             id = product.sku,
                             message = "Missing product class in properties of product: ${product.sku}")
+                            .left()
+                            .bind()
+                }
+            }
+            /* Apply the effect of payment type. */
+            when (product.paymentType) {
+                PaymentTypes.SUBSCRIPTION.s -> {
+                    product.segmentIds.forEach { segmentId ->
+                        assignCustomerToSegment(customerId = customerId,
+                                segmentId = segmentId,
+                                transaction = transaction)
+                                .mapLeft {
+                                    SystemError(
+                                            type = "Customer -> Segment",
+                                            id = "$customerId -> $segmentId",
+                                            message = "Failed to assign Membership",
+                                            error = it)
+                                }
+                                .bind()
+                    }
+                }
+                PaymentTypes.ONE_TIME_PAYMENT.s -> {
+                    /* No action. */
+                }
+                else -> {
+                    SystemError(
+                            type = "Product",
+                            id = product.sku,
+                            message = "No payment type set in payment properties of product: ${product.sku}")
                             .left()
                             .bind()
                 }
@@ -2187,7 +2205,7 @@ object Neo4jStoreSingleton : GraphStore {
     override fun createPlan(
             plan: Plan,
             stripeProductName: String,
-            planProduct: Product): Either<StoreError, Plan> = writeTransaction {
+            product: Product): Either<StoreError, Plan> = writeTransaction {
         IO {
             Either.monad<StoreError>().binding {
 
@@ -2214,8 +2232,8 @@ object Neo4jStoreSingleton : GraphStore {
                         }.bind()
                 val planInfo = paymentProcessor.createPlan(
                         productInfo.id,
-                        planProduct.price.amount,
-                        planProduct.price.currency,
+                        product.price.amount,
+                        product.price.currency,
                         PaymentProcessor.Interval.valueOf(plan.interval.toUpperCase()), plan.intervalCount)
                         .mapLeft {
                             NotCreatedError(type = planEntity.name, id = "Failed to create plan ${plan.id}",
@@ -2223,15 +2241,6 @@ object Neo4jStoreSingleton : GraphStore {
                         }.linkReversalActionToTransaction(transaction) {
                             paymentProcessor.removePlan(it.id)
                         }.bind()
-
-                /* The associated product to the plan. Note that:
-                         sku - name of the plan
-                         property value 'productClass' is set to "plan"
-                   TODO: Update to new backend model. */
-                val product = planProduct.copy(
-                        payment = planProduct.payment + mapOf(
-                                "type" to SUBSCRIPTION.name)
-                )
 
                 /* Propagates errors from lower layer if any. */
                 create { product }.bind()

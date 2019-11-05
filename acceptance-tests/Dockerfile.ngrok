@@ -1,4 +1,4 @@
-FROM azul/zulu-openjdk:13
+FROM azul/zulu-openjdk:13.0.1
 
 LABEL maintainer="dev@redotter.sg"
 
