@@ -7,7 +7,6 @@ import org.ostelco.prime.customer.endpoint.store.SubscriberDAO
 import org.ostelco.prime.ekyc.MyInfoKycService
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.MyInfoApiVersion
-import org.ostelco.prime.model.MyInfoApiVersion.V2
 import org.ostelco.prime.model.MyInfoApiVersion.V3
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.tracing.EnableTracing
@@ -47,36 +46,6 @@ open class KycResource(private val regionCode: String,
 class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(regionCode = "sg", dao = dao) {
 
     private val logger by getLogger()
-
-    // MyInfo v2
-    private val myInfoKycService by lazy { getResource<MyInfoKycService>("v2") }
-
-    @GET
-    @Path("/myInfo/{authorisationCode}")
-    @Produces(MediaType.APPLICATION_JSON)
-    fun getCustomerMyInfoData(@Auth token: AccessTokenPrincipal?,
-                              @NotNull
-                              @PathParam("authorisationCode")
-                              authorisationCode: String): Response =
-            if (token == null) {
-                Response.status(Response.Status.UNAUTHORIZED)
-            } else {
-                dao.getCustomerMyInfoData(
-                        identity = token.identity,
-                        version = V2,
-                        authorisationCode = authorisationCode)
-                        .responseBuilder(jsonEncode = false)
-            }.build()
-
-    @GET
-    @Path("/myInfoConfig")
-    @Produces(MediaType.APPLICATION_JSON)
-    fun getMyInfoConfig(@Auth token: AccessTokenPrincipal?): Response =
-            if (token == null) {
-                Response.status(Response.Status.UNAUTHORIZED)
-            } else {
-                Response.status(Response.Status.OK).entity(myInfoKycService.getConfig())
-            }.build()
 
     // MyInfo v3
 
