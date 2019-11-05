@@ -19,15 +19,6 @@ var (
 	// TODO: Enable, but also make it have an effect.
 	// debug    = kingpin.Flag("debug", "enable debug mode").Default("false").Bool()
 
-	//
-	// Smoketest of the ES2Plus interface
-	//
-	smoketest             = kingpin.Command("es2plus-smoketest", "Smoketest the ES2+ protocol.")
-	smoketestCertFilePath = smoketest.Flag("cert", "Certificate pem file.").Required().String()
-	smoketestKeyFilePath  = smoketest.Flag("key", "Certificate key file.").Required().String()
-	smoketestHostport     = smoketest.Flag("hostport", "host:port of ES2+ endpoint.").Required().String()
-	smoketestRequesterId  = smoketest.Flag("requesterid", "ES2+ requester ID.").Required().String()
-	smoketestIccidInput   = smoketest.Flag("iccid", "Iccid of profile to manipulate").Required().String()
 
 	es2             = kingpin.Command("es2", "Do things with the ES2+ protocol")
 	es2cmd          = es2.Arg("cmd", "The ES2+ subcommand, one of get-status, recover-profile, download-order, confirm-order, cancel-profile, bulk-activate-iccids, activate-iccid ").Required().String()
@@ -156,8 +147,6 @@ func main() {
 
 	cmd := kingpin.Parse()
 	switch cmd {
-	case "es2plus-smoketest":
-		es2PlusSmoketest(smoketestCertFilePath, smoketestKeyFilePath, smoketestHostport, smoketestRequesterId, smoketestIccidInput)
 	case "sim-profile-upload":
 		outfileconversion.ConvertInputfileToOutputfile(*spUploadInputFile, *spUploadOutputFilePrefix)
 	case "declare-batch":
@@ -296,86 +285,3 @@ func checkEs2TargetState(target *string) {
 	}
 }
 
-// TODO:  This is just smoketest-code, delete it after
-//        the smoketest-script has been rewritten a bit to do the same thing.
-func es2PlusSmoketest(certFilePath *string, keyFilePath *string, hostport *string, requesterId *string, iccidInput *string) {
-
-	fmt.Printf("certFilePath = '%s'\n", *certFilePath)
-	fmt.Printf("keyFilePath  = '%s'\n", *keyFilePath)
-	fmt.Printf("hostport     = '%s'\n", *hostport)
-	fmt.Printf("requesterId  = '%s'\n", *requesterId)
-	fmt.Printf("iccidInput   = '%s'\n", *iccidInput)
-
-	iccid := *iccidInput
-
-	client := es2plus.Client(*certFilePath, *keyFilePath, *hostport, *requesterId)
-
-	result, err := es2plus.GetStatus(client, iccid)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("result1 -> ", result.State)
-
-	result2, err := es2plus.RecoverProfile(client, iccid, "AVAILABLE")
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println("result2 -> ", result2)
-
-	result, err = es2plus.GetStatus(client, iccid)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println("result3 -> ", result.State)
-
-	// XXX Should be CancelProfile
-	result4, err := es2plus.RecoverProfile(client, iccid, "AVAILABLE")
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println("result4 -> ", result4)
-
-	result, err = es2plus.GetStatus(client, iccid)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println("result5 -> ", result.State)
-
-	if result.State != "AVAILABLE" {
-		panic("Couldn't convert state of iccid into AVAILABLE")
-	}
-
-	result6, err := es2plus.DownloadOrder(client, iccid)
-	fmt.Println("result6 -> ", result6)
-	if err != nil {
-		panic(err)
-	}
-
-	result7, err := es2plus.GetStatus(client, iccid)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("result7 -> ", result7)
-
-	result8, err := es2plus.ConfirmOrder(client, iccid)
-	fmt.Println("result8 -> ", result8)
-	if err != nil {
-		panic(err)
-	}
-
-	result9, err := es2plus.GetStatus(client, iccid)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("result9 -> ", result9)
-
-	if result.State != "RELEASED" {
-		panic("Couldn't convert state of sim profile into RELEASED")
-	}
-
-	fmt.Println("Success")
-}
