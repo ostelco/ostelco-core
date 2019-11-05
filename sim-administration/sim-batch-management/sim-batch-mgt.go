@@ -196,7 +196,7 @@ func main() {
 		iccid := *es2iccid
 		switch *es2cmd {
 		case "get-status":
-			result, err := es2plus.GetStatus(client, iccid)
+			result, err := client.GetStatus(iccid)
 			if err != nil {
 				panic(err)
 			}
@@ -204,25 +204,25 @@ func main() {
 			fmt.Printf("iccid='%s', state='%s', acToken='%s'\n", iccid, (*result).State, (*result).ACToken)
 		case "recover-profile":
 			checkEs2TargetState(es2Target)
-			result, err := es2plus.RecoverProfile(client, iccid, *es2Target)
+			result, err := client.RecoverProfile(iccid, *es2Target)
 			if err != nil {
 				panic(err)
 			}
 			fmt.Println("result -> ", result)
 		case "download-order":
-			result, err := es2plus.DownloadOrder(client, iccid)
+			result, err := client.DownloadOrder(iccid)
 			if err != nil {
 				panic(err)
 			}
 			fmt.Println("result -> ", result)
 		case "confirm-order":
-			result, err := es2plus.ConfirmOrder(client, iccid)
+			result, err := client.ConfirmOrder(iccid)
 			if err != nil {
 				panic(err)
 			}
 			fmt.Println("result -> ", result)
 		case "activate-iccid":
-			result, err := es2plus.ActivateIccid(client, iccid)
+			result, err := client.ActivateIccid(iccid)
 
 			if err != nil {
 				panic(err)
@@ -245,7 +245,7 @@ func main() {
 				waitgroup.Add(1)
 				go func(i string) {
 
-					result, err := es2plus.ActivateIccid(client, i)
+					result, err := client.ActivateIccid(i)
 					if err != nil {
 						panic(err)
 					}
@@ -264,7 +264,7 @@ func main() {
 
 		case "cancel-profile":
 			checkEs2TargetState(es2Target)
-			_, err := es2plus.CancelOrder(client, iccid, *es2Target)
+			_, err := client.CancelOrder(iccid, *es2Target)
 			if err != nil {
 				panic(err)
 			}

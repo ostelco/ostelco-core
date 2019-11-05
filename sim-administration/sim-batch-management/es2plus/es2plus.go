@@ -14,6 +14,20 @@ import (
 )
 
 ///
+///   External interface
+///
+type Es2PlusClient interface {
+      GetStatus(iccid string) (*ProfileStatus, error)
+      RecoverProfile(iccid string, targetState string) (*ES2PlusRecoverProfileResponse, error)
+      CancelOrder(iccid string, targetState string) (*ES2PlusCancelOrderResponse, error)
+      DownloadOrder(iccid string) (*ES2PlusDownloadOrderResponse, error)
+      ConfirmOrder(iccid string) (*ES2PlusConfirmOrderResponse, error)
+      ActivateIccid(iccid string)  (*ProfileStatus, error)
+      RequesterId()  (string)
+}
+
+
+///
 ///  Generic headers for invocations and responses
 ///
 
@@ -144,7 +158,7 @@ type ES2PlusConfirmOrderResponse struct {
 //
 
 
-type Es2PlusClient struct {
+type Es2PlusClientState struct {
 	httpClient *http.Client
 	hostport string
 	requesterId string
@@ -152,8 +166,8 @@ type Es2PlusClient struct {
 	printHeaders bool
 }
 
-func Client (certFilePath string, keyFilePath string, hostport string, requesterId string) (*Es2PlusClient) {
-    return &Es2PlusClient {
+func Client (certFilePath string, keyFilePath string, hostport string, requesterId string) (*Es2PlusClientState) {
+    return &Es2PlusClientState {
         httpClient: newHttpClient(certFilePath, keyFilePath),
         hostport: hostport,
         requesterId: requesterId,
@@ -223,16 +237,16 @@ func newUuid() (string, error) {
     return uuid.URN(), nil
 }
 
-func newEs2plusHeader(client *Es2PlusClient) (*ES2PlusHeader) {
+func newEs2plusHeader(client Es2PlusClient) (*ES2PlusHeader) {
    functionCallIdentifier, err := newUuid()
    if err != nil  {
         panic(err)
    }
-   return &ES2PlusHeader{FunctionCallIdentifier: functionCallIdentifier, FunctionRequesterIdentifier: client.requesterId}
+   return &ES2PlusHeader{FunctionCallIdentifier: functionCallIdentifier, FunctionRequesterIdentifier: client.RequesterId()}
 }
 
 
-func marshalUnmarshalGenericEs2plusCommand(client *Es2PlusClient, es2plusCommand string,  payload interface{}, result interface{}) error {
+func marshalUnmarshalGenericEs2plusCommand(client *Es2PlusClientState, es2plusCommand string,  payload interface{}, result interface{}) error {
 
     // Serialize payload as json.
 	jsonStrB, err := json.Marshal(payload)
@@ -300,9 +314,9 @@ func executeGenericEs2plusCommand(jsonStrB []byte, hostport string, es2plusComma
 ///
 
 
-func GetStatus(client *Es2PlusClient, iccid string) (*ProfileStatus, error) {
+func (client *Es2PlusClientState) GetStatus(iccid string) (*ProfileStatus, error) {
 
-        result := new(ES2ProfileStatusResponse)
+    result := new(ES2ProfileStatusResponse)
     es2plusCommand := "getProfileStatus"
     header := newEs2plusHeader(client)
     payload := &ES2PlusGetProfileStatusRequest{
@@ -326,7 +340,7 @@ func GetStatus(client *Es2PlusClient, iccid string) (*ProfileStatus, error) {
 }
 
 
-func RecoverProfile(client *Es2PlusClient, iccid string, targetState string) (*ES2PlusRecoverProfileResponse, error) {
+func(client *Es2PlusClientState)  RecoverProfile(iccid string, targetState string) (*ES2PlusRecoverProfileResponse, error) {
     result := new(ES2PlusRecoverProfileResponse)
     es2plusCommand := "recoverProfile"
     header := newEs2plusHeader(client)
@@ -339,7 +353,7 @@ func RecoverProfile(client *Es2PlusClient, iccid string, targetState string) (*E
 }
 
 
-func CancelOrder(client *Es2PlusClient, iccid string, targetState string) (*ES2PlusCancelOrderResponse, error) {
+func (client *Es2PlusClientState)  CancelOrder(iccid string, targetState string) (*ES2PlusCancelOrderResponse, error) {
     result := new(ES2PlusCancelOrderResponse)
     es2plusCommand := "cancelOrder"
     header := newEs2plusHeader(client)
@@ -351,7 +365,7 @@ func CancelOrder(client *Es2PlusClient, iccid string, targetState string) (*ES2P
     return result, marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result)
 }
 
-func DownloadOrder(client *Es2PlusClient, iccid string) (*ES2PlusDownloadOrderResponse, error) {
+func (client *Es2PlusClientState)  DownloadOrder(iccid string) (*ES2PlusDownloadOrderResponse, error) {
     result := new(ES2PlusDownloadOrderResponse)
     es2plusCommand := "downloadOrder"
     header := newEs2plusHeader(client)
@@ -375,7 +389,7 @@ func DownloadOrder(client *Es2PlusClient, iccid string) (*ES2PlusDownloadOrderRe
 }
 
 
-func ConfirmOrder(client *Es2PlusClient, iccid string) (*ES2PlusConfirmOrderResponse, error) {
+func (client *Es2PlusClientState)  ConfirmOrder(iccid string) (*ES2PlusConfirmOrderResponse, error) {
     result := new(ES2PlusConfirmOrderResponse)
     es2plusCommand := "confirmOrder"
     header := newEs2plusHeader(client)
@@ -402,24 +416,28 @@ func ConfirmOrder(client *Es2PlusClient, iccid string) (*ES2PlusConfirmOrderResp
     }
 }
 
-func ActivateIccid(client *Es2PlusClient, iccid string)  (*ProfileStatus, error){
+func (client *Es2PlusClientState)  ActivateIccid(iccid string)  (*ProfileStatus, error){
 
-			result, err := GetStatus(client, iccid)
+			result, err := client.GetStatus(iccid)
 			if err != nil {
 				panic(err)
 			}
 
 			if result.ACToken == "" {
 
-				_, err := DownloadOrder(client, iccid)
+				_, err := client.DownloadOrder(iccid)
 				if err != nil {
 					return nil, err
 				}
-				_, err = ConfirmOrder(client, iccid)
+				_, err = client.ConfirmOrder(iccid)
 				if err != nil {
 					return nil, err
 				}
 			}
-			result, err = GetStatus(client, iccid)
+			result, err = client.GetStatus(iccid)
 			return result, err
 }
+
+func (clientState *Es2PlusClientState)  RequesterId()  (string){
+    return clientState.requesterId
+ }
