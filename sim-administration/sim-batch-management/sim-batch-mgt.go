@@ -249,28 +249,18 @@ func main() {
 			}
 			defer file.Close()
 
-
-			var iccids []string
 			scanner := bufio.NewScanner(file)
 			var mutex = &sync.Mutex{}
+			var waitgroup sync.WaitGroup
 			for scanner.Scan() {
 				iccid := scanner.Text()
-				iccids = append(iccids, iccid)
-			}
-
-			var waitgroup sync.WaitGroup
-			for _, iccid := range (iccids) {
 				waitgroup.Add(1)
-				go func() {
-					for {
-						// Mutex the printing, so that it won't
-						//  print on top of someone else already printing.
-						mutex.Lock()
-						fmt.Println("Iccid = ", iccid)
-						mutex.Unlock()
-						waitgroup.Done()
-					}
-				}()
+				go func(i string) {
+					mutex.Lock()
+					fmt.Println("Iccid = ", i)
+					mutex.Unlock()
+					waitgroup.Done()
+				}(iccid)
 			}
 
 			waitgroup.Wait()
