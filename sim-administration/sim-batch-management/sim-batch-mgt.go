@@ -170,8 +170,6 @@ func main() {
 			*dbProfileVendor,
 			*dbInitialHlrActivationStatusOfProfiles)
 	case "prime-batch-upload":
-		// TODO: Combine these two into something inside uploadtoprime.
-		//       It's unecessary to break the batch thingy open in this way.
 		var batch = uploadtoprime.OutputBatchFromCommandLineParameters(
 			pbuFirstIccid,
 			pbuLastIccid,
