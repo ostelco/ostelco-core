@@ -257,7 +257,11 @@ func main() {
 				waitgroup.Add(1)
 				go func(i string) {
 					mutex.Lock()
-					fmt.Println("Iccid = ", i)
+					result, err := es2plus.ActivateIccid(client, i)
+					if err != nil {
+						panic(err)
+					}
+					fmt.Println("Iccid = ", i, "activation code = ", result.ACToken)
 					mutex.Unlock()
 					waitgroup.Done()
 				}(iccid)
