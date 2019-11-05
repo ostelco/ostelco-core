@@ -98,7 +98,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
 
         val doneSignal = CountDownLatch(request.msccList.size)
 
-        var requestCounter = 0
+        var reservationCounter = 0
 
         request.msccList.forEach { mscc ->
 
@@ -107,6 +107,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                 addInfo(consumptionResult.balance, mscc, responseBuilder)
                 reportAnalytics(consumptionResult, request)
                 Notifications.lowBalanceAlert(msisdn, consumptionResult.granted, consumptionResult.balance)
+                reservationCounter++
                 doneSignal.countDown()
             }
 
@@ -131,7 +132,6 @@ object OnlineCharging : OcsAsyncRequestConsumer {
 
             val requested = mscc.requested?.totalOctets ?: 0
             if (requested > 0) {
-                requestCounter++
                 consumptionPolicy.checkConsumption(
                         msisdn = msisdn,
                         multipleServiceCreditControl = mscc,
@@ -147,7 +147,8 @@ object OnlineCharging : OcsAsyncRequestConsumer {
         }
         doneSignal.await(2, TimeUnit.SECONDS)
 
-        if (requestCounter == 0) {
+        // In case there was no granted reservations the Validity-Time is set on base level, else it is set in each MSCC
+        if (reservationCounter == 0) {
             responseBuilder.validityTime = 86400
         }
     }
