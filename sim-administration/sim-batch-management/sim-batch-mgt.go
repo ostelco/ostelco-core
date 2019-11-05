@@ -179,7 +179,7 @@ func main() {
 		if batch == nil {
 			fmt.Printf("No batch found with name '%s'\n", *describeBatchBatch)
 		} else {
-			bytes, err := json.MarshalIndent(batch, "", "     ")
+			bytes, err := json.MarshalIndent(batch, "    ", "     ")
 			if err != nil {
 				fmt.Println("Can't serialize", batch)
 			}
