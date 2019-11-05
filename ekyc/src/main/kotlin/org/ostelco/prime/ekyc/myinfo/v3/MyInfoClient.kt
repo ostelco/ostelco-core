@@ -1,5 +1,7 @@
 package org.ostelco.prime.ekyc.myinfo.v3
 
+import com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.jsonwebtoken.Jwts
 import org.apache.cxf.rs.security.jose.jwe.JweCompactConsumer
 import org.apache.cxf.rs.security.jose.jwe.JweUtils
@@ -27,6 +29,7 @@ import java.security.Signature
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
 import java.time.Instant
+import java.time.LocalDate
 import java.util.*
 import javax.inject.Named
 import javax.ws.rs.core.MediaType
@@ -39,6 +42,8 @@ class MyInfoClient : MyInfoKycService by MyInfoClientSingleton
 object MyInfoClientSingleton : MyInfoKycService {
 
     private val logger by getLogger()
+
+    private val relaxedObjectMapper = jacksonObjectMapper().configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
 
     override fun getConfig(): MyInfoConfig = MyInfoConfig(
             url = "${config.myInfoApiUri}/authorise" +
@@ -60,11 +65,18 @@ object MyInfoClientSingleton : MyInfoKycService {
         val uinFin = claims.body.subject
 
         // Using access_token and uin_fin, call /person API to get Person Data
-        val personData = getPersonData(
+        val personDataString = getPersonData(
                 uinFin = uinFin,
                 accessToken = tokenApiResponse.accessToken)
 
-        return MyInfoData(uinFin = uinFin, personData = personData)
+        val personData = relaxedObjectMapper.readValue(personDataString, PersonData::class.java)
+
+        return MyInfoData(
+                uinFin = uinFin,
+                personData = personDataString,
+                birthDate = personData.dateOfBirth?.value?.let(LocalDate::parse),
+                passExpiryDate = personData.passExpiryDate?.value?.let(LocalDate::parse)
+        )
     }
 
     private fun getToken(authorisationCode: String): String? =
