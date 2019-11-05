@@ -301,7 +301,8 @@ func executeGenericEs2plusCommand(jsonStrB []byte, hostport string, es2plusComma
 
 
 func GetStatus(client *Es2PlusClient, iccid string) (*ProfileStatus, error) {
-    result := new(ES2ProfileStatusResponse)
+
+        result := new(ES2ProfileStatusResponse)
     es2plusCommand := "getProfileStatus"
     header := newEs2plusHeader(client)
     payload := &ES2PlusGetProfileStatusRequest{
@@ -314,6 +315,7 @@ func GetStatus(client *Es2PlusClient, iccid string) (*ProfileStatus, error) {
     }
 
     if (len(result.ProfileStatusList) == 0) {
+        fmt.Sprintf("No results found for iccid = '%s'", iccid)
         return nil, nil
     } else if (len(result.ProfileStatusList)  == 1) {
         returnvalue := result.ProfileStatusList[0]
@@ -398,4 +400,26 @@ func ConfirmOrder(client *Es2PlusClient, iccid string) (*ES2PlusConfirmOrderResp
     } else {
         return result, nil
     }
+}
+
+func ActivateIccid(client *Es2PlusClient, iccid string)  (*ProfileStatus, error){
+
+			result, err := GetStatus(client, iccid)
+			if err != nil {
+				panic(err)
+			}
+
+			if result.ACToken == "" {
+
+				_, err := DownloadOrder(client, iccid)
+				if err != nil {
+					return nil, err
+				}
+				_, err = ConfirmOrder(client, iccid)
+				if err != nil {
+					return nil, err
+				}
+			}
+			result, err = GetStatus(client, iccid)
+			return result, err
 }

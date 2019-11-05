@@ -2,12 +2,16 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/es2plus"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/outfileconversion"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/store"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/uploadtoprime"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	"log"
+	"os"
+	"sync"
 )
 
 //  "gopkg.in/alecthomas/kingpin.v2"
@@ -26,7 +30,7 @@ var (
 	smoketestIccidInput   = smoketest.Flag("iccid", "Iccid of profile to manipulate").Required().String()
 
 	es2             = kingpin.Command("es2", "Do things with the ES2+ protocol")
-	es2cmd          = es2.Arg("cmd", "The ES2+ subcommand, one of get-status, recover-profile, download-order, confirm-order, cancel-profile ").Required().String()
+	es2cmd          = es2.Arg("cmd", "The ES2+ subcommand, one of get-status, recover-profile, download-order, confirm-order, cancel-profile, bulk-activate-iccids, activate-iccid ").Required().String()
 	es2iccid        = es2.Arg("iccid", "Iccid of profile to manipulate").Required().String()
 	es2Target       = es2.Arg("target-state", "Target state of recover-profile or cancel-profile command").Default("AVAILABLE").String()
 	es2CertFilePath = es2.Flag("cert", "Certificate pem file.").Required().String()
@@ -197,6 +201,8 @@ func main() {
 		uploadtoprime.GeneratePostingCurlscript(batch.Url, csvPayload)
 
 	case "es2":
+
+		// TODO: Vet all the parameters, they can  very easily be bogus.
 		client := es2plus.Client(*es2CertFilePath, *es2KeyFilePath, *es2Hostport, *es2RequesterId)
 		iccid := *es2iccid
 		switch *es2cmd {
@@ -205,7 +211,8 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			fmt.Println("iccid='%s', state='%s', acToken='%s'\n", iccid, result.State, result.ACToken)
+
+			fmt.Printf("iccid='%s', state='%s', acToken='%s'\n", iccid, (*result).State, (*result).ACToken)
 		case "recover-profile":
 			checkEs2TargetState(es2Target)
 			result, err := es2plus.RecoverProfile(client, iccid, *es2Target)
@@ -226,19 +233,35 @@ func main() {
 			}
 			fmt.Println("result -> ", result)
 		case "activate-iccid":
-			_, err := es2plus.DownloadOrder(client, iccid)
+			result, err := es2plus.ActivateIccid(client, iccid)
+
 			if err != nil {
 				panic(err)
 			}
-			_, err = es2plus.ConfirmOrder(client, iccid)
+			fmt.Printf("%s, %s\n", iccid, result.ACToken)
+
+		case "bulk-activate-iccids":
+			fmt.Printf("Ready to bulk activate some iccids\n")
+
+			file, err := os.Open(iccid)
 			if err != nil {
-				panic(err)
+				log.Fatal(err)
 			}
-			result, err := es2plus.GetStatus(client, iccid)
-			if err != nil {
-				panic(err)
+			defer file.Close()
+
+			scanner := bufio.NewScanner(file)
+			var mutex = &sync.Mutex{}
+			for scanner.Scan() {
+				mutex.Lock()
+				fmt.Println("Iccid = ", scanner.Text())
+				mutex.Unlock()
 			}
-			fmt.Printf("%s, %s", iccid, result.ACToken)
+
+			if err := scanner.Err(); err != nil {
+				log.Fatal(err)
+			}
+			fmt.Println("Done")
+
 
 		case "cancel-profile":
 			checkEs2TargetState(es2Target)
@@ -247,7 +270,7 @@ func main() {
 				panic(err)
 			}
 		default:
-			panic("Unknown es2+ subcommand, try --help")
+			panic(fmt.Sprintf("Unknown es2+ subcommand '%s', try --help", *es2cmd))
 		}
 	case "batch":
 		fmt.Println("Doing the batch thing.")
