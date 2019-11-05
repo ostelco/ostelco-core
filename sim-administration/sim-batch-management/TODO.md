@@ -1,10 +1,14 @@
 An informal TODO list for the sim batch management tool
 ==
 
+1. Ingest input files into a corresponding batch, read all the sim 
+   profiles into a sim profile table.  This table can then be enriched
+   with access codes, MSISDNs etc, and then written to both HSSes and 
+   be transformed into various types of upload files.
 1. Rewrite upload-sim-batch-lib-test.go to be part of sim-batch-mgt.go,
    during that process:
    * Persist the batch data [Done]
-   * List available batches, show the status (use json).
+   * List persisted batches, show the status (use json).
    * Persist access parameters for Prime(s) (prod, and pre-prod) (indirectly).
    * Persist access parameters for sim vendors and HSSes
    * Check referential integrity in data model so that batches don't refer to
@@ -23,3 +27,11 @@ An informal TODO list for the sim batch management tool
       directly from the script later.   In either case 
       it will be assumed that tunnels are set up out of band, and
       tunnel setup is not part of this program.
+
+
+
+Notes
+==
+
+      simmgr_inventory=> select count(*) from sim_entries where profile = 'OYA_M1_STANDARD_ACB' and smdpplusstate = 'RELEASED'; 
+ 

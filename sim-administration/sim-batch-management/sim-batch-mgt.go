@@ -19,7 +19,6 @@ var (
 	// TODO: Enable, but also make it have an effect.
 	// debug    = kingpin.Flag("debug", "enable debug mode").Default("false").Bool()
 
-
 	es2             = kingpin.Command("es2", "Do things with the ES2+ protocol")
 	es2cmd          = es2.Arg("cmd", "The ES2+ subcommand, one of get-status, recover-profile, download-order, confirm-order, cancel-profile, bulk-activate-iccids, activate-iccid ").Required().String()
 	es2iccid        = es2.Arg("iccid", "Iccid of profile to manipulate").Required().String()
@@ -104,6 +103,13 @@ var (
 	// TODO ???
 	batch = kingpin.Command("batch", "Utility for persisting and manipulating sim card batches.")
 
+	listBatches   = kingpin.Command("list-batches", "List all known batches.")
+	describeBatch = kingpin.Command("describe-batch", "List all known batches.")
+
+	describeBatchBatch = describeBatch.Arg("batch", "List all known batches.").String()
+
+	// describeBatch = kingpin.Command("describe-batch", "List details about named batch")
+	// describeBatchName = describeBatch.Arg("name").Required().String()
 	//
 	//    Declare a new batch
 	//
@@ -149,6 +155,34 @@ func main() {
 	switch cmd {
 	case "sim-profile-upload":
 		outfileconversion.ConvertInputfileToOutputfile(*spUploadInputFile, *spUploadOutputFilePrefix)
+
+	case "list-batches":
+
+		allBatches, err := db.GetAllBatches()
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println("Names of current batches: ")
+		for _, batch := range allBatches {
+			fmt.Printf("  %s\n", batch.Name)
+		}
+
+	case "describe-batch":
+
+		fmt.Print("aaa")
+		batch, err := db.GetBatchByName(*describeBatchBatch)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Print("yho")
+		if batch == nil {
+			fmt.Printf("No batch found with name '%s'\n", *describeBatchBatch)
+		} else {
+			fmt.Printf("Batch = '%s'\n", batch)
+		}
+
 	case "declare-batch":
 		fmt.Println("Declare batch")
 		db.DeclareBatch(
@@ -282,4 +316,3 @@ func checkEs2TargetState(target *string) {
 		panic("Target ES2+ state unexpected, legal value(s) is(are): 'AVAILABLE'")
 	}
 }
-
