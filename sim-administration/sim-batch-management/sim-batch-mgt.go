@@ -184,7 +184,7 @@ func main() {
 				fmt.Println("Can't serialize", batch)
 			}
 
-			fmt.Printf("%v'\n", string(bytes))
+			fmt.Printf("%v\n", string(bytes))
 		}
 
 	case "declare-batch":
