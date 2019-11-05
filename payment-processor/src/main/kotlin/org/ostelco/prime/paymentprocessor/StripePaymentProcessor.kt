@@ -531,16 +531,15 @@ class StripePaymentProcessor : PaymentProcessor {
      */
     override fun payInvoice(invoiceId: String, sourceId: String?): Either<PaymentError, InvoicePaymentInfo> =
             either("Failed to complete payment of invoice ${invoiceId}") {
-                val params = mapOf(
-                        *(if (sourceId != null)
-                            arrayOf("source" to sourceId)
-                        else arrayOf())
-                )
+                val params = if (sourceId != null)
+                    mapOf("source" to sourceId)
+                else
+                    emptyMap()
                 val receipt = Invoice.retrieve(invoiceId)
                         .pay(params)
                 InvoicePaymentInfo(id = receipt.id,
                         status = PaymentStatus.PAYMENT_SUCCEEDED,
-                        chargeId = receipt?.charge ?: UUID.randomUUID().toString())
+                        chargeId = receipt.charge ?: UUID.randomUUID().toString())
             }
 
     override fun removeInvoice(invoiceId: String): Either<PaymentError, InvoiceInfo> =

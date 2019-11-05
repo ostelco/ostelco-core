@@ -2490,7 +2490,7 @@ object Neo4jStoreSingleton : GraphStore {
                         product = product,
                         timestamp = Instant.now().toEpochMilli(),
                         properties = mapOf(
-                                "invoiceId" to (subscriptionPaymentInfo.invoiceId ?: UUID.randomUUID().toString()),
+                                "invoiceId" to (subscriptionPaymentInfo.invoiceId),
                                 "paymentStatus" to subscriptionPaymentInfo.status.name)
                 )
 
