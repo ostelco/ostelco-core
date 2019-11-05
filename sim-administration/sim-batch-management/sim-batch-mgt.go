@@ -117,10 +117,10 @@ var (
 	//    Declare a new batch
 	//
 	db           = kingpin.Command("declare-batch", "Declare a batch to be persisted, and used by other commands")
-	dbName = db.Flag("name", "Unique name of this batch").Required().String()
-	dbCustomer = db.Flag("customer", "Name of the customer of this batch (with respect to the sim profile vendor)").Required().String()
-	dbBatchNo = db.Flag("batch-no", "Unique number of this batch (with respect to the profile vendor)").Required().String()
-	dbOrderDate = db.Flag("order-date", "Order date in format ddmmyyyy").Required().String()
+	dbName       = db.Flag("name", "Unique name of this batch").Required().String()
+	dbCustomer   = db.Flag("customer", "Name of the customer of this batch (with respect to the sim profile vendor)").Required().String()
+	dbBatchNo    = db.Flag("batch-no", "Unique number of this batch (with respect to the profile vendor)").Required().String()
+	dbOrderDate  = db.Flag("order-date", "Order date in format ddmmyyyy").Required().String()
 	dbFirstIccid = db.Flag("first-rawIccid",
 		"An 18 or 19 digit long string.  The 19-th digit being a luhn luhnChecksum digit, if present").Required().String()
 	dbLastIccid = db.Flag("last-rawIccid",
@@ -249,19 +249,36 @@ func main() {
 			}
 			defer file.Close()
 
+
+			var iccids []string
 			scanner := bufio.NewScanner(file)
 			var mutex = &sync.Mutex{}
 			for scanner.Scan() {
-				mutex.Lock()
-				fmt.Println("Iccid = ", scanner.Text())
-				mutex.Unlock()
+				iccid := scanner.Text()
+				iccids = append(iccids, iccid)
 			}
+
+			var waitgroup sync.WaitGroup
+			for _, iccid := range (iccids) {
+				waitgroup.Add(1)
+				go func() {
+					for {
+						// Mutex the printing, so that it won't
+						//  print on top of someone else already printing.
+						mutex.Lock()
+						fmt.Println("Iccid = ", iccid)
+						mutex.Unlock()
+						waitgroup.Done()
+					}
+				}()
+			}
+
+			waitgroup.Wait()
 
 			if err := scanner.Err(); err != nil {
 				log.Fatal(err)
 			}
 			fmt.Println("Done")
-
 
 		case "cancel-profile":
 			checkEs2TargetState(es2Target)
