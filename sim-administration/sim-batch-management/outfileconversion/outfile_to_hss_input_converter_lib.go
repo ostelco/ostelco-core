@@ -58,7 +58,7 @@ type ParserState struct {
 	entries           []model.SimEntry
 }
 
-func ReadOutputFile(filename string) model.OutputFileRecord {
+func ParseOutputFile(filename string) model.OutputFileRecord {
 
 	_, err := os.Stat(filename)
 
@@ -277,7 +277,7 @@ func WriteHssCsvFile(filename string, entries []model.SimEntry) error {
 //
 
 func ConvertInputfileToOutputfile(inputFile string, outputFilePrefix string) {
-	outRecord := ReadOutputFile(inputFile)
+	outRecord := ParseOutputFile(inputFile)
 	outputFile := outputFilePrefix + outRecord.OutputFileName + ".csv"
 	fmt.Println("outputFile = ", outputFile)
 
