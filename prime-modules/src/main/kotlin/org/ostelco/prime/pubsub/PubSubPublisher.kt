@@ -6,6 +6,6 @@ import io.dropwizard.lifecycle.Managed
 import java.util.concurrent.ScheduledExecutorService
 
 
-interface PubSubPublisher : Managed {
+interface PubSubPublisher2 : Managed {
     fun publishPubSubMessage(pubsubMessage: PubsubMessage): ApiFuture<String>
 }

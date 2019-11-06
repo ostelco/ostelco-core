@@ -11,9 +11,9 @@ import io.grpc.ManagedChannelBuilder
 import java.util.concurrent.TimeUnit
 
 
-class DelegatePubSubPublisher(
+class DelegatePubSubPublisher2(
         private val topicId: String,
-        private val projectId: String) : PubSubPublisher {
+        private val projectId: String) : PubSubPublisher2 {
 
     private lateinit var publisher: Publisher
 

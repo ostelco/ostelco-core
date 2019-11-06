@@ -9,6 +9,7 @@ plugins {
 dependencies {
   implementation(project(":prime-modules"))
   implementation(project(":data-store"))
+  implementation(project(":publisher-extensions"))
 
   implementation("com.stripe:stripe-java:${Version.stripe}")
 
