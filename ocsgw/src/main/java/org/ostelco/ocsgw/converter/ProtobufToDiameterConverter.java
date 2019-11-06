@@ -4,6 +4,7 @@ import org.ostelco.diameter.CreditControlContext;
 import org.ostelco.diameter.model.*;
 import org.ostelco.ocs.api.CreditControlRequestInfo;
 import org.ostelco.ocs.api.CreditControlRequestType;
+import org.ostelco.ocs.api.PsInformation;
 import org.ostelco.ocs.api.ServiceInfo;
 import org.ostelco.ocsgw.datasource.protobuf.GrpcDataSource;
 import org.slf4j.Logger;
@@ -87,66 +88,78 @@ public class ProtobufToDiameterConverter {
 
             builder.setRequestNumber(context.getCreditControlRequest().getCcRequestNumber().getInteger32());
 
-            for (MultipleServiceCreditControl mscc : context.getCreditControlRequest().getMultipleServiceCreditControls()) {
-
-                org.ostelco.ocs.api.MultipleServiceCreditControl.Builder protoMscc = org.ostelco.ocs.api.MultipleServiceCreditControl.newBuilder();
-
-                if (!mscc.getRequested().isEmpty()) {
-
-                    ServiceUnit requested = mscc.getRequested().get(0);
-
-                    protoMscc.setRequested(org.ostelco.ocs.api.ServiceUnit.newBuilder()
-                            .setTotalOctets(requested.getTotal()) // fails at 55904
-                            .setInputOctets(0L)
-                            .setOutputOctets(0L));
-                }
-
-                for (ServiceUnit used : mscc.getUsed()) {
-
-                    // We do not track CC-Service-Specific-Units or CC-Time
-                    if (used.getTotal() > 0) {
-                        protoMscc.setUsed(org.ostelco.ocs.api.ServiceUnit.newBuilder()
-                                .setInputOctets(used.getInput())
-                                .setOutputOctets(used.getOutput())
-                                .setTotalOctets(used.getTotal()));
-                    }
-                }
-
-                protoMscc.setRatingGroup(mscc.getRatingGroup());
-                protoMscc.setServiceIdentifier(mscc.getServiceIdentifier());
-
-                if (mscc.getReportingReason() != null) {
-                    protoMscc.setReportingReasonValue(mscc.getReportingReason().ordinal());
-                } else {
-                    protoMscc.setReportingReasonValue(org.ostelco.ocs.api.ReportingReason.UNRECOGNIZED.ordinal());
-                }
-                builder.addMscc(protoMscc);
-            }
+            addMultipleServiceCreditControl(context, builder);
 
             builder.setRequestId(context.getSessionId())
                     .setMsisdn(context.getCreditControlRequest().getMsisdn())
                     .setImsi(context.getCreditControlRequest().getImsi());
 
-            if (!context.getCreditControlRequest().getServiceInformation().isEmpty()) {
-                final PsInformation psInformation
-                        = context.getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0);
+            addPsInformation(context, builder);
 
-                if (psInformation != null
-                        && psInformation.getCalledStationId() != null
-                        && psInformation.getSgsnMccMnc() != null) {
-
-                    builder.setServiceInformation(
-                            ServiceInfo.newBuilder()
-                                    .setPsInformation(org.ostelco.ocs.api.PsInformation.newBuilder()
-                                            .setCalledStationId(psInformation.getCalledStationId())
-                                            .setSgsnMccMnc(psInformation.getSgsnMccMnc())));
-                }
-            }
             return builder.build();
 
         } catch (Exception e) {
             LOG.error("Failed to create CreditControlRequestInfo [{}] [{}]", context.getCreditControlRequest().getMsisdn(), context.getSessionId(), e);
         }
         return null;
+    }
+
+    private static void addMultipleServiceCreditControl(final CreditControlContext context, CreditControlRequestInfo.Builder builder) {
+        for (MultipleServiceCreditControl mscc : context.getCreditControlRequest().getMultipleServiceCreditControls()) {
+
+            org.ostelco.ocs.api.MultipleServiceCreditControl.Builder protoMscc = org.ostelco.ocs.api.MultipleServiceCreditControl.newBuilder();
+
+            if (!mscc.getRequested().isEmpty()) {
+
+                ServiceUnit requested = mscc.getRequested().get(0);
+
+                protoMscc.setRequested(org.ostelco.ocs.api.ServiceUnit.newBuilder()
+                        .setTotalOctets(requested.getTotal()) // fails at 55904
+                        .setInputOctets(0L)
+                        .setOutputOctets(0L));
+            }
+
+            for (ServiceUnit used : mscc.getUsed()) {
+
+                // We do not track CC-Service-Specific-Units or CC-Time
+                if (used.getTotal() > 0) {
+                    protoMscc.setUsed(org.ostelco.ocs.api.ServiceUnit.newBuilder()
+                            .setInputOctets(used.getInput())
+                            .setOutputOctets(used.getOutput())
+                            .setTotalOctets(used.getTotal()));
+                }
+            }
+
+            protoMscc.setRatingGroup(mscc.getRatingGroup());
+            protoMscc.setServiceIdentifier(mscc.getServiceIdentifier());
+
+            if (mscc.getReportingReason() != null) {
+                protoMscc.setReportingReasonValue(mscc.getReportingReason().ordinal());
+            } else {
+                protoMscc.setReportingReasonValue(org.ostelco.ocs.api.ReportingReason.UNRECOGNIZED.ordinal());
+            }
+            builder.addMscc(protoMscc);
+        }
+    }
+
+    private static void addPsInformation(final CreditControlContext context, CreditControlRequestInfo.Builder builder) {
+        if (!context.getCreditControlRequest().getServiceInformation().isEmpty()) {
+            final org.ostelco.diameter.model.PsInformation psInformation
+                    = context.getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0);
+
+            if (psInformation != null) {
+                PsInformation.Builder psInformationBuilder  = org.ostelco.ocs.api.PsInformation.newBuilder();
+                if (psInformation.getCalledStationId() != null) {
+                    psInformationBuilder.setCalledStationId(psInformation.getCalledStationId());
+                }
+                if (psInformation.getSgsnMccMnc() != null) {
+                    psInformationBuilder.setSgsnMccMnc(psInformation.getSgsnMccMnc());
+                }
+                if (psInformation.getImsiMccMnc() != null) {
+                    psInformationBuilder.setImsiMccMnc(psInformation.getImsiMccMnc());
+                }
+                builder.setServiceInformation(ServiceInfo.newBuilder().setPsInformation(psInformationBuilder));
+            }
+        }
     }
 }
