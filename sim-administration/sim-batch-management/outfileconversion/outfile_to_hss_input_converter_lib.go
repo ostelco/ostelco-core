@@ -1,5 +1,7 @@
 package outfileconversion
 
+// TODO: Rename to oufileparser
+
 import (
 	"bufio"
 	"flag"

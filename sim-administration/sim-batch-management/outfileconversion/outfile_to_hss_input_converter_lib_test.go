@@ -3,16 +3,18 @@ package outfileconversion
 import (
 	"gotest.tools/assert"
 	"testing"
+	"fmt"
 )
 
-func testKeywordValueParser(t *testing.T) {
+
+func TestKeywordValueParser(t *testing.T) {
 	theMap := make(map[string]string)
 	ParseLineIntoKeyValueMap("ProfileType     : BAR_FOOTEL_STD", theMap)
 
 	assert.Equal(t, "BAR_FOOTEL_STD", theMap["ProfileType"])
 }
 
-func testReadingSimpleOutputFile(t *testing.T) {
+func TestReadingSimpleOutputFile(t *testing.T) {
 	sample_output_file_name := "sample_out_file_for_testing.out"
 	record := ParseOutputFile(sample_output_file_name)
 
@@ -35,7 +37,8 @@ func testReadingSimpleOutputFile(t *testing.T) {
 	assert.Equal(t, 3, record.NoOfEntries)
 }
 
-func testReadingComplexOutputFile(t *testing.T) {
+func TestReadingComplexOutputFile(t *testing.T) {
 	sample_output_file_name := "sample_out_file_for_testing.out"
 	record := ParseOutputFile(sample_output_file_name)
+	fmt.Println("Record = ",record)
 }
