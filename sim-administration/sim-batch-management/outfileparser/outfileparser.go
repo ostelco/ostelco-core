@@ -4,6 +4,7 @@ package outfileparser
 
 import (
 	"bufio"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/loltelutils"
@@ -13,7 +14,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"errors"
 )
 
 const (
@@ -59,28 +59,27 @@ type ParserState struct {
 	inputVariables    map[string]string
 	headerDescription map[string]string
 	entries           []model.SimEntry
+	csvFieldMap       map[string]int
 }
 
-func ParseVarOutLine(varOutLine string) (map[string]int, error) {
+func ParseVarOutLine(varOutLine string, result *map[string]int) (error) {
 	varOutSplit := strings.Split(varOutLine, ":")
 
-	if (len(varOutSplit) != 2) {
+	if len(varOutSplit) != 2 {
 		fmt.Println("Length = ", len(varOutSplit))
-		return nil, errors.New("syntax error in var_out line.  More than two colon separated fields.")
+		return nerrors.New("syntax error in var_out line.  More than two colon separated fields.")
 	}
 
-	if (string(varOutSplit[0]) != "var_out") {
-		return nil, errors.New("syntax error in var_out line.  Does not start with'var_out:'")
+	if string(varOutSplit[0]) != "var_out" {
+		return errors.New("syntax error in var_out line.  Does not start with 'var_out:'")
 	}
 
 	slashedFields := strings.Split(varOutSplit[1], "/")
-	var result =  map[string]int{}
 	for index, columnName := range slashedFields {
-		result[columnName] = index
+		(*result)[columnName] = index
 	}
-	return result, nil
+	return nil
 }
-
 
 func ParseOutputFile(filename string) model.OutputFileRecord {
 
@@ -104,6 +103,7 @@ func ParseOutputFile(filename string) model.OutputFileRecord {
 		currentState:      INITIAL,
 		inputVariables:    make(map[string]string),
 		headerDescription: make(map[string]string),
+		csvFieldMap:       make(map[string]int),
 	}
 
 	scanner := bufio.NewScanner(file)
@@ -135,22 +135,27 @@ func ParseOutputFile(filename string) model.OutputFileRecord {
 			}
 			ParseLineIntoKeyValueMap(line, state.inputVariables)
 		case OUTPUT_VARIABLES:
-			if line == "var_Out: ICCID/IMSI/KI" {
+
+			if (strings.HasPrefix(line, "var_Out: ")) {
+				if (len(state.csvFieldMap) != 0) {
+					log.Fatal("Parsing multiple 'var_out' lines can't be right")
+				}
+				if ParseVarOutLine(line, &(state.csvFieldMap)) != nil {
+					log.Fatalf("Couldn't parse output variable declaration '%s'\n", err)
+				}
 				continue
 			}
 
-			// We won't handle all variations, only the most common one
-			// if more fancy variations are necessary (with pin codes etc), then
-			// we'll add them as needed.
-			if strings.HasPrefix(line, "var_Out: ") {
-				log.Fatalf("Unknown output format, only know how to handle ICCID/IMSI/KI, but was '%s'\n", line)
+			if (len(state.csvFieldMap) == 0) {
+				log.Fatal("Cannot parse CSV part of input file without having first parsed a CSV header.")
 			}
 
 			line = strings.TrimSpace(line)
 			if line == "" {
 				continue
 			}
-			rawIccid, imsi, ki := parseOutputLine(line)
+
+			rawIccid, imsi, ki := parseOutputLine(state, line)
 
 			iccidWithChecksum := rawIccid
 			if strings.HasSuffix(rawIccid, "F") {
@@ -183,7 +188,7 @@ func ParseOutputFile(filename string) model.OutputFileRecord {
 	declaredNoOfEntities, err := strconv.Atoi(state.headerDescription["Quantity"])
 
 	if err != nil {
-		log.Fatal("Could not find 'Quantity' field while parsing file '",filename, "'")
+		log.Fatal("Could not find 'Quantity' field while parsing file '", filename, "'")
 	}
 
 	if countedNoOfEntries != declaredNoOfEntities {
@@ -222,9 +227,9 @@ func getCustomer(state ParserState) string {
 	return state.headerDescription["Customer"]
 }
 
-func parseOutputLine(s string) (string, string, string) {
+func parseOutputLine(state ParserState, s string) (string, string, string) {
 	parsedString := strings.Split(s, " ")
-	return parsedString[0], parsedString[1], parsedString[2]
+	return parsedString[state.csvFieldMap["ICCID"]], parsedString[state.csvFieldMap["IMSI"]], parsedString[state.csvFieldMap["KI"]]
 }
 
 func transitionMode(state *ParserState, targetState string) {
@@ -265,7 +270,6 @@ func fileExists(filename string) bool {
 	}
 	return !info.IsDir()
 }
-
 
 // TODO: Move this into some other package. "hssoutput" or something.
 // TODO: Consider rewriting using https://golang.org/pkg/encoding/csv/
