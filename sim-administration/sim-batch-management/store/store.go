@@ -157,6 +157,7 @@ func (sdb SimBatchDB) DeclareBatch(
 	profileVendor string,
 	initialHlrActivationStatusOfProfiles string) (*model.Batch, error) {
 
+
 	// TODO:
 	// 1. Check all the arguments (methods already written).
 	// 2. Check that the name isn't already registred.
@@ -246,5 +247,6 @@ func (sdb SimBatchDB) DeclareBatch(
 
 	// Create the new batch (checking for consistency not done!)
 	err = sdb.Create(&myBatch)
+
 	return &myBatch, err
 }

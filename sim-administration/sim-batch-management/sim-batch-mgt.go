@@ -6,9 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/es2plus"
-	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/store"
-	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/uploadtoprime"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/outfileparser"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/store"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/uploadtoprime"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 	"log"
 	"os"
@@ -105,15 +106,13 @@ var (
 	batch = kingpin.Command("batch", "Utility for persisting and manipulating sim card batches.")
 
 	listBatches   = kingpin.Command("list-batches", "List all known batches.")
-	describeBatch = kingpin.Command("describe-batch", "List all known batches.")
 
-	describeBatchBatch = describeBatch.Arg("batch", "List all known batches.").String()
+	describeBatch = kingpin.Command("describe-batch", "Describe a batch with a particular name.")
+	describeBatchBatch = describeBatch.Arg("batch", "The batch to describe").String()
 
-	// describeBatch = kingpin.Command("describe-batch", "List details about named batch")
-	// describeBatchName = describeBatch.Arg("name").Required().String()
-	//
-	//    Declare a new batch
-	//
+	generateInputFile = kingpin.Command("generate-input-file", "Generate input file for a named batch using stored parameters")
+	generateInputFileBatchname = generateInputFile.Arg("batchname", "The batch to generate the input file for.").String()
+
 	db           = kingpin.Command("declare-batch", "Declare a batch to be persisted, and used by other commands")
 	dbName       = db.Flag("name", "Unique name of this batch").Required().String()
 	dbCustomer   = db.Flag("customer", "Name of the customer of this batch (with respect to the sim profile vendor)").Required().String()
@@ -185,6 +184,19 @@ func main() {
 			}
 
 			fmt.Printf("%v\n", string(bytes))
+		}
+
+	case "generate-input-file":
+		batch, err := db.GetBatchByName(*generateInputFileBatchname)
+		if err != nil {
+			panic(err)
+		}
+
+		if batch == nil {
+			fmt.Printf("No batch found with name '%s'\n", *generateInputFileBatchname)
+		} else {
+			var result = GenerateInputFile(batch)
+			fmt.Println(result)
 		}
 
 	case "declare-batch":
@@ -319,4 +331,31 @@ func checkEs2TargetState(target *string) {
 	if *target != "AVAILABLE" {
 		panic("Target ES2+ state unexpected, legal value(s) is(are): 'AVAILABLE'")
 	}
+}
+
+
+///
+///    Input batch management
+///
+
+
+func GenerateInputFile(batch *model.Batch) string {
+	result := "*HEADER DESCRIPTION\n" +
+		"***************************************\n" +
+		fmt.Sprintf("Customer        : %s\n",  (*batch).Customer) +
+		fmt.Sprintf("ProfileType     : %s\n", (*batch).ProfileType) +
+		fmt.Sprintf("Order Date      : %s\n", (*batch).OrderDate) +
+		fmt.Sprintf("Batch No        : %s\n", (*batch).BatchNo) +
+		fmt.Sprintf("Quantity        : %d\n", (*batch).Quantity) +
+		"***************************************\n" +
+		"*INPUT VARIABLES\n" +
+		"***************************************\n" +
+		"var_In:\n" +
+		fmt.Sprintf(" ICCID: %s\n", (*batch).FirstIccid) +
+		fmt.Sprintf("IMSI: %s\n", (*batch).FirstImsi) +
+		"***************************************\n" +
+		"*OUTPUT VARIABLES\n" +
+		"***************************************\n" +
+		"var_Out: ICCID/IMSI/KI\n"
+	return result
 }

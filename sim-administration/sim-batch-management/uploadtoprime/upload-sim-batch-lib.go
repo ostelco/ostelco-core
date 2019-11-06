@@ -208,42 +208,4 @@ func OutputBatchFromCommandLineParameters(firstIccid *string,
 	}
 }
 
-///
-///    Input batch management
-///
 
-func ParseInputFileGeneratorCommmandline() model.InputBatch {
-
-	// TODO: This function should be rewritten to parse a string array and send it to flags.
-	//       we need to up our Go-Fu before we can make flag.Parse(arguments) work
-
-	return model.InputBatch{
-		Customer:    "Footel",
-		ProfileType: "BAR_FOOTEL_STD",
-		OrderDate:   "20191007",
-		BatchNo:     "2019100701",
-		Quantity:    10,
-		FirstIccid:  "894700000000002214",
-		FirstImsi:   "242017100012213"}
-}
-
-func GenerateInputFile(batch model.InputBatch) string {
-	result := "*HEADER DESCRIPTION\n" +
-		"***************************************\n" +
-		fmt.Sprintf("Customer        :%s\n", batch.Customer) +
-		fmt.Sprintf("ProfileType     : %s\n", batch.ProfileType) +
-		fmt.Sprintf("Order Date      : %s\n", batch.OrderDate) +
-		fmt.Sprintf("Batch No        : %s\n", batch.BatchNo) +
-		fmt.Sprintf("Quantity        : %d\n", batch.Quantity) +
-		"***************************************\n" +
-		"*INPUT VARIABLES\n" +
-		"***************************************\n" +
-		"var_In:\n" +
-		fmt.Sprintf(" ICCID: %s\n", batch.FirstIccid) +
-		fmt.Sprintf("IMSI: %s\n", batch.FirstImsi) +
-		"***************************************\n" +
-		"*OUTPUT VARIABLES\n" +
-		"***************************************\n" +
-		"var_Out: ICCID/IMSI/KI\n"
-	return result
-}

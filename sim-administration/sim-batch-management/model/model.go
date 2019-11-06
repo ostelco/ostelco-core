@@ -68,6 +68,12 @@ type SimEntry struct {
 type Batch struct {
 	Id              int64  `db:"id" json:"id"`
 	Name            string `db:"name" json:"name"`
+
+	// TODO: Customer is a misnomer: This is the customer name used when
+	//       ordering a sim batch, used in the input file.  So a very
+	//       specific use, not in any way the generic thing the word
+	//       as it is used now points to.
+
 	Customer        string `db:"customer" json:"customer"`
 	ProfileType     string `db:"profileType" json:"profileType"`
 	OrderDate       string `db:"orderDate" json:"orderDate"`
