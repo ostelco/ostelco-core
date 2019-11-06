@@ -53,7 +53,6 @@ import org.ostelco.prime.model.KycType.JUMIO
 import org.ostelco.prime.model.KycType.MY_INFO
 import org.ostelco.prime.model.KycType.NRIC_FIN
 import org.ostelco.prime.model.MyInfoApiVersion
-import org.ostelco.prime.model.MyInfoApiVersion.V2
 import org.ostelco.prime.model.MyInfoApiVersion.V3
 import org.ostelco.prime.model.PaymentType.SUBSCRIPTION
 import org.ostelco.prime.model.Plan
@@ -232,21 +231,21 @@ object Neo4jStoreSingleton : GraphStore {
             from = customerEntity,
             to = subscriptionEntity,
             dataClass = None::class.java)
-            .also { RelationStore(it) }
+            .also { UniqueRelationStore(it) }
 
     val exSubscriptionRelation = RelationType(
             relation = HAD_SUBSCRIPTION,
             from = exCustomerEntity,
             to = subscriptionEntity,
             dataClass = None::class.java)
-            .also { RelationStore(it) }
+            .also { UniqueRelationStore(it) }
 
     val customerToBundleRelation = RelationType(
             relation = HAS_BUNDLE,
             from = customerEntity,
             to = bundleEntity,
             dataClass = None::class.java)
-            .also { RelationStore(it) }
+            .also { UniqueRelationStore(it) }
 
     val subscriptionToBundleRelation = RelationType(
             relation = LINKED_TO_BUNDLE,
@@ -260,14 +259,14 @@ object Neo4jStoreSingleton : GraphStore {
             from = customerEntity,
             to = simProfileEntity,
             dataClass = None::class.java)
-            .also { RelationStore(it) }
+            .also { UniqueRelationStore(it) }
 
     val exCustomerToSimProfileRelation = RelationType(
             relation = HAD_SIM_PROFILE,
             from = exCustomerEntity,
             to = simProfileEntity,
             dataClass = None::class.java)
-            .also { RelationStore(it) }
+            .also { UniqueRelationStore(it) }
 
     val forPurchaseByRelation = RelationType(
             relation = FOR_PURCHASE_BY,
@@ -288,7 +287,7 @@ object Neo4jStoreSingleton : GraphStore {
             from = customerEntity,
             to = customerEntity,
             dataClass = None::class.java)
-            .also { RelationStore(it) }
+            .also { UniqueRelationStore(it) }
 
     val subscribesToPlanRelation = RelationType(
             relation = Relation.SUBSCRIBES_TO_PLAN,
@@ -1723,14 +1722,15 @@ object Neo4jStoreSingleton : GraphStore {
 
     override fun updateScanInformation(scanInformation: ScanInformation, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit> = writeTransaction {
         logger.info("updateScanInformation : ${scanInformation.scanId} status: ${scanInformation.status}")
-        getCustomerUsingScanId(scanInformation.scanId).flatMap { customer ->
-            update { scanInformation }.flatMap {
-                logger.info("updating scan Information for : ${customer.contactEmail} id: ${scanInformation.scanId} status: ${scanInformation.status}")
-                val extendedStatus = scanInformationDatastore.getExtendedStatusInformation(scanInformation)
-                if (scanInformation.status == ScanStatus.APPROVED) {
+        val updatedScanInformation = scanInformation.copy(status = verifyAndUpdateScanStatus(scanInformation))
+        getCustomerUsingScanId(updatedScanInformation.scanId).flatMap { customer ->
+            update { updatedScanInformation }.flatMap {
+                logger.info("updating scan Information for : ${customer.contactEmail} id: ${updatedScanInformation.scanId} status: ${updatedScanInformation.status}")
+                val extendedStatus = scanInformationDatastore.getExtendedStatusInformation(updatedScanInformation)
+                if (updatedScanInformation.status == ScanStatus.APPROVED) {
 
-                    logger.info("Inserting scan Information to cloud storage : id: ${scanInformation.scanId} countryCode: ${scanInformation.countryCode}")
-                    scanInformationDatastore.upsertVendorScanInformation(customer.id, scanInformation.countryCode, vendorData)
+                    logger.info("Inserting scan Information to cloud storage : id: ${updatedScanInformation.scanId} countryCode: ${updatedScanInformation.countryCode}")
+                    scanInformationDatastore.upsertVendorScanInformation(customer.id, updatedScanInformation.countryCode, vendorData)
                             .flatMap {
                                 appNotifier.notify(
                                         notificationType = NotificationType.JUMIO_VERIFICATION_SUCCEEDED,
@@ -1740,27 +1740,47 @@ object Neo4jStoreSingleton : GraphStore {
                                 logger.info(NOTIFY_OPS_MARKER, "Jumio verification succeeded for ${customer.contactEmail} Info: $extendedStatus")
                                 setKycStatus(
                                         customer = customer,
-                                        regionCode = scanInformation.countryCode.toLowerCase(),
+                                        regionCode = updatedScanInformation.countryCode.toLowerCase(),
                                         kycType = JUMIO,
+                                        kycExpiryDate = updatedScanInformation?.scanResult?.expiry,
                                         transaction = transaction)
                             }
                 } else {
-                    // TODO: find out what more information can be passed to the client.
-                    appNotifier.notify(
-                            notificationType = NotificationType.JUMIO_VERIFICATION_FAILED,
-                            customerId = customer.id,
-                            data = extendedStatus
-                    )
+                    // Do not notify the app when the verification fails because the customer has cancelled and hence did not upload an ID.
+                    if (updatedScanInformation.scanResult?.verificationStatus != "NO_ID_UPLOADED") {
+                        // TODO: find out what more information can be passed to the client.
+                        appNotifier.notify(
+                                notificationType = NotificationType.JUMIO_VERIFICATION_FAILED,
+                                customerId = customer.id,
+                                data = extendedStatus
+                        )
+                    }
                     logger.info(NOTIFY_OPS_MARKER, "Jumio verification failed for ${customer.contactEmail} Info: $extendedStatus")
                     setKycStatus(
                             customer = customer,
-                            regionCode = scanInformation.countryCode.toLowerCase(),
+                            regionCode = updatedScanInformation.countryCode.toLowerCase(),
                             kycType = JUMIO,
                             kycStatus = REJECTED,
                             transaction = transaction)
                 }
             }
         }.ifFailedThenRollback(transaction)
+    }
+
+    private fun verifyAndUpdateScanStatus(scanInformation: ScanInformation): ScanStatus {
+
+        val is18yrsOfAge = scanInformation.scanResult
+                ?.dob
+                ?.let(LocalDate::parse)
+                ?.plusYears(18)
+                ?.isBefore(LocalDate.now())
+                ?: true
+
+        return if (is18yrsOfAge) {
+            scanInformation.status
+        } else {
+            ScanStatus.REJECTED
+        }
     }
 
     //
@@ -1790,7 +1810,6 @@ object Neo4jStoreSingleton : GraphStore {
 
                 val myInfoData = try {
                     when (version) {
-                        V2 -> myInfoKycV2Service
                         V3 -> myInfoKycV3Service
                     }.getPersonData(authorisationCode)
                 } catch (e: Exception) {
@@ -1945,6 +1964,7 @@ object Neo4jStoreSingleton : GraphStore {
             regionCode: String,
             kycType: KycType,
             kycStatus: KycStatus = KycStatus.APPROVED,
+            kycExpiryDate: String? = null,
             transaction: Transaction): Either<StoreError, Unit> {
 
         return IO {

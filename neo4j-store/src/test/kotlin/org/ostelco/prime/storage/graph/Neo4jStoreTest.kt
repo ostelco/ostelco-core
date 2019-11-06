@@ -199,7 +199,7 @@ class Neo4jStoreTest {
                 customer = CUSTOMER, referredBy = "blah")
                 .fold({
                     assertEquals(
-                            expected = "Failed to create REFERRED - blah -> ${CUSTOMER.id}",
+                            expected = "Customer - blah not found.",
                             actual = it.message)
                 },
                         { fail("Created customer in spite of invalid 'referred by'") })
@@ -558,7 +558,8 @@ class Neo4jStoreTest {
                             country = "NOR",
                             firstName = "Test User",
                             lastName = "Family",
-                            dob = "1980/10/10",
+                            dob = "1980-10-10",
+                            expiry = null,
                             rejectReason = null
                     )
             )
@@ -608,7 +609,8 @@ class Neo4jStoreTest {
                             country = "NOR",
                             firstName = "Test User",
                             lastName = "Family",
-                            dob = "1980/10/10",
+                            dob = "1980-10-10",
+                            expiry = null,
                             rejectReason = null
                     )
             )
@@ -1147,7 +1149,7 @@ class Neo4jStoreTest {
 
                     val exCustomer = get(ExCustomer withId CUSTOMER.id).bind()
                     assertEquals(
-                            expected = ExCustomer(id = CUSTOMER.id, terminationDate = "%d-%d-%d".format(LocalDate.now().year, LocalDate.now().monthValue, LocalDate.now().dayOfMonth)),
+                            expected = ExCustomer(id = CUSTOMER.id, terminationDate = "%d-%02d-%02d".format(LocalDate.now().year, LocalDate.now().monthValue, LocalDate.now().dayOfMonth)),
                             actual = exCustomer,
                             message = "ExCustomer does not match")
 

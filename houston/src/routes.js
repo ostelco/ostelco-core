@@ -3,8 +3,7 @@ import { Route, BrowserRouter as Router, Redirect, Switch, Link } from 'react-ro
 import { connect } from 'react-redux';
 
 import App from './components/App';
-import Search from './components/Search/Search';
-import Notifications from './components/Notifications/Notifications';
+import Main from './components/Search/Main';
 import Callback from './components/Callback/Callback';
 import { Provider } from 'react-redux';
 import { store } from './helpers';
@@ -65,9 +64,6 @@ function NoMatch() {
         <li>
           <Link to="/">Search</Link>
         </li>
-        <li>
-          <Link to="/notifications">Notifications</Link>
-        </li>
       </ul>
     </div>
   );
@@ -81,8 +77,7 @@ export const makeMainRoutes = () => {
           <App />
           <Switch >
             <Route path="/login" component={Login} />
-            <ProtectedRoute path="/" exact component={Search} />
-            <ProtectedRoute path="/notifications" component={Notifications} />
+            <ProtectedRoute path="/" exact component={Main} />
             <Route path="/callback" render={(props) => {
               handleAuthentication(props);
               return <Callback {...props} />

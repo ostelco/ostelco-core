@@ -72,9 +72,18 @@ class ReplicatedTimerTask(val data: ReplicatedTimerTaskData, private val session
             logger.debug("Task with id ${data.taskID} is recurring, not removing it")
         }
 
-        logger.debug("Firing Timer with id ${data.taskID}")
-
-        runTask()
+        /* The TCC_CCASERVER_TIMER is supposed to clear any reservation and set state back to IDLE
+           We do not store the reservation in the gateway, therefore we do not need to trigger the
+           onTimer imlp. But we should clear any internals kept for this session to not waste memory.
+         */
+        if (!data.taskID.toString().endsWith("TCC_CCASERVER_TIMER")) {
+            logger.debug("Firing Timer with id ${data.taskID}")
+            runTask()
+        } else {
+            // clear local session. As the timer was created by this instance it should be local.
+            logger.debug("Skipping Timer with id ${data.taskID}, removing session ${data.sessionId}")
+            sessionDataSource.removeSession(data.sessionId)
+        }
     }
 
     private fun removeFromScheduler() {

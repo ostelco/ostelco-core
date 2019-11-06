@@ -6,7 +6,7 @@ jobs:
     machine:
       image: ubuntu-1604:201903-01
     environment:
-      JAVA_HOME: /usr/lib/jvm/zulu13.27.9-ca-jdk13-linux_x64
+      JAVA_HOME: /usr/lib/jvm/zulu13.28.11-ca-jdk13.0.1-linux_x64
 
     steps:
       - checkout
@@ -14,8 +14,8 @@ jobs:
           name: upgrading Java to open-jdk-12
           command: |
             # sudo apt update; sudo apt install -y wget
-            sudo wget https://cdn.azul.com/zulu/bin/zulu13.27.9-ca-jdk13-linux_x64.tar.gz -O /tmp/zulu13.27.9-ca-jdk13-linux_x64.tar.gz
-            sudo tar -zxf /tmp/zulu13.27.9-ca-jdk13-linux_x64.tar.gz -C /usr/lib/jvm
+            sudo wget https://cdn.azul.com/zulu/bin/zulu13.28.11-ca-jdk13.0.1-linux_x64.tar.gz -O /tmp/zulu13.28.11-ca-jdk13.0.1-linux_x64.tar.gz
+            sudo tar -zxf /tmp/zulu13.28.11-ca-jdk13.0.1-linux_x64.tar.gz -C /usr/lib/jvm
       - run:
           # checking for merge conflicts and merging locally if none exist
           name: merging ${CIRCLE_BRANCH} into develop locally
@@ -29,7 +29,7 @@ jobs:
       - run:
           name: javac -version
           command: |
-            export PATH=/usr/lib/jvm/zulu13.27.9-ca-jdk13-linux_x64/bin:$PATH
+            export PATH=/usr/lib/jvm/zulu13.28.11-ca-jdk13.0.1-linux_x64/bin:$PATH
             javac -version
       - run:
           name: Pulling Gradle cache
@@ -84,12 +84,12 @@ jobs:
   code-coverage:
     environment:
       CODACY_DOWNLOAD_URL: https://github.com/codacy/codacy-coverage-reporter/releases/download
-      CODACY_VERSION: 6.0.0
+      CODACY_VERSION: 6.0.6
       CODACY_JAR_FILE: codacy-coverage-reporter-assembly-latest.jar
       CODACY_MODULE: com.codacy.CodacyCoverageReporter
 
     docker:
-      - image: circleci/openjdk:11.0.3-jdk-stretch
+      - image: circleci/openjdk:13.0.1-jdk-buster
 
     steps:
       - run:
@@ -117,7 +117,7 @@ jobs:
     machine:
       image: ubuntu-1604:201903-01
     environment:
-      JAVA_HOME: /usr/lib/jvm/zulu13.27.9-ca-jdk13-linux_x64
+      JAVA_HOME: /usr/lib/jvm/zulu13.28.11-ca-jdk13.0.1-linux_x64
 
     steps:
       - checkout
@@ -126,8 +126,8 @@ jobs:
           command: |
             # sudo apt update; sudo apt install -y wget
 
-            sudo wget https://cdn.azul.com/zulu/bin/zulu13.27.9-ca-jdk13-linux_x64.tar.gz -O /tmp/zulu13.27.9-ca-jdk13-linux_x64.tar.gz
-            sudo tar -zxf /tmp/zulu13.27.9-ca-jdk13-linux_x64.tar.gz -C /usr/lib/jvm
+            sudo wget https://cdn.azul.com/zulu/bin/zulu13.28.11-ca-jdk13.0.1-linux_x64.tar.gz -O /tmp/zulu13.28.11-ca-jdk13.0.1-linux_x64.tar.gz
+            sudo tar -zxf /tmp/zulu13.28.11-ca-jdk13.0.1-linux_x64.tar.gz -C /usr/lib/jvm
       - run:
           name: Pulling Gradle cache
           command: |
@@ -142,7 +142,7 @@ jobs:
       - run:
           name: javac -version
           command: |
-            export PATH=/usr/lib/jvm/zulu13.27.9-ca-jdk13-linux_x64/bin:$PATH
+            export PATH=/usr/lib/jvm/zulu13.28.11-ca-jdk13.0.1-linux_x64/bin:$PATH
             javac -version
       - run:
           name: Gradle Build Prime and ScanInfo Shredder
