@@ -8,6 +8,7 @@ import (
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/es2plus"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/store"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/uploadtoprime"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/outfileparser"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 	"log"
 	"os"
@@ -154,7 +155,7 @@ func main() {
 	cmd := kingpin.Parse()
 	switch cmd {
 	case "sim-profile-upload":
-		outfileconversion.ConvertInputfileToOutputfile(*spUploadInputFile, *spUploadOutputFilePrefix)
+		outfileparser.ConvertInputfileToOutputfile(*spUploadInputFile, *spUploadOutputFilePrefix)
 
 	case "list-batches":
 
