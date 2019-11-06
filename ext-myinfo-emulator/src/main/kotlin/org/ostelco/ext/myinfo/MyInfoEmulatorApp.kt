@@ -31,9 +31,6 @@ class MyInfoEmulatorApp : Application<MyInfoEmulatorConfig>() {
                 Logger.getLogger(LoggingFeature.DEFAULT_LOGGER_NAME),
                 PAYLOAD_ANY))
 
-        env.jersey().register(org.ostelco.ext.myinfo.v2.TokenResource(config))
-        env.jersey().register(org.ostelco.ext.myinfo.v2.PersonResource(config))
-
         env.jersey().register(org.ostelco.ext.myinfo.v3.TokenResource(config))
         env.jersey().register(org.ostelco.ext.myinfo.v3.PersonResource(config))
     }

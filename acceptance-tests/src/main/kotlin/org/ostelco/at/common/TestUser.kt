@@ -41,7 +41,7 @@ fun enableRegion(email: String, region: String = "no") {
     when (region) {
         "sg" -> {
             get<String> {
-                path = "/regions/sg/kyc/myInfo/activation-code"
+                path = "/regions/sg/kyc/myInfo/v3/personData/activation-code"
                 this.email = email
             }
             put<String>(expectedResultCode = 204) {
