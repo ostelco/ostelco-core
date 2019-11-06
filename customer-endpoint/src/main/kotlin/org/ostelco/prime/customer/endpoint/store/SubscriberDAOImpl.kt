@@ -327,18 +327,18 @@ class SubscriberDAOImpl : SubscriberDAO {
     // Subscription to plans
     //
 
-    override fun renewSubscriptionToPlan(identity: Identity,
-                                         sku: String): Either<ApiError, Product> =
+    override fun renewPaymentSubscription(identity: Identity,
+                                          sku: String): Either<ApiError, Product> =
             storage.renewSubscriptionToPlan(identity, sku)
                     .mapLeft { error ->
                         mapStorageErrorToApiError(error.message, ApiErrorCode.FAILED_TO_RENEW_SUBSCRIPTION,
                                 error)
                     }
 
-    override fun renewSubscriptionToPlan(identity: Identity,
-                                         sku: String,
-                                         sourceId: String,
-                                         saveCard: Boolean): Either<ApiError, Product> =
+    override fun renewPaymentSubscription(identity: Identity,
+                                          sku: String,
+                                          sourceId: String,
+                                          saveCard: Boolean): Either<ApiError, Product> =
             storage.renewSubscriptionToPlan(identity,
                     sku,
                     sourceId,
