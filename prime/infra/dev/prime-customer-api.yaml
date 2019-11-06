@@ -257,42 +257,6 @@ paths:
           description: "Region or Scan not found."
       security:
         - firebase: []
-  "/regions/sg/kyc/myInfoConfig":
-    get:
-      description: "Get Singapore MyInfo v2 service config (deprecated)."
-      produces:
-        - application/json
-      operationId: "getMyInfoV2Config"
-      responses:
-        200:
-          description: "MyInfo service config."
-          schema:
-            $ref: "#/definitions/MyInfoConfig"
-        404:
-          description: "Config not found."
-      security:
-        - firebase: []
-  "/regions/sg/kyc/myInfo/{authorisationCode}":
-    get:
-      description: "Get Customer Data from Singapore MyInfo v2 service (deprecated)."
-      produces:
-        - application/json
-      operationId: "getCustomerMyInfoV2Data"
-      parameters:
-        - name: authorisationCode
-          in: path
-          description: "Authorisation Code"
-          required: true
-          type: string
-      responses:
-        200:
-          description: "Successfully retrieved Customer Data from MyInfo v2 service."
-          schema:
-            type: object
-        404:
-          description: "Person Data not found."
-      security:
-        - firebase: []
   "/regions/sg/kyc/myInfo/v3/config":
     get:
       description: "Get Singapore MyInfo v3 service config."

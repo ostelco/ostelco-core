@@ -40,8 +40,7 @@ prime:
     ACTIVATE_TOPIC_ID: ocs-activate
     CCR_SUBSCRIPTION_ID: ocs-ccr-sub
     GOOGLE_APPLICATION_CREDENTIALS: /secret/prime-service-account.json
-    MY_INFO_API_URI: https://myinfosg.api.gov.sg/v2
-    MY_INFO_API_REALM: prod
+    MY_INFO_V3_API_URI: https://api.myinfo.gov.sg/com/v3
     MY_INFO_REDIRECT_URI: https://dl.oya.world/links/myinfo
 
   secretVolumes:
