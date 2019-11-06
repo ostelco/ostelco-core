@@ -57,6 +57,7 @@ data class RegionDetails(
         val region: Region,
         val status: CustomerRegionStatus,
         val kycStatusMap: Map<KycType, KycStatus> = emptyMap(),
+        val kycExpiryDate: String? = null,
         val simProfiles: Collection<SimProfile> = emptyList())
 
 enum class CustomerRegionStatus {
@@ -81,7 +82,6 @@ enum class KycStatus {
 data class MyInfoConfig(val url: String)
 
 enum class MyInfoApiVersion {
-    V2,
     V3
 }
 
@@ -132,6 +132,7 @@ data class ScanResult(
         val firstName: String?,
         val lastName: String?,
         val dob: String?,
+        val expiry: String?,
         val rejectReason: IdentityVerification?)
 
 data class ScanInformation(
@@ -177,6 +178,7 @@ enum class JumioScanData(val s: String) {
     ID_FIRSTNAME("idFirstName"),
     ID_LASTNAME("idLastName"),
     ID_DOB("idDob"),
+    ID_EXPIRY("idExpiry"),
     SCAN_IMAGE("idScanImage"),
     SCAN_IMAGE_FACE("idScanImageFace"),
     SCAN_IMAGE_BACKSIDE("idScanImageBackside"),
