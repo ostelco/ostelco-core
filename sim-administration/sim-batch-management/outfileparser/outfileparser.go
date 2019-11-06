@@ -66,12 +66,12 @@ func ParseVarOutLine(varOutLine string, result *map[string]int) (error) {
 	varOutSplit := strings.Split(varOutLine, ":")
 
 	if len(varOutSplit) != 2 {
-		fmt.Println("Length = ", len(varOutSplit))
-		return nerrors.New("syntax error in var_out line.  More than two colon separated fields.")
+		return errors.New("syntax error in var_out line.  More than two colon separated fields.")
 	}
 
-	if string(varOutSplit[0]) != "var_out" {
-		return errors.New("syntax error in var_out line.  Does not start with 'var_out:'")
+	varOutToken := strings.TrimSpace(string(varOutSplit[0]))
+	if strings.ToLower(varOutToken) != "var_out" {
+		return errors.New(fmt.Sprintf("syntax error in var_out line.  Does not start with 'var_out', was '%s'", varOutToken))
 	}
 
 	slashedFields := strings.Split(varOutSplit[1], "/")
@@ -136,17 +136,22 @@ func ParseOutputFile(filename string) model.OutputFileRecord {
 			ParseLineIntoKeyValueMap(line, state.inputVariables)
 		case OUTPUT_VARIABLES:
 
-			if (strings.HasPrefix(line, "var_Out: ")) {
+			line = strings.TrimSpace(line)
+			lowercaseLine := strings.ToLower(line)
+
+			if (strings.HasPrefix(lowercaseLine, "var_out:")) {
 				if (len(state.csvFieldMap) != 0) {
 					log.Fatal("Parsing multiple 'var_out' lines can't be right")
 				}
-				if ParseVarOutLine(line, &(state.csvFieldMap)) != nil {
+				err :=  ParseVarOutLine(line, &(state.csvFieldMap))
+				if err != nil {
 					log.Fatalf("Couldn't parse output variable declaration '%s'\n", err)
 				}
 				continue
 			}
 
 			if (len(state.csvFieldMap) == 0) {
+				fmt.Println("Line = ", line)
 				log.Fatal("Cannot parse CSV part of input file without having first parsed a CSV header.")
 			}
 
