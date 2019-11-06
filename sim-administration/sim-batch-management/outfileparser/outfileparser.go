@@ -1,4 +1,4 @@
-package outfileconversion
+package outfileparser
 
 // TODO: Rename to oufileparser
 

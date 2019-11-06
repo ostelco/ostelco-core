@@ -1,9 +1,9 @@
-package outfileconversion
+package outfileparser
 
 import (
+	"fmt"
 	"gotest.tools/assert"
 	"testing"
-	"fmt"
 )
 
 
@@ -38,7 +38,7 @@ func TestReadingSimpleOutputFile(t *testing.T) {
 }
 
 func TestReadingComplexOutputFile(t *testing.T) {
-	sample_output_file_name := "sample_out_file_for_testing.out"
+	sample_output_file_name := "sample-out-2.out"
 	record := ParseOutputFile(sample_output_file_name)
 	fmt.Println("Record = ",record)
 }
