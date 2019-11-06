@@ -1,4 +1,4 @@
-package org.ostelco.prime.analytics.publishers
+package org.ostelco.common.publisherex
 
 import com.google.api.core.ApiFutureCallback
 import com.google.api.core.ApiFutures
@@ -11,14 +11,12 @@ import com.google.common.util.concurrent.MoreExecutors
 import com.google.pubsub.v1.ProjectTopicName
 import com.google.pubsub.v1.PubsubMessage
 import io.grpc.ManagedChannelBuilder
-import org.ostelco.prime.analytics.ConfigRegistry
-import org.ostelco.prime.analytics.events.Event
 import org.ostelco.prime.getLogger
 import java.util.concurrent.TimeUnit
 
 class DelegatePubSubPublisher(
         private val topicId: String,
-        private val projectId: String = ConfigRegistry.config.projectId) : PubSubPublisher {
+        private val projectId: String) : PubSubPublisher {
 
     private lateinit var publisher: Publisher
     private val logger by getLogger()

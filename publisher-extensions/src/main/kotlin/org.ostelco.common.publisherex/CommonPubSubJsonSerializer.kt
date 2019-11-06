@@ -1,4 +1,4 @@
-package org.ostelco.prime.analytics.events
+package org.ostelco.common.publisherex
 
 import com.google.gson.Gson
 import com.google.gson.JsonPrimitive

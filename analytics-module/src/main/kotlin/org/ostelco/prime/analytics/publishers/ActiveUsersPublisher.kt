@@ -8,12 +8,16 @@ import org.ostelco.analytics.api.ActiveUsersInfo
 import org.ostelco.prime.analytics.ConfigRegistry
 import org.ostelco.prime.metrics.api.User
 import java.time.Instant
+import org.ostelco.common.publisherex.DelegatePubSubPublisher
+import org.ostelco.common.publisherex.PubSubPublisher
 
 /**
  * This class publishes the active users information events to the Google Cloud Pub/Sub.
  */
 object ActiveUsersPublisher :
-        PubSubPublisher by DelegatePubSubPublisher(topicId = ConfigRegistry.config.activeUsersTopicId) {
+        PubSubPublisher by DelegatePubSubPublisher(
+                topicId = ConfigRegistry.config.activeUsersTopicId,
+                projectId = ConfigRegistry.config.projectId) {
 
     private val jsonPrinter = JsonFormat.printer().includingDefaultValueFields()
 
