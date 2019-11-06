@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/es2plus"
-	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/outfileparser"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/store"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/uploadtoprime"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
