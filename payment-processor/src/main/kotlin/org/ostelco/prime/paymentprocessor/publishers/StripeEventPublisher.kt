@@ -10,9 +10,10 @@ import org.ostelco.common.publisherex.DelegatePubSubPublisher
 import org.ostelco.common.publisherex.PubSubPublisher
 
 
-object StripeEventPublisher : PubSubPublisher by DelegatePubSubPublisher(
-        topicId = ConfigRegistry.config.stripeEventTopicId,
-        projectId = ConfigRegistry.config.projectId) {
+object StripeEventPublisher :
+        PubSubPublisher by DelegatePubSubPublisher(
+                topicId = ConfigRegistry.config.stripeEventTopicId,
+                projectId = ConfigRegistry.config.projectId) {
 
     fun publish(event: Event) {
 
