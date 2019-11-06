@@ -12,7 +12,7 @@ func testKeywordValueParser(t *testing.T) {
 	assert.Equal(t, "BAR_FOOTEL_STD", theMap["ProfileType"])
 }
 
-func testReadOutputFile(t *testing.T) {
+func testReadingSimpleOutputFile(t *testing.T) {
 	sample_output_file_name := "sample_out_file_for_testing.out"
 	record := ReadOutputFile(sample_output_file_name)
 
@@ -33,4 +33,10 @@ func testReadOutputFile(t *testing.T) {
 	// Check that the output entry set looks legit.
 	assert.Equal(t, 3, len(record.Entries))
 	assert.Equal(t, 3, record.noOfEntries)
+}
+
+
+func testReadingComplexOutputFile(t *testing.T) {
+	sample_output_file_name := "sample_out_file_for_testing.out"
+	record := ReadOutputFile(sample_output_file_name)
 }
