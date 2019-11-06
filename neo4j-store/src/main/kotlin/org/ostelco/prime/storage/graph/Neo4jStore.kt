@@ -1746,12 +1746,15 @@ object Neo4jStoreSingleton : GraphStore {
                                         transaction = transaction)
                             }
                 } else {
-                    // TODO: find out what more information can be passed to the client.
-                    appNotifier.notify(
-                            notificationType = NotificationType.JUMIO_VERIFICATION_FAILED,
-                            customerId = customer.id,
-                            data = extendedStatus
-                    )
+                    // Do not notify the app when the verification fails because the customer has cancelled and hence did not upload an ID.
+                    if (updatedScanInformation.scanResult?.verificationStatus != "NO_ID_UPLOADED") {
+                        // TODO: find out what more information can be passed to the client.
+                        appNotifier.notify(
+                                notificationType = NotificationType.JUMIO_VERIFICATION_FAILED,
+                                customerId = customer.id,
+                                data = extendedStatus
+                        )
+                    }
                     logger.info(NOTIFY_OPS_MARKER, "Jumio verification failed for ${customer.contactEmail} Info: $extendedStatus")
                     setKycStatus(
                             customer = customer,
