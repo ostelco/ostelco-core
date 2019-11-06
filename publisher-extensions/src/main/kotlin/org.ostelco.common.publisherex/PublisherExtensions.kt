@@ -12,8 +12,6 @@ import com.google.pubsub.v1.ProjectTopicName
 import com.google.pubsub.v1.PubsubMessage
 import io.grpc.ManagedChannelBuilder
 import org.ostelco.prime.getLogger
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 
 class DelegatePubSubPublisher(
