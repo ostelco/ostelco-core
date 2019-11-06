@@ -80,15 +80,13 @@ services:
         ipv4_address: 172.16.238.3
       default:
 
-  ngrok:
-    container_name: ngrok
+  webhook-serveo:
+    container_name: webhook-serveo
     build:
       context: acceptance-tests
-      dockerfile: Dockerfile.ngrok
-    command: ["./wait.sh"]
+      dockerfile: Dockerfile.serveo
     environment:
-      - STRIPE_API_KEY=${STRIPE_API_KEY}
-      - NGROK_AUTH_TOKEN=${NGROK_AUTH_TOKEN}
+      - WEBHOOK_DOMAIN_NAME=redotter-${USER}.serveo.net
 
   acceptance-tests:
     container_name: acceptance-tests

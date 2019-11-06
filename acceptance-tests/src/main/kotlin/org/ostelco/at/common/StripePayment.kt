@@ -182,7 +182,7 @@ object StripePayment {
 
         val endpoint = WebhookEndpoint.list(emptyMap()).data
                 .filter {
-                    it.url.contains("ngrok")
+                    it.url.contains("serveo")
                 }
 
         if (endpoint.isNotEmpty())
@@ -191,7 +191,7 @@ object StripePayment {
                             "disabled" to !on
                     ))
         else
-            logger.error("Found no webhook endpoint configured on Stripe using the NGROK service")
+            logger.error("Found no webhook endpoint configured on Stripe using the serveo.net service")
     }
 
     private fun nextYear() = Year.now().value + 1

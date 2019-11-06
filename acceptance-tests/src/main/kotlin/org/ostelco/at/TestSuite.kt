@@ -53,18 +53,13 @@ class TestSuite {
 
     /**
      * Test of recurring payments requires that:
-     *    1) The NGROK service docker is running (Docker instance).
-     *    2) The NGROK_AUTH_TOKEN env. variable set to the NGROK token.
-     *    2) Webhooks enabled and configured to use the NGROK endpoint on Stripe.
-     * As NGROK only allows for up to 40 connections per minute, which with Stripe
-     * events means max 40 events per minute, the recurring payment tests has to
-     * be run seperately from the other tests. Otherwise the limit will be exceeded
-     * and tests will fail.
-     * Note that if the NGROK_AUT_TOKEN variable is not set, then the test will be
-     * skipped altogether.
+     *    1) The serveo.net service docker instance is running.
+     *    2) The STRIPE_ENDPOINT_SECRET env. variable set.
+     * Note that if the STRIPE_ENDPOINT_SECRET variable is not set, then the test
+     * will be skipped altogether.
      */
     @Test
-    @EnabledIfEnvironmentVariable(named = "NGROK_AUTH_TOKEN", matches="\\S+")
+    @EnabledIfEnvironmentVariable(named = "STRIPE_ENDPOINT_SECRET", matches="\\S+")
     fun `run recurring payment tests`() {
         runBlocking {
 
