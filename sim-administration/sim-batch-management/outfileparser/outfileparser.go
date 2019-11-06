@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"errors"
 )
 
 const (
@@ -59,6 +60,27 @@ type ParserState struct {
 	headerDescription map[string]string
 	entries           []model.SimEntry
 }
+
+func ParseVarOutLine(varOutLine string) (map[string]int, error) {
+	varOutSplit := strings.Split(varOutLine, ":")
+
+	if (len(varOutSplit) != 2) {
+		fmt.Println("Length = ", len(varOutSplit))
+		return nil, errors.New("syntax error in var_out line.  More than two colon separated fields.")
+	}
+
+	if (string(varOutSplit[0]) != "var_out") {
+		return nil, errors.New("syntax error in var_out line.  Does not start with'var_out:'")
+	}
+
+	slashedFields := strings.Split(varOutSplit[1], "/")
+	var result =  map[string]int{}
+	for index, columnName := range slashedFields {
+		result[columnName] = index
+	}
+	return result, nil
+}
+
 
 func ParseOutputFile(filename string) model.OutputFileRecord {
 
@@ -161,7 +183,7 @@ func ParseOutputFile(filename string) model.OutputFileRecord {
 	declaredNoOfEntities, err := strconv.Atoi(state.headerDescription["Quantity"])
 
 	if err != nil {
-		log.Fatal("Could not find  declared quantity of entities")
+		log.Fatal("Could not find 'Quantity' field while parsing file '",filename, "'")
 	}
 
 	if countedNoOfEntries != declaredNoOfEntities {

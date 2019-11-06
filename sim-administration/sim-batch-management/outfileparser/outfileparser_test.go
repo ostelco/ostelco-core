@@ -1,14 +1,11 @@
 package outfileparser
 
 import (
-	"errors"
-	"fmt"
 	"gotest.tools/assert"
-	"strings"
 	"testing"
 )
 
-/*
+
 func TestKeywordValueParser(t *testing.T) {
 	theMap := make(map[string]string)
 	ParseLineIntoKeyValueMap("ProfileType     : BAR_FOOTEL_STD", theMap)
@@ -38,36 +35,17 @@ func TestReadingSimpleOutputFile(t *testing.T) {
 	assert.Equal(t, 3, len(record.Entries))
 	assert.Equal(t, 3, record.NoOfEntries)
 }
-*/
 
 
-/*
+
+/* TODO: Uncomment this test, and start on making it pass.
 func TestReadingComplexOutputFile(t *testing.T) {
 	sample_output_file_name := "sample-out-2.out"
 	record := ParseOutputFile(sample_output_file_name)
 	fmt.Println("Record = ", record)
 }
-*/
+ */
 
-func ParseVarOutLine(varOutLine string) (map[string]int, error) {
-	varOutSplit := strings.Split(varOutLine, ":")
-
-	if (len(varOutSplit) != 2) {
-		fmt.Println("Length = ", len(varOutSplit))
-		return nil, errors.New("syntax error in var_out line.  More than two colon separated fields.")
-	}
-
-	if (string(varOutSplit[0]) != "var_out") {
-		return nil, errors.New("syntax error in var_out line.  Does not start with'var_out:'")
-	}
-
-	slashedFields := strings.Split(varOutSplit[1], "/")
-	var result =  map[string]int{}
-	for index, columnName := range slashedFields {
-		result[columnName] = index
-	}
-	return result, nil
-}
 
 func TestParseOutputVariablesLine(t *testing.T) {
 	varOutLine := "var_out:ICCID/IMSI/PIN1/PUK1/PIN2/PUK2/ADM1/KI/Access_Control/Code Retailer/Code ADM/ADM2/ADM3/ADM4"
@@ -77,7 +55,7 @@ func TestParseOutputVariablesLine(t *testing.T) {
 		t.Error("Couldn't parse var_out line:", err)
 		t.Fail()
 	}
-	
+
 	assert.Equal(t, m["ICCID"], 0)
 	assert.Equal(t, m["IMSI"], 1)
 	assert.Equal(t, m["PIN1"], 2)
