@@ -244,6 +244,8 @@ func fileExists(filename string) bool {
 	return !info.IsDir()
 }
 
+
+// TODO: Move this into some other package. "hssoutput" or something.
 // TODO: Consider rewriting using https://golang.org/pkg/encoding/csv/
 func WriteHssCsvFile(filename string, entries []model.SimEntry) error {
 
@@ -276,6 +278,7 @@ func WriteHssCsvFile(filename string, entries []model.SimEntry) error {
 
 //
 // Entrypoint
+// TODO: Move this entrypoint into the the command processor
 //
 
 func ConvertInputfileToOutputfile(inputFile string, outputFilePrefix string) {
