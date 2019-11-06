@@ -7,6 +7,5 @@ import java.util.concurrent.ScheduledExecutorService
 
 
 interface PubSubPublisher : Managed {
-    var singleThreadScheduledExecutor: ScheduledExecutorService
     fun publishPubSubMessage(pubsubMessage: PubsubMessage): ApiFuture<String>
 }
