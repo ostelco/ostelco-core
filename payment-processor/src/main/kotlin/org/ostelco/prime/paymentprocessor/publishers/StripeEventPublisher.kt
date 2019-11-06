@@ -3,6 +3,7 @@ package org.ostelco.prime.paymentprocessor.publishers
 import com.google.api.core.ApiFutureCallback
 import com.google.api.core.ApiFutures
 import com.google.api.gax.rpc.ApiException
+import com.google.common.util.concurrent.MoreExecutors
 import com.google.protobuf.ByteString
 import com.google.protobuf.Timestamp
 import com.google.pubsub.v1.PubsubMessage
@@ -46,7 +47,7 @@ object StripeEventPublisher :
                 logger.debug("Published Stripe event {} as message {}", event.id,
                         messageId)
             }
-        }, singleThreadScheduledExecutor)
+        }, MoreExecutors.directExecutor())
     }
 
     /* Monkeypatching uber alles! */
