@@ -219,7 +219,7 @@ func OutputBatchFromCommandLineParameters(firstIccid *string,
 		log.Printf("msisdnLen   = %10d\n", msisdnLen)
 		log.Printf("iccidLen    = %10d\n", iccidlen)
 		log.Printf("imsiLen     = %10d\n", imsiLen)
-		log.Fatal("FATAL: msisdnLen, iccidLen and imsiLen are not identical.")
+		log.Fatal("FATAL (outfile generation): msisdnLen, iccidLen and imsiLen are not identical.")
 	}
 
 	tail := flag.Args()
