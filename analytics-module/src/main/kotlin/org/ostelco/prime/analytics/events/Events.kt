@@ -2,16 +2,7 @@ package org.ostelco.prime.analytics.events
 
 import org.ostelco.prime.model.SimProfileStatus
 import java.math.BigDecimal
-import java.time.Instant
-
-/**
- * Abstraction for a point-in-time analytics event.
- *
- * @property timestamp time at which the event occurs
- */
-sealed class Event(val timestamp: Instant = Instant.now()) {
-    fun toJsonByteString() = CommonPubSubJsonSerializer.toJsonByteString(this)
-}
+import org.ostelco.common.publisherex.Event
 
 /**
  * Represents a new purchase.

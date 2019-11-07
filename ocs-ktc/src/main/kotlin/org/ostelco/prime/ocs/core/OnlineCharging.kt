@@ -98,6 +98,8 @@ object OnlineCharging : OcsAsyncRequestConsumer {
 
         val doneSignal = CountDownLatch(request.msccList.size)
 
+        var reservationCounter = 0
+
         request.msccList.forEach { mscc ->
 
             fun consumptionResultHandler(consumptionResult: ConsumptionResult) {
@@ -105,6 +107,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                 addInfo(consumptionResult.balance, mscc, responseBuilder)
                 reportAnalytics(consumptionResult, request)
                 Notifications.lowBalanceAlert(msisdn, consumptionResult.granted, consumptionResult.balance)
+                reservationCounter++
                 doneSignal.countDown()
             }
 
@@ -132,8 +135,9 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                 consumptionPolicy.checkConsumption(
                         msisdn = msisdn,
                         multipleServiceCreditControl = mscc,
-                        mccMnc = request.serviceInformation.psInformation.sgsnMccMnc,
-                        apn = request.serviceInformation.psInformation.calledStationId)
+                        sgsnMccMnc = request.serviceInformation.psInformation.sgsnMccMnc,
+                        apn = request.serviceInformation.psInformation.calledStationId,
+                        imsiMccMnc = request.serviceInformation.psInformation.imsiMccMnc)
                         .bimap(
                                 { consumptionResult -> consumptionResultHandler(consumptionResult) },
                                 { consumptionRequest ->  consumeRequestHandler(consumptionRequest) }
@@ -143,6 +147,11 @@ object OnlineCharging : OcsAsyncRequestConsumer {
             }
         }
         doneSignal.await(2, TimeUnit.SECONDS)
+
+        // In case there was no granted reservations the Validity-Time is set on base level, else it is set in each MSCC
+        if (reservationCounter == 0) {
+            responseBuilder.validityTime = 86400
+        }
     }
 
     private fun reportAnalytics(consumptionResult: ConsumptionResult, request: CreditControlRequestInfo) {

@@ -2,12 +2,16 @@ package org.ostelco.prime.analytics.publishers
 
 import org.ostelco.prime.analytics.ConfigRegistry
 import org.ostelco.prime.analytics.events.DataConsumptionEvent
+import org.ostelco.common.publisherex.DelegatePubSubPublisher
+import org.ostelco.common.publisherex.PubSubPublisher
 
 /**
  * This holds logic for publishing the data consumption information events to Google Cloud Pub/Sub.
  */
 object DataConsumptionInfoPublisher :
-        PubSubPublisher by DelegatePubSubPublisher(topicId = ConfigRegistry.config.dataTrafficTopicId) {
+        PubSubPublisher by DelegatePubSubPublisher(
+                topicId = ConfigRegistry.config.dataTrafficTopicId,
+                projectId = ConfigRegistry.config.projectId) {
 
     /**
      * Publishes a new data consumption record to Cloud Pubsub
