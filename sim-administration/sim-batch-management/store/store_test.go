@@ -4,14 +4,13 @@ import (
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
-	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/store"
 	"gotest.tools/assert"
 	"os"
 	"reflect"
 	"testing"
 )
 
-var sdb *store.SimBatchDB
+var sdb *SimBatchDB
 var err error
 
 func TestMain(m *testing.M) {
@@ -23,7 +22,7 @@ func TestMain(m *testing.M) {
 
 func setup() {
 	// sdb, err = store.OpenFileSqliteDatabase("bazunka.db")
-	sdb, err = store.NewInMemoryDatabase()
+	sdb, err = NewInMemoryDatabase()
 	if err != nil {
 		fmt.Errorf("Couldn't open new in memory database  '%s", err)
 	}
@@ -96,7 +95,6 @@ func TestGetAllBatches(t *testing.T) {
 	}
 }
 
-
 func declareTestBatch(t *testing.T) *model.Batch {
 
 	theBatch, err := sdb.DeclareBatch(
@@ -116,8 +114,7 @@ func declareTestBatch(t *testing.T) *model.Batch {
 		"localhost",            // uploadHostname string,
 		"8088",                 // uploadPortnumber string,
 		"snuff",                // profileVendor string,
-		"ACTIVE")               // initialHlrActivationStatusOfProfiles string
-
+		"ACTIVE") // initialHlrActivationStatusOfProfiles string
 
 	if err != nil {
 		t.Fatal(err)
@@ -129,6 +126,50 @@ func TestDeclareBatch(t *testing.T) {
 	theBatch := declareTestBatch(t)
 	retrievedValue, _ := sdb.GetBatchById(theBatch.Id)
 	if !reflect.DeepEqual(*retrievedValue, *theBatch) {
-		fmt.Errorf("getBatchById failed")
+		t.Fatal("getBatchById failed")
+	}
+}
+
+func entryEqual(a *model.SimEntry, b *model.SimEntry) bool {
+	return ((a.BatchID == b.BatchID) && (a.RawIccid == b.RawIccid) && a.IccidWithChecksum == b.IccidWithChecksum	&& a.IccidWithoutChecksum == b.IccidWithoutChecksum && a.Iccid == b.Iccid && a.Imsi == b.Imsi && a.Msisdn == b.Msisdn && a.Ki == b.Ki)
+}
+
+func TestDeclareAndRetrieveSimEntries(t *testing.T) {
+	theBatch := declareTestBatch(t)
+	batchId := theBatch.Id
+
+	entry := model.SimEntry{
+		BatchID:              batchId,
+		RawIccid:             "1",
+		IccidWithChecksum:    "2",
+		IccidWithoutChecksum: "3",
+		Iccid:                "4",
+		Imsi:                 "5",
+		Msisdn:               "6",
+		Ki:                   "7",
+	}
+
+	// assert.Equal(t, 0, entry.SimId)
+	sdb.CreateSimEntry(&entry)
+	assert.Assert(t, entry.SimId != 0)
+
+	retrivedEntry, err := sdb.GetSimEntryById(entry.SimId)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !entryEqual(retrivedEntry, &entry) {
+		t.Fatal("Retrieved and stored sim entry are different")
+	}
+
+	retrievedEntries, err := sdb.GetAllSimEntriesForBarch(entry.BatchID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, 1, len(retrievedEntries))
+
+	retrivedEntry = &(retrievedEntries[0])
+
+	if !entryEqual(retrivedEntry, &entry) {
+		t.Fatal("Retrieved and stored sim entry are different")
 	}
 }

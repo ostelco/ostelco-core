@@ -13,8 +13,8 @@ package model
 // TODO: This  struct isn't fully baked.
 
 type SimEntry struct {
-	Id          int64  `db:"id" json:"id"`
-	BatchID     string  `db:"batchId" json:"batchId"`
+	SimId       int64  `db:"simId" json:"simId"`
+	BatchID     int64  `db:"batchId" json:"batchId"`
 	RawIccid    string  `db:"rawIccid" json:"rawIccid"`
 	IccidWithChecksum    string  `db:"iccidWithChecksum" json:"iccidWithChecksum"`
 	IccidWithoutChecksum string  `db:"iccidWithoutChecksum" json:"iccidWithoutChecksum"`

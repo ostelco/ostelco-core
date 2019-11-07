@@ -132,17 +132,17 @@ func (sdb *SimBatchDB) GenerateTables() error {
 	url VARCHAR
 	)`
 	_, err := sdb.Db.Exec(foo)
-	return err
 
 	foo = `CREATE TABLE IF NOT EXISTS SIM_PROFILE (
     simId INTEGER PRIMARY KEY AUTOINCREMENT,
     batchId INTEGER NOT NULL,
     imsi VARCHAR NOT NULL,
+    rawIccid VARCHAR NOT NULL,
     iccidWithChecksum VARCHAR NOT NULL,
     iccidWithoutChecksum VARCHAR NOT NULL,
 	iccid VARCHAR NOT NULL,
 	ki VARCHAR NOT NULL,
-	msisdn VARCHAR NOT NULL,
+	msisdn VARCHAR NOT NULL
 	)`
 	_, err = sdb.Db.Exec(foo)
 	return err
@@ -151,7 +151,7 @@ func (sdb *SimBatchDB) GenerateTables() error {
 
 func (sdb SimBatchDB) CreateSimEntry(theEntry *model.SimEntry) error {
 
-	res := sdb.Db.MustExec("INSERT INTO SIM_ENTRY (batchId, rawIccid, iccidWithChrecksum, iccidWithoutChecksum, iccid, imsi, msisdn, ki) values (?,?,?,?,?,?,?,?)",
+	res := sdb.Db.MustExec("INSERT INTO SIM_PROFILE (batchId, rawIccid, iccidWithChecksum, iccidWithoutChecksum, iccid, imsi, msisdn, ki) values (?,?,?,?,?,?,?,?)",
 		(*theEntry).BatchID,
 		(*theEntry).RawIccid,
 		(*theEntry).IccidWithChecksum,
@@ -166,19 +166,19 @@ func (sdb SimBatchDB) CreateSimEntry(theEntry *model.SimEntry) error {
 	if err != nil {
 		fmt.Errorf("Getting last inserted id failed '%s'", err)
 	}
-	theEntry.Id = id
+	theEntry.SimId = id
 	return err
 }
 
 func (sdb SimBatchDB) GetSimEntryById(simId int64)  (*model.SimEntry, error) {
 	var result model.SimEntry
-	return &result, sdb.Db.Get(&result, "select * from SIM_ENTRY where simId = ?", simId)
+	return &result, sdb.Db.Get(&result, "select * from SIM_PROFILE where simId = ?", simId)
 }
 
 
 func (sdb SimBatchDB) GetAllSimEntriesForBarch(batchId int64)  ([]model.SimEntry, error) {
 	result := []model.SimEntry{}
-	return result, sdb.Db.Select(&result, "SELECT * from SIM_ENTRY WHERE batchId = ?", batchId )
+	return result, sdb.Db.Select(&result, "SELECT * from SIM_PROFILE WHERE batchId = ?", batchId )
 }
 
 
