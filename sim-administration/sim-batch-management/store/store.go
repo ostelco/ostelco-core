@@ -8,7 +8,6 @@ import (
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/fieldsyntaxchecks"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/loltelutils"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
-
 	"log"
 	"os"
 	"strconv"
@@ -284,7 +283,7 @@ func (sdb SimBatchDB) DeclareBatch(
 	filenameBase := fmt.Sprintf("%s%s%s", customer,  orderDate, batchNo)
 	fmt.Printf("Filename base = '%s'\n", filenameBase)
 
-	myBatch := model.Batch{
+	batch := model.Batch{
 		OrderDate:       orderDate,
 		Customer:        customer,
 		FilenameBase:    filenameBase,
@@ -301,8 +300,56 @@ func (sdb SimBatchDB) DeclareBatch(
 		MsisdnIncrement: msisdnIncrement,
 	}
 
-	// Persist the newly created batch, and return it
-	err = sdb.CreateBatch(&myBatch)
+	// Persist the newly created batch,
+	err = sdb.CreateBatch(&batch)
 
-	return &myBatch, err
+
+	// Now create all the sim profiles
+
+
+	iccidWithoutLuhnChecksum, err :=  strconv.Atoi(batch.FirstIccid)
+	if err != nil {
+		panic(err)
+	}
+
+	imsi, err :=  strconv.Atoi(batch.FirstImsi)
+	if err != nil {
+		panic(err)
+	}
+
+	// XXX !!! TODO THis is wrong, but I'm doing it now, just to get started!
+	var msisdn, err2 =  strconv.Atoi(batch.FirstMsisdn)
+	if err2 != nil {
+		panic(err)
+	}
+
+	for i := 0; i < batch.Quantity; i++ {
+		iccidWithLuhnChecksum := fmt.Sprintf("%d%d", iccidWithoutLuhnChecksum, fieldsyntaxchecks.LuhnChecksum(iccidWithoutLuhnChecksum))
+
+		fmt.Println(" iccid with checksum ", iccidWithLuhnChecksum)
+
+		 simEntry := &model.SimEntry{
+			BatchID:              batch.Id,
+			RawIccid:             fmt.Sprintf("%d", iccidWithoutLuhnChecksum),
+			IccidWithChecksum:    iccidWithLuhnChecksum,
+			IccidWithoutChecksum: fmt.Sprintf("%d", iccidWithoutLuhnChecksum),
+			Iccid:                iccidWithLuhnChecksum,
+			Imsi:                 fmt.Sprintf("%d", imsi),
+			Msisdn:               fmt.Sprintf("%d", msisdn),
+			Ki:                   "", // Should be null
+		}
+
+		err = sdb.CreateSimEntry(simEntry)
+		if (err != nil) {
+			panic(err)
+		}
+
+		iccidWithoutLuhnChecksum += batch.IccidIncrement
+		imsi += batch.ImsiIncrement
+		msisdn += batch.MsisdnIncrement
+	}
+
+
+	//  Return the newly created batch
+	return &batch, err
 }
