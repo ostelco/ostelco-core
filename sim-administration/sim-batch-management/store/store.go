@@ -84,7 +84,7 @@ func (sdb SimBatchDB) GetBatchByName(name string) (*model.Batch, error) {
 	return &result, sdb.Db.Get(&result, "select * from BATCH where name = ?", name)
 }
 
-func (sdb SimBatchDB) Create(theBatch *model.Batch) error {
+func (sdb SimBatchDB) CreateBatch(theBatch *model.Batch) error {
 
 	res := sdb.Db.MustExec("INSERT INTO BATCH (name, filenameBase, customer, orderDate,  customer, profileType, batchNo, quantity, firstIccid, firstImsi,  firstMsisdn, msisdnIncrement, iccidIncrement, imsiIncrement, url) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ",
 		(*theBatch).Name,
@@ -189,7 +189,7 @@ func (sdb *SimBatchDB) DropTables() error {
 }
 
 /**
- * Create a new batch, assuming that it doesn't exist.  Do all kind of checking of fields etc.
+ * CreateBatch a new batch, assuming that it doesn't exist.  Do all kind of checking of fields etc.
  */
 func (sdb SimBatchDB) DeclareBatch(
 	name string,
@@ -302,7 +302,7 @@ func (sdb SimBatchDB) DeclareBatch(
 	}
 
 	// Persist the newly created batch, and return it
-	err = sdb.Create(&myBatch)
+	err = sdb.CreateBatch(&myBatch)
 
 	return &myBatch, err
 }

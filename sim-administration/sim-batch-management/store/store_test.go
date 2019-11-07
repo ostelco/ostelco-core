@@ -61,7 +61,7 @@ func injectTestBatch() *model.Batch {
 		MsisdnIncrement: -1,
 	}
 
-	err := sdb.Create(&theBatch)
+	err := sdb.CreateBatch(&theBatch)
 	if err != nil {
 		panic(err)
 	}
