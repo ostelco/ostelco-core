@@ -22,6 +22,7 @@ type SimEntry struct {
 	Imsi        string  `db:"imsi" json:"imsi"`
 	Msisdn      string  `db:"msisdn" json:"msisdn"`
 	Ki          string  `db:"ki" json:"ki"`
+	ActivationCode          string  `db:"activationCode" json:"activationCode"`
 }
 
 
