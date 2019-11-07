@@ -13,6 +13,7 @@ package model
 // TODO: This  struct isn't fully baked.
 
 type SimEntry struct {
+	Id          int64  `db:"id" json:"id"`
 	BatchID     string  `db:"batchId" json:"batchId"`
 	RawIccid    string  `db:"rawIccid" json:"rawIccid"`
 	IccidWithChecksum    string  `db:"iccidWithChecksum" json:"iccidWithChecksum"`
@@ -22,6 +23,7 @@ type SimEntry struct {
 	Msisdn      string  `db:"msisdn" json:"msisdn"`
 	Ki          string  `db:"ki" json:"ki"`
 }
+
 
 //
 //  Below this line we grow the final persistence model. Eventually

@@ -38,6 +38,9 @@ type Store interface {
 		uploadPortnumber string,
 		profileVendor string,
 		initialHlrActivationStatusOfProfiles string) (*model.Batch, error)
+
+
+	CreateSimEntry(simEntry *model.SimEntry) error
 }
 
 type SimBatchDB struct {
@@ -108,6 +111,28 @@ func (sdb SimBatchDB) Create(theBatch *model.Batch) error {
 	theBatch.Id = id
 	return err
 }
+
+func (sdb SimBatchDB) CreateSimEntry(theEntry *model.SimEntry) error {
+
+	res := sdb.Db.MustExec("INSERT INTO SIM_ENTRY (batchId, rawIccid, iccidWithChrecksum, iccidWithoutChecksum, iccid, imsi, msisdn, ki) values (?,?,?,?,?,?,?,?)",
+		(*theEntry).BatchID,
+		(*theEntry).RawIccid,
+		(*theEntry).IccidWithChecksum,
+		(*theEntry).IccidWithoutChecksum,
+		(*theEntry).Iccid,
+		(*theEntry).Imsi,
+		(*theEntry).Msisdn,
+		(*theEntry).Ki,
+	)
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		fmt.Errorf("Getting last inserted id failed '%s'", err)
+	}
+	theEntry.Id = id
+	return err
+}
+
 
 func (sdb *SimBatchDB) GenerateTables() error {
 	foo := `CREATE TABLE IF NOT EXISTS BATCH (
