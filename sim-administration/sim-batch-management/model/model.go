@@ -10,20 +10,26 @@ package model
 
 
 
+// TODO: This  struct isn't fully baked.
 
 type SimEntry struct {
-	RawIccid             string
-	IccidWithChecksum    string
-	IccidWithoutChecksum string
-	Imsi                 string
-	Ki                   string // XXX Toxic.  Should never be stored persistently!!
-	OutputFileName       string
+	RawIccid             string  `db:"rawIccid" json:"rawIccid"`
+	IccidWithChecksum    string  `db:"iccidWithChecksum" json:"iccidWithChecksum"`
+	IccidWithoutChecksum string  `db:"iccidWithoutChecksum" json:"iccidWithoutChecksum"`
+	Imsi                 string  `db:"imsi" json:"imsi"`
+	Ki                   string  `db:"ki" json:"ki"`
+	OutputFileName       string  `db:"outputFileName" json:"outputFileName"`
 }
 
 //
 //  Below this line we grow the final persistence model. Eventually
 //  nothing below this line should be left.
 //
+
+
+// TODO:   Add a filename base which is e.g. Footel201910110102, functional
+//         dependencies on other fields, but we'll not worry about that right
+//         now.
 
 type Batch struct {
 	Id              int64  `db:"id" json:"id"`
