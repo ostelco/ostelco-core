@@ -24,6 +24,24 @@ const (
 	UNKNOWN_HEADER     = "unknown"
 )
 
+
+type OutputFileRecord struct {
+	Filename          string
+	InputVariables    map[string]string
+	HeaderDescription map[string]string
+	Entries           []model.SimEntry
+	// TODO: As it is today, the noOfEntries is just the number of Entries,
+	//       but I may want to change that to be the declared number of Entries,
+	//       and then later, dynamically, read in the individual Entries
+	//       in a channel that is just piped to the goroutine that writes
+	//       them to file, and fails if the number of declared Entries
+	//       differs from the actual number of Entries.  .... but that is
+	//       for another day.
+	NoOfEntries    int
+	OutputFileName string
+}
+
+
 ///
 ///  Functions
 ///
@@ -81,7 +99,7 @@ func ParseVarOutLine(varOutLine string, result *map[string]int) (error) {
 	return nil
 }
 
-func ParseOutputFile(filename string) model.OutputFileRecord {
+func ParseOutputFile(filename string) OutputFileRecord {
 
 	_, err := os.Stat(filename)
 
@@ -202,7 +220,7 @@ func ParseOutputFile(filename string) model.OutputFileRecord {
 			countedNoOfEntries)
 	}
 
-	result := model.OutputFileRecord{
+	result := OutputFileRecord{
 		Filename:          filename,
 		InputVariables:    state.inputVariables,
 		HeaderDescription: state.headerDescription,
