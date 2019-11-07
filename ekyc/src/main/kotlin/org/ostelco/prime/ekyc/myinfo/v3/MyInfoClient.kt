@@ -74,9 +74,19 @@ object MyInfoClientSingleton : MyInfoKycService {
         return MyInfoData(
                 uinFin = uinFin,
                 personData = personDataString,
-                birthDate = personData.dateOfBirth?.value?.let(LocalDate::parse),
-                passExpiryDate = personData.passExpiryDate?.value?.let(LocalDate::parse)
+                birthDate = personData.dateOfBirth.toLocalDate(),
+                passExpiryDate = personData.passExpiryDate.toLocalDate()
         )
+    }
+
+    private fun ValueDataItem?.toLocalDate(): LocalDate? {
+        val value = this?.value
+        return if (value.isNullOrBlank()) {
+            // value can be null or blank
+            null
+        } else {
+            value.let(LocalDate::parse)
+        }
     }
 
     private fun getToken(authorisationCode: String): String? =
