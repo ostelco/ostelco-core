@@ -306,8 +306,7 @@ func (sdb SimBatchDB) DeclareBatch(
 
 	// Now create all the sim profiles
 
-
-	iccidWithoutLuhnChecksum, err :=  strconv.Atoi(batch.FirstIccid)
+	iccidWithoutLuhnChecksum := firstIccidInt
 	if err != nil {
 		panic(err)
 	}
@@ -324,7 +323,7 @@ func (sdb SimBatchDB) DeclareBatch(
 	}
 
 	for i := 0; i < batch.Quantity; i++ {
-		iccidWithLuhnChecksum := fmt.Sprintf("%d%d", iccidWithoutLuhnChecksum, fieldsyntaxchecks.LuhnChecksum(iccidWithoutLuhnChecksum))s
+		iccidWithLuhnChecksum := fmt.Sprintf("%d%d", iccidWithoutLuhnChecksum, fieldsyntaxchecks.LuhnChecksum(iccidWithoutLuhnChecksum))
 
 		 simEntry := &model.SimEntry{
 			BatchID:              batch.Id,
