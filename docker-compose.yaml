@@ -80,13 +80,12 @@ services:
         ipv4_address: 172.16.238.3
       default:
 
-  webhook-serveo:
-    container_name: webhook-serveo
-    build:
-      context: acceptance-tests
-      dockerfile: Dockerfile.serveo
+  webhook-stripe:
+    container_name: webhook-stripe
+    image: stripe/stripe-cli
     environment:
-      - WEBHOOK_DOMAIN_NAME=redotter-${USER}.serveo.net
+      - STRIPE_API_KEY=${STRIPE_API_KEY}
+    command: ["listen", "--forward-to", "prime:8080/stripe/event", "--events", "customer.subscription.updated,invoice.created,invoice.payment_succeeded,invoice.upcoming"]
 
   acceptance-tests:
     container_name: acceptance-tests
