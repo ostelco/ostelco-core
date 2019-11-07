@@ -125,6 +125,7 @@ class KYCResourceTest {
                 firstName = "Ole",
                 lastName = "Nordmann",
                 dob = "1988-01-23",
+                expiry = null,
                 rejectReason = id)
         val scanInformation = ScanInformation(
                 scanId = "123456",
@@ -134,7 +135,7 @@ class KYCResourceTest {
         if (id != null) {
             val result = """{"scanId":"123456","countryCode":"sg","status":"REJECTED","""+
             """"scanResult":{"vendorScanReference":"7890123","verificationStatus":"APPROVED_VERIFIED","time":123456,"type":"PASSPORT","country":"NORWAY","firstName":"Ole","""+
-            """"lastName":"Nordmann","dob":"1988-01-23","rejectReason":{"similarity":"NO_MATCH","validity":true,"reason":null,"handwrittenNoteMatches":null}}}"""
+            """"lastName":"Nordmann","dob":"1988-01-23","expiry":null,"rejectReason":{"similarity":"NO_MATCH","validity":true,"reason":null,"handwrittenNoteMatches":null}}}"""
             Assertions.assertThat(objectMapper.writeValueAsString(scanInformation)).isEqualTo(result)
         }
         Assertions.assertThat(id).isNotNull

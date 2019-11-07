@@ -1,6 +1,7 @@
 package org.ostelco.prime.ekyc
 
 import org.ostelco.prime.model.MyInfoConfig
+import java.time.LocalDate
 
 interface MyInfoKycService {
     fun getConfig() : MyInfoConfig
@@ -13,5 +14,7 @@ interface DaveKycService {
 
 data class MyInfoData(
         val uinFin: String,
+        val birthDate: LocalDate?,
+        val passExpiryDate: LocalDate?,
         val personData: String?
 )

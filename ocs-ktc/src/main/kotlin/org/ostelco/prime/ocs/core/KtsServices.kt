@@ -20,7 +20,8 @@ interface ConsumptionPolicy {
     fun checkConsumption(
             msisdn: String,
             multipleServiceCreditControl: MultipleServiceCreditControl,
-            mccMnc: String,
-            apn: String
+            sgsnMccMnc: String,
+            apn: String,
+            imsiMccMnc: String
     ): Either<ConsumptionResult, ConsumptionRequest>
 }

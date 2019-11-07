@@ -59,10 +59,10 @@ class KYCResource {
         return map
     }
 
-    private fun toScanStatus(status: String): ScanStatus  {
+    private fun toScanStatus(status: String): ScanStatus {
         return when (status) {
-            "SUCCESS" -> { ScanStatus.APPROVED }
-            else -> { ScanStatus.REJECTED }
+            "SUCCESS" -> ScanStatus.APPROVED
+            else -> ScanStatus.REJECTED
         }
     }
 
@@ -88,6 +88,7 @@ class KYCResource {
             val firstName: String? = dataMap[JumioScanData.ID_FIRSTNAME.s]
             val lastName: String? = dataMap[JumioScanData.ID_LASTNAME.s]
             val dob: String? = dataMap[JumioScanData.ID_DOB.s]
+            val expiry: String? = dataMap[JumioScanData.ID_EXPIRY.s]
             val scanId: String = dataMap[JumioScanData.SCAN_ID.s]!!
             val identityVerificationData: String? = dataMap[JumioScanData.IDENTITY_VERIFICATION.s]
             var rejectReason: IdentityVerification? = null
@@ -109,24 +110,27 @@ class KYCResource {
                     }
                 }
             }
-            val countryCode = getCountryCodeForScan(scanId)
-            if (countryCode != null) {
-                return ScanInformation(scanId, countryCode, status, ScanResult(
-                        vendorScanReference = vendorScanReference,
-                        verificationStatus = verificationStatus,
-                        time = time,
-                        type = type,
-                        country = country,
-                        firstName = firstName,
-                        lastName = lastName,
-                        dob = dob,
-                        rejectReason = rejectReason
-                ))
-            } else {
-                return null
-            }
-        }
-        catch (e: NullPointerException) {
+            return getCountryCodeForScan(scanId)
+                    ?.let { countryCode ->
+                        ScanInformation(
+                                scanId,
+                                countryCode,
+                                status,
+                                ScanResult(
+                                        vendorScanReference = vendorScanReference,
+                                        verificationStatus = verificationStatus,
+                                        time = time,
+                                        type = type,
+                                        country = country,
+                                        firstName = firstName,
+                                        lastName = lastName,
+                                        dob = dob,
+                                        expiry = expiry,
+                                        rejectReason = rejectReason
+                                )
+                        )
+                    }
+        } catch (e: NullPointerException) {
             logger.error("Missing mandatory fields in scan result $dataMap", e)
             return null
         }
@@ -148,8 +152,8 @@ class KYCResource {
         }
         logger.info("Updating scan information ${scanInformation.scanId} jumioIdScanReference ${scanInformation.scanResult?.vendorScanReference}")
         return updateScanInformation(scanInformation, formData).fold(
-                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                        { Response.status(Response.Status.OK).entity(asJson(scanInformation)) }).build()
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                { Response.status(Response.Status.OK).entity(asJson(scanInformation)) }).build()
     }
 
     private fun getCountryCodeForScan(scanId: String): String? {
@@ -177,6 +181,7 @@ class KYCResource {
             Either.left(InternalServerError("Failed to update scan information", ApiErrorCode.FAILED_TO_UPDATE_SCAN_RESULTS))
         }
     }
+
     //TODO: Prasanth, remove this method after testing
     private fun dumpRequestInfo(request: HttpServletRequest, httpHeaders: HttpHeaders, formData: MultivaluedMap<String, String>): String {
         var result = ""

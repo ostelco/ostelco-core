@@ -29,8 +29,8 @@ import org.ostelco.prime.customer.model.Product
 import org.ostelco.prime.customer.model.Region
 import org.ostelco.prime.customer.model.RegionDetails
 import org.ostelco.prime.customer.model.RegionDetails.StatusEnum.APPROVED
-import org.ostelco.prime.customer.model.RegionDetails.StatusEnum.PENDING
 import org.ostelco.prime.customer.model.RegionDetails.StatusEnum.AVAILABLE
+import org.ostelco.prime.customer.model.RegionDetails.StatusEnum.PENDING
 import org.ostelco.prime.customer.model.RegionDetailsList
 import org.ostelco.prime.customer.model.ScanInformation
 import org.ostelco.prime.customer.model.SimProfile
@@ -154,6 +154,7 @@ class RegionsTest {
                     .region(Region().id("no").name("Norway"))
                     .status(APPROVED)
                     .kycStatusMap(mapOf(KycType.JUMIO.name to KycStatus.APPROVED))
+                    .kycExpiryDateMap(emptyMap())
                     .simProfiles(SimProfileList())
 
             assertEquals(regionDetails, regionDetailsList[noRegionIndex], "RegionDetails do not match")
@@ -606,31 +607,6 @@ class PurchaseTest {
 class SingaporeKycTest {
 
     @Test
-    fun `okhttp test - GET myinfoConfig v2`() {
-
-        val email = "myinfo-${randomInt()}@test.com"
-        var customerId = ""
-        try {
-
-            customerId = createCustomer(name = "Test MyInfoConfig v2 Customer", email = email).id
-
-            val client = clientForSubject(subject = email)
-
-            val myInfoConfig = client.myInfoV2Config
-
-            assertEquals(
-                    "http://ext-myinfo-emulator:8080/v2/authorise" +
-                            "?client_id=STG2-MYINFO-SELF-TEST" +
-                            "&attributes=name,sex,dob,residentialstatus,nationality,mobileno,email,mailadd" +
-                            "&redirect_uri=http://localhost:3001/callback",
-                    myInfoConfig.url)
-
-        } finally {
-            StripePayment.deleteCustomer(customerId = customerId)
-        }
-    }
-
-    @Test
     fun `okhttp test - GET myinfoConfig v3`() {
 
         val email = "myinfo-v3-${randomInt()}@test.com"
@@ -650,53 +626,6 @@ class SingaporeKycTest {
                             "&redirect_uri=http://localhost:3001/callback",
                     myInfoConfig.url)
 
-        } finally {
-            StripePayment.deleteCustomer(customerId = customerId)
-        }
-    }
-
-    @Test
-    fun `okhttp test - GET myinfo v2`() {
-
-        val email = "myinfo-v2-${randomInt()}@test.com"
-        var customerId = ""
-        try {
-
-            customerId = createCustomer(name = "Test MyInfo v2 Customer", email = email).id
-
-            val client = clientForSubject(subject = email)
-
-            run {
-                val regionDetailsList = client.allRegions
-
-                regionDetailsList.forEach {
-                    assertTrue(it.status == AVAILABLE, "All regions should be in available state")
-                }
-            }
-
-            val personData: String = jacksonObjectMapper().writeValueAsString(client.getCustomerMyInfoV2Data("authCode"))
-
-            val expectedPersonData = """{"name":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"TAN XIAO HUI"},"sex":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"F"},"nationality":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"SG"},"dob":{"lastupdated":"2018-03-20","source":"1","classification":"C","value":"1970-05-17"},"email":{"lastupdated":"2018-08-23","source":"4","classification":"C","value":"myinfotesting@gmail.com"},"mobileno":{"lastupdated":"2018-08-23","code":"65","source":"4","classification":"C","prefix":"+","nbr":"97399245"},"mailadd":{"country":"SG","unit":"128","street":"BEDOK NORTH AVENUE 4","lastupdated":"2018-03-20","block":"102","postal":"460102","source":"1","classification":"C","floor":"09","building":"PEARL GARDEN"},"uinfin":"S9812381D"}"""
-            assertEquals(expectedPersonData, personData, "MyInfo PersonData do not match")
-
-            run {
-                val regionDetailsList = client.allRegions
-
-                val sgRegionIndex = regionDetailsList.indexOfFirst { it.region.id == "sg" }
-                assertTrue(sgRegionIndex != -1, "regionDetailsList should contain sg region")
-
-                val regionDetails = RegionDetails()
-                        .region(Region().id("sg").name("Singapore"))
-                        .status(PENDING)
-                        .kycStatusMap(mutableMapOf(
-                                KycType.JUMIO.name to KycStatus.PENDING,
-                                KycType.MY_INFO.name to KycStatus.APPROVED,
-                                KycType.ADDRESS.name to KycStatus.PENDING,
-                                KycType.NRIC_FIN.name to KycStatus.PENDING))
-                        .simProfiles(SimProfileList())
-
-                assertEquals(regionDetails, regionDetailsList[sgRegionIndex], "RegionDetails do not match")
-            }
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
         }
@@ -740,6 +669,7 @@ class SingaporeKycTest {
                                 KycType.MY_INFO.name to KycStatus.APPROVED,
                                 KycType.ADDRESS.name to KycStatus.PENDING,
                                 KycType.NRIC_FIN.name to KycStatus.PENDING))
+                        .kycExpiryDateMap(emptyMap())
                         .simProfiles(SimProfileList())
 
                 assertEquals(regionDetails, regionDetailsList[sgRegionIndex], "RegionDetails do not match")
@@ -783,6 +713,7 @@ class SingaporeKycTest {
                                 KycType.NRIC_FIN.name to KycStatus.APPROVED,
                                 KycType.JUMIO.name to KycStatus.PENDING,
                                 KycType.ADDRESS.name to KycStatus.PENDING))
+                        .kycExpiryDateMap(emptyMap())
                         .simProfiles(SimProfileList())
 
                 assertEquals(regionDetails, regionDetailsList[sgRegionIndex], "RegionDetails do not match")
@@ -828,6 +759,7 @@ class SingaporeKycTest {
                                 KycType.NRIC_FIN.name to KycStatus.APPROVED,
                                 KycType.JUMIO.name to KycStatus.APPROVED,
                                 KycType.ADDRESS.name to KycStatus.PENDING))
+                        .kycExpiryDateMap(emptyMap())
                         .simProfiles(SimProfileList())
 
                 assertEquals(regionDetails, regionDetailsList[sgRegionIndex], "RegionDetails do not match")
@@ -849,6 +781,7 @@ class SingaporeKycTest {
                                 KycType.MY_INFO.name to KycStatus.PENDING,
                                 KycType.ADDRESS.name to KycStatus.APPROVED,
                                 KycType.NRIC_FIN.name to KycStatus.APPROVED))
+                        .kycExpiryDateMap(emptyMap())
                         .simProfiles(SimProfileList())
 
                 assertEquals(regionDetails, regionDetailsList[sgRegionIndex], "RegionDetails do not match")
@@ -916,6 +849,7 @@ class SingaporeKycTest {
                                 KycType.NRIC_FIN.name to KycStatus.PENDING,
                                 KycType.JUMIO.name to KycStatus.APPROVED,
                                 KycType.ADDRESS.name to KycStatus.PENDING))
+                        .kycExpiryDateMap(emptyMap())
                         .simProfiles(SimProfileList())
 
                 assertEquals(regionDetails, regionDetailsList[sgRegionIndex], "RegionDetails do not match")
@@ -937,6 +871,7 @@ class SingaporeKycTest {
                                 KycType.MY_INFO.name to KycStatus.PENDING,
                                 KycType.ADDRESS.name to KycStatus.APPROVED,
                                 KycType.NRIC_FIN.name to KycStatus.PENDING))
+                        .kycExpiryDateMap(emptyMap())
                         .simProfiles(SimProfileList())
 
                 assertEquals(regionDetails, regionDetailsList[sgRegionIndex], "RegionDetails do not match")
