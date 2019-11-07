@@ -174,7 +174,7 @@ func AssertThatEnvironmentVariableaAreSet(variableNames ...string) {
 	log.Printf("Checking if environment variables are set...\n")
 	for key := range variableNames {
 		if len(os.Getenv(variableNames[key])) == 0 {
-			log.Fatalf("Environment variable not set'%s'", variableNames[key])
+			log.Fatalf("Environment variable not set '%s'", variableNames[key])
 		}
 	}
 	log.Printf("   ... they are\n")
