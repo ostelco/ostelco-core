@@ -112,27 +112,6 @@ func (sdb SimBatchDB) Create(theBatch *model.Batch) error {
 	return err
 }
 
-func (sdb SimBatchDB) CreateSimEntry(theEntry *model.SimEntry) error {
-
-	res := sdb.Db.MustExec("INSERT INTO SIM_ENTRY (batchId, rawIccid, iccidWithChrecksum, iccidWithoutChecksum, iccid, imsi, msisdn, ki) values (?,?,?,?,?,?,?,?)",
-		(*theEntry).BatchID,
-		(*theEntry).RawIccid,
-		(*theEntry).IccidWithChecksum,
-		(*theEntry).IccidWithoutChecksum,
-		(*theEntry).Iccid,
-		(*theEntry).Imsi,
-		(*theEntry).Msisdn,
-		(*theEntry).Ki,
-	)
-
-	id, err := res.LastInsertId()
-	if err != nil {
-		fmt.Errorf("Getting last inserted id failed '%s'", err)
-	}
-	theEntry.Id = id
-	return err
-}
-
 
 func (sdb *SimBatchDB) GenerateTables() error {
 	foo := `CREATE TABLE IF NOT EXISTS BATCH (
@@ -156,8 +135,8 @@ func (sdb *SimBatchDB) GenerateTables() error {
 	return err
 
 	foo = `CREATE TABLE IF NOT EXISTS SIM_PROFILE (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    batch INTEGER NOT NULL,
+    simId INTEGER PRIMARY KEY AUTOINCREMENT,
+    batchId INTEGER NOT NULL,
     imsi VARCHAR NOT NULL,
     iccidWithChecksum VARCHAR NOT NULL,
     iccidWithoutChecksum VARCHAR NOT NULL,
@@ -169,6 +148,38 @@ func (sdb *SimBatchDB) GenerateTables() error {
 	return err
 }
 
+
+func (sdb SimBatchDB) CreateSimEntry(theEntry *model.SimEntry) error {
+
+	res := sdb.Db.MustExec("INSERT INTO SIM_ENTRY (batchId, rawIccid, iccidWithChrecksum, iccidWithoutChecksum, iccid, imsi, msisdn, ki) values (?,?,?,?,?,?,?,?)",
+		(*theEntry).BatchID,
+		(*theEntry).RawIccid,
+		(*theEntry).IccidWithChecksum,
+		(*theEntry).IccidWithoutChecksum,
+		(*theEntry).Iccid,
+		(*theEntry).Imsi,
+		(*theEntry).Msisdn,
+		(*theEntry).Ki,
+	)
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		fmt.Errorf("Getting last inserted id failed '%s'", err)
+	}
+	theEntry.Id = id
+	return err
+}
+
+func (sdb SimBatchDB) GetSimEntryById(simId int64)  (*model.SimEntry, error) {
+	var result model.SimEntry
+	return &result, sdb.Db.Get(&result, "select * from SIM_ENTRY where simId = ?", simId)
+}
+
+
+func (sdb SimBatchDB) GetAllSimEntriesForBarch(batchId int64)  ([]model.SimEntry, error) {
+	result := []model.SimEntry{}
+	return result, sdb.Db.Select(&result, "SELECT * from SIM_ENTRY WHERE batchId = ?", batchId )
+}
 
 
 func (sdb *SimBatchDB) DropTables() error {
