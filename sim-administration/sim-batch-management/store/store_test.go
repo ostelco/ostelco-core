@@ -96,7 +96,9 @@ func TestGetAllBatches(t *testing.T) {
 	}
 }
 
-func TestDeclareBatch(t *testing.T) {
+
+func declareTestBatch(t *testing.T) *model.Batch {
+
 	theBatch, err := sdb.DeclareBatch(
 		"Name",
 		"Customer",
@@ -115,10 +117,16 @@ func TestDeclareBatch(t *testing.T) {
 		"8088",                 // uploadPortnumber string,
 		"snuff",                // profileVendor string,
 		"ACTIVE")               // initialHlrActivationStatusOfProfiles string
-	if err != nil {
-		panic(err)
-	}
 
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	return theBatch
+}
+
+func TestDeclareBatch(t *testing.T) {
+	theBatch := declareTestBatch(t)
 	retrievedValue, _ := sdb.GetBatchById(theBatch.Id)
 	if !reflect.DeepEqual(*retrievedValue, *theBatch) {
 		fmt.Errorf("getBatchById failed")
