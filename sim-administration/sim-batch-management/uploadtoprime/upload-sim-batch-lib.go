@@ -51,6 +51,39 @@ func GenerateCsvPayload(batch model.OutputBatch) string {
 	return sb.String()
 }
 
+func GenerateCsvPayload2(batch model.Batch) string {
+	var sb strings.Builder
+	sb.WriteString("ICCID, IMSI, MSISDN, PIN1, PIN2, PUK1, PUK2, PROFILE\n")
+
+	iccidWithoutLuhnChecksum, err :=  strconv.Atoi(batch.FirstIccid)
+	if err != nil {
+		panic(err)
+	}
+
+	imsi, err :=  strconv.Atoi(batch.FirstImsi)
+	if err != nil {
+		panic(err)
+	}
+
+	var msisdn, err2 =  strconv.Atoi(batch.FirstMsisdn)
+	if err2 != nil {
+		panic(err)
+	}
+
+	for i := 0; i < batch.Quantity; i++ {
+		iccid := fmt.Sprintf("%d%1d", iccidWithoutLuhnChecksum, fieldsyntaxchecks.LuhnChecksum(iccidWithoutLuhnChecksum))
+		line := fmt.Sprintf("%s, %d, %d,,,,,%s\n", iccid, imsi, msisdn, batch.ProfileType)
+		sb.WriteString(line)
+
+		iccidWithoutLuhnChecksum += batch.IccidIncrement
+		imsi += batch.ImsiIncrement
+		msisdn += batch.MsisdnIncrement
+	}
+
+	return sb.String()
+}
+
+// TODO: Delete this function.
 func ParseUploadFileGeneratorCommmandline() model.OutputBatch {
 
 	//
@@ -207,5 +240,3 @@ func OutputBatchFromCommandLineParameters(firstIccid *string,
 		MsisdnIncrement: msisdnIncrement,
 	}
 }
-
-

@@ -113,6 +113,9 @@ var (
 	generateInputFile = kingpin.Command("generate-input-file", "Generate input file for a named batch using stored parameters")
 	generateInputFileBatchname = generateInputFile.Arg("batchname", "The batch to generate the input file for.").String()
 
+	generateUploadBatch = kingpin.Command("generate-batch-upload-script", "Generate a batch upload script")
+	generateUploadBatchBatch = generateUploadBatch.Arg("batch", "The batch to generate upload script from").String()
+
 	db           = kingpin.Command("declare-batch", "Declare a batch to be persisted, and used by other commands")
 	dbName       = db.Flag("name", "Unique name of this batch").Required().String()
 	dbCustomer   = db.Flag("customer", "Name of the customer of this batch (with respect to the sim profile vendor)").Required().String()
@@ -184,6 +187,19 @@ func main() {
 			}
 
 			fmt.Printf("%v\n", string(bytes))
+		}
+
+	case "generate-batch-upload-script":
+		batch, err := db.GetBatchByName(*generateUploadBatchBatch)
+		if err != nil {
+			panic(err)
+		}
+
+		if batch == nil {
+			fmt.Printf("No batch found with name '%s'\n", *describeBatchBatch)
+		} else {
+			var csvPayload = uploadtoprime.GenerateCsvPayload2(*batch)
+			uploadtoprime.GeneratePostingCurlscript(batch.Url, csvPayload)
 		}
 
 	case "generate-input-file":
