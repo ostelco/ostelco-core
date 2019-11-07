@@ -8,21 +8,6 @@ package model
 //       in a common persisted record that is then used for the bulk of the
 //       processing.
 
-//
-// Batches as read from the input files
-//
-type InputBatch struct {
-	Id          int64  `db:"id" json:"id"`
-	Name        string `db:"name" json:"name"`
-	Customer    string `db:"customer" json:"customer"`
-	ProfileType string `db:"profileType" json:"profileType"`
-	OrderDate   string `db:"orderDate" json:"orderDate"`
-	BatchNo     string `db:"batchNo" json:"batchNo"`
-	Quantity    int    `db:"quantity" json:"quantity"`
-	FirstIccid  string `db:"firstIccid" json:"firstIccid"`
-	FirstImsi   string `db:"firstImsi" json:"firstImsi"`
-}
-
 
 
 
