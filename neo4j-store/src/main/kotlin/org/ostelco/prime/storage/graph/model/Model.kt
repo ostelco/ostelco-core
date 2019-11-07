@@ -23,7 +23,8 @@ data class PlanSubscription(
 
 data class CustomerRegion(
         val status: CustomerRegionStatus,
-        val kycStatusMap: Map<KycType, KycStatus> = emptyMap())
+        val kycStatusMap: Map<KycType, KycStatus> = emptyMap(),
+        val kycExpiryDateMap: Map<KycType, String> = emptyMap())
 
 data class SimProfile(
         override val id: String,

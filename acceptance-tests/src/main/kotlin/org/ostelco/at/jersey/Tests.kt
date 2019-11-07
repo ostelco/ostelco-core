@@ -33,8 +33,8 @@ import org.ostelco.prime.customer.model.PurchaseRecordList
 import org.ostelco.prime.customer.model.Region
 import org.ostelco.prime.customer.model.RegionDetails
 import org.ostelco.prime.customer.model.RegionDetails.StatusEnum.APPROVED
-import org.ostelco.prime.customer.model.RegionDetails.StatusEnum.PENDING
 import org.ostelco.prime.customer.model.RegionDetails.StatusEnum.AVAILABLE
+import org.ostelco.prime.customer.model.RegionDetails.StatusEnum.PENDING
 import org.ostelco.prime.customer.model.RegionDetailsList
 import org.ostelco.prime.customer.model.ScanInformation
 import org.ostelco.prime.customer.model.SimProfile
@@ -231,6 +231,7 @@ class RegionsTest {
                     .region(Region().id("no").name("Norway"))
                     .status(APPROVED)
                     .kycStatusMap(mapOf(KycType.JUMIO.name to KycStatus.APPROVED))
+                    .kycExpiryDateMap(emptyMap())
                     .simProfiles(SimProfileList())
 
             assertEquals(regionDetails, noRegionDetails, "RegionDetails do not match")
@@ -1507,6 +1508,7 @@ class SingaporeKycTest {
                                 KycType.MY_INFO.name to KycStatus.APPROVED,
                                 KycType.ADDRESS.name to KycStatus.PENDING,
                                 KycType.NRIC_FIN.name to KycStatus.PENDING))
+                        .kycExpiryDateMap(emptyMap())
                         .simProfiles(SimProfileList())
 
                 assertEquals(regionDetails, newRegionDetailsList, "RegionDetails do not match")
@@ -1556,6 +1558,7 @@ class SingaporeKycTest {
                                 KycType.NRIC_FIN.name to KycStatus.APPROVED,
                                 KycType.JUMIO.name to KycStatus.PENDING,
                                 KycType.ADDRESS.name to KycStatus.PENDING))
+                        .kycExpiryDateMap(emptyMap())
                         .simProfiles(SimProfileList())
 
                 assertEquals(regionDetails, sgRegionDetails, "RegionDetails do not match")
@@ -1607,6 +1610,7 @@ class SingaporeKycTest {
                                 KycType.NRIC_FIN.name to KycStatus.APPROVED,
                                 KycType.JUMIO.name to KycStatus.APPROVED,
                                 KycType.ADDRESS.name to KycStatus.PENDING))
+                        .kycExpiryDateMap(emptyMap())
                         .simProfiles(SimProfileList())
 
                 assertEquals(regionDetails, sgRegionDetails, "RegionDetails do not match")
@@ -1635,6 +1639,7 @@ class SingaporeKycTest {
                                 KycType.MY_INFO.name to KycStatus.PENDING,
                                 KycType.ADDRESS.name to KycStatus.APPROVED,
                                 KycType.NRIC_FIN.name to KycStatus.APPROVED))
+                        .kycExpiryDateMap(emptyMap())
                         .simProfiles(SimProfileList())
 
                 assertEquals(regionDetails, sgRegionDetails, "RegionDetails do not match")
@@ -1709,6 +1714,7 @@ class SingaporeKycTest {
                                 KycType.NRIC_FIN.name to KycStatus.PENDING,
                                 KycType.JUMIO.name to KycStatus.APPROVED,
                                 KycType.ADDRESS.name to KycStatus.PENDING))
+                        .kycExpiryDateMap(emptyMap())
                         .simProfiles(SimProfileList())
 
                 assertEquals(regionDetails, sgRegionDetails, "RegionDetails do not match")
@@ -1737,6 +1743,7 @@ class SingaporeKycTest {
                                 KycType.MY_INFO.name to KycStatus.PENDING,
                                 KycType.ADDRESS.name to KycStatus.APPROVED,
                                 KycType.NRIC_FIN.name to KycStatus.PENDING))
+                        .kycExpiryDateMap(emptyMap())
                         .simProfiles(SimProfileList())
 
                 assertEquals(regionDetails, sgRegionDetails, "RegionDetails do not match")

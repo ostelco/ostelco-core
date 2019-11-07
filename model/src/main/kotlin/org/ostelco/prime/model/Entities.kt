@@ -57,7 +57,7 @@ data class RegionDetails(
         val region: Region,
         val status: CustomerRegionStatus,
         val kycStatusMap: Map<KycType, KycStatus> = emptyMap(),
-        val kycExpiryDate: String? = null,
+        val kycExpiryDateMap: Map<KycType, String> = emptyMap(),
         val simProfiles: Collection<SimProfile> = emptyList())
 
 enum class CustomerRegionStatus {

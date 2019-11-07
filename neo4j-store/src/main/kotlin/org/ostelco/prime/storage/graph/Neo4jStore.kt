@@ -587,6 +587,7 @@ object Neo4jStoreSingleton : GraphStore {
                                 region = region,
                                 status = cr.status,
                                 kycStatusMap = cr.kycStatusMap,
+                                kycExpiryDateMap = cr.kycExpiryDateMap,
                                 simProfiles = simProfiles)
                     }
                     .requireNoNulls()
@@ -1787,16 +1788,19 @@ object Neo4jStoreSingleton : GraphStore {
                                         customer = customer,
                                         regionCode = updatedScanInformation.countryCode.toLowerCase(),
                                         kycType = JUMIO,
-                                        kycExpiryDate = updatedScanInformation?.scanResult?.expiry,
+                                        kycExpiryDate = updatedScanInformation.scanResult?.expiry,
                                         transaction = transaction)
                             }
                 } else {
-                    // TODO: find out what more information can be passed to the client.
-                    appNotifier.notify(
-                            notificationType = NotificationType.JUMIO_VERIFICATION_FAILED,
-                            customerId = customer.id,
-                            data = extendedStatus
-                    )
+                    // Do not notify the app when the verification fails because the customer has cancelled and hence did not upload an ID.
+                    if (updatedScanInformation.scanResult?.verificationStatus != "NO_ID_UPLOADED") {
+                        // TODO: find out what more information can be passed to the client.
+                        appNotifier.notify(
+                                notificationType = NotificationType.JUMIO_VERIFICATION_FAILED,
+                                customerId = customer.id,
+                                data = extendedStatus
+                        )
+                    }
                     logger.info(NOTIFY_OPS_MARKER, "Jumio verification failed for ${customer.contactEmail} Info: $extendedStatus")
                     setKycStatus(
                             customer = customer,
@@ -1811,25 +1815,30 @@ object Neo4jStoreSingleton : GraphStore {
 
     private fun verifyAndUpdateScanStatus(scanInformation: ScanInformation): ScanStatus {
 
-        val is18yrsOfAge = scanInformation.scanResult
+        val above18yrsOfAge = scanInformation.scanResult
                 ?.dob
                 ?.let(LocalDate::parse)
-                ?.plusYears(18)
-                ?.isBefore(LocalDate.now())
-                ?: true
+                .isLessThan18yrsAgo()
+                .not()
 
-        return if (is18yrsOfAge) {
+        return if (above18yrsOfAge) {
             scanInformation.status
         } else {
             ScanStatus.REJECTED
         }
     }
 
+    /**
+     * Return true if value is null or if it is more than 18 years ago.
+     */
+    private fun LocalDate?.isLessThan18yrsAgo() = this
+            ?.plusYears(18)
+            ?.isAfter(LocalDate.now())
+            ?: false
     //
     // eKYC - MyInfo
     //
 
-    private val myInfoKycV2Service by lazy { getResource<MyInfoKycService>("v2") }
     private val myInfoKycV3Service by lazy { getResource<MyInfoKycService>("v3") }
 
     private val secureArchiveService by lazy { getResource<SecureArchiveService>() }
@@ -1862,34 +1871,35 @@ object Neo4jStoreSingleton : GraphStore {
                         id = authorisationCode,
                         message = "Failed to fetched MyInfo $version").left().bind()
 
-                // TODO vihang: Should we set status for NRIC_FIN to APPROVED?
-
-                // set NRIC_FIN KYC Status to Approved
-//                setKycStatus(
-//                        customerId = customerId,
-//                        regionCode = "sg",
-//                        kycType = NRIC_FIN).bind()
-
                 val personData = myInfoData.personData ?: SystemError(
                         type = "MyInfo Auth Code",
                         id = authorisationCode,
                         message = "Failed to fetched MyInfo $version").left().bind()
 
-                secureArchiveService.archiveEncrypted(
-                        customerId = customer.id,
-                        fileName = "myInfoData",
-                        regionCodes = listOf("sg"),
-                        dataMap = mapOf(
-                                "uinFin" to myInfoData.uinFin.toByteArray(),
-                                "personData" to personData.toByteArray()
-                        )
-                ).bind()
+                val kycStatus = if(myInfoData.birthDate.isLessThan18yrsAgo()) {
+                    AuditLog.warn(customerId = customer.id, message = "Customer age is less than 18yrs.")
+                    REJECTED
+                } else {
+                    // store data only if approved
+                    secureArchiveService.archiveEncrypted(
+                            customerId = customer.id,
+                            fileName = "myInfoData",
+                            regionCodes = listOf("sg"),
+                            dataMap = mapOf(
+                                    "uinFin" to myInfoData.uinFin.toByteArray(),
+                                    "personData" to personData.toByteArray()
+                            )
+                    ).bind()
+                    KycStatus.APPROVED
+                }
 
                 // set MY_INFO KYC Status to Approved
                 setKycStatus(
                         customer = customer,
                         regionCode = "sg",
-                        kycType = MY_INFO).bind()
+                        kycType = MY_INFO,
+                        kycStatus = kycStatus,
+                        kycExpiryDate = myInfoData.passExpiryDate?.toString()).bind()
 
                 personData
             }.fix()
@@ -1988,6 +1998,7 @@ object Neo4jStoreSingleton : GraphStore {
             customer: Customer,
             regionCode: String,
             kycType: KycType,
+            kycExpiryDate: String? = null,
             kycStatus: KycStatus = KycStatus.APPROVED) = writeTransaction {
 
         setKycStatus(
@@ -1995,6 +2006,7 @@ object Neo4jStoreSingleton : GraphStore {
                 regionCode = regionCode,
                 kycType = kycType,
                 kycStatus = kycStatus,
+                kycExpiryDate = kycExpiryDate,
                 transaction = transaction)
                 .ifFailedThenRollback(transaction)
     }
@@ -2062,10 +2074,18 @@ object Neo4jStoreSingleton : GraphStore {
                     ).bind()
                 }
 
+                val newKycExpiryDateMap = kycExpiryDate
+                        ?.let { existingCustomerRegion.kycExpiryDateMap.copy(key = kycType, value = it) }
+                        ?: existingCustomerRegion.kycExpiryDateMap
+
                 customerRegionRelationStore
                         .createOrUpdate(
                                 fromId = customer.id,
-                                relation = CustomerRegion(status = newStatus, kycStatusMap = newKycStatusMap),
+                                relation = CustomerRegion(
+                                        status = newStatus,
+                                        kycStatusMap = newKycStatusMap,
+                                        kycExpiryDateMap = newKycExpiryDateMap
+                                ),
                                 toId = regionCode,
                                 transaction = transaction)
                         .bind()

@@ -869,6 +869,17 @@ definitions:
           MY_INFO: APPROVED
           NRIC_FIN: REJECTED
           ADDRESS: PENDING
+      kycExpiryDateMap:
+        description: "Map of expiry date for each KYC"
+        type: object
+        properties:
+          kycType:
+            $ref: '#/definitions/KycType'
+        additionalProperties:
+          type: string
+        example:
+          JUMIO: "2040-12-31"
+          MY_INFO: "2030-12-31"
       simProfiles:
         $ref: '#/definitions/SimProfileList'
   KycType:
