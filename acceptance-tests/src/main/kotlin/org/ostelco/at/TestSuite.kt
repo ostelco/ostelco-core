@@ -58,7 +58,7 @@ class TestSuite {
      * Note that if the STRIPE_ENDPOINT_SECRET variable is not set, then the test
      * will be skipped altogether.
      */
-    @Test
+    //@Test
     @EnabledIfEnvironmentVariable(named = "STRIPE_ENDPOINT_SECRET", matches="whsec_\\S+")
     fun `run recurring payment tests`() {
         runBlocking {
