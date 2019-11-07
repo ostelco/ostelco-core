@@ -73,34 +73,6 @@ var (
 	// TODO: Check if this can be used for the key files.
 	// postImage   = post.Flag("image", "image to post").ExistingFile()
 
-	//
-	// Upload of batch data to Prime
-	//
-	pbu           = kingpin.Command("prime-batch-upload", "Generate a shellscript that will upload a batch of profiles to Prime.")
-	pbuFirstIccid = pbu.Flag("first-rawIccid",
-		"An 18 or 19 digit long string.  The 19-th digit being a luhn luhnChecksum digit, if present").Required().String()
-	pbuLastIccid = pbu.Flag("last-rawIccid",
-		"An 18 or 19 digit long string.  The 19-th digit being a luhn luhnChecksum digit, if present").Required().String()
-	pbuFirstIMSI         = pbu.Flag("first-imsi", "First IMSI in batch").Required().String()
-	pbuLastIMSI          = pbu.Flag("last-imsi", "Last IMSI in batch").Required().String()
-	pbuFirstMsisdn       = pbu.Flag("first-msisdn", "First MSISDN in batch").Required().String()
-	pbuLastMsisdn        = pbu.Flag("last-msisdn", "Last MSISDN in batch").Required().String()
-	pbuProfileType       = pbu.Flag("profile-type", "SIM profile type").Required().String()
-	pbuBatchLengthString = pbu.Flag(
-		"batch-Quantity",
-		"Number of sim cards in batch").Required().String()
-
-	// XXX Legal values are Loltel and M1 at this time, how to configure that
-	//     flexibly?  Eventually by putting them in a database and consulting it during
-	//     command execution, but for now, just by squinting.
-
-	pbuHssVendor                            = pbu.Flag("hss-vendor", "The HSS vendor").Default("M1").String()
-	pbuUploadHostname                       = pbu.Flag("upload-hostname", "host to upload batch to").Default("localhost").String()
-	pbuUploadPortnumber                     = pbu.Flag("upload-portnumber", "port to upload to").Default("8080").String()
-	pbuProfileVendor                        = pbu.Flag("profile-vendor", "Vendor of SIM profiles").Default("Idemia").String()
-	pbuInitialHlrActivationStatusOfProfiles = pbu.Flag(
-		"initial-hlr-activation-status-of-profiles",
-		"Initial hss activation state.  Legal values are ACTIVATED and NOT_ACTIVATED.").Default("ACTIVATED").String()
 
 	// TODO ???
 	batch = kingpin.Command("batch", "Utility for persisting and manipulating sim card batches.")
@@ -235,23 +207,6 @@ func main() {
 			*dbUploadPortnumber,
 			*dbProfileVendor,
 			*dbInitialHlrActivationStatusOfProfiles)
-	case "prime-batch-upload":
-		var batch = uploadtoprime.OutputBatchFromCommandLineParameters(
-			pbuFirstIccid,
-			pbuLastIccid,
-			pbuLastIMSI,
-			pbuFirstIMSI,
-			pbuLastMsisdn,
-			pbuFirstMsisdn,
-			pbuUploadHostname,
-			pbuUploadPortnumber,
-			pbuHssVendor,
-			pbuInitialHlrActivationStatusOfProfiles,
-			pbuProfileType,
-			pbuProfileVendor,
-			pbuBatchLengthString)
-		var csvPayload = uploadtoprime.GenerateCsvPayload(batch)
-		uploadtoprime.GeneratePostingCurlscript(batch.Url, csvPayload)
 
 	case "es2":
 

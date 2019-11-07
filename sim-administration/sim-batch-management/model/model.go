@@ -23,17 +23,6 @@ type InputBatch struct {
 	FirstImsi   string `db:"firstImsi" json:"firstImsi"`
 }
 
-type OutputBatch struct {
-	ProfileType     string `db:"profileType" json:"profileType"`
-	Url             string `db:"url" json:"url"`
-	Length          int
-	FirstMsisdn     int
-	MsisdnIncrement int
-	FirstIccid      int
-	IccidIncrement  int
-	FirstImsi       int
-	ImsiIncrement   int
-}
 
 type OutputFileRecord struct {
 	Filename          string
