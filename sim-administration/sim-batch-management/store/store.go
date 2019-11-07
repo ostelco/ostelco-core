@@ -83,8 +83,9 @@ func (sdb SimBatchDB) GetBatchByName(name string) (*model.Batch, error) {
 
 func (sdb SimBatchDB) Create(theBatch *model.Batch) error {
 
-	res := sdb.Db.MustExec("INSERT INTO BATCH (name, customer, orderDate,  customer, profileType, batchNo, quantity, firstIccid, firstImsi,  firstMsisdn, msisdnIncrement, iccidIncrement, imsiIncrement, url) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?) ",
+	res := sdb.Db.MustExec("INSERT INTO BATCH (name, filenameBase, customer, orderDate,  customer, profileType, batchNo, quantity, firstIccid, firstImsi,  firstMsisdn, msisdnIncrement, iccidIncrement, imsiIncrement, url) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ",
 		(*theBatch).Name,
+		(*theBatch).FilenameBase,
 		(*theBatch).Customer,
 		(*theBatch).OrderDate,
 		(*theBatch).Customer,
@@ -112,6 +113,7 @@ func (sdb *SimBatchDB) GenerateTables() error {
 	foo := `CREATE TABLE IF NOT EXISTS BATCH (
     id integer primary key autoincrement,
     name VARCHAR NOT NULL UNIQUE,
+    filenameBase VARCHAR NOT NULL,
 	customer VARCHAR NOT NULL,
 	profileType VARCHAR NOT NULL,
 	orderDate VARCHAR NOT NULL,
@@ -228,11 +230,13 @@ func (sdb SimBatchDB) DeclareBatch(
 		log.Printf("Unknown parameters:  %s", flag.Args())
 	}
 
-	// Return a correctly parsed batch
-	// TODO: Batch name missing!
+	filenameBase := fmt.Sprintf("%s%s%s", customer,  orderDate, batchNo)
+	fmt.Printf("Filename base = '%s'\n", filenameBase)
+
 	myBatch := model.Batch{
 		OrderDate:       orderDate,
 		Customer:        customer,
+		FilenameBase:    filenameBase,
 		Name:            name,
 		BatchNo:         batchNo,
 		ProfileType:     profileType,
@@ -246,7 +250,7 @@ func (sdb SimBatchDB) DeclareBatch(
 		MsisdnIncrement: msisdnIncrement,
 	}
 
-	// Create the new batch (checking for consistency not done!)
+	// Persist the newly created batch, and return it
 	err = sdb.Create(&myBatch)
 
 	return &myBatch, err

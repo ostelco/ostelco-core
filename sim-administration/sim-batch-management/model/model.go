@@ -40,6 +40,7 @@ type Batch struct {
 	//       specific use, not in any way the generic thing the word
 	//       as it is used now points to.
 
+	FilenameBase    string `db:"filenameBase" json:"filenameBase"`
 	Customer        string `db:"customer" json:"customer"`
 	ProfileType     string `db:"profileType" json:"profileType"`
 	OrderDate       string `db:"orderDate" json:"orderDate"`
