@@ -13,12 +13,14 @@ package model
 // TODO: This  struct isn't fully baked.
 
 type SimEntry struct {
-	RawIccid             string  `db:"rawIccid" json:"rawIccid"`
+	BatchID     string  `db:"batchId" json:"batchId"`
+	RawIccid    string  `db:"rawIccid" json:"rawIccid"`
 	IccidWithChecksum    string  `db:"iccidWithChecksum" json:"iccidWithChecksum"`
 	IccidWithoutChecksum string  `db:"iccidWithoutChecksum" json:"iccidWithoutChecksum"`
-	Imsi                 string  `db:"imsi" json:"imsi"`
-	Ki                   string  `db:"ki" json:"ki"`
-	OutputFileName       string  `db:"outputFileName" json:"outputFileName"`
+	Iccid       string  `db:"iccid" json:"iccid"`
+	Imsi        string  `db:"imsi" json:"imsi"`
+	Msisdn      string  `db:"msisdn" json:"msisdn"`
+	Ki          string  `db:"ki" json:"ki"`
 }
 
 //

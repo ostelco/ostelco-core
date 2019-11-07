@@ -129,7 +129,22 @@ func (sdb *SimBatchDB) GenerateTables() error {
 	)`
 	_, err := sdb.Db.Exec(foo)
 	return err
+
+	foo = `CREATE TABLE IF NOT EXISTS SIM_PROFILE (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    batch INTEGER NOT NULL,
+    imsi VARCHAR NOT NULL,
+    iccidWithChecksum VARCHAR NOT NULL,
+    iccidWithoutChecksum VARCHAR NOT NULL,
+	iccid VARCHAR NOT NULL,
+	ki VARCHAR NOT NULL,
+	msisdn VARCHAR NOT NULL,
+	)`
+	_, err = sdb.Db.Exec(foo)
+	return err
 }
+
+
 
 func (sdb *SimBatchDB) DropTables() error {
 	foo := `DROP  TABLE BATCH`
