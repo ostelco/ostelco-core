@@ -284,7 +284,7 @@ func executeGenericEs2plusCommand(jsonStrB []byte, hostport string, es2plusComma
 
 
     if printHeaders {
-	    fmt.Println("Request -> %s\n", formatRequest(req))
+	    fmt.Printf("Request -> %s\n", formatRequest(req))
 	}
 
 	resp, err := httpClient.Do(req)
