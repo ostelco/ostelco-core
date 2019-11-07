@@ -30,7 +30,7 @@ class SimInventoryCallbackService(val dao: SimInventoryDAO) : SmDpPlusCallbackSe
         // Remove padding in ICCIDs with odd number of digits.
         // The database don't recognize those and will only get confused when
         // trying to use ICCIDs with trailing Fs as keys.
-        val iccid = incomingIccid.trimEnd('F')
+        val iccid = incomingIccid.toUpperCase().trimEnd('F')
 
         // If we can't find the ICCID, then cry foul and log an error message
         // that will get the ops team's attention asap!
