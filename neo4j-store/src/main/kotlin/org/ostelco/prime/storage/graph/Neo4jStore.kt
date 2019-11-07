@@ -1027,13 +1027,20 @@ object Neo4jStoreSingleton : GraphStore {
                             -[:${customerToSegmentRelation.name}]->(:${segmentEntity.name})
                             <-[:${offerToSegmentRelation.name}]-(:${offerEntity.name})
                             -[:${offerToProductRelation.name}]->(product:${productEntity.name} {sku: '$sku'})
-                            RETURN product;
+                            RETURN DISTINCT product;
                             """.trimIndent(),
                             transaction) { statementResult ->
-                        if (statementResult.hasNext()) {
-                            Either.right(productEntity.createEntity(statementResult.single().get("product").asMap()))
-                        } else {
-                            Either.left(NotFoundError(type = productEntity.name, id = sku))
+
+                        val products = statementResult
+                                    .list { productEntity.createEntity(it["product"].asMap()) }
+                                    .toList()
+                        when(products.size) {
+                            0 -> NotFoundError(type = productEntity.name, id = sku).left()
+                            1 -> products.single().right()
+                            else -> {
+                                logger.warn("Found multiple products: {} with same sku:{} for customerId: {}", products, sku, customerId)
+                                products.first().right()
+                            }
                         }
                     }
                 }
