@@ -52,7 +52,37 @@ top level directory, and they have different usecases:
   ... tbd, but should include:   Just running them, running them while developing new tests, how to attach  a test being developed to an IDE's debugger.
 
 
+## Running tests that depends on webhooks configured at Stripe
 
 
+Currently the "recurring payment" tests depends on webhooks being enabled at Stripe. For proxy forwarding the events to the Prime backend the [stripe/stripe-cli](https://hub.docker.com/r/stripe/stripe-cli) Docker image is used.
 
+For the tests to work the following two evnironment variables must be set to their correct value.
 
+ - `STRIPE_API_KEY`
+ - `STRIPE_ENDPOINT_SECRET`
+
+For the `STRIPE_API_KEY` variable go to the Stripe console and list the value at Developer -> API keys -> Secret key.
+
+To get the correct `STRIPE_ENDPOINT_SECRET` value do as follows:
+
+    $ export STRIPE_API_KEY=<secret value obtained earlier>
+    $ docker run --rm -e STRIPE_API_KEY=$STRIPE_API_KEY stripe/stripe-cli listen
+    Checking for new versions...
+
+    Getting ready...
+    Ready! Your webhook signing secret is whsec_secretvaluesecretvalue0123456789 (^C to quit)
+
+Alternatively download the `stripe` command line program from [https://stripe.com/docs/stripe-cli](https://stripe.com/docs/stripe-cli) and run the command:
+
+    $ stripe listen
+
+(with the `STRIPE_API_KEY` environment variable set).
+
+Set the `STRIPE_ENDPOINT_SECRET` environment variable to the string starting with the "`whsec_`" string.
+
+    $ export STRIPE_ENDPOINT_SECRET=whsec_secretvaluesecretvalue0123456789
+
+This will cause the tests that depends upon Stripe events to run.
+
+To disiable the tests, set the `STRIPE_ENDPOINT_SECRET` to som dummy value that don't starts with the "`whsec_`" string.
