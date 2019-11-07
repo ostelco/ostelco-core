@@ -59,7 +59,7 @@ class TestSuite {
      * will be skipped altogether.
      */
     @Test
-    @EnabledIfEnvironmentVariable(named = "STRIPE_ENDPOINT_SECRET", matches="\\S+")
+    @EnabledIfEnvironmentVariable(named = "STRIPE_ENDPOINT_SECRET", matches="whsec_\\S+")
     fun `run recurring payment tests`() {
         runBlocking {
 
