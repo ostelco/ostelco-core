@@ -1,6 +1,9 @@
 package org.ostelco.prime.storage.graph
 
 import arrow.core.Either
+import arrow.core.Either.Left
+import arrow.core.Either.Right
+import arrow.core.EitherOf
 import arrow.core.fix
 import arrow.core.flatMap
 import arrow.core.getOrElse
@@ -2086,6 +2089,7 @@ object Neo4jStoreSingleton : GraphStore {
 
         AuditLog.info(customerId = customerId, message = "Approved for region - $regionCode by Admin")
 
+        // create, but fail if already exists
         customerRegionRelationStore.create(
                 fromId = customerId,
                 relation = CustomerRegion(
@@ -2094,9 +2098,38 @@ object Neo4jStoreSingleton : GraphStore {
                 ),
                 toId = regionCode,
                 transaction = transaction
-        )
+        ).flatMapLeft { storeError ->
+            // if already exists
+            if(storeError is AlreadyExistsError) {
+                // then get the stored relation value
+                customerRegionRelationStore.get(
+                        fromId = customerId,
+                        toId = regionCode,
+                        transaction = transaction)
+                        .map { customerRegion ->
+                            if (customerRegion.status != APPROVED) {
+                                // and store the updated relation value
+                                customerRegionRelationStore.createOrUpdate(
+                                        fromId = customerId,
+                                        relation = customerRegion.copy(status = APPROVED), // with only status modified to APPROVED
+                                        toId = regionCode,
+                                        transaction = transaction)
+                            }
+                        }
+            } else {
+                // return other store errors which are not AlreadyExistsError
+                storeError.left()
+            }
+        }
     }
 
+    private inline fun <A, B> EitherOf<A, B>.flatMapLeft(f: (A) -> Either<A, B>): Either<A, B> =
+            fix().let {
+                when (it) {
+                    is Right -> it
+                    is Left -> f(it.a)
+                }
+            }
     //
     // Balance (Customer - Subscription - Bundle)
     //
