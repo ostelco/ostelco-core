@@ -40,6 +40,8 @@ type Store interface {
 		initialHlrActivationStatusOfProfiles string) (*model.Batch, error)
 
 	CreateSimEntry(simEntry *model.SimEntry) error
+	UpdateSimEntryMsisdn(simId int64, msisdn string)
+	GetAllSimEntriesForBatch(batchId int64)  ([]model.SimEntry, error)
 
 	Begin()
 }
@@ -117,7 +119,7 @@ func (sdb SimBatchDB) CreateBatch(theBatch *model.Batch) error {
 	if err != nil {
 		fmt.Errorf("Getting last inserted id failed '%s'", err)
 	}
-	theBatch.Id = id
+	theBatch.BatchId = id
 	return err
 }
 
@@ -185,11 +187,19 @@ func (sdb SimBatchDB) GetSimEntryById(simId int64)  (*model.SimEntry, error) {
 }
 
 
-func (sdb SimBatchDB) GetAllSimEntriesForBarch(batchId int64)  ([]model.SimEntry, error) {
+func (sdb SimBatchDB) GetAllSimEntriesForBatch(batchId int64)  ([]model.SimEntry, error) {
 	result := []model.SimEntry{}
 	return result, sdb.Db.Select(&result, "SELECT * from SIM_PROFILE WHERE batchId = ?", batchId )
 }
 
+func (sdb SimBatchDB) UpdateSimEntryMsisdn(simId int64, msisdn string) error {
+	_, err := sdb.Db.NamedExec("UPDATE SIM_PROFILE SET msisdn=:msisdn WHERE simId = :simId",
+		map[string]interface{}{
+			"simId":  simId,
+			"msisdn": msisdn,
+		})
+	return err
+}
 
 func (sdb *SimBatchDB) DropTables() error {
 	foo := `DROP  TABLE BATCH`
@@ -219,6 +229,14 @@ func (sdb SimBatchDB) DeclareBatch(
 	profileVendor string,
 	initialHlrActivationStatusOfProfiles string) (*model.Batch, error) {
 
+		alreadyExistingBatch, err := sdb.GetBatchByName(name)
+		if err != nil {
+			panic(err)
+		}
+
+		if alreadyExistingBatch != nil {
+			panic(fmt.Sprintf("Batch already defined: '%s'", name))
+		}
 
 	// TODO:
 	// 1. Check all the arguments (methods already written).
@@ -349,7 +367,7 @@ func (sdb SimBatchDB) DeclareBatch(
 		iccidWithLuhnChecksum := fmt.Sprintf("%d%d", iccidWithoutLuhnChecksum, fieldsyntaxchecks.LuhnChecksum(iccidWithoutLuhnChecksum))
 
 		 simEntry := &model.SimEntry{
-			BatchID:              batch.Id,
+			BatchID:              batch.BatchId,
 			RawIccid:             fmt.Sprintf("%d", iccidWithoutLuhnChecksum),
 			IccidWithChecksum:    iccidWithLuhnChecksum,
 			IccidWithoutChecksum: fmt.Sprintf("%d", iccidWithoutLuhnChecksum),

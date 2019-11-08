@@ -37,8 +37,8 @@ type SimEntry struct {
 //         now.
 
 type Batch struct {
-	Id              int64  `db:"id" json:"id"`
-	Name            string `db:"name" json:"name"`
+	BatchId int64  `db:"id" json:"id"`
+	Name    string `db:"name" json:"name"`
 
 	// TODO: Customer is a misnomer: This is the customer name used when
 	//       ordering a sim batch, used in the input file.  So a very

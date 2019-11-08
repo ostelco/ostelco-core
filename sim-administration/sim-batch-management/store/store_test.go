@@ -124,7 +124,7 @@ func declareTestBatch(t *testing.T) *model.Batch {
 
 func TestDeclareBatch(t *testing.T) {
 	theBatch := declareTestBatch(t)
-	retrievedValue, _ := sdb.GetBatchById(theBatch.Id)
+	retrievedValue, _ := sdb.GetBatchById(theBatch.BatchId)
 	if !reflect.DeepEqual(*retrievedValue, *theBatch) {
 		t.Fatal("getBatchById failed")
 	}
@@ -136,7 +136,7 @@ func entryEqual(a *model.SimEntry, b *model.SimEntry) bool {
 
 func TestDeclareAndRetrieveSimEntries(t *testing.T) {
 	theBatch := declareTestBatch(t)
-	batchId := theBatch.Id
+	batchId := theBatch.BatchId
 
 	entry := model.SimEntry{
 		BatchID:              batchId,
@@ -161,7 +161,7 @@ func TestDeclareAndRetrieveSimEntries(t *testing.T) {
 		t.Fatal("Retrieved and stored sim entry are different")
 	}
 
-	retrievedEntries, err := sdb.GetAllSimEntriesForBarch(entry.BatchID)
+	retrievedEntries, err := sdb.GetAllSimEntriesForBatch(entry.BatchID)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -3,16 +3,19 @@ package main
 
 import (
 	"bufio"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/es2plus"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/outfileparser"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/store"
-	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/uploadtoprime"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	"io"
 	"log"
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -73,19 +76,22 @@ var (
 	// TODO: Check if this can be used for the key files.
 	// postImage   = post.Flag("image", "image to post").ExistingFile()
 
-
 	// TODO ???
 	batch = kingpin.Command("batch", "Utility for persisting and manipulating sim card batches.")
 
-	listBatches   = kingpin.Command("list-batches", "List all known batches.")
+	listBatches = kingpin.Command("list-batches", "List all known batches.")
 
-	describeBatch = kingpin.Command("describe-batch", "Describe a batch with a particular name.")
+	describeBatch      = kingpin.Command("describe-batch", "Describe a batch with a particular name.")
 	describeBatchBatch = describeBatch.Arg("batch", "The batch to describe").String()
 
-	generateInputFile = kingpin.Command("generate-input-file", "Generate input file for a named batch using stored parameters")
+	generateInputFile          = kingpin.Command("generate-input-file", "Generate input file for a named batch using stored parameters")
 	generateInputFileBatchname = generateInputFile.Arg("batchname", "The batch to generate the input file for.").String()
 
-	generateUploadBatch = kingpin.Command("generate-batch-upload-script", "Generate a batch upload script")
+	addMsisdnFromFile        = kingpin.Command("add-msisdn-from-file", "Add MSISDN from CSV file containing at least ICCID/MSISDN, but also possibly IMSI.")
+	addMsisdnFromFileBatch   = addMsisdnFromFile.Flag("batch", "The batch to augment").Required().String()
+	addMsisdnFromFileCsvfile = addMsisdnFromFile.Flag("csv-file", "The CSV file to read from").Required().ExistingFile()
+
+	generateUploadBatch      = kingpin.Command("generate-batch-upload-script", "Generate a batch upload script")
 	generateUploadBatchBatch = generateUploadBatch.Arg("batch", "The batch to generate upload script from").String()
 
 	db           = kingpin.Command("declare-batch", "Declare a batch to be persisted, and used by other commands")
@@ -186,6 +192,113 @@ func main() {
 			var result = GenerateInputFile(batch)
 			fmt.Println(result)
 		}
+
+	case "add-msisdn-from-file":
+		batchName := *addMsisdnFromFileBatch
+		csvFilename := *addMsisdnFromFileCsvfile
+
+		batch, err := db.GetBatchByName(batchName)
+		if err != nil {
+			panic(err)
+		}
+
+		csvFile, _ := os.Open(csvFilename)
+		reader := csv.NewReader(bufio.NewReader(csvFile))
+
+		headerLine, error := reader.Read()
+		if error == io.EOF {
+			break
+		} else if error != nil {
+			log.Fatal(error)
+		}
+
+		var columnMap map[string]int
+		columnMap = make(map[string]int)
+
+		for index, fieldname := range headerLine {
+			columnMap[strings.ToLower(fieldname)] = index
+		}
+
+		if _, hasIccid := columnMap["iccid"] ; !hasIccid {
+			panic("No ICCID  column in CSV file")
+		}
+
+		if _, hasMsisdn := columnMap["msisdn"];  !hasMsisdn {
+			panic("No MSISDN  column in CSV file")
+		}
+
+		if _, hasImsi := columnMap["imsi"]; !hasImsi {
+			panic("No IMSI  column in CSV file")
+		}
+
+		type csvRecord struct {
+			iccid  string
+			imsi   string
+			msisdn string
+		}
+
+		var recordMap map[string]csvRecord
+		recordMap = make(map[string]csvRecord)
+
+		// Read all the lines into the record map.
+		for {
+			line, error := reader.Read()
+			if error == io.EOF {
+				break
+			} else if error != nil {
+				log.Fatal(error)
+			}
+
+			record := csvRecord{
+				iccid:  line[columnMap["iccid"]],
+				imsi:   line[columnMap["imsi"]],
+				msisdn: line[columnMap["msisdn"]],
+			}
+
+			if _, duplicateRecordExists := recordMap[record.iccid]; duplicateRecordExists {
+				panic(fmt.Sprintf("Duplicate ICCID record in map: %s", record.iccid))
+			}
+
+			recordMap[record.iccid] = record
+		}
+
+		simEntries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
+		if err != nil {
+			panic(err)
+		}
+
+		// Check for compatibility
+		tx := db.Begin()
+		noOfRecordsUpdated := 0
+		for _, entry := range simEntries {
+			record, iccidRecordIsPresent := recordMap[entry.Iccid]
+			if !iccidRecordIsPresent {
+				tx.Rollback()
+				panic(fmt.Sprintf("ICCID not in batch: %s", entry.Iccid))
+			}
+
+			if entry.Imsi != record.imsi {
+				tx.Rollback()
+				panic(fmt.Sprintf("IMSI mismatch for ICCID=%s.  Batch has %s, csv file has %s", entry.Iccid, entry.Imsi, record.iccid))
+			}
+
+			if entry.Msisdn != "" && record.msisdn != "" && record.msisdn != entry.Msisdn {
+				tx.Rollback()
+				panic(fmt.Sprintf("MSISDN mismatch for ICCID=%s.  Batch has %s, csv file has %s", entry.Iccid, entry.Msisdn, record.msisdn))
+			}
+
+			if (entry.Msisdn == "" && record.msisdn != "") {
+				err = db.UpdateSimEntryMsisdn(entry.SimId, record.msisdn)
+				if err != nil {
+					tx.Rollback()
+					panic(err)
+				}
+				noOfRecordsUpdated  += 1
+			}
+		}
+		tx.Commit()
+
+		fmt.Printf("Updated %d of a total of %d records in batch '%s'\n", noOfRecordsUpdated, len(simEntries), batchName)
 
 	case "declare-batch":
 		fmt.Println("Declare batch")
@@ -304,16 +417,14 @@ func checkEs2TargetState(target *string) {
 	}
 }
 
-
 ///
 ///    Input batch management
 ///
 
-
 func GenerateInputFile(batch *model.Batch) string {
 	result := "*HEADER DESCRIPTION\n" +
 		"***************************************\n" +
-		fmt.Sprintf("Customer        : %s\n",  (*batch).Customer) +
+		fmt.Sprintf("Customer        : %s\n", (*batch).Customer) +
 		fmt.Sprintf("ProfileType     : %s\n", (*batch).ProfileType) +
 		fmt.Sprintf("Order Date      : %s\n", (*batch).OrderDate) +
 		fmt.Sprintf("Batch No        : %s\n", (*batch).BatchNo) +
