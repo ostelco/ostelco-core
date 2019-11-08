@@ -195,7 +195,7 @@ func main() {
 		if batch == nil {
 			fmt.Printf("No batch found with name '%s'\n", *describeBatchBatch)
 		} else {
-			var csvPayload = uploadtoprime.GenerateCsvPayload2(*batch)
+			var csvPayload = uploadtoprime.GenerateCsvPayload3(db, *batch)
 			uploadtoprime.GeneratePostingCurlscript(batch.Url, csvPayload)
 		}
 

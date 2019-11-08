@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/fieldsyntaxchecks"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/store"
 	"strconv"
 	"strings"
 )
@@ -45,6 +46,9 @@ func GenerateCsvPayload2(batch model.Batch) string {
 		panic(err)
 	}
 
+
+
+	// TODO: Replace with a loop over actual entries
 	for i := 0; i < batch.Quantity; i++ {
 		iccid := fmt.Sprintf("%d%1d", iccidWithoutLuhnChecksum, fieldsyntaxchecks.LuhnChecksum(iccidWithoutLuhnChecksum))
 		line := fmt.Sprintf("%s, %d, %d,,,,,%s\n", iccid, imsi, msisdn, batch.ProfileType)
@@ -53,6 +57,23 @@ func GenerateCsvPayload2(batch model.Batch) string {
 		iccidWithoutLuhnChecksum += batch.IccidIncrement
 		imsi += batch.ImsiIncrement
 		msisdn += batch.MsisdnIncrement
+	}
+
+	return sb.String()
+}
+
+func GenerateCsvPayload3(db *store.SimBatchDB, batch model.Batch) string {
+	var sb strings.Builder
+	sb.WriteString("ICCID, IMSI, MSISDN, PIN1, PIN2, PUK1, PUK2, PROFILE\n")
+
+	entries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
+	if err != nil {
+		panic(err)
+	}
+
+	for  _ , entry:= range entries {
+		line := fmt.Sprintf("%s, %s, %s,,,,,%s\n", entry.Iccid, entry.Imsi, entry.Msisdn, batch.ProfileType)
+		sb.WriteString(line)
 	}
 
 	return sb.String()
