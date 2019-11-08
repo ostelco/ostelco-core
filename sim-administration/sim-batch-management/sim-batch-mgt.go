@@ -6,8 +6,8 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/es2plus"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/outfileparser"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/store"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/uploadtoprime"
@@ -205,6 +205,8 @@ func main() {
 		csvFile, _ := os.Open(csvFilename)
 		reader := csv.NewReader(bufio.NewReader(csvFile))
 
+		defer csvFile.Close()
+
 		headerLine, error := reader.Read()
 		if error == io.EOF {
 			break
@@ -219,11 +221,11 @@ func main() {
 			columnMap[strings.ToLower(fieldname)] = index
 		}
 
-		if _, hasIccid := columnMap["iccid"] ; !hasIccid {
+		if _, hasIccid := columnMap["iccid"]; !hasIccid {
 			panic("No ICCID  column in CSV file")
 		}
 
-		if _, hasMsisdn := columnMap["msisdn"];  !hasMsisdn {
+		if _, hasMsisdn := columnMap["msisdn"]; !hasMsisdn {
 			panic("No MSISDN  column in CSV file")
 		}
 
@@ -293,7 +295,7 @@ func main() {
 					tx.Rollback()
 					panic(err)
 				}
-				noOfRecordsUpdated  += 1
+				noOfRecordsUpdated += 1
 			}
 		}
 		tx.Commit()
@@ -327,6 +329,7 @@ func main() {
 		client := es2plus.Client(*es2CertFilePath, *es2KeyFilePath, *es2Hostport, *es2RequesterId)
 		iccid := *es2iccid
 		switch *es2cmd {
+
 		case "get-status":
 			result, err := client.GetStatus(iccid)
 			if err != nil {
@@ -360,6 +363,54 @@ func main() {
 				panic(err)
 			}
 			fmt.Printf("%s, %s\n", iccid, result.ACToken)
+
+		case "set-batch-activation-codes":
+			batchName := iccid
+			batch, err := db.GetBatchByName(batchName)
+			if err != nil {
+				fmt.Errorf("Unknown batch '%s'\n", batchName)
+			}
+
+			entries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
+			if err != nil {
+				panic(err)
+			}
+
+			// XXX Is this really necessary? I don't think so
+			// var mutex = &sync.Mutex{}
+
+			fmt.Println("Starting to loop over entries")
+			// var waitgroup sync.WaitGroup
+			for _, entry := range entries {
+
+				fmt.Printf("Processing iccid %s, activation code = '%s'\n", entry.Iccid, entry.ActivationCode)
+				//
+				// Only apply activation if not already noted in the
+				// database.
+				if entry.ActivationCode == "" {
+					fmt.Printf("Activating iccid = %s.", iccid)
+					iccid := entry.Iccid
+					// waitgroup.Add(1)
+					// go func(iccid string) {
+
+					result, err := client.ActivateIccid(iccid)
+					if err != nil {
+						panic(err)
+					}
+					fmt.Printf("%s, %s", iccid, result.ACToken)
+					// mutex.Lock()
+					tx := db.Begin()
+					db.UpdateActivationCode(entry.SimId, result.ACToken)
+					tx.Commit()
+					// mutex.Unlock()
+					// waitgroup.Done()
+					// }(iccid)
+				} else {
+					fmt.Printf("Skipping iccid = %s empty activation code ('%s')", iccid, entry.ActivationCode)
+				}
+			}
+
+			// waitgroup.Wait()
 
 		case "bulk-activate-iccids":
 

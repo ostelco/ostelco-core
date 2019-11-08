@@ -41,6 +41,7 @@ type Store interface {
 
 	CreateSimEntry(simEntry *model.SimEntry) error
 	UpdateSimEntryMsisdn(simId int64, msisdn string)
+	UpdateActivationCode(simId int64, activationCode string) error
 	GetAllSimEntriesForBatch(batchId int64)  ([]model.SimEntry, error)
 
 	Begin()
@@ -147,6 +148,7 @@ func (sdb *SimBatchDB) GenerateTables() error {
 	foo = `CREATE TABLE IF NOT EXISTS SIM_PROFILE (
     simId INTEGER PRIMARY KEY AUTOINCREMENT,
     batchId INTEGER NOT NULL,
+    activationCode VARCHAR,
     imsi VARCHAR NOT NULL,
     rawIccid VARCHAR NOT NULL,
     iccidWithChecksum VARCHAR NOT NULL,
@@ -197,6 +199,15 @@ func (sdb SimBatchDB) UpdateSimEntryMsisdn(simId int64, msisdn string) error {
 		map[string]interface{}{
 			"simId":  simId,
 			"msisdn": msisdn,
+		})
+	return err
+}
+
+func (sdb SimBatchDB)  UpdateActivationCode(simId int64, activationCode string) error {
+	_, err := sdb.Db.NamedExec("UPDATE SIM_PROFILE SET activationCode=:activationCode WHERE simId = :simId",
+		map[string]interface{}{
+			"simId":  simId,
+			"activationCode": activationCode,
 		})
 	return err
 }

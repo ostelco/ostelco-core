@@ -131,7 +131,7 @@ func TestDeclareBatch(t *testing.T) {
 }
 
 func entryEqual(a *model.SimEntry, b *model.SimEntry) bool {
-	return ((a.BatchID == b.BatchID) && (a.RawIccid == b.RawIccid) && a.IccidWithChecksum == b.IccidWithChecksum	&& a.IccidWithoutChecksum == b.IccidWithoutChecksum && a.Iccid == b.Iccid && a.Imsi == b.Imsi && a.Msisdn == b.Msisdn && a.Ki == b.Ki)
+	return ((a.ActivationCode == b.ActivationCode) && (a.BatchID == b.BatchID) && (a.RawIccid == b.RawIccid) && a.IccidWithChecksum == b.IccidWithChecksum	&& a.IccidWithoutChecksum == b.IccidWithoutChecksum && a.Iccid == b.Iccid && a.Imsi == b.Imsi && a.Msisdn == b.Msisdn && a.Ki == b.Ki)
 }
 
 func TestDeclareAndRetrieveSimEntries(t *testing.T) {
@@ -147,6 +147,7 @@ func TestDeclareAndRetrieveSimEntries(t *testing.T) {
 		Imsi:                 "5",
 		Msisdn:               "6",
 		Ki:                   "7",
+		ActivationCode:       "8",
 	}
 
 	// assert.Equal(t, 0, entry.SimId)
