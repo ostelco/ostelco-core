@@ -1,13 +1,3 @@
-//usr/bin/env go run "$0" "$@"; exit "$?"
-
-// XXX This is an utility script to feed the prime with sim profiles.
-//     it  is actually a much better idea to extend the import functionality of
-//     prime to generate sequences and checksums, but that will require a major
-//     extension of a program that is soon going into production, so I'm keeping this
-//     complexity external for now. However, the existance of this program should be
-//     considered technical debt, and the debt can be paid back e.g. by
-//     internalizing the logic into prime.
-
 package uploadtoprime
 
 import (
