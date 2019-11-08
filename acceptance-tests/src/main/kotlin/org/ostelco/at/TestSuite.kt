@@ -53,10 +53,9 @@ class TestSuite {
 
     /**
      * Test of recurring payments requires that:
-     *    1) The serveo.net service docker instance is running.
+     *    1) The webhook-stripe service docker instance is running.
      *    2) The STRIPE_ENDPOINT_SECRET env. variable set.
-     * Note that if the STRIPE_ENDPOINT_SECRET variable is not set, then the test
-     * will be skipped altogether.
+     * If the STRIPE_ENDPOINT_SECRET variable is not set the tests will be skipped.
      */
     @Test
     @EnabledIfEnvironmentVariable(named = "STRIPE_ENDPOINT_SECRET", matches="whsec_\\S+")
@@ -70,7 +69,7 @@ class TestSuite {
         val secret = System.getenv("STRIPE_ENDPOINT_SECRET") ?: "not_set"
 
         if (!secret.matches(Regex("whsec_\\S+"))) {
-            logger.info("Skipping the 'recurring payment tests' as the STRIPE_ENDPOINT_SECRET environment variable" +
+            logger.info("Skipping the 'recurring payment tests' as the STRIPE_ENDPOINT_SECRET environment variable " +
                     "is not set or set to a value not matching a secret.")
             return
         }

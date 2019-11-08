@@ -102,6 +102,7 @@ services:
       - PRIME_SOCKET=prime:8080
       - OCS_SOCKET=prime:8082
       - STRIPE_API_KEY=${STRIPE_API_KEY}
+      - STRIPE_ENDPOINT_SECRET=${STRIPE_ENDPOINT_SECRET}
       - GOOGLE_APPLICATION_CREDENTIALS=/secret/prime-service-account.json
       - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
     networks:
