@@ -380,40 +380,49 @@ func main() {
 			}
 
 			// XXX Is this really necessary? I don't think so
-			// var mutex = &sync.Mutex{}
+			var mutex = &sync.Mutex{}
 
 			fmt.Println("Starting to loop over entries")
-			// var waitgroup sync.WaitGroup
+			var waitgroup sync.WaitGroup
+			concurrency := 80
+			sem := make(chan bool, concurrency)
+
 			for _, entry := range entries {
 
-				fmt.Printf("Processing iccid %s, activation code = '%s'\n", entry.Iccid, entry.ActivationCode)
 				//
 				// Only apply activation if not already noted in the
 				// database.
 				if entry.ActivationCode == "" {
-					fmt.Printf("Activating iccid = %s.", iccid)
-					iccid := entry.Iccid
-					// waitgroup.Add(1)
-					// go func(iccid string) {
 
-					result, err := client.ActivateIccid(iccid)
-					if err != nil {
-						panic(err)
-					}
-					fmt.Printf("%s, %s", iccid, result.ACToken)
-					// mutex.Lock()
-					tx := db.Begin()
-					db.UpdateActivationCode(entry.SimId, result.ACToken)
-					tx.Commit()
-					// mutex.Unlock()
-					// waitgroup.Done()
-					// }(iccid)
-				} else {
-					fmt.Printf("Skipping iccid = %s empty activation code ('%s')", iccid, entry.ActivationCode)
+					sem <- true
+
+					// fmt.Printf("Processing iccid %s, activation code = '%s'\n", entry.Iccid, entry.ActivationCode)
+
+					iccid := entry.Iccid
+					waitgroup.Add(1)
+					go func(iccid string) {
+
+						defer func() { <-sem }()
+
+						result, err := client.ActivateIccid(iccid)
+						if err != nil {
+							panic(err)
+						}
+						fmt.Printf("%s, %s\n", iccid, result.ACToken)
+						mutex.Lock()
+						tx := db.Begin()
+						db.UpdateActivationCode(entry.SimId, result.ACToken)
+						tx.Commit()
+						mutex.Unlock()
+						waitgroup.Done()
+					}(iccid)
 				}
 			}
 
-			// waitgroup.Wait()
+			 waitgroup.Wait()
+			for i := 0; i < cap(sem); i++ {
+				sem <- true
+			}
 
 		case "bulk-activate-iccids":
 

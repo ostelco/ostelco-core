@@ -419,21 +419,29 @@ func (client *Es2PlusClientState)  ConfirmOrder(iccid string) (*ES2PlusConfirmOr
 func (client *Es2PlusClientState)  ActivateIccid(iccid string)  (*ProfileStatus, error){
 
 			result, err := client.GetStatus(iccid)
+
 			if err != nil {
 				panic(err)
 			}
 
-			if result.ACToken == "" {
+			 if result.ACToken == "" {
 
-				_, err := client.DownloadOrder(iccid)
-				if err != nil {
-					return nil, err
+                if  result.State == "AVAILABLE" {
+				    _, err := client.DownloadOrder(iccid)
+				    if err != nil {
+					    return nil, err
+				    }
+				    result, err = client.GetStatus(iccid)
 				}
+
+				if  result.State == "ALLOCATED" {
 				_, err = client.ConfirmOrder(iccid)
 				if err != nil {
 					return nil, err
 				}
-			}
+			  }
+
+			 }
 			result, err = client.GetStatus(iccid)
 			return result, err
 }

@@ -364,7 +364,7 @@ func (sdb SimBatchDB) DeclareBatch(
 	}
 
 	for i := 0; i < batch.Quantity; i++ {
-	
+
 		iccidWithLuhnChecksum := fmt.Sprintf("%d%d", iccidWithoutLuhnChecksum, fieldsyntaxchecks.LuhnChecksum(iccidWithoutLuhnChecksum))
 
 		simEntry := &model.SimEntry{
