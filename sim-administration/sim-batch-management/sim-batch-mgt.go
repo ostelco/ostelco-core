@@ -366,6 +366,9 @@ func main() {
 
 		case "set-batch-activation-codes":
 			batchName := iccid
+
+			fmt.Printf("Getting batch  named %s\n", batchName)
+
 			batch, err := db.GetBatchByName(batchName)
 			if err != nil {
 				fmt.Errorf("Unknown batch '%s'\n", batchName)

@@ -42,12 +42,12 @@ type Store interface {
 	CreateSimEntry(simEntry *model.SimEntry) error
 	UpdateSimEntryMsisdn(simId int64, msisdn string)
 	UpdateActivationCode(simId int64, activationCode string) error
-	GetAllSimEntriesForBatch(batchId int64)  ([]model.SimEntry, error)
+	GetAllSimEntriesForBatch(batchId int64) ([]model.SimEntry, error)
 
 	Begin()
 }
 
-func (sdb *SimBatchDB) Begin()  *sql.Tx {
+func (sdb *SimBatchDB) Begin() *sql.Tx {
 	tx, err := sdb.Db.Begin()
 	if err != nil {
 		panic(err)
@@ -124,7 +124,6 @@ func (sdb SimBatchDB) CreateBatch(theBatch *model.Batch) error {
 	return err
 }
 
-
 func (sdb *SimBatchDB) GenerateTables() error {
 	foo := `CREATE TABLE IF NOT EXISTS BATCH (
     id integer primary key autoincrement,
@@ -148,7 +147,7 @@ func (sdb *SimBatchDB) GenerateTables() error {
 	foo = `CREATE TABLE IF NOT EXISTS SIM_PROFILE (
     simId INTEGER PRIMARY KEY AUTOINCREMENT,
     batchId INTEGER NOT NULL,
-    activationCode VARCHAR,
+    activationCode VARCHAR NOT NULL,
     imsi VARCHAR NOT NULL,
     rawIccid VARCHAR NOT NULL,
     iccidWithChecksum VARCHAR NOT NULL,
@@ -161,11 +160,11 @@ func (sdb *SimBatchDB) GenerateTables() error {
 	return err
 }
 
-
 func (sdb SimBatchDB) CreateSimEntry(theEntry *model.SimEntry) error {
 
-	res := sdb.Db.MustExec("INSERT INTO SIM_PROFILE (batchId, rawIccid, iccidWithChecksum, iccidWithoutChecksum, iccid, imsi, msisdn, ki) values (?,?,?,?,?,?,?,?)",
+	res := sdb.Db.MustExec("INSERT INTO SIM_PROFILE (batchId, activationCode, rawIccid, iccidWithChecksum, iccidWithoutChecksum, iccid, imsi, msisdn, ki) values (?,?,?,?,?,?,?,?,?)",
 		(*theEntry).BatchID,
+		(*theEntry).ActivationCode,
 		(*theEntry).RawIccid,
 		(*theEntry).IccidWithChecksum,
 		(*theEntry).IccidWithoutChecksum,
@@ -183,15 +182,14 @@ func (sdb SimBatchDB) CreateSimEntry(theEntry *model.SimEntry) error {
 	return err
 }
 
-func (sdb SimBatchDB) GetSimEntryById(simId int64)  (*model.SimEntry, error) {
+func (sdb SimBatchDB) GetSimEntryById(simId int64) (*model.SimEntry, error) {
 	var result model.SimEntry
 	return &result, sdb.Db.Get(&result, "select * from SIM_PROFILE where simId = ?", simId)
 }
 
-
-func (sdb SimBatchDB) GetAllSimEntriesForBatch(batchId int64)  ([]model.SimEntry, error) {
+func (sdb SimBatchDB) GetAllSimEntriesForBatch(batchId int64) ([]model.SimEntry, error) {
 	result := []model.SimEntry{}
-	return result, sdb.Db.Select(&result, "SELECT * from SIM_PROFILE WHERE batchId = ?", batchId )
+	return result, sdb.Db.Select(&result, "SELECT * from SIM_PROFILE WHERE batchId = ?", batchId)
 }
 
 func (sdb SimBatchDB) UpdateSimEntryMsisdn(simId int64, msisdn string) error {
@@ -203,10 +201,10 @@ func (sdb SimBatchDB) UpdateSimEntryMsisdn(simId int64, msisdn string) error {
 	return err
 }
 
-func (sdb SimBatchDB)  UpdateActivationCode(simId int64, activationCode string) error {
+func (sdb SimBatchDB) UpdateActivationCode(simId int64, activationCode string) error {
 	_, err := sdb.Db.NamedExec("UPDATE SIM_PROFILE SET activationCode=:activationCode WHERE simId = :simId",
 		map[string]interface{}{
-			"simId":  simId,
+			"simId":          simId,
 			"activationCode": activationCode,
 		})
 	return err
@@ -239,15 +237,6 @@ func (sdb SimBatchDB) DeclareBatch(
 	uploadPortnumber string,
 	profileVendor string,
 	initialHlrActivationStatusOfProfiles string) (*model.Batch, error) {
-
-		alreadyExistingBatch, err := sdb.GetBatchByName(name)
-		if err != nil {
-			panic(err)
-		}
-
-		if alreadyExistingBatch != nil {
-			panic(fmt.Sprintf("Batch already defined: '%s'", name))
-		}
 
 	// TODO:
 	// 1. Check all the arguments (methods already written).
@@ -319,7 +308,7 @@ func (sdb SimBatchDB) DeclareBatch(
 		log.Printf("Unknown parameters:  %s", flag.Args())
 	}
 
-	filenameBase := fmt.Sprintf("%s%s%s", customer,  orderDate, batchNo)
+	filenameBase := fmt.Sprintf("%s%s%s", customer, orderDate, batchNo)
 	fmt.Printf("Filename base = '%s'\n", filenameBase)
 
 	batch := model.Batch{
@@ -359,7 +348,7 @@ func (sdb SimBatchDB) DeclareBatch(
 		panic(err)
 	}
 
-	imsi, err :=  strconv.Atoi(batch.FirstImsi)
+	imsi, err := strconv.Atoi(batch.FirstImsi)
 	if err != nil {
 		panic(err)
 	}
@@ -369,16 +358,18 @@ func (sdb SimBatchDB) DeclareBatch(
 	iccidWithoutLuhnChecksum := firstIccidInt
 
 	// XXX !!! TODO THis is wrong, but I'm doing it now, just to get started!
-	var msisdn, err2 =  strconv.Atoi(batch.FirstMsisdn)
+	var msisdn, err2 = strconv.Atoi(batch.FirstMsisdn)
 	if err2 != nil {
 		panic(err)
 	}
 
 	for i := 0; i < batch.Quantity; i++ {
+	
 		iccidWithLuhnChecksum := fmt.Sprintf("%d%d", iccidWithoutLuhnChecksum, fieldsyntaxchecks.LuhnChecksum(iccidWithoutLuhnChecksum))
 
-		 simEntry := &model.SimEntry{
+		simEntry := &model.SimEntry{
 			BatchID:              batch.BatchId,
+			ActivationCode:       "",
 			RawIccid:             fmt.Sprintf("%d", iccidWithoutLuhnChecksum),
 			IccidWithChecksum:    iccidWithLuhnChecksum,
 			IccidWithoutChecksum: fmt.Sprintf("%d", iccidWithoutLuhnChecksum),
