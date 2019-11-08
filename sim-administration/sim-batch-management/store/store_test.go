@@ -24,18 +24,28 @@ func setup() {
 	// sdb, err = store.OpenFileSqliteDatabase("bazunka.db")
 	sdb, err = NewInMemoryDatabase()
 	if err != nil {
-		fmt.Errorf("Couldn't open new in memory database  '%s", err)
+		fmt.Sprintf("Couldn't open new in memory database  '%s", err)
 	}
+
+	batches, err := sdb.GetAllBatches()
+	if err == nil {
+		panic(fmt.Sprintf("Couldn't generate tables  '%s'", err))
+	}
+
+	if len(batches) != 0 {
+		panic(fmt.Sprintf("batches already registred, test misconfigured"))
+	}
+
 	err = sdb.GenerateTables()
 	if err != nil {
-		fmt.Errorf("Couldn't generate tables  '%s'", err)
+		fmt.Sprintf("Couldn't generate tables  '%s'", err)
 	}
 }
 
 func shutdown() {
-	sdb.DropTables()
+	err := sdb.DropTables()
 	if err != nil {
-		fmt.Errorf("Couldn't drop tables  '%s'", err)
+		panic(fmt.Sprintf("Couldn't drop tables  '%s'", err))
 	}
 }
 
@@ -59,6 +69,11 @@ func injectTestBatch() *model.Batch {
 		FirstIccid:      "1234567890123456789",
 		FirstImsi:       "123456789012345",
 		MsisdnIncrement: -1,
+	}
+
+	batch, _ := sdb.GetBatchByName(theBatch.Name)
+	if batch != nil {
+		fmt.Errorf("Duplicate batch detected %s", theBatch.Name)
 	}
 
 	err := sdb.CreateBatch(&theBatch)

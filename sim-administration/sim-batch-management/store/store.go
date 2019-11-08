@@ -213,6 +213,11 @@ func (sdb SimBatchDB) UpdateActivationCode(simId int64, activationCode string) e
 func (sdb *SimBatchDB) DropTables() error {
 	foo := `DROP  TABLE BATCH`
 	_, err := sdb.Db.Exec(foo)
+	if err != nil {
+		return err
+	}
+	foo = `DROP  TABLE SIM_PROFILE`
+	_, err = sdb.Db.Exec(foo)
 	return err
 }
 
