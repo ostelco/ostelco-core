@@ -206,10 +206,11 @@ data class ConsumptionResult(val msisdnAnalyticsId: String, val granted: Long, v
 
 interface AdminGraphStore {
 
-    fun getCustomerForMsisdn(msisdn: String): Either<StoreError, Customer>
+    fun getCustomersForMsisdn(msisdn: String): Either<StoreError, Collection<Customer>>
 
-    fun getIdentityForCustomerId(id: String): Either<StoreError, Identity>
+    fun getAnyIdentityForCustomerId(id: String): Either<StoreError, Identity>
     fun getIdentitiesFor(queryString: String): Either<StoreError, Collection<Identity>>
+    fun getAllIdentities(): Either<StoreError, Collection<Identity>>
 
     /**
      * Link Customer to MSISDN
