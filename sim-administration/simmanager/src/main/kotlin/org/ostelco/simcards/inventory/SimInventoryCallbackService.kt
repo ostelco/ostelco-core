@@ -1,6 +1,7 @@
 package org.ostelco.simcards.inventory
 
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.sim.es2plus.ES2NotificationPointStatus
 import org.ostelco.sim.es2plus.ES2RequestHeader
 import org.ostelco.sim.es2plus.FunctionExecutionStatusType
@@ -17,23 +18,36 @@ class SimInventoryCallbackService(val dao: SimInventoryDAO) : SmDpPlusCallbackSe
 
     override fun handleDownloadProgressInfo(header: ES2RequestHeader,
                                             eid: String?,
-                                            iccid: String,
+                                            incomingIccid: String,
                                             profileType: String,
                                             timestamp: String,
                                             notificationPointId: Int,
                                             notificationPointStatus: ES2NotificationPointStatus,
                                             resultData: String?,
                                             imei: String?) {
-        if (notificationPointStatus.status == FunctionExecutionStatusType.ExecutedSuccess) {
 
-            /* XXX To be removed or updated to debug. */
+
+        // Remove padding in ICCIDs with odd number of digits.
+        // The database don't recognize those and will only get confused when
+        // trying to use ICCIDs with trailing Fs as keys.
+        val iccid = incomingIccid.toUpperCase().trimEnd('F')
+
+        // If we can't find the ICCID, then cry foul and log an error message
+        // that will get the ops team's attention asap!
+        val profileQueryResult = dao.getSimProfileByIccid(iccid)
+        profileQueryResult.mapLeft {
+            logger.error(NOTIFY_OPS_MARKER,
+                    "Could not find ICCID='$iccid' in database while handling downloadProgressinfo callback!!")
+            return
+        }
+
+        if (notificationPointStatus.status == FunctionExecutionStatusType.ExecutedSuccess) {
             logger.info("download-progress-info: Received message with status 'executed-success' for ICCID {}" +
                     "(notificationPointId: {}, profileType: {}, resultData: {})",
                     iccid, notificationPointId, profileType, resultData)
 
             /* Update EID. */
             if (!eid.isNullOrEmpty()) {
-                /* XXX To be removed or updated to debug. */
                 logger.info("download-progress-info: Updating EID to {} for ICCID {}",
                         eid, iccid)
                 dao.setEidOfSimProfileByIccid(iccid, eid)
@@ -41,7 +55,7 @@ class SimInventoryCallbackService(val dao: SimInventoryDAO) : SmDpPlusCallbackSe
 
             /**
              * Update SM-DP+ state.
-             *      There is a somewhat more subtle failure mode, namly that the SM-DP+ for some reason
+             *      There is a somewhat more subtle failure mode, namely that the SM-DP+ for some reason
              *      is unable to signal back, in that case the state has actually changed, but that fact will not
              *      be picked up by the state as stored in the database, and if the user interface is dependent
              *      on that state, the user interface may suffer a failure.  These issues needs to be gamed out

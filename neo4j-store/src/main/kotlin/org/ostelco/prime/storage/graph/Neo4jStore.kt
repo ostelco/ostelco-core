@@ -33,6 +33,7 @@ import org.ostelco.prime.dsl.withId
 import org.ostelco.prime.dsl.withKyc
 import org.ostelco.prime.dsl.withMsisdn
 import org.ostelco.prime.dsl.withSku
+import org.ostelco.prime.dsl.withSubscription
 import org.ostelco.prime.dsl.writeTransaction
 import org.ostelco.prime.ekyc.DaveKycService
 import org.ostelco.prime.ekyc.MyInfoKycService
@@ -1027,13 +1028,20 @@ object Neo4jStoreSingleton : GraphStore {
                             -[:${customerToSegmentRelation.name}]->(:${segmentEntity.name})
                             <-[:${offerToSegmentRelation.name}]-(:${offerEntity.name})
                             -[:${offerToProductRelation.name}]->(product:${productEntity.name} {sku: '$sku'})
-                            RETURN product;
+                            RETURN DISTINCT product;
                             """.trimIndent(),
                             transaction) { statementResult ->
-                        if (statementResult.hasNext()) {
-                            Either.right(productEntity.createEntity(statementResult.single().get("product").asMap()))
-                        } else {
-                            Either.left(NotFoundError(type = productEntity.name, id = sku))
+
+                        val products = statementResult
+                                    .list { productEntity.createEntity(it["product"].asMap()) }
+                                    .toList()
+                        when(products.size) {
+                            0 -> NotFoundError(type = productEntity.name, id = sku).left()
+                            1 -> products.single().right()
+                            else -> {
+                                logger.warn("Found multiple products: {} with same sku:{} for customerId: {}", products, sku, customerId)
+                                products.first().right()
+                            }
                         }
                     }
                 }
@@ -2093,21 +2101,11 @@ object Neo4jStoreSingleton : GraphStore {
     // Balance (Customer - Subscription - Bundle)
     //
 
-    override fun getCustomerForMsisdn(msisdn: String): Either<StoreError, Customer> = readTransaction {
-        read("""
-                MATCH (customer:${customerEntity.name})-[:${subscriptionRelation.name}]->(subscription:${subscriptionEntity.name} {msisdn: '$msisdn'})
-                RETURN customer
-                """.trimIndent(),
-                transaction) {
-            if (it.hasNext())
-                Either.right(customerEntity.createEntity(it.single().get("customer").asMap()))
-            else
-                Either.left(NotFoundError(type = customerEntity.name, id = msisdn))
-        }
+    override fun getCustomersForMsisdn(msisdn: String): Either<StoreError, Collection<Customer>> = readTransaction {
+        get(Customer withSubscription (Subscription withMsisdn msisdn))
     }
 
-
-    override fun getIdentityForCustomerId(id: String): Either<StoreError, ModelIdentity> = readTransaction {
+    override fun getAnyIdentityForCustomerId(id: String): Either<StoreError, ModelIdentity> = readTransaction {
         read("""
                 MATCH (:${customerEntity.name} { id:'$id' })<-[r:${identifiesRelation.name}]-(identity:${identityEntity.name})
                 RETURN identity, r.provider as provider
@@ -2128,7 +2126,7 @@ object Neo4jStoreSingleton : GraphStore {
         read("""
                 MATCH (c:${customerEntity.name})<-[r:${identifiesRelation.name}]-(identity:${identityEntity.name})
                 WHERE c.contactEmail contains '$queryString' or c.nickname contains '$queryString' or c.id contains '$queryString'
-                RETURN c, identity, r.provider as provider
+                RETURN identity, r.provider as provider
                 """.trimIndent(),
                 transaction) {
             if (it.hasNext()) {
@@ -2142,6 +2140,20 @@ object Neo4jStoreSingleton : GraphStore {
             } else {
                 Either.left(NotFoundError(type = customerEntity.name, id = queryString))
             }
+        }
+    }
+
+    override fun getAllIdentities(): Either<StoreError, Collection<org.ostelco.prime.model.Identity>> = readTransaction {
+        read("""
+                MATCH (:${customerEntity.name})<-[r:${identifiesRelation.name}]-(identity:${identityEntity.name})
+                RETURN identity, r.provider as provider
+                """.trimIndent(),
+                transaction) { statementResult ->
+            statementResult.list { record ->
+                val identity = identityEntity.createEntity(record.get("identity").asMap())
+                val provider = record.get("provider").asString()
+                ModelIdentity(id = identity.id, type = identity.type, provider = provider)
+            }.right()
         }
     }
 

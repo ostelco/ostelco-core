@@ -14,8 +14,10 @@ object Notifications {
         val lowBalanceThreshold = ConfigRegistry.config.lowBalanceThreshold
         if ((balance < lowBalanceThreshold) && ((balance + reserved) > lowBalanceThreshold)) {
             // TODO martin : Title and message should differ depending on subscription
-            storage.getCustomerForMsisdn(msisdn).map { customer ->
-                appNotifier.notify(customer.id, "OYA", "You have less then " + lowBalanceThreshold / 1000000 + "Mb data left")
+            storage.getCustomersForMsisdn(msisdn).map { customers ->
+                customers.forEach { customer ->
+                    appNotifier.notify(customer.id, "OYA", "You have less then " + lowBalanceThreshold / 1000000 + "Mb data left")
+                }
             }
         }
     }
