@@ -1,0 +1,9 @@
+FROM stripe/stripe-cli
+
+LABEL maintainer="dev@redotter.sg"
+
+COPY script/stripe-proxy.sh /proxy.sh
+
+ENTRYPOINT []
+
+CMD ["/proxy.sh"]
