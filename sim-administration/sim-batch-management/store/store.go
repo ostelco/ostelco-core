@@ -1,6 +1,7 @@
 package store
 
 import (
+	"database/sql"
 	"flag"
 	"fmt"
 	"github.com/jmoiron/sqlx"
@@ -38,8 +39,17 @@ type Store interface {
 		profileVendor string,
 		initialHlrActivationStatusOfProfiles string) (*model.Batch, error)
 
-
 	CreateSimEntry(simEntry *model.SimEntry) error
+
+	Begin()
+}
+
+func (sdb *SimBatchDB) Begin()  *sql.Tx {
+	tx, err := sdb.Db.Begin()
+	if err != nil {
+		panic(err)
+	}
+	return tx
 }
 
 type SimBatchDB struct {
@@ -300,21 +310,24 @@ func (sdb SimBatchDB) DeclareBatch(
 		MsisdnIncrement: msisdnIncrement,
 	}
 
+	tx := sdb.Begin()
+
 	// Persist the newly created batch,
 	err = sdb.CreateBatch(&batch)
-
-
-	// Now create all the sim profiles
-
-	iccidWithoutLuhnChecksum := firstIccidInt
 	if err != nil {
+		tx.Rollback()
 		panic(err)
 	}
 
 	imsi, err :=  strconv.Atoi(batch.FirstImsi)
 	if err != nil {
+		tx.Rollback()
 		panic(err)
 	}
+
+	// Now create all the sim profiles
+
+	iccidWithoutLuhnChecksum := firstIccidInt
 
 	// XXX !!! TODO THis is wrong, but I'm doing it now, just to get started!
 	var msisdn, err2 =  strconv.Atoi(batch.FirstMsisdn)
@@ -338,6 +351,7 @@ func (sdb SimBatchDB) DeclareBatch(
 
 		err = sdb.CreateSimEntry(simEntry)
 		if (err != nil) {
+			tx.Rollback()
 			panic(err)
 		}
 
@@ -346,6 +360,7 @@ func (sdb SimBatchDB) DeclareBatch(
 		msisdn += batch.MsisdnIncrement
 	}
 
+	tx.Commit()
 
 	//  Return the newly created batch
 	return &batch, err

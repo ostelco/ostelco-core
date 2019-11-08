@@ -1,6 +1,10 @@
 An informal TODO list for the sim batch management tool
 ==
 
+1. Ingest 10K iccid/imsi/msisdn .csv file into existing batch.
+
+1. Get activation codes for all ICCIdes in an existing batch.
+
 1. Ingest input files into a corresponding batch, read all the sim 
    profiles into a sim profile table.  This table can then be enriched
    with access codes, MSISDNs etc, and then written to both HSSes and 
