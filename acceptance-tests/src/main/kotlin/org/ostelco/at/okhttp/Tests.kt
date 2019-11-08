@@ -3,7 +3,6 @@ package org.ostelco.at.okhttp
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.junit.Ignore
 import org.junit.Test
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import org.ostelco.at.common.StripeEventListener
 import org.ostelco.at.common.StripePayment
 import org.ostelco.at.common.createCustomer

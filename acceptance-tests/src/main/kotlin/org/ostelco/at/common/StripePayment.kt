@@ -175,25 +175,6 @@ object StripePayment {
         }
     }
 
-    fun enableWebhook(on: Boolean = true) {
-
-        // https://stripe.com/docs/api/java#create_card_token
-        Stripe.apiKey = System.getenv("STRIPE_API_KEY")
-
-        val endpoint = WebhookEndpoint.list(emptyMap()).data
-                .filter {
-                    it.url.contains("serveo")
-                }
-
-        if (endpoint.isNotEmpty())
-            endpoint.first()
-                    .update(mapOf(
-                            "disabled" to !on
-                    ))
-        else
-            logger.error("Found no webhook endpoint configured on Stripe using the serveo.net service")
-    }
-
     private fun nextYear() = Year.now().value + 1
 }
 

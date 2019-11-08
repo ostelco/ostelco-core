@@ -2,7 +2,6 @@ package org.ostelco.at.jersey
 
 import org.junit.Ignore
 import org.junit.Test
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import org.ostelco.at.common.StripeEventListener
 import org.ostelco.at.common.StripePayment
 import org.ostelco.at.common.createCustomer

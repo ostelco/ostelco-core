@@ -58,25 +58,33 @@ class TestSuite {
      * Note that if the STRIPE_ENDPOINT_SECRET variable is not set, then the test
      * will be skipped altogether.
      */
-    //@Test
+    @Test
     @EnabledIfEnvironmentVariable(named = "STRIPE_ENDPOINT_SECRET", matches="whsec_\\S+")
     fun `run recurring payment tests`() {
+
+        /**
+         * TODO: For some reason the '@EnabledIfEnvironmentVariable' annotation
+         *       is not working...
+         *       Remove the check below when this is fixed.
+         */
+        val secret = System.getenv("STRIPE_ENDPOINT_SECRET") ?: "not_set"
+
+        if (!secret.matches(Regex("whsec_\\S+"))) {
+            logger.info("Skipping the 'recurring payment tests' as the STRIPE_ENDPOINT_SECRET environment variable" +
+                    "is not set or set to a value not matching a secret.")
+            return
+        }
+
         runBlocking {
 
             launch {
-                try {
-                    StripePayment.enableWebhook()
-
-                    checkResult(
-                            JUnitCore.runClasses(
-                                    ParallelComputer(true, true),
-                                    org.ostelco.at.okhttp.RenewPlanTest::class.java,
-                                    org.ostelco.at.jersey.RenewPlanTest::class.java
-                            )
-                    )
-                } finally {
-                    StripePayment.enableWebhook(false)
-                }
+                checkResult(
+                        JUnitCore.runClasses(
+                                ParallelComputer(true, true),
+                                org.ostelco.at.okhttp.RenewPlanTest::class.java,
+                                org.ostelco.at.jersey.RenewPlanTest::class.java
+                        )
+                )
             }
         }
     }

@@ -82,10 +82,13 @@ services:
 
   webhook-stripe:
     container_name: webhook-stripe
-    image: stripe/stripe-cli
+    build:
+      context: acceptance-tests
+      dockerfile: Dockerfile.stripe
     environment:
       - STRIPE_API_KEY=${STRIPE_API_KEY}
-    command: ["listen", "--forward-to", "prime:8080/stripe/event", "--events", "customer.subscription.updated,invoice.created,invoice.payment_succeeded,invoice.upcoming"]
+      - STRIPE_ENDPOINT_SECRET=${STRIPE_ENDPOINT_SECRET}
+    command: ["/proxy.sh"]
 
   acceptance-tests:
     container_name: acceptance-tests
