@@ -6,6 +6,7 @@ import org.ostelco.tools.prime.admin.actions.approveRegionForCustomer
 import org.ostelco.tools.prime.admin.actions.createCustomer
 import org.ostelco.tools.prime.admin.actions.createSubscription
 import org.ostelco.tools.prime.admin.actions.getAllRegionDetails
+import org.ostelco.tools.prime.admin.actions.identifyCustomer
 import org.ostelco.tools.prime.admin.actions.print
 import org.ostelco.tools.prime.admin.actions.printLeft
 import org.ostelco.tools.prime.admin.actions.setBalance
@@ -119,6 +120,12 @@ fun doActions() {
 //    setup()
 //    index()
 
+}
+
+fun debug() {
+
+    // identify customer using `jsonPayload.mdc.customerIdentity` in the logs
+    identifyCustomer(setOf(""))
 }
 
 data class SimProfileData(val iccId: String, val msisdn: String)

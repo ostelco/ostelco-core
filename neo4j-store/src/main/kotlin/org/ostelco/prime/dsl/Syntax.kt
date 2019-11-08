@@ -225,6 +225,12 @@ infix fun Customer.Companion.referredBy(customer: CustomerContext) =
                 fromId = customer.id
         )
 
+infix fun Customer.Companion.withSubscription(subscription: SubscriptionContext) =
+        RelatedToClause(
+                relationType = subscriptionRelation,
+                toId = subscription.id
+        )
+
 //
 // ExCustomer
 //
