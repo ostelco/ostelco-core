@@ -312,16 +312,26 @@ func (sdb SimBatchDB) DeclareBatch(
 
 	tx := sdb.Begin()
 
+	// This variable should be se to "true" if all transactions
+	// were successful, otherwise it will be rolled back.
+	weCool := false
+
+	defer func() {
+		if (weCool) {
+			tx.Commit()
+		} else {
+			tx.Rollback()
+		}
+	}()
+
 	// Persist the newly created batch,
 	err = sdb.CreateBatch(&batch)
 	if err != nil {
-		tx.Rollback()
 		panic(err)
 	}
 
 	imsi, err :=  strconv.Atoi(batch.FirstImsi)
 	if err != nil {
-		tx.Rollback()
 		panic(err)
 	}
 
@@ -351,7 +361,6 @@ func (sdb SimBatchDB) DeclareBatch(
 
 		err = sdb.CreateSimEntry(simEntry)
 		if (err != nil) {
-			tx.Rollback()
 			panic(err)
 		}
 
@@ -360,7 +369,8 @@ func (sdb SimBatchDB) DeclareBatch(
 		msisdn += batch.MsisdnIncrement
 	}
 
-	tx.Commit()
+	// Signal to deferred function that we're ready to commit.
+	weCool = true
 
 	//  Return the newly created batch
 	return &batch, err
