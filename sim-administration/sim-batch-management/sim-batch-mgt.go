@@ -289,7 +289,7 @@ func main() {
 				panic(fmt.Sprintf("MSISDN mismatch for ICCID=%s.  Batch has %s, csv file has %s", entry.Iccid, entry.Msisdn, record.msisdn))
 			}
 
-			if (entry.Msisdn == "" && record.msisdn != "") {
+			if entry.Msisdn == "" && record.msisdn != "" {
 				err = db.UpdateSimEntryMsisdn(entry.SimId, record.msisdn)
 				if err != nil {
 					tx.Rollback()
@@ -384,9 +384,14 @@ func main() {
 
 			fmt.Println("Starting to loop over entries")
 			var waitgroup sync.WaitGroup
-			concurrency := 80
-			sem := make(chan bool, concurrency)
 
+			// Limit concurency of the for-loop below
+			// to 160 goroutines.  The reason is that if we get too
+			// many we run out of file descriptors, and we don't seem to
+			// get much speedup after hundred or so.
+			concurrency := 160
+			sem := make(chan bool, concurrency)
+			tx := db.Begin()
 			for _, entry := range entries {
 
 				//
@@ -396,33 +401,31 @@ func main() {
 
 					sem <- true
 
-					// fmt.Printf("Processing iccid %s, activation code = '%s'\n", entry.Iccid, entry.ActivationCode)
-
-					iccid := entry.Iccid
 					waitgroup.Add(1)
-					go func(iccid string) {
+					go func(entry model.SimEntry) {
 
 						defer func() { <-sem }()
 
-						result, err := client.ActivateIccid(iccid)
+						result, err := client.ActivateIccid(entry.Iccid)
 						if err != nil {
 							panic(err)
 						}
-						fmt.Printf("%s, %s\n", iccid, result.ACToken)
+						fmt.Printf("%s, %s\n", entry.Iccid, result.ACToken)
 						mutex.Lock()
-						tx := db.Begin()
+
 						db.UpdateActivationCode(entry.SimId, result.ACToken)
-						tx.Commit()
+
 						mutex.Unlock()
 						waitgroup.Done()
-					}(iccid)
+					}(entry)
 				}
 			}
 
-			 waitgroup.Wait()
+			waitgroup.Wait()
 			for i := 0; i < cap(sem); i++ {
 				sem <- true
 			}
+			tx.Commit()
 
 		case "bulk-activate-iccids":
 
