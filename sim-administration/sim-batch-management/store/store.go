@@ -88,7 +88,7 @@ func (sdb SimBatchDB) GetAllBatches() ([]model.Batch, error) {
 
 func (sdb SimBatchDB) GetBatchById(id int64) (*model.Batch, error) {
 	var result model.Batch
-	return &result, sdb.Db.Get(&result, "select * from BATCH where id = ?", id)
+	return &result, sdb.Db.Get(&result, "select * from BATCH where batchId = ?", id)
 }
 
 func (sdb SimBatchDB) GetBatchByName(name string) (*model.Batch, error) {
@@ -126,7 +126,7 @@ func (sdb SimBatchDB) CreateBatch(theBatch *model.Batch) error {
 
 func (sdb *SimBatchDB) GenerateTables() error {
 	foo := `CREATE TABLE IF NOT EXISTS BATCH (
-    id integer primary key autoincrement,
+    batchId integer primary key autoincrement,
     name VARCHAR NOT NULL UNIQUE,
     filenameBase VARCHAR NOT NULL,
 	customer VARCHAR NOT NULL,
