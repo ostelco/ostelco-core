@@ -94,6 +94,9 @@ var (
 	generateUploadBatch      = kingpin.Command("generate-batch-upload-script", "Generate a batch upload script")
 	generateUploadBatchBatch = generateUploadBatch.Arg("batch", "The batch to generate upload script from").String()
 
+	generateActivationCodeSql      = kingpin.Command("generate-activation-code-updating-sql", "Generate SQL code to update access codes")
+	generateActivationCodeSqlBatch = generateActivationCodeSql.Arg("batch", "The batch to generate sql coce for").String()
+
 	db           = kingpin.Command("declare-batch", "Declare a batch to be persisted, and used by other commands")
 	dbName       = db.Flag("name", "Unique name of this batch").Required().String()
 	dbCustomer   = db.Flag("customer", "Name of the customer of this batch (with respect to the sim profile vendor)").Required().String()
@@ -165,6 +168,22 @@ func main() {
 			}
 
 			fmt.Printf("%v\n", string(bytes))
+		}
+
+	case "generate-activation-code-updating-sql":
+		fmt.Println("hahaha")
+		batch, err := db.GetBatchByName(*generateActivationCodeSqlBatch)
+		if err != nil {
+			panic(err)
+		}
+
+		simEntries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
+		if err != nil {
+			panic(err)
+		}
+
+		for _, b := range simEntries {
+			fmt.Printf("UPDATE  INTO sim_entries (matchingid) VALUES ('%s') WHERE iccid='%s'\n;", b.ActivationCode, b.Iccid)
 		}
 
 	case "generate-batch-upload-script":
