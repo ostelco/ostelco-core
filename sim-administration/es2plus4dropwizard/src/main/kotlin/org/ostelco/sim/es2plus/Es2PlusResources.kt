@@ -47,6 +47,17 @@ class ES2PlusIncomingHeadersFilter : ContainerRequestFilter {
         if (!uri.startsWith(ES2PLUS_PATH_PREFIX)) {
             return
         }
+
+        // Vihang: Should we be strict about these checks which are valid in terms of protocol but do not contribute
+        // much to the call-flow logic in pragmatic sense.
+        val adminProtocol: String? = ctx.headers.getFirst("X-Admin-Protocol")
+
+        // This looks weird, but it's also excluding null values in a "boolean" check,
+        // so it's actually legit :-)
+        if (adminProtocol?.startsWith("gsma/rsp/") != true) {
+            logger.warn("Illegal X-Admin-Protocol header: {}, expected something starting with 'gsma/rsp/'", adminProtocol)
+            // TODO rmz: Add configuration to make strict mode configurable
+        }
     }
 }
 
