@@ -115,7 +115,6 @@ func TestGetBatchById(t *testing.T) {
 
 func TestGetAllBatches(t *testing.T) {
 
-
 	allBatches, err := sdb.GetAllBatches()
 	if err != nil {
 		fmt.Errorf("Reading query failed '%s'", err)
