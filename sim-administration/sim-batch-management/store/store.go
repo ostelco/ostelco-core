@@ -60,7 +60,7 @@ type SimBatchDB struct {
 }
 
 func NewInMemoryDatabase() (*SimBatchDB, error) {
-	db, err := sqlx.Open("sqlite3", ":memory:")
+	db, err := sqlx.Connect("sqlite3", ":memory:")
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (sdb SimBatchDB) GetAllBatches() ([]model.Batch, error) {
 
 func (sdb SimBatchDB) GetBatchById(id int64) (*model.Batch, error) {
 	var result model.Batch
-	return &result, sdb.Db.Get(&result, "select * from BATCH where batchId = ?", id)
+	return &result, sdb.Db.Get(&result, "select * from BATCH where id = ?", id)
 }
 
 func (sdb SimBatchDB) GetBatchByName(name string) (*model.Batch, error) {
@@ -113,12 +113,12 @@ func (sdb SimBatchDB) CreateBatch(theBatch *model.Batch) error {
 		(*theBatch).MsisdnIncrement,
 		(*theBatch).IccidIncrement,
 		(*theBatch).ImsiIncrement,
-		(*theBatch).Url,
-	)
+		(*theBatch).Url)
 
 	id, err := res.LastInsertId()
 	if err != nil {
-		fmt.Errorf("Getting last inserted id failed '%s'", err)
+		// XXX Should be error logging
+		fmt.Printf("Getting last inserted id failed '%s'", err)
 	}
 	theBatch.BatchId = id
 	return err
@@ -126,7 +126,7 @@ func (sdb SimBatchDB) CreateBatch(theBatch *model.Batch) error {
 
 func (sdb *SimBatchDB) GenerateTables() error {
 	foo := `CREATE TABLE IF NOT EXISTS BATCH (
-    batchId integer primary key autoincrement,
+    id integer primary key autoincrement,
     name VARCHAR NOT NULL UNIQUE,
     filenameBase VARCHAR NOT NULL,
 	customer VARCHAR NOT NULL,
@@ -145,7 +145,7 @@ func (sdb *SimBatchDB) GenerateTables() error {
 	_, err := sdb.Db.Exec(foo)
 
 	foo = `CREATE TABLE IF NOT EXISTS SIM_PROFILE (
-    simId INTEGER PRIMARY KEY AUTOINCREMENT,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     batchId INTEGER NOT NULL,
     activationCode VARCHAR NOT NULL,
     imsi VARCHAR NOT NULL,
@@ -178,13 +178,13 @@ func (sdb SimBatchDB) CreateSimEntry(theEntry *model.SimEntry) error {
 	if err != nil {
 		fmt.Errorf("Getting last inserted id failed '%s'", err)
 	}
-	theEntry.SimId = id
+	theEntry.Id = id
 	return err
 }
 
 func (sdb SimBatchDB) GetSimEntryById(simId int64) (*model.SimEntry, error) {
 	var result model.SimEntry
-	return &result, sdb.Db.Get(&result, "select * from SIM_PROFILE where simId = ?", simId)
+	return &result, sdb.Db.Get(&result, "select * from SIM_PROFILE where id = ?", simId)
 }
 
 func (sdb SimBatchDB) GetAllSimEntriesForBatch(batchId int64) ([]model.SimEntry, error) {
@@ -193,7 +193,7 @@ func (sdb SimBatchDB) GetAllSimEntriesForBatch(batchId int64) ([]model.SimEntry,
 }
 
 func (sdb SimBatchDB) UpdateSimEntryMsisdn(simId int64, msisdn string) error {
-	_, err := sdb.Db.NamedExec("UPDATE SIM_PROFILE SET msisdn=:msisdn WHERE simId = :simId",
+	_, err := sdb.Db.NamedExec("UPDATE SIM_PROFILE SET msisdn=:msisdn WHERE id = :simId",
 		map[string]interface{}{
 			"simId":  simId,
 			"msisdn": msisdn,
@@ -202,7 +202,7 @@ func (sdb SimBatchDB) UpdateSimEntryMsisdn(simId int64, msisdn string) error {
 }
 
 func (sdb SimBatchDB) UpdateActivationCode(simId int64, activationCode string) error {
-	_, err := sdb.Db.NamedExec("UPDATE SIM_PROFILE SET activationCode=:activationCode WHERE simId = :simId",
+	_, err := sdb.Db.NamedExec("UPDATE SIM_PROFILE SET activationCode=:activationCode WHERE id = :simId",
 		map[string]interface{}{
 			"simId":          simId,
 			"activationCode": activationCode,
@@ -222,7 +222,7 @@ func (sdb *SimBatchDB) DropTables() error {
 }
 
 /**
- * CreateBatch a new batch, assuming that it doesn't exist.  Do all kind of checking of fields etc.
+ * DeclareBatch a new batch, assuming that it doesn't exist.  Do all kind of checking of fields etc.
  */
 func (sdb SimBatchDB) DeclareBatch(
 	name string,
@@ -314,7 +314,6 @@ func (sdb SimBatchDB) DeclareBatch(
 	}
 
 	filenameBase := fmt.Sprintf("%s%s%s", customer, orderDate, batchNo)
-	fmt.Printf("Filename base = '%s'\n", filenameBase)
 
 	batch := model.Batch{
 		OrderDate:       orderDate,

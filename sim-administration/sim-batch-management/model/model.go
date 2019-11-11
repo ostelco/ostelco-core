@@ -1,43 +1,24 @@
 package model
 
-// TODO: There are now multiple structs that model batches.
-//       It's probably a good idea to harmonize these so that it's
-//       only one type of batch info that's being read, and then have
-//       various ways to combine the misc. sources of batch information
-//       that lets partial information from multiple records be harmonized
-//       in a common persisted record that is then used for the bulk of the
-//       processing.
 
-
-
-// TODO: This  struct isn't fully baked.
+// TODO: This  type SimEntry struct { struct isn't fully baked.
 
 type SimEntry struct {
-	SimId       int64  `db:"simId" json:"simId"`
-	BatchID     int64  `db:"batchId" json:"batchId"`
-	RawIccid    string  `db:"rawIccid" json:"rawIccid"`
-	IccidWithChecksum    string  `db:"iccidWithChecksum" json:"iccidWithChecksum"`
-	IccidWithoutChecksum string  `db:"iccidWithoutChecksum" json:"iccidWithoutChecksum"`
-	Iccid       string  `db:"iccid" json:"iccid"`
-	Imsi        string  `db:"imsi" json:"imsi"`
-	Msisdn      string  `db:"msisdn" json:"msisdn"`
-	Ki          string  `db:"ki" json:"ki"`
-	ActivationCode          string  `db:"activationCode" json:"activationCode"`
+	Id                   int64  `db:"id" json:"id"`
+	BatchID              int64  `db:"batchId" json:"batchId"`
+	RawIccid             string `db:"rawIccid" json:"rawIccid"`
+	IccidWithChecksum    string `db:"iccidWithChecksum" json:"iccidWithChecksum"`
+	IccidWithoutChecksum string `db:"iccidWithoutChecksum" json:"iccidWithoutChecksum"`
+	Iccid                string `db:"iccid" json:"iccid"`
+	Imsi                 string `db:"imsi" json:"imsi"`
+	Msisdn               string `db:"msisdn" json:"msisdn"`
+	Ki                   string `db:"ki" json:"ki"`
+	ActivationCode       string `db:"activationCode" json:"activationCode"`
 }
 
 
-//
-//  Below this line we grow the final persistence model. Eventually
-//  nothing below this line should be left.
-//
-
-
-// TODO:   Add a filename base which is e.g. Footel201910110102, functional
-//         dependencies on other fields, but we'll not worry about that right
-//         now.
-
 type Batch struct {
-	BatchId int64  `db:"batchId" json:"batchId"`
+	BatchId int64  `db:"id" json:"id"`
 	Name    string `db:"name" json:"name"`
 
 	// TODO: Customer is a misnomer: This is the customer name used when

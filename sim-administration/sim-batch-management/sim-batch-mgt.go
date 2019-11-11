@@ -24,9 +24,11 @@ var (
 	// TODO: Enable, but also make it have an effect.
 	// debug    = kingpin.Flag("debug", "enable debug mode").Default("false").Bool()
 
-	es2             = kingpin.Command("es2", "Do things with the ES2+ protocol")
-	es2cmd          = es2.Arg("cmd", "The ES2+ subcommand, one of get-status, recover-profile, download-order, confirm-order, cancel-profile, bulk-activate-iccids, activate-iccid ").Required().String()
-	es2iccid        = es2.Arg("iccid", "Iccid of profile to manipulate").Required().String()
+	es2    = kingpin.Command("es2", "Do things with the ES2+ protocol")
+	es2cmd = es2.Arg("cmd",
+		"The ES2+ subcommand, one of get-status, recover-profile, download-order, confirm-order, cancel-profile, bulk-activate-iccids, activate-iccid ").Required().String()
+	//  .String()
+	es2iccid        = es2.Arg("iccid", "Iccid of profile to manipulate").String()
 	es2Target       = es2.Arg("target-state", "Target state of recover-profile or cancel-profile command").Default("AVAILABLE").String()
 	es2CertFilePath = es2.Flag("cert", "Certificate pem file.").Required().String()
 	es2KeyFilePath  = es2.Flag("key", "Certificate key file.").Required().String()
@@ -171,10 +173,10 @@ func main() {
 		}
 
 	case "generate-activation-code-updating-sql":
-		fmt.Println("hahaha")
 		batch, err := db.GetBatchByName(*generateActivationCodeSqlBatch)
 		if err != nil {
-			panic(err)
+			msg := fmt.Sprintf("Couldn't find batch named '%s' (%s) ", *generateActivationCodeSqlBatch, err)
+			panic(msg)
 		}
 
 		simEntries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
@@ -183,7 +185,10 @@ func main() {
 		}
 
 		for _, b := range simEntries {
-			fmt.Printf("UPDATE  INTO sim_entries (matchingid) VALUES ('%s') WHERE iccid='%s'\n;", b.ActivationCode, b.Iccid)
+			fmt.Printf(
+				"UPDATE sim_entries SET matchingid = '%s', smdpplusstate = 'RELEASED', provisionstate = 'AVAILABLE' WHERE iccid = '%s' and smdpplusstate = 'AVAILABLE';\n",
+				b.ActivationCode,
+				b.Iccid)
 		}
 
 	case "generate-batch-upload-script":
@@ -309,7 +314,7 @@ func main() {
 			}
 
 			if entry.Msisdn == "" && record.msisdn != "" {
-				err = db.UpdateSimEntryMsisdn(entry.SimId, record.msisdn)
+				err = db.UpdateSimEntryMsisdn(entry.Id, record.msisdn)
 				if err != nil {
 					tx.Rollback()
 					panic(err)
@@ -350,6 +355,7 @@ func main() {
 		switch *es2cmd {
 
 		case "get-status":
+
 			result, err := client.GetStatus(iccid)
 			if err != nil {
 				panic(err)
@@ -398,16 +404,20 @@ func main() {
 				panic(err)
 			}
 
+			if len(entries) != batch.Quantity {
+				panic(fmt.Sprintf("Batch quantity retrieved from database (%d) different from batch quantity (%d)\n", len(entries), batch.Quantity))
+			}
+
 			// XXX Is this really necessary? I don't think so
 			var mutex = &sync.Mutex{}
 
-			fmt.Println("Starting to loop over entries")
 			var waitgroup sync.WaitGroup
 
-			// Limit concurency of the for-loop below
+			// Limit concurrency of the for-loop below
 			// to 160 goroutines.  The reason is that if we get too
 			// many we run out of file descriptors, and we don't seem to
 			// get much speedup after hundred or so.
+
 			concurrency := 160
 			sem := make(chan bool, concurrency)
 			tx := db.Begin()
@@ -416,6 +426,7 @@ func main() {
 				//
 				// Only apply activation if not already noted in the
 				// database.
+
 				if entry.ActivationCode == "" {
 
 					sem <- true
@@ -429,11 +440,10 @@ func main() {
 						if err != nil {
 							panic(err)
 						}
-						fmt.Printf("%s, %s\n", entry.Iccid, result.ACToken)
+
 						mutex.Lock()
-
-						db.UpdateActivationCode(entry.SimId, result.ACToken)
-
+						fmt.Printf("%s, %s\n", entry.Iccid, result.ACToken)
+						db.UpdateActivationCode(entry.Id, result.ACToken)
 						mutex.Unlock()
 						waitgroup.Done()
 					}(entry)

@@ -21,7 +21,7 @@ func TestMain(m *testing.M) {
 }
 
 func setup() {
-	// sdb, err = store.OpenFileSqliteDatabase("bazunka.db")
+	// sdb, err = OpenFileSqliteDatabase("bazunka.db")
 	sdb, err = NewInMemoryDatabase()
 	if err != nil {
 		fmt.Sprintf("Couldn't open new in memory database  '%s", err)
@@ -38,8 +38,23 @@ func setup() {
 
 	err = sdb.GenerateTables()
 	if err != nil {
-		fmt.Sprintf("Couldn't generate tables  '%s'", err)
+		panic(fmt.Sprintf("Couldn't generate tables  '%s'", err))
 	}
+
+
+	// The tables don't seem to be guaranteed to be empty
+	foo, err := sdb.Db.Exec("DELETE FROM SIM_PROFILE")
+	if err != nil {
+		panic(fmt.Sprintf("Couldn't delete SIM_PROFILE  '%s'", err))
+	}
+	bar, err := sdb.Db.Exec("DELETE FROM BATCH")
+	if err != nil {
+		panic(fmt.Sprintf("Couldn't delete BATCH  '%s'", err))
+	}
+
+	fooRows, _ := foo.RowsAffected()
+	barRows,_ := bar.RowsAffected()
+	fmt.Printf("foo = %d, bar=%d\n",fooRows, barRows)
 }
 
 func shutdown() {
@@ -47,6 +62,7 @@ func shutdown() {
 	if err != nil {
 		panic(fmt.Sprintf("Couldn't drop tables  '%s'", err))
 	}
+	sdb.Db.Close()
 }
 
 // ... just to know that everything is sane.
@@ -87,7 +103,7 @@ func TestGetBatchById(t *testing.T) {
 
 	theBatch := injectTestBatch()
 
-	firstInputBatch, _ := sdb.GetBatchById(1)
+	firstInputBatch, _ := sdb.GetBatchById(theBatch.BatchId)
 	if !reflect.DeepEqual(*firstInputBatch, *theBatch) {
 		fmt.Errorf("getBatchById failed")
 	}
@@ -95,9 +111,17 @@ func TestGetBatchById(t *testing.T) {
 
 func TestGetAllBatches(t *testing.T) {
 
-	theBatch := injectTestBatch()
 
 	allBatches, err := sdb.GetAllBatches()
+	if err != nil {
+		fmt.Errorf("Reading query failed '%s'", err)
+	}
+
+	assert.Equal(t, len(allBatches), 0)
+
+	theBatch := injectTestBatch()
+
+	allBatches, err = sdb.GetAllBatches()
 	if err != nil {
 		fmt.Errorf("Reading query failed '%s'", err)
 	}
@@ -165,11 +189,11 @@ func TestDeclareAndRetrieveSimEntries(t *testing.T) {
 		ActivationCode:       "8",
 	}
 
-	// assert.Equal(t, 0, entry.SimId)
+	// assert.Equal(t, 0, entry.Id)
 	sdb.CreateSimEntry(&entry)
-	assert.Assert(t, entry.SimId != 0)
+	assert.Assert(t, entry.Id != 0)
 
-	retrivedEntry, err := sdb.GetSimEntryById(entry.SimId)
+	retrivedEntry, err := sdb.GetSimEntryById(entry.Id)
 	if err != nil {
 		t.Fatal(err)
 	}

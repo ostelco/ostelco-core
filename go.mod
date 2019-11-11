@@ -13,4 +13,5 @@ require (
 	github.com/pkg/errors v0.8.1
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gotest.tools v2.2.0+incompatible
+	honnef.co/go/tools v0.0.1-2019.2.3 // indirect
 )
