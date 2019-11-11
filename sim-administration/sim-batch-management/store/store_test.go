@@ -21,29 +21,39 @@ func TestMain(m *testing.M) {
 }
 
 func setup() {
-	// sdb, err = OpenFileSqliteDatabase("bazunka.db")
-	sdb, err = NewInMemoryDatabase()
+
+	// In memory database fails, so we try this gonzo method of getting
+	// a fresh database
+	filename := "bazunka.db"
+	// delete file, ignore any errors
+	os.Remove(filename)
+
+	sdb, err = OpenFileSqliteDatabase(filename)
+	// sdb, err = NewInMemoryDatabase()
 	if err != nil {
 		fmt.Sprintf("Couldn't open new in memory database  '%s", err)
 	}
-/*
-	batches, err := sdb.GetAllBatches()
-	if err == nil {
-		panic(fmt.Sprintf("Couldn't generate tables  '%s'", err))
-	}
+	/*
+		batches, err := sdb.GetAllBatches()
+		if err == nil {
+			panic(fmt.Sprintf("Couldn't generate tables  '%s'", err))
+		}
 
-	if len(batches) != 0 {
-		panic(fmt.Sprintf("batches already registred, test misconfigured"))
-	}
-*/
-
+		if len(batches) != 0 {
+			panic(fmt.Sprintf("batches already registred, test misconfigured"))
+		}
+	*/
 
 	err = sdb.GenerateTables()
 	if err != nil {
 		panic(fmt.Sprintf("Couldn't generate tables  '%s'", err))
 	}
 
-/*
+	cleanTables()
+}
+
+func cleanTables() {
+
 	// The tables don't seem to be guaranteed to be empty
 	foo, err := sdb.Db.Exec("DELETE FROM SIM_PROFILE")
 	if err != nil {
@@ -57,8 +67,6 @@ func setup() {
 	fooRows, _ := foo.RowsAffected()
 	barRows,_ := bar.RowsAffected()
 	fmt.Printf("foo = %d, bar=%d\n",fooRows, barRows)
-
- */
 }
 
 func shutdown() {
@@ -115,6 +123,8 @@ func TestGetBatchById(t *testing.T) {
 
 func TestGetAllBatches(t *testing.T) {
 
+	cleanTables()
+
 	allBatches, err := sdb.GetAllBatches()
 	if err != nil {
 		fmt.Errorf("Reading query failed '%s'", err)
@@ -168,8 +178,17 @@ func TestDeclareBatch(t *testing.T) {
 	theBatch := declareTestBatch(t)
 	retrievedValue, _ := sdb.GetBatchById(theBatch.BatchId)
 	if !reflect.DeepEqual(*retrievedValue, *theBatch) {
-		t.Fatal("getBatchById failed")
+		t.Fatal("getBatchById failed, stored batch not equal to retrieved batch")
 	}
+
+	retrievedEntries, err := sdb.GetAllSimEntriesForBatch(theBatch.BatchId)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, 1, len(retrievedEntries))
+
+	// TODO: Add check for content of retrieved entity
+
 }
 
 func entryEqual(a *model.SimEntry, b *model.SimEntry) bool {
@@ -177,6 +196,7 @@ func entryEqual(a *model.SimEntry, b *model.SimEntry) bool {
 }
 
 func TestDeclareAndRetrieveSimEntries(t *testing.T) {
+	cleanTables()
 	theBatch := declareTestBatch(t)
 	batchId := theBatch.BatchId
 
@@ -200,18 +220,6 @@ func TestDeclareAndRetrieveSimEntries(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !entryEqual(retrivedEntry, &entry) {
-		t.Fatal("Retrieved and stored sim entry are different")
-	}
-
-	retrievedEntries, err := sdb.GetAllSimEntriesForBatch(entry.BatchID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.Equal(t, 1, len(retrievedEntries))
-
-	retrivedEntry = &(retrievedEntries[0])
-
 	if !entryEqual(retrivedEntry, &entry) {
 		t.Fatal("Retrieved and stored sim entry are different")
 	}

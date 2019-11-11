@@ -103,30 +103,53 @@ func (sdb SimBatchDB) GetBatchByName(name string) (*model.Batch, error) {
 }
 
 func (sdb SimBatchDB) CreateBatch(theBatch *model.Batch) error {
+// TODO: mutex
+/*
+	res, err  := sdb.Db.Exec("INSERT INTO BATCH (name, filenameBase, orderDate, customer, profileType, batchNo, quantity, firstIccid,  firstImsi,  firstMsisdn, msisdnIncrement, iccidIncrement, imsiIncrement, url) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)",
+		// "INSERT INTO BATCH (name, filenameBase, orderDate,  customer, profileType, batchNo, quantity, firstIccid, firstImsi,  firstMsisdn, msisdnIncrement, iccidIncrement, imsiIncrement, url) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?) ",
+theBatch.Name ,theBatch.FilenameBase,theBatch.OrderDate, theBatch.Customer,theBatch.ProfileType,
+		theBatch.BatchNo,
+		theBatch.Quantity,
+		theBatch.FirstIccid,
+		theBatch.FirstImsi,
+		theBatch.FirstMsisdn,
+		theBatch.MsisdnIncrement,
+		theBatch.IccidIncrement,
+		theBatch.ImsiIncrement,
+		theBatch.Url,
+	)
+*/
 
-	res, err  := sdb.Db.Exec("INSERT INTO BATCH (name, filenameBase, customer, orderDate,  customer, profileType, batchNo, quantity, firstIccid, firstImsi,  firstMsisdn, msisdnIncrement, iccidIncrement, imsiIncrement, url) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ",
-		(*theBatch).Name,
-		(*theBatch).FilenameBase,
-		(*theBatch).Customer,
-		(*theBatch).OrderDate,
-		(*theBatch).Customer,
-		(*theBatch).ProfileType,
-		(*theBatch).BatchNo,
-		(*theBatch).Quantity,
-		(*theBatch).FirstIccid,
-		(*theBatch).FirstImsi,
-		(*theBatch).FirstMsisdn,
-		(*theBatch).MsisdnIncrement,
-		(*theBatch).IccidIncrement,
-		(*theBatch).ImsiIncrement,
-		(*theBatch).Url)
+
+// TODO:  a) Report it as a real error (minimal reproducable)
+//        b) Insert the object, then add extra fields, do it in a transaction, and don't break
+/** foo := `CREATE TABLE IF NOT EXISTS BATCH (
+       id integer primary key autoincrement,
+  	 name VARCHAR NOT NULL UNIQUE,
+  	 filenameBase VARCHAR NOT NULL,
+  	 customer VARCHAR NOT NULL,
+  	 profileType VARCHAR NOT NULL,
+  	 orderDate VARCHAR NOT NULL,
+  	 batchNo VARCHAR NOT NULL,
+  	 quantity INTEGER NOT NULL,
+
+ */
+/*
+	res, err := sdb.Db.NamedExec("INSERT INTO BATCH (name, filenameBase, orderDate, customer, profileType, batchNo, quantity) values (:name, :filenameBase, :orderDate, :customer, :profileType, :batchNo, :quantity)",
+		theBatch,
+	)
+	*/
+
+	res, err := sdb.Db.NamedExec("INSERT INTO BATCH (name, filenameBase, orderDate, customer, profileType, batchNo, quantity) values (:name, :filenameBase, :orderDate, :customer, :profileType, :batchNo, :quantity)",
+		theBatch,
+	)
+
 
 	if err != nil {
 		// XXX Should be error logging
 		fmt.Printf("Failed to insert new batch '%s'", err)
 		return err
 	}
-
 
 
 	id, err := res.LastInsertId()
@@ -136,6 +159,16 @@ func (sdb SimBatchDB) CreateBatch(theBatch *model.Batch) error {
 		return err
 	}
 	theBatch.BatchId = id
+
+	// "UPDATE SIM_PROFILE SET msisdn=:msisdn WHERE id = :simId",
+
+	res, err = sdb.Db.NamedExec("UPDATE BATCH  SET firstIccid = :firstIccid, firstImsi = :firstImsi, firstMsisdn = :firstMsisdn, msisdnIncrement = :msisdnIncrement, iccidIncrement = :iccidIncrement, imsiIncrement = :imsiIncrement, url=:url WHERE id = :id",
+		theBatch)
+	// , :firstIccid,  :firstImsi,  :firstMsisdn, :msisdnIncrement, :iccidIncrement, :imsiIncrement, :url
+
+
+
+
 	return err
 }
 
@@ -143,12 +176,12 @@ func (sdb *SimBatchDB) GenerateTables() error {
 	foo := `CREATE TABLE IF NOT EXISTS BATCH (
      id integer primary key autoincrement,
 	 name VARCHAR NOT NULL UNIQUE,
-	 filenameBase VARCHAR NOT NULL,
-	 customer VARCHAR NOT NULL,
-	 profileType VARCHAR NOT NULL,
-	 orderDate VARCHAR NOT NULL,
-	 batchNo VARCHAR NOT NULL,
-	 quantity INTEGER NOT NULL,
+	 filenameBase VARCHAR,
+	 customer VARCHAR,
+	 profileType VARCHAR,
+	 orderDate VARCHAR,
+	 batchNo VARCHAR,
+	 quantity INTEGER,
 	 firstIccid VARCHAR,
 	 firstImsi VARCHAR,
 	 firstMsisdn VARCHAR,
@@ -179,7 +212,7 @@ func (sdb *SimBatchDB) GenerateTables() error {
 func (sdb SimBatchDB) CreateSimEntry(theEntry *model.SimEntry) error {
 
 	res := sdb.Db.MustExec("INSERT INTO SIM_PROFILE (batchId, activationCode, rawIccid, iccidWithChecksum, iccidWithoutChecksum, iccid, imsi, msisdn, ki) values (?,?,?,?,?,?,?,?,?)",
-		(*theEntry).BatchID,
+		(*theEntry).BatchID,  // XXX Fix this!
 		(*theEntry).ActivationCode,
 		(*theEntry).RawIccid,
 		(*theEntry).IccidWithChecksum,
@@ -215,6 +248,7 @@ func (sdb SimBatchDB) UpdateSimEntryMsisdn(simId int64, msisdn string) error {
 			"msisdn": msisdn,
 		})
 	return err
+
 }
 
 func (sdb SimBatchDB) UpdateActivationCode(simId int64, activationCode string) error {
@@ -347,6 +381,7 @@ func (sdb SimBatchDB) DeclareBatch(
 		FirstMsisdn:     firstMsisdn,
 		MsisdnIncrement: msisdnIncrement,
 	}
+
 
 	tx := sdb.Begin()
 

@@ -18,7 +18,7 @@ type SimEntry struct {
 
 
 type Batch struct {
-	BatchId int64  `db:"id" json:"id"`
+	BatchId int64  `db:"id" json:"id"`  // TODO: SHould this be called 'Id'
 	Name    string `db:"name" json:"name"`
 
 	// TODO: Customer is a misnomer: This is the customer name used when
