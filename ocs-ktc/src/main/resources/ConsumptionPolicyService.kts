@@ -5,30 +5,13 @@ import org.ostelco.ocs.api.MultipleServiceCreditControl
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.ocs.core.ConsumptionPolicy
 import org.ostelco.prime.ocs.core.ConsumptionRequest
+import org.ostelco.prime.ocs.core.Mcc
+import org.ostelco.prime.ocs.core.ServiceIdRatingGroup
 import org.ostelco.prime.storage.ConsumptionResult
 
-private data class ServiceIdRatingGroup(
-        val serviceId: Long,
-        val ratingGroup: Long
-)
 
 enum class MccMnc(val value: String) {
     LOLTEL("24201")
-}
-
-enum class Mcc(val value: String) {
-    AUSTRALIA("505"),
-    CHINA("460"),
-    HONG_KONG("454"),
-    INDONESIA("510"),
-    JAPAN("440"),
-    MALAYSIA("502"),
-    NORWAY("242"),
-    PHILIPPINES("515"),
-    THAILAND("520"),
-    SINGAPORE("525"),
-    SOUTH_KOREA("450"),
-    VIET_NAM("452")
 }
 
 object : ConsumptionPolicy {

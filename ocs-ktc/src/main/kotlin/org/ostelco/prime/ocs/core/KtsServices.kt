@@ -10,6 +10,26 @@ data class ConsumptionRequest(
         val requestedBytes: Long
 )
 
+data class ServiceIdRatingGroup(
+        val serviceId: Long,
+        val ratingGroup: Long
+)
+
+enum class Mcc(val value: String) {
+    AUSTRALIA("505"),
+    CHINA("460"),
+    HONG_KONG("454"),
+    INDONESIA("510"),
+    JAPAN("440"),
+    MALAYSIA("502"),
+    NORWAY("242"),
+    PHILIPPINES("515"),
+    THAILAND("520"),
+    SINGAPORE("525"),
+    SOUTH_KOREA("450"),
+    VIET_NAM("452")
+}
+
 interface ConsumptionPolicy {
 
     /**
