@@ -1,10 +1,10 @@
 package outfileparser
 
 import (
+	"fmt"
 	"gotest.tools/assert"
 	"testing"
 )
-
 
 func TestKeywordValueParser(t *testing.T) {
 	theMap := make(map[string]string)
@@ -36,16 +36,13 @@ func TestReadingSimpleOutputFile(t *testing.T) {
 	assert.Equal(t, 3, record.NoOfEntries)
 }
 
-
-
-/* TODO: Uncomment this test, and start on making it pass.
 func TestReadingComplexOutputFile(t *testing.T) {
 	sample_output_file_name := "sample-out-2.out"
 	record := ParseOutputFile(sample_output_file_name)
 	fmt.Println("Record = ", record)
-}
- */
 
+	// TODO: Check that we got all the fields
+}
 
 func TestParseOutputVariablesLine(t *testing.T) {
 	varOutLine := "var_out:ICCID/IMSI/PIN1/PUK1/PIN2/PUK2/ADM1/KI/Access_Control/Code Retailer/Code ADM/ADM2/ADM3/ADM4"
