@@ -64,6 +64,12 @@ func NewInMemoryDatabase() (*SimBatchDB, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	err = db.Ping()
+	if err != nil {
+		return nil, err
+	}
+
 	return &SimBatchDB{Db: db}, nil
 }
 
@@ -74,7 +80,7 @@ func OpenFileSqliteDatabaseFromPathInEnvironmentVariable(variablename string) (*
 }
 
 func OpenFileSqliteDatabase(path string) (*SimBatchDB, error) {
-	db, err := sqlx.Open("sqlite3", "foobar.db")
+	db, err := sqlx.Open("sqlite3", path)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +104,7 @@ func (sdb SimBatchDB) GetBatchByName(name string) (*model.Batch, error) {
 
 func (sdb SimBatchDB) CreateBatch(theBatch *model.Batch) error {
 
-	res := sdb.Db.MustExec("INSERT INTO BATCH (name, filenameBase, customer, orderDate,  customer, profileType, batchNo, quantity, firstIccid, firstImsi,  firstMsisdn, msisdnIncrement, iccidIncrement, imsiIncrement, url) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ",
+	res, err  := sdb.Db.Exec("INSERT INTO BATCH (name, filenameBase, customer, orderDate,  customer, profileType, batchNo, quantity, firstIccid, firstImsi,  firstMsisdn, msisdnIncrement, iccidIncrement, imsiIncrement, url) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ",
 		(*theBatch).Name,
 		(*theBatch).FilenameBase,
 		(*theBatch).Customer,
@@ -115,10 +121,19 @@ func (sdb SimBatchDB) CreateBatch(theBatch *model.Batch) error {
 		(*theBatch).ImsiIncrement,
 		(*theBatch).Url)
 
+	if err != nil {
+		// XXX Should be error logging
+		fmt.Printf("Failed to insert new batch '%s'", err)
+		return err
+	}
+
+
+
 	id, err := res.LastInsertId()
 	if err != nil {
 		// XXX Should be error logging
 		fmt.Printf("Getting last inserted id failed '%s'", err)
+		return err
 	}
 	theBatch.BatchId = id
 	return err
@@ -126,36 +141,37 @@ func (sdb SimBatchDB) CreateBatch(theBatch *model.Batch) error {
 
 func (sdb *SimBatchDB) GenerateTables() error {
 	foo := `CREATE TABLE IF NOT EXISTS BATCH (
-    id integer primary key autoincrement,
-    name VARCHAR NOT NULL UNIQUE,
-    filenameBase VARCHAR NOT NULL,
-	customer VARCHAR NOT NULL,
-	profileType VARCHAR NOT NULL,
-	orderDate VARCHAR NOT NULL,
-	batchNo VARCHAR NOT NULL,
-	quantity INTEGER NOT NULL,
-	firstIccid VARCHAR,
-	firstImsi VARCHAR,
-	firstMsisdn VARCHAR,
-	msisdnIncrement INTEGER,
-	imsiIncrement INTEGER,
-	iccidIncrement INTEGER,
-	url VARCHAR
-	)`
+     id integer primary key autoincrement,
+	 name VARCHAR NOT NULL UNIQUE,
+	 filenameBase VARCHAR NOT NULL,
+	 customer VARCHAR NOT NULL,
+	 profileType VARCHAR NOT NULL,
+	 orderDate VARCHAR NOT NULL,
+	 batchNo VARCHAR NOT NULL,
+	 quantity INTEGER NOT NULL,
+	 firstIccid VARCHAR,
+	 firstImsi VARCHAR,
+	 firstMsisdn VARCHAR,
+	 msisdnIncrement INTEGER,
+	 imsiIncrement INTEGER,
+	 iccidIncrement INTEGER,
+	 url VARCHAR)`
 	_, err := sdb.Db.Exec(foo)
+	if err != nil {
+		return err
+	}
 
 	foo = `CREATE TABLE IF NOT EXISTS SIM_PROFILE (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    batchId INTEGER NOT NULL,
-    activationCode VARCHAR NOT NULL,
-    imsi VARCHAR NOT NULL,
-    rawIccid VARCHAR NOT NULL,
-    iccidWithChecksum VARCHAR NOT NULL,
-    iccidWithoutChecksum VARCHAR NOT NULL,
-	iccid VARCHAR NOT NULL,
-	ki VARCHAR NOT NULL,
-	msisdn VARCHAR NOT NULL
-	)`
+         id INTEGER PRIMARY KEY AUTOINCREMENT,
+         batchId INTEGER NOT NULL,
+         activationCode VARCHAR NOT NULL,
+         imsi VARCHAR NOT NULL,
+         rawIccid VARCHAR NOT NULL,
+         iccidWithChecksum VARCHAR NOT NULL,
+         iccidWithoutChecksum VARCHAR NOT NULL,
+         iccid VARCHAR NOT NULL,
+         ki VARCHAR NOT NULL,
+         msisdn VARCHAR NOT NULL)`
 	_, err = sdb.Db.Exec(foo)
 	return err
 }

@@ -26,7 +26,7 @@ func setup() {
 	if err != nil {
 		fmt.Sprintf("Couldn't open new in memory database  '%s", err)
 	}
-
+/*
 	batches, err := sdb.GetAllBatches()
 	if err == nil {
 		panic(fmt.Sprintf("Couldn't generate tables  '%s'", err))
@@ -35,13 +35,15 @@ func setup() {
 	if len(batches) != 0 {
 		panic(fmt.Sprintf("batches already registred, test misconfigured"))
 	}
+*/
+
 
 	err = sdb.GenerateTables()
 	if err != nil {
 		panic(fmt.Sprintf("Couldn't generate tables  '%s'", err))
 	}
 
-
+/*
 	// The tables don't seem to be guaranteed to be empty
 	foo, err := sdb.Db.Exec("DELETE FROM SIM_PROFILE")
 	if err != nil {
@@ -55,6 +57,8 @@ func setup() {
 	fooRows, _ := foo.RowsAffected()
 	barRows,_ := bar.RowsAffected()
 	fmt.Printf("foo = %d, bar=%d\n",fooRows, barRows)
+
+ */
 }
 
 func shutdown() {
