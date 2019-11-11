@@ -2,6 +2,7 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import org.ostelco.ocs.api.MultipleServiceCreditControl
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.ocs.core.ConsumptionPolicy
 import org.ostelco.prime.ocs.core.ConsumptionRequest
 import org.ostelco.prime.storage.ConsumptionResult
@@ -11,7 +12,43 @@ private data class ServiceIdRatingGroup(
         val ratingGroup: Long
 )
 
+enum class MccMnc(val value: String) {
+    LOLTEL("24201")
+}
+
+enum class Mcc(val value: String) {
+    AUSTRALIA("505"),
+    CHINA("460"),
+    HONG_KONG("454"),
+    INDONESIA("510"),
+    JAPAN("440"),
+    MALAYSIA("502"),
+    NORWAY("242"),
+    PHILIPPINES("515"),
+    THAILAND("520"),
+    SINGAPORE("525"),
+    SOUTH_KOREA("450"),
+    VIET_NAM("452")
+}
+
 object : ConsumptionPolicy {
+
+    private val logger by getLogger()
+
+    private val testAllowedMcc = setOf(
+            Mcc.AUSTRALIA.value,
+            Mcc.CHINA.value,
+            Mcc.HONG_KONG.value,
+            Mcc.INDONESIA.value,
+            Mcc.JAPAN.value,
+            Mcc.MALAYSIA.value,
+            Mcc.NORWAY.value,
+            Mcc.PHILIPPINES.value,
+            Mcc.SINGAPORE.value,
+            Mcc.THAILAND.value,
+            Mcc.SOUTH_KOREA.value,
+            Mcc.VIET_NAM.value
+    )
 
     override fun checkConsumption(
             msisdn: String,
@@ -24,6 +61,7 @@ object : ConsumptionPolicy {
         val used = multipleServiceCreditControl.used?.totalOctets ?: 0
 
         if (!isMccMncAllowed(sgsnMccMnc, imsiMccMnc)) {
+            logger.warn("Blocked usage for sgsnMccMnc $sgsnMccMnc imsiMccMnc $imsiMccMnc msisdn $msisdn ")
             return blockConsumption(msisdn)
         }
 
@@ -57,6 +95,10 @@ object : ConsumptionPolicy {
     }
 
     fun isMccMncAllowed(sgsnMccMnc: String, imsiMccMnc: String) : Boolean {
-        return true
+        val sgsnMcc = sgsnMccMnc.substring(range = 0..2)
+        return when (imsiMccMnc) {
+            MccMnc.LOLTEL.value -> testAllowedMcc.contains(sgsnMcc)
+            else -> false
+        }
     }
 }
