@@ -138,6 +138,7 @@ object TestHelper {
                 group(PS_INFORMATION, vendorId = VENDOR_ID_3GPP) {
                     avp(CALLED_STATION_ID, apn, pFlag = true)
                     avp(Avp.GPP_SGSN_MCC_MNC, sgsnMccMnc, vendorId = VENDOR_ID_3GPP, asOctetString = true)
+                    avp(Avp.TGPP_IMSI_MCC_MNC, sgsnMccMnc, vendorId = VENDOR_ID_3GPP, asOctetString = true)
                 }
             }
         }
