@@ -21,8 +21,27 @@ import (
 
 //  "gopkg.in/alecthomas/kingpin.v2"
 var (
-	// TODO: Enable, but also make it have an effect.
+	// TODO: Global flags can be added to Kingpin, but also make it have an effect.
 	// debug    = kingpin.Flag("debug", "enable debug mode").Default("false").Bool()
+
+
+	// Declare a profile-vendor with an SM-DP+ that can be referred to from
+	// batches.  Referential integrity required, so it won't be possible to
+	// declare bathes with non-existing profile vendors.
+	dpv               = kingpin.Command("declare-profile-vendor", "Declare a profile vendor with an SM-DP+ we can talk to")
+	dpvName         = dpv.Flag("name", "Name of profile-vendor").Required().String()
+	dpvCertFilePath = dpv.Flag("cert", "Certificate pem file.").Required().String()
+	dpvKeyFilePath  = dpv.Flag("key", "Certificate key file.").Required().String()
+	dpvHost         = dpv.Flag("host", "Host of ES2+ endpoint.").Required().String()
+	dpvPort         = dpv.Flag("port", "Port of ES2+ endpoint").Required().String()
+	// TODO:  Add sftp coordinates to be used when fetching/uploding input/utput-files
+	// TODO: Declare hss-es, that can be refered to in profiles.
+	// TODO: Declare legal hss/dpv combinations, batches must use legal combos.
+	// TODO: Declare contact methods for primes.  It might be a good idea to
+	//        impose referential integrity constraint on this too, so that
+	//        profile/vendor/hss/prime combos are constrained.  It should be possible
+	//        to specify prod/dev primes.
+
 
 	es2    = kingpin.Command("es2", "Do things with the ES2+ protocol")
 	es2cmd = es2.Arg("cmd",
@@ -141,6 +160,9 @@ func main() {
 	switch cmd {
 	case "sim-profile-upload":
 		outfileparser.ConvertInputfileToOutputfile(*spUploadInputFile, *spUploadOutputFilePrefix)
+
+	case declare-profile-vendor":
+		fmt.Println("Declaration of profile-vendors not yet implemented.\n")
 
 	case "list-batches":
 
