@@ -47,22 +47,6 @@ class ES2PlusIncomingHeadersFilter : ContainerRequestFilter {
         if (!uri.startsWith(ES2PLUS_PATH_PREFIX)) {
             return
         }
-
-        val adminProtocol: String? = ctx.headers.getFirst("X-Admin-Protocol")
-        val userAgent: String? = ctx.headers.getFirst("User-Agent")
-
-
-        if (!listOf("gsma-rsp-lpad", "gsma-rsp-lpae").contains(userAgent)) {
-            logger.warn("Illegal user agent, expected: 'gsma-rsp-lpad' or 'gsma-rsp-lpae', actual: '{}'", userAgent)
-            // TODO rmz: Add configuration to make strict mode configurable
-        }
-
-        // This looks weird, but it's also excluding null values in a "boolean" check,
-        // so it's actually legit :-)
-        if (adminProtocol?.startsWith("gsma/rsp/") != true) {
-            logger.warn("Illegal X-Admin-Protocol header: {}, expected something starting with 'gsma/rsp/'", adminProtocol)
-            // TODO rmz: Add configuration to make strict mode configurable
-        }
     }
 }
 
