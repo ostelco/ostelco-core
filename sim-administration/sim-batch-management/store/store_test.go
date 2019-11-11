@@ -55,21 +55,22 @@ func setup() {
 func cleanTables() {
 
 	// The tables don't seem to be guaranteed to be empty
-	foo, err := sdb.Db.Exec("DELETE FROM SIM_PROFILE")
+	simProfileDeletionResult, err := sdb.Db.Exec("DELETE FROM SIM_PROFILE")
 	if err != nil {
 		panic(fmt.Sprintf("Couldn't delete SIM_PROFILE  '%s'", err))
 	}
-	bar, err := sdb.Db.Exec("DELETE FROM BATCH")
+	batchDeleteResult, err := sdb.Db.Exec("DELETE FROM BATCH")
 	if err != nil {
 		panic(fmt.Sprintf("Couldn't delete BATCH  '%s'", err))
 	}
 
-	fooRows, _ := foo.RowsAffected()
-	barRows,_ := bar.RowsAffected()
-	fmt.Printf("foo = %d, bar=%d\n",fooRows, barRows)
+	simRows, _ := simProfileDeletionResult.RowsAffected()
+	batchRows,_ := batchDeleteResult.RowsAffected()
+	fmt.Printf("simProfileDeletionResult = %d, batchDeleteResult=%d\n",simRows, batchRows)
 }
 
 func shutdown() {
+	cleanTables()
 	err := sdb.DropTables()
 	if err != nil {
 		panic(fmt.Sprintf("Couldn't drop tables  '%s'", err))
