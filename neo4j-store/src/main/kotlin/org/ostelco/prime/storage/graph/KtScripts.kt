@@ -14,8 +14,7 @@ interface OnNewCustomerAction {
 }
 
 interface AllowedRegionsService {
-    fun get(identity: Identity,
-            customer: Customer,
+    fun get(customer: Customer,
             transaction: PrimeTransaction
     ): Either<StoreError, Collection<String>>
 }

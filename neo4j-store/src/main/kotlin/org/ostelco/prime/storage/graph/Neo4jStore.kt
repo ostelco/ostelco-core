@@ -497,12 +497,12 @@ object Neo4jStoreSingleton : GraphStore {
     //
 
     override fun getAllRegionDetails(identity: org.ostelco.prime.model.Identity): Either<StoreError, Collection<RegionDetails>> = readTransaction {
-        getCustomerId(identity = identity)
-                .flatMap { customerId ->
-                    getAllowedRegionIds(identity, transaction).map { allowedIds ->
+        getCustomer(identity = identity)
+                .flatMap { customer ->
+                    allowedRegionsService.get(customer, transaction).map { allowedIds ->
                         val allRegions = getAvailableRegionDetails(transaction)
                         val customerRegions = getRegionDetails(
-                                customerId = customerId,
+                                customerId = customer.id,
                                 transaction = transaction)
                         combineRegions(allRegions, customerRegions)
                                 .filter { allowedIds.contains(it.region.id) }
@@ -514,24 +514,17 @@ object Neo4jStoreSingleton : GraphStore {
             identity: org.ostelco.prime.model.Identity,
             regionCode: String): Either<StoreError, RegionDetails> = readTransaction {
 
-        getCustomerId(identity = identity)
-                .flatMap { customerId ->
-                    getAllowedRegionIds(identity, transaction).flatMap { allowedIds ->
+        getCustomer(identity = identity)
+                .flatMap { customer ->
+                    allowedRegionsService.get(customer, transaction).flatMap { allowedIds ->
                         getRegionDetails(
-                                customerId = customerId,
+                                customerId = customer.id,
                                 regionCode = regionCode,
                                 transaction = transaction).singleOrNull { allowedIds.contains(it.region.id) }
                                 ?.right()
-                                ?: NotFoundError(type = customerRegionRelation.name, id = "$customerId -> $regionCode").left()
+                                ?: NotFoundError(type = customerRegionRelation.name, id = "${customer.id} -> $regionCode").left()
                     }
                 }
-    }
-
-    // Retrieve the list of allowed region Ids from AllowedRegionsService
-    private fun getAllowedRegionIds(
-            identity: org.ostelco.prime.model.Identity,
-            transaction: PrimeTransaction): Either<StoreError, Collection<String>> = getCustomer(identity).flatMap {
-        allowedRegionsService.get(identity, it, transaction)
     }
 
     private fun getRegionDetails(
