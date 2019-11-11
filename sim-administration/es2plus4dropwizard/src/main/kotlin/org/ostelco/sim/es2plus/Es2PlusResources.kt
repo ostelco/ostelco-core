@@ -48,14 +48,9 @@ class ES2PlusIncomingHeadersFilter : ContainerRequestFilter {
             return
         }
 
+        // Vihang: Should we be strict about these checks which are valid in terms of protocol but do not contribute
+        // much to the call-flow logic in pragmatic sense.
         val adminProtocol: String? = ctx.headers.getFirst("X-Admin-Protocol")
-        val userAgent: String? = ctx.headers.getFirst("User-Agent")
-
-
-        if (!listOf("gsma-rsp-lpad", "gsma-rsp-lpae").contains(userAgent)) {
-            logger.warn("Illegal user agent, expected: 'gsma-rsp-lpad' or 'gsma-rsp-lpae', actual: '{}'", userAgent)
-            // TODO rmz: Add configuration to make strict mode configurable
-        }
 
         // This looks weird, but it's also excluding null values in a "boolean" check,
         // so it's actually legit :-)
