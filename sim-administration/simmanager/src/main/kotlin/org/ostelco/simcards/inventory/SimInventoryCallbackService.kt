@@ -76,6 +76,9 @@ class SimInventoryCallbackService(val dao: SimInventoryDAO) : SmDpPlusCallbackSe
                     /* BPP installation. */
                     gotoState(numericIccId, SmDpPlusState.INSTALLED)
                 }
+                5 -> {
+                    /* Non standard, but non-error state */
+                }
                 else -> {
                     /* Unexpected check point value. */
                     logger.error("download-progress-info: Received message with unexpected 'notificationPointId' {} for ICCID {}" +
