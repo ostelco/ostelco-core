@@ -18,7 +18,7 @@ class SimInventoryCallbackService(val dao: SimInventoryDAO) : SmDpPlusCallbackSe
 
     override fun handleDownloadProgressInfo(header: ES2RequestHeader,
                                             eid: String?,
-                                            incomingIccid: String,
+                                            iccid: String,
                                             profileType: String,
                                             timestamp: String,
                                             notificationPointId: Int,
@@ -30,27 +30,27 @@ class SimInventoryCallbackService(val dao: SimInventoryDAO) : SmDpPlusCallbackSe
         // Remove padding in ICCIDs with odd number of digits.
         // The database don't recognize those and will only get confused when
         // trying to use ICCIDs with trailing Fs as keys.
-        val iccid = incomingIccid.toUpperCase().trimEnd('F')
+        val numericIccId = iccid.toUpperCase().trimEnd('F')
 
         // If we can't find the ICCID, then cry foul and log an error message
         // that will get the ops team's attention asap!
-        val profileQueryResult = dao.getSimProfileByIccid(iccid)
+        val profileQueryResult = dao.getSimProfileByIccid(numericIccId)
         profileQueryResult.mapLeft {
             logger.error(NOTIFY_OPS_MARKER,
-                    "Could not find ICCID='$iccid' in database while handling downloadProgressinfo callback!!")
+                    "Could not find ICCID='$numericIccId' in database while handling downloadProgressinfo callback!!")
             return
         }
 
         if (notificationPointStatus.status == FunctionExecutionStatusType.ExecutedSuccess) {
             logger.info("download-progress-info: Received message with status 'executed-success' for ICCID {}" +
                     "(notificationPointId: {}, profileType: {}, resultData: {})",
-                    iccid, notificationPointId, profileType, resultData)
+                    numericIccId, notificationPointId, profileType, resultData)
 
             /* Update EID. */
             if (!eid.isNullOrEmpty()) {
                 logger.info("download-progress-info: Updating EID to {} for ICCID {}",
-                        eid, iccid)
-                dao.setEidOfSimProfileByIccid(iccid, eid)
+                        eid, numericIccId)
+                dao.setEidOfSimProfileByIccid(numericIccId, eid)
             }
 
             /**
@@ -70,17 +70,17 @@ class SimInventoryCallbackService(val dao: SimInventoryDAO) : SmDpPlusCallbackSe
                 }
                 3 -> {
                     /* BPP download. */
-                    gotoState(iccid, SmDpPlusState.DOWNLOADED)
+                    gotoState(numericIccId, SmDpPlusState.DOWNLOADED)
                 }
                 4 -> {
                     /* BPP installation. */
-                    gotoState(iccid, SmDpPlusState.INSTALLED)
+                    gotoState(numericIccId, SmDpPlusState.INSTALLED)
                 }
                 else -> {
                     /* Unexpected check point value. */
                     logger.error("download-progress-info: Received message with unexpected 'notificationPointId' {} for ICCID {}" +
                             "(notificationPointStatus: {}, profileType: {}, resultData: {})",
-                            notificationPointId, iccid, notificationPointStatus,
+                            notificationPointId, numericIccId, notificationPointStatus,
                             profileType, resultData)
                 }
             }
@@ -88,7 +88,7 @@ class SimInventoryCallbackService(val dao: SimInventoryDAO) : SmDpPlusCallbackSe
             /* XXX Update to handle other cases explicitly + review of logging. */
             logger.warn("download-progress-info: Received message with notificationPointStatus {} for ICCID {}" +
                     "(notificationPointId: {}, profileType: {}, resultData: {})",
-                    notificationPointStatus, iccid, notificationPointId,
+                    notificationPointStatus, numericIccId, notificationPointId,
                     profileType, resultData)
         }
     }
