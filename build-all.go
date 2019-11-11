@@ -6,7 +6,7 @@
 package main
 
 import (
-	"./github.com/ostelco-core/goscript"
+	"github.com/ostelco/ostelco-core/github.com/ostelco-core/goscript"
 	"encoding/json"
 	"flag"
 	"fmt"

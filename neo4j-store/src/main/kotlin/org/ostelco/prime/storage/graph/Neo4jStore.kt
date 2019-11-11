@@ -33,6 +33,7 @@ import org.ostelco.prime.dsl.withId
 import org.ostelco.prime.dsl.withKyc
 import org.ostelco.prime.dsl.withMsisdn
 import org.ostelco.prime.dsl.withSku
+import org.ostelco.prime.dsl.withSubscription
 import org.ostelco.prime.dsl.writeTransaction
 import org.ostelco.prime.ekyc.DaveKycService
 import org.ostelco.prime.ekyc.MyInfoKycService
@@ -53,7 +54,6 @@ import org.ostelco.prime.model.KycType.JUMIO
 import org.ostelco.prime.model.KycType.MY_INFO
 import org.ostelco.prime.model.KycType.NRIC_FIN
 import org.ostelco.prime.model.MyInfoApiVersion
-import org.ostelco.prime.model.MyInfoApiVersion.V2
 import org.ostelco.prime.model.MyInfoApiVersion.V3
 import org.ostelco.prime.model.PaymentType.SUBSCRIPTION
 import org.ostelco.prime.model.Plan
@@ -578,6 +578,7 @@ object Neo4jStoreSingleton : GraphStore {
                                 region = region,
                                 status = cr.status,
                                 kycStatusMap = cr.kycStatusMap,
+                                kycExpiryDateMap = cr.kycExpiryDateMap,
                                 simProfiles = simProfiles)
                     }
                     .requireNoNulls()
@@ -1027,13 +1028,20 @@ object Neo4jStoreSingleton : GraphStore {
                             -[:${customerToSegmentRelation.name}]->(:${segmentEntity.name})
                             <-[:${offerToSegmentRelation.name}]-(:${offerEntity.name})
                             -[:${offerToProductRelation.name}]->(product:${productEntity.name} {sku: '$sku'})
-                            RETURN product;
+                            RETURN DISTINCT product;
                             """.trimIndent(),
                             transaction) { statementResult ->
-                        if (statementResult.hasNext()) {
-                            Either.right(productEntity.createEntity(statementResult.single().get("product").asMap()))
-                        } else {
-                            Either.left(NotFoundError(type = productEntity.name, id = sku))
+
+                        val products = statementResult
+                                    .list { productEntity.createEntity(it["product"].asMap()) }
+                                    .toList()
+                        when(products.size) {
+                            0 -> NotFoundError(type = productEntity.name, id = sku).left()
+                            1 -> products.single().right()
+                            else -> {
+                                logger.warn("Found multiple products: {} with same sku:{} for customerId: {}", products, sku, customerId)
+                                products.first().right()
+                            }
                         }
                     }
                 }
@@ -1723,14 +1731,15 @@ object Neo4jStoreSingleton : GraphStore {
 
     override fun updateScanInformation(scanInformation: ScanInformation, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit> = writeTransaction {
         logger.info("updateScanInformation : ${scanInformation.scanId} status: ${scanInformation.status}")
-        getCustomerUsingScanId(scanInformation.scanId).flatMap { customer ->
-            update { scanInformation }.flatMap {
-                logger.info("updating scan Information for : ${customer.contactEmail} id: ${scanInformation.scanId} status: ${scanInformation.status}")
-                val extendedStatus = scanInformationDatastore.getExtendedStatusInformation(scanInformation)
-                if (scanInformation.status == ScanStatus.APPROVED) {
+        val updatedScanInformation = scanInformation.copy(status = verifyAndUpdateScanStatus(scanInformation))
+        getCustomerUsingScanId(updatedScanInformation.scanId).flatMap { customer ->
+            update { updatedScanInformation }.flatMap {
+                logger.info("updating scan Information for : ${customer.contactEmail} id: ${updatedScanInformation.scanId} status: ${updatedScanInformation.status}")
+                val extendedStatus = scanInformationDatastore.getExtendedStatusInformation(updatedScanInformation)
+                if (updatedScanInformation.status == ScanStatus.APPROVED) {
 
-                    logger.info("Inserting scan Information to cloud storage : id: ${scanInformation.scanId} countryCode: ${scanInformation.countryCode}")
-                    scanInformationDatastore.upsertVendorScanInformation(customer.id, scanInformation.countryCode, vendorData)
+                    logger.info("Inserting scan Information to cloud storage : id: ${updatedScanInformation.scanId} countryCode: ${updatedScanInformation.countryCode}")
+                    scanInformationDatastore.upsertVendorScanInformation(customer.id, updatedScanInformation.countryCode, vendorData)
                             .flatMap {
                                 appNotifier.notify(
                                         notificationType = NotificationType.JUMIO_VERIFICATION_SUCCEEDED,
@@ -1740,21 +1749,25 @@ object Neo4jStoreSingleton : GraphStore {
                                 logger.info(NOTIFY_OPS_MARKER, "Jumio verification succeeded for ${customer.contactEmail} Info: $extendedStatus")
                                 setKycStatus(
                                         customer = customer,
-                                        regionCode = scanInformation.countryCode.toLowerCase(),
+                                        regionCode = updatedScanInformation.countryCode.toLowerCase(),
                                         kycType = JUMIO,
+                                        kycExpiryDate = updatedScanInformation.scanResult?.expiry,
                                         transaction = transaction)
                             }
                 } else {
-                    // TODO: find out what more information can be passed to the client.
-                    appNotifier.notify(
-                            notificationType = NotificationType.JUMIO_VERIFICATION_FAILED,
-                            customerId = customer.id,
-                            data = extendedStatus
-                    )
+                    // Do not notify the app when the verification fails because the customer has cancelled and hence did not upload an ID.
+                    if (updatedScanInformation.scanResult?.verificationStatus != "NO_ID_UPLOADED") {
+                        // TODO: find out what more information can be passed to the client.
+                        appNotifier.notify(
+                                notificationType = NotificationType.JUMIO_VERIFICATION_FAILED,
+                                customerId = customer.id,
+                                data = extendedStatus
+                        )
+                    }
                     logger.info(NOTIFY_OPS_MARKER, "Jumio verification failed for ${customer.contactEmail} Info: $extendedStatus")
                     setKycStatus(
                             customer = customer,
-                            regionCode = scanInformation.countryCode.toLowerCase(),
+                            regionCode = updatedScanInformation.countryCode.toLowerCase(),
                             kycType = JUMIO,
                             kycStatus = REJECTED,
                             transaction = transaction)
@@ -1763,11 +1776,32 @@ object Neo4jStoreSingleton : GraphStore {
         }.ifFailedThenRollback(transaction)
     }
 
+    private fun verifyAndUpdateScanStatus(scanInformation: ScanInformation): ScanStatus {
+
+        val above18yrsOfAge = scanInformation.scanResult
+                ?.dob
+                ?.let(LocalDate::parse)
+                .isLessThan18yrsAgo()
+                .not()
+
+        return if (above18yrsOfAge) {
+            scanInformation.status
+        } else {
+            ScanStatus.REJECTED
+        }
+    }
+
+    /**
+     * Return true if value is null or if it is more than 18 years ago.
+     */
+    private fun LocalDate?.isLessThan18yrsAgo() = this
+            ?.plusYears(18)
+            ?.isAfter(LocalDate.now())
+            ?: false
     //
     // eKYC - MyInfo
     //
 
-    private val myInfoKycV2Service by lazy { getResource<MyInfoKycService>("v2") }
     private val myInfoKycV3Service by lazy { getResource<MyInfoKycService>("v3") }
 
     private val secureArchiveService by lazy { getResource<SecureArchiveService>() }
@@ -1790,7 +1824,6 @@ object Neo4jStoreSingleton : GraphStore {
 
                 val myInfoData = try {
                     when (version) {
-                        V2 -> myInfoKycV2Service
                         V3 -> myInfoKycV3Service
                     }.getPersonData(authorisationCode)
                 } catch (e: Exception) {
@@ -1801,34 +1834,35 @@ object Neo4jStoreSingleton : GraphStore {
                         id = authorisationCode,
                         message = "Failed to fetched MyInfo $version").left().bind()
 
-                // TODO vihang: Should we set status for NRIC_FIN to APPROVED?
-
-                // set NRIC_FIN KYC Status to Approved
-//                setKycStatus(
-//                        customerId = customerId,
-//                        regionCode = "sg",
-//                        kycType = NRIC_FIN).bind()
-
                 val personData = myInfoData.personData ?: SystemError(
                         type = "MyInfo Auth Code",
                         id = authorisationCode,
                         message = "Failed to fetched MyInfo $version").left().bind()
 
-                secureArchiveService.archiveEncrypted(
-                        customerId = customer.id,
-                        fileName = "myInfoData",
-                        regionCodes = listOf("sg"),
-                        dataMap = mapOf(
-                                "uinFin" to myInfoData.uinFin.toByteArray(),
-                                "personData" to personData.toByteArray()
-                        )
-                ).bind()
+                val kycStatus = if(myInfoData.birthDate.isLessThan18yrsAgo()) {
+                    AuditLog.warn(customerId = customer.id, message = "Customer age is less than 18yrs.")
+                    REJECTED
+                } else {
+                    // store data only if approved
+                    secureArchiveService.archiveEncrypted(
+                            customerId = customer.id,
+                            fileName = "myInfoData",
+                            regionCodes = listOf("sg"),
+                            dataMap = mapOf(
+                                    "uinFin" to myInfoData.uinFin.toByteArray(),
+                                    "personData" to personData.toByteArray()
+                            )
+                    ).bind()
+                    KycStatus.APPROVED
+                }
 
                 // set MY_INFO KYC Status to Approved
                 setKycStatus(
                         customer = customer,
                         regionCode = "sg",
-                        kycType = MY_INFO).bind()
+                        kycType = MY_INFO,
+                        kycStatus = kycStatus,
+                        kycExpiryDate = myInfoData.passExpiryDate?.toString()).bind()
 
                 personData
             }.fix()
@@ -1927,6 +1961,7 @@ object Neo4jStoreSingleton : GraphStore {
             customer: Customer,
             regionCode: String,
             kycType: KycType,
+            kycExpiryDate: String? = null,
             kycStatus: KycStatus = KycStatus.APPROVED) = writeTransaction {
 
         setKycStatus(
@@ -1934,6 +1969,7 @@ object Neo4jStoreSingleton : GraphStore {
                 regionCode = regionCode,
                 kycType = kycType,
                 kycStatus = kycStatus,
+                kycExpiryDate = kycExpiryDate,
                 transaction = transaction)
                 .ifFailedThenRollback(transaction)
     }
@@ -1945,6 +1981,7 @@ object Neo4jStoreSingleton : GraphStore {
             regionCode: String,
             kycType: KycType,
             kycStatus: KycStatus = KycStatus.APPROVED,
+            kycExpiryDate: String? = null,
             transaction: Transaction): Either<StoreError, Unit> {
 
         return IO {
@@ -2000,10 +2037,18 @@ object Neo4jStoreSingleton : GraphStore {
                     ).bind()
                 }
 
+                val newKycExpiryDateMap = kycExpiryDate
+                        ?.let { existingCustomerRegion.kycExpiryDateMap.copy(key = kycType, value = it) }
+                        ?: existingCustomerRegion.kycExpiryDateMap
+
                 customerRegionRelationStore
                         .createOrUpdate(
                                 fromId = customer.id,
-                                relation = CustomerRegion(status = newStatus, kycStatusMap = newKycStatusMap),
+                                relation = CustomerRegion(
+                                        status = newStatus,
+                                        kycStatusMap = newKycStatusMap,
+                                        kycExpiryDateMap = newKycExpiryDateMap
+                                ),
                                 toId = regionCode,
                                 transaction = transaction)
                         .bind()
@@ -2056,21 +2101,11 @@ object Neo4jStoreSingleton : GraphStore {
     // Balance (Customer - Subscription - Bundle)
     //
 
-    override fun getCustomerForMsisdn(msisdn: String): Either<StoreError, Customer> = readTransaction {
-        read("""
-                MATCH (customer:${customerEntity.name})-[:${subscriptionRelation.name}]->(subscription:${subscriptionEntity.name} {msisdn: '$msisdn'})
-                RETURN customer
-                """.trimIndent(),
-                transaction) {
-            if (it.hasNext())
-                Either.right(customerEntity.createEntity(it.single().get("customer").asMap()))
-            else
-                Either.left(NotFoundError(type = customerEntity.name, id = msisdn))
-        }
+    override fun getCustomersForMsisdn(msisdn: String): Either<StoreError, Collection<Customer>> = readTransaction {
+        get(Customer withSubscription (Subscription withMsisdn msisdn))
     }
 
-
-    override fun getIdentityForCustomerId(id: String): Either<StoreError, ModelIdentity> = readTransaction {
+    override fun getAnyIdentityForCustomerId(id: String): Either<StoreError, ModelIdentity> = readTransaction {
         read("""
                 MATCH (:${customerEntity.name} { id:'$id' })<-[r:${identifiesRelation.name}]-(identity:${identityEntity.name})
                 RETURN identity, r.provider as provider
@@ -2091,7 +2126,7 @@ object Neo4jStoreSingleton : GraphStore {
         read("""
                 MATCH (c:${customerEntity.name})<-[r:${identifiesRelation.name}]-(identity:${identityEntity.name})
                 WHERE c.contactEmail contains '$queryString' or c.nickname contains '$queryString' or c.id contains '$queryString'
-                RETURN c, identity, r.provider as provider
+                RETURN identity, r.provider as provider
                 """.trimIndent(),
                 transaction) {
             if (it.hasNext()) {
@@ -2105,6 +2140,20 @@ object Neo4jStoreSingleton : GraphStore {
             } else {
                 Either.left(NotFoundError(type = customerEntity.name, id = queryString))
             }
+        }
+    }
+
+    override fun getAllIdentities(): Either<StoreError, Collection<org.ostelco.prime.model.Identity>> = readTransaction {
+        read("""
+                MATCH (:${customerEntity.name})<-[r:${identifiesRelation.name}]-(identity:${identityEntity.name})
+                RETURN identity, r.provider as provider
+                """.trimIndent(),
+                transaction) { statementResult ->
+            statementResult.list { record ->
+                val identity = identityEntity.createEntity(record.get("identity").asMap())
+                val provider = record.get("provider").asString()
+                ModelIdentity(id = identity.id, type = identity.type, provider = provider)
+            }.right()
         }
     }
 

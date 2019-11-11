@@ -199,7 +199,7 @@ class Neo4jStoreTest {
                 customer = CUSTOMER, referredBy = "blah")
                 .fold({
                     assertEquals(
-                            expected = "Failed to create REFERRED - blah -> ${CUSTOMER.id}",
+                            expected = "Customer - blah not found.",
                             actual = it.message)
                 },
                         { fail("Created customer in spite of invalid 'referred by'") })
@@ -558,7 +558,8 @@ class Neo4jStoreTest {
                             country = "NOR",
                             firstName = "Test User",
                             lastName = "Family",
-                            dob = "1980/10/10",
+                            dob = "1980-10-10",
+                            expiry = null,
                             rejectReason = null
                     )
             )
@@ -608,7 +609,8 @@ class Neo4jStoreTest {
                             country = "NOR",
                             firstName = "Test User",
                             lastName = "Family",
-                            dob = "1980/10/10",
+                            dob = "1980-10-10",
+                            expiry = null,
                             rejectReason = null
                     )
             )

@@ -20,14 +20,21 @@ import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.auth.OAuthAuthenticator
 import org.ostelco.prime.customer.endpoint.store.SubscriberDAO
 import org.ostelco.prime.customer.endpoint.util.AccessToken
+import org.ostelco.prime.ekyc.MyInfoKycService
 import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.model.Identity
-import org.ostelco.prime.model.MyInfoApiVersion.V2
+import org.ostelco.prime.model.MyInfoApiVersion.V3
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.ScanStatus
 import java.util.*
+import javax.inject.Named
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
+
+private val MOCK_MY_INFO_KYC_SERVICE: MyInfoKycService = Mockito.mock(MyInfoKycService::class.java)
+
+@Named("v3")
+class MockMyInfoKycService : MyInfoKycService by MOCK_MY_INFO_KYC_SERVICE
 
 class KycResourcesTest {
 
@@ -99,10 +106,10 @@ class KycResourcesTest {
         val identityCaptor = argumentCaptor<Identity>()
         val authorisationCodeCaptor = argumentCaptor<String>()
 
-        `when`<Either<ApiError, String>>(DAO.getCustomerMyInfoData(identityCaptor.capture(), eq(V2), authorisationCodeCaptor.capture()))
+        `when`<Either<ApiError, String>>(DAO.getCustomerMyInfoData(identityCaptor.capture(), eq(V3), authorisationCodeCaptor.capture()))
                 .thenReturn("{}".right())
 
-        val resp = RULE.target("regions/sg/kyc/myInfo/code123")
+        val resp = RULE.target("regions/sg/kyc/myInfo/v3/personData/code123")
                 .request()
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
                 .get(Response::class.java)
@@ -123,10 +130,10 @@ class KycResourcesTest {
         val identityCaptor = argumentCaptor<Identity>()
         val authorisationCodeCaptor = argumentCaptor<String>()
 
-        `when`<Either<ApiError, String>>(DAO.getCustomerMyInfoData(identityCaptor.capture(), eq(V2), authorisationCodeCaptor.capture()))
+        `when`<Either<ApiError, String>>(DAO.getCustomerMyInfoData(identityCaptor.capture(), eq(V3), authorisationCodeCaptor.capture()))
                 .thenReturn("{}".right())
 
-        val resp = RULE.target("regions/no/kyc/myInfo/code123")
+        val resp = RULE.target("regions/no/kyc/myInfo/v3/personData/code123")
                 .request()
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
                 .get(Response::class.java)
@@ -137,7 +144,7 @@ class KycResourcesTest {
 
     @Before
     fun setUp() {
-        Mockito.`when`(AUTHENTICATOR.authenticate(ArgumentMatchers.anyString()))
+        `when`(AUTHENTICATOR.authenticate(ArgumentMatchers.anyString()))
                 .thenReturn(Optional.of(AccessTokenPrincipal(Identity(email, "EMAIL","email"))))
     }
 

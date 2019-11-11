@@ -1,4 +1,4 @@
-package org.ostelco.prime.analytics.publishers
+package org.ostelco.common.publisherex
 
 import com.google.api.core.ApiFutureCallback
 import com.google.api.core.ApiFutures
@@ -7,28 +7,21 @@ import com.google.api.gax.grpc.GrpcTransportChannel
 import com.google.api.gax.rpc.ApiException
 import com.google.api.gax.rpc.FixedTransportChannelProvider
 import com.google.cloud.pubsub.v1.Publisher
+import com.google.common.util.concurrent.MoreExecutors
 import com.google.pubsub.v1.ProjectTopicName
 import com.google.pubsub.v1.PubsubMessage
 import io.grpc.ManagedChannelBuilder
-import org.ostelco.prime.analytics.ConfigRegistry
-import org.ostelco.prime.analytics.events.Event
 import org.ostelco.prime.getLogger
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 
 class DelegatePubSubPublisher(
         private val topicId: String,
-        private val projectId: String = ConfigRegistry.config.projectId) : PubSubPublisher {
+        private val projectId: String) : PubSubPublisher {
 
     private lateinit var publisher: Publisher
     private val logger by getLogger()
 
-    override lateinit var singleThreadScheduledExecutor: ScheduledExecutorService
-
     override fun start() {
-
-        singleThreadScheduledExecutor = Executors.newSingleThreadScheduledExecutor()
 
         val topicName = ProjectTopicName.of(projectId, topicId)
         val strSocketAddress = System.getenv("PUBSUB_EMULATOR_HOST")
@@ -49,7 +42,6 @@ class DelegatePubSubPublisher(
         // When finished with the publisher, shutdown to free up resources.
         publisher.shutdown()
         publisher.awaitTermination(1, TimeUnit.MINUTES)
-        singleThreadScheduledExecutor.shutdown()
     }
 
     override fun publishPubSubMessage(pubsubMessage: PubsubMessage) {
@@ -74,7 +66,7 @@ class DelegatePubSubPublisher(
                 // Once published, returns server-assigned message ids (unique within the topic)
                 logger.debug("Published message $messageId to topic $topicId")
             }
-        }, DataConsumptionInfoPublisher.singleThreadScheduledExecutor)
+        }, MoreExecutors.directExecutor())
     }
 
     override fun publishEvent(event: Event) {
