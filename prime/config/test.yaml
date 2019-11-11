@@ -47,6 +47,11 @@ modules:
         textReader:
           type: classpathResource
           filename: /AllowedRegionsService.kts
+      onKycApprovedAction:
+        serviceInterface: org.ostelco.prime.storage.graph.OnKycApprovedAction
+        textReader:
+          type: classpathResource
+          filename: /OnKycApprovedAction.kts
       onRegionApprovedAction:
         serviceInterface: org.ostelco.prime.storage.graph.OnRegionApprovedAction
         textReader:

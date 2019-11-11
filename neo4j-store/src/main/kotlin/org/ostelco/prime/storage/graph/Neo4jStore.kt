@@ -337,6 +337,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     private val onNewCustomerAction: OnNewCustomerAction = config.onNewCustomerAction.getKtsService()
     private val allowedRegionsService: AllowedRegionsService = config.allowedRegionsService.getKtsService()
+    private val onKycApprovedAction: OnKycApprovedAction = config.onKycApprovedAction.getKtsService()
     private val onRegionApprovedAction: OnRegionApprovedAction = config.onRegionApprovedAction.getKtsService()
     private val hssNameLookup: HssNameLookupService = config.hssNameLookupService.getKtsService()
 
@@ -1748,6 +1749,7 @@ object Neo4jStoreSingleton : GraphStore {
                                         regionCode = updatedScanInformation.countryCode.toLowerCase(),
                                         kycType = JUMIO,
                                         kycExpiryDate = updatedScanInformation.scanResult?.expiry,
+                                        kycIdType = updatedScanInformation.scanResult?.type,
                                         transaction = transaction)
                             }
                 } else {
@@ -1972,12 +1974,13 @@ object Neo4jStoreSingleton : GraphStore {
 
     // FIXME: vihang This implementation has risk of loss of data due during concurrency to stale read since it does
     // READ-UPDATE-WRITE.
-    private fun setKycStatus(
+    fun setKycStatus(
             customer: Customer,
             regionCode: String,
             kycType: KycType,
             kycStatus: KycStatus = KycStatus.APPROVED,
             kycExpiryDate: String? = null,
+            kycIdType: String? = null,
             transaction: Transaction): Either<StoreError, Unit> {
 
         return IO {
@@ -2005,6 +2008,17 @@ object Neo4jStoreSingleton : GraphStore {
                         AuditLog.info(customerId = customer.id, message = "Setting $kycType status from $existingKycStatus to $newKycStatus")
                     } else {
                         AuditLog.info(customerId = customer.id, message = "Setting $kycType status from $existingKycStatus to $newKycStatus instead of $kycStatus")
+                    }
+                    if (newKycStatus == KycStatus.APPROVED) {
+                        onKycApprovedAction.apply(
+                                customer = customer,
+                                regionCode = regionCode,
+                                kycType = kycType,
+                                kycExpiryDate = kycExpiryDate,
+                                kycIdType = kycIdType,
+                                allowedRegionsService = allowedRegionsService,
+                                transaction = PrimeTransaction(transaction)
+                        ).bind()
                     }
                 } else {
                     AuditLog.info(customerId = customer.id, message = "Ignoring setting $kycType status to $kycStatus since it is already $existingKycStatus")

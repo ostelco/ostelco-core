@@ -42,6 +42,7 @@ data class Config(
         val protocol: String,
         val onNewCustomerAction: KtsServiceFactory,
         val allowedRegionsService: KtsServiceFactory,
+        val onKycApprovedAction: KtsServiceFactory,
         val onRegionApprovedAction: KtsServiceFactory,
         val hssNameLookupService: KtsServiceFactory
 )
