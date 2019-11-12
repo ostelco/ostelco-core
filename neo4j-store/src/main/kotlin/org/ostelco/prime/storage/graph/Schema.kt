@@ -20,7 +20,6 @@ import org.ostelco.prime.storage.NotDeletedError
 import org.ostelco.prime.storage.NotFoundError
 import org.ostelco.prime.storage.NotUpdatedError
 import org.ostelco.prime.storage.StoreError
-import org.ostelco.prime.storage.graph.Graph.LOG
 import org.ostelco.prime.storage.graph.Graph.read
 import org.ostelco.prime.storage.graph.Graph.write
 import org.ostelco.prime.storage.graph.ObjectHandler.getProperties
