@@ -45,8 +45,8 @@ var (
 
 	es2    = kingpin.Command("es2", "Do things with the ES2+ protocol")
 	es2cmd = es2.Arg("cmd",
-		"The ES2+ subcommand, one of get-status, recover-profile, download-order, confirm-order, cancel-profile, bulk-activate-iccids, activate-iccid, get-profile-activation-statuses-for-batch").Required().String()
-	es2iccid        = es2.Arg("iccid", "Iccid of profile to manipulate").String()
+		"The ES2+ subcommand, one of get-status, recover-profile, download-order, confirm-order, cancel-profile, bulk-activate-iccids, activate-Iccid, get-profile-activation-statuses-for-batch, get-profile-activation-statuses-for-iccids-in-file").Required().String()
+	es2iccid        = es2.Arg("Iccid", "Iccid of profile to manipulate").String()
 	es2Target       = es2.Arg("target-state", "Target state of recover-profile or cancel-profile command").Default("AVAILABLE").String()
 	es2CertFilePath = es2.Flag("cert", "Certificate pem file.").Required().String()
 	es2KeyFilePath  = es2.Flag("key", "Certificate key file.").Required().String()
@@ -209,7 +209,7 @@ func main() {
 
 		for _, b := range simEntries {
 			fmt.Printf(
-				"UPDATE sim_entries SET matchingid = '%s', smdpplusstate = 'RELEASED', provisionstate = 'AVAILABLE' WHERE iccid = '%s' and smdpplusstate = 'AVAILABLE';\n",
+				"UPDATE sim_entries SET matchingid = '%s', smdpplusstate = 'RELEASED', provisionstate = 'AVAILABLE' WHERE Iccid = '%s' and smdpplusstate = 'AVAILABLE';\n",
 				b.ActivationCode,
 				b.Iccid)
 		}
@@ -269,7 +269,7 @@ func main() {
 			columnMap[strings.ToLower(fieldname)] = index
 		}
 
-		if _, hasIccid := columnMap["iccid"]; !hasIccid {
+		if _, hasIccid := columnMap["Iccid"]; !hasIccid {
 			panic("No ICCID  column in CSV file")
 		}
 
@@ -299,7 +299,7 @@ func main() {
 				log.Fatal(error)
 			}
 
-			iccid := line[columnMap["iccid"]]
+			iccid := line[columnMap["Iccid"]]
 
 			if addLuhns {
 				iccid = fieldsyntaxchecks.AddLuhnChecksum(iccid)
@@ -392,7 +392,7 @@ func main() {
 				panic(err)
 			}
 
-			fmt.Printf("iccid='%s', state='%s', acToken='%s'\n", iccid, (*result).State, (*result).ACToken)
+			fmt.Printf("Iccid='%s', state='%s', acToken='%s'\n", iccid, (*result).State, (*result).ACToken)
 		case "recover-profile":
 			checkEs2TargetState(es2Target)
 			result, err := client.RecoverProfile(iccid, *es2Target)
@@ -412,13 +412,116 @@ func main() {
 				panic(err)
 			}
 			fmt.Println("result -> ", result)
-		case "activate-iccid":
+		case "activate-Iccid":
 			result, err := client.ActivateIccid(iccid)
 
 			if err != nil {
 				panic(err)
 			}
 			fmt.Printf("%s, %s\n", iccid, result.ACToken)
+
+		case "get-profile-activation-statuses-for-iccids-in-file":
+			csvFilename := iccid
+
+			csvFile, _ := os.Open(csvFilename)
+			reader := csv.NewReader(bufio.NewReader(csvFile))
+
+			defer csvFile.Close()
+
+			headerLine, error := reader.Read()
+			if error == io.EOF {
+				break
+			} else if error != nil {
+				log.Fatal(error)
+			}
+
+			var columnMap map[string]int
+			columnMap = make(map[string]int)
+
+			for index, fieldname := range headerLine {
+				columnMap[strings.ToLower(fieldname)] = index
+			}
+
+			if _, hasIccid := columnMap["iccid"]; !hasIccid {
+				panic("No ICCID  column in CSV file")
+			}
+
+			type csvRecord struct {
+				Iccid string
+			}
+
+			var recordMap map[string]csvRecord
+			recordMap = make(map[string]csvRecord)
+
+			// Read all the lines into the record map.
+			for {
+				line, error := reader.Read()
+				if error == io.EOF {
+					break
+				} else if error != nil {
+					log.Fatal(error)
+				}
+
+				iccid := line[columnMap["Iccid"]]
+
+				record := csvRecord{
+					Iccid: iccid,
+				}
+
+				if _, duplicateRecordExists := recordMap[record.Iccid]; duplicateRecordExists {
+					panic(fmt.Sprintf("Duplicate ICCID record in map: %s", record.Iccid))
+				}
+
+				recordMap[record.Iccid] = record
+			}
+
+			// XXX Is this really necessary? I don't think so
+			var mutex = &sync.Mutex{}
+
+			var waitgroup sync.WaitGroup
+
+			// Limit concurrency of the for-loop below
+			// to 160 goroutines.  The reason is that if we get too
+			// many we run out of file descriptors, and we don't seem to
+			// get much speedup after hundred or so.
+
+			concurrency := 160
+			sem := make(chan bool, concurrency)
+			fmt.Printf("%s, %s\n", "ICCID", "STATE")
+			for _, entry := range recordMap {
+
+				//
+				// Only apply activation if not already noted in the
+				// database.
+				//
+
+				sem <- true
+
+				waitgroup.Add(1)
+				go func(entry csvRecord) {
+
+					defer func() { <-sem }()
+
+					result, err := client.GetStatus(entry.Iccid)
+					if err != nil {
+						panic(err)
+					}
+
+					if result == nil {
+						panic(fmt.Sprintf("Couldn't find any status for Iccid='%s'\n", entry.Iccid))
+					}
+
+					mutex.Lock()
+					fmt.Printf("%s, %s\n", entry.Iccid, result.State)
+					mutex.Unlock()
+					waitgroup.Done()
+				}(entry)
+			}
+
+			waitgroup.Wait()
+			for i := 0; i < cap(sem); i++ {
+				sem <- true
+			}
 
 		case "get-profile-activation-statuses-for-batch":
 			batchName := iccid
@@ -453,7 +556,6 @@ func main() {
 
 			concurrency := 160
 			sem := make(chan bool, concurrency)
-			tx := db.Begin()
 			for _, entry := range entries {
 
 				//
@@ -474,7 +576,7 @@ func main() {
 					}
 
 					if result == nil {
-						panic(fmt.Sprintf("Couldn't find any status for iccid='%s'\n", entry.Iccid))
+						panic(fmt.Sprintf("Couldn't find any status for Iccid='%s'\n", entry.Iccid))
 					}
 
 					mutex.Lock()
@@ -488,7 +590,6 @@ func main() {
 			for i := 0; i < cap(sem); i++ {
 				sem <- true
 			}
-			tx.Commit()
 
 		case "set-batch-activation-codes":
 			batchName := iccid
