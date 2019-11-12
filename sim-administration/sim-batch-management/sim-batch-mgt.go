@@ -35,7 +35,7 @@ var (
 	dpvKeyFilePath  = dpv.Flag("key", "Certificate key file.").Required().String()
 	dpvHost         = dpv.Flag("host", "Host of ES2+ endpoint.").Required().String()
 	dpvPort         = dpv.Flag("port", "Port of ES2+ endpoint").Required().String()
-	 */
+	*/
 	// TODO: Some command to list all profile-vendors, hsses, etc. , e.g. lspv, lshss, ...
 	// TODO: Add sftp coordinates to be used when fetching/uploding input/utput-files
 	// TODO: Declare hss-es, that can be refered to in profiles.
@@ -159,7 +159,18 @@ func main() {
 	cmd := kingpin.Parse()
 	switch cmd {
 	case "sim-profile-upload":
-		outfileparser.ConvertInputfileToOutputfile(*spUploadInputFile, *spUploadOutputFilePrefix)
+
+		inputFile := *spUploadInputFile
+		outputFilePrefix := *spUploadOutputFilePrefix
+
+		outRecord := outfileparser.ParseOutputFile(inputFile)
+		outputFile := outputFilePrefix + outRecord.OutputFileName + ".csv"
+		fmt.Println("outputFile = ", outputFile)
+
+		err := outfileparser.WriteHssCsvFile(outputFile, outRecord.Entries)
+		if err != nil {
+			log.Fatal("Couldn't close output file '", outputFilePrefix, "'.  Error = '", err, "'")
+		}
 
 	case "declare-profile-vendor":
 		fmt.Println("Declaration of profile-vendors not yet implemented.")

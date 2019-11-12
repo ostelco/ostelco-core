@@ -21,23 +21,14 @@ const (
 	UNKNOWN_HEADER     = "unknown"
 )
 
-
 type OutputFileRecord struct {
 	Filename          string
 	InputVariables    map[string]string
 	HeaderDescription map[string]string
 	Entries           []model.SimEntry
-	// TODO: As it is today, the noOfEntries is just the number of Entries,
-	//       but I may want to change that to be the declared number of Entries,
-	//       and then later, dynamically, read in the individual Entries
-	//       in a channel that is just piped to the goroutine that writes
-	//       them to file, and fails if the number of declared Entries
-	//       differs from the actual number of Entries.  .... but that is
-	//       for another day.
-	NoOfEntries    int
-	OutputFileName string
+	NoOfEntries       int
+	OutputFileName    string
 }
-
 
 ///
 ///  Functions
@@ -95,7 +86,7 @@ func ParseVarOutLine(varOutLine string, result *map[string]int) (error) {
 	}
 	return nil
 }
-
+// Implement a state machine that parses an output file.
 func ParseOutputFile(filename string) OutputFileRecord {
 
 	_, err := os.Stat(filename)
@@ -136,7 +127,7 @@ func ParseOutputFile(filename string) OutputFileRecord {
 			nextMode := modeFromSectionHeader(line)
 			transitionMode(&state, nextMode)
 			continue
-		}else if line == "OUTPUT VARIABLES" {
+		} else if line == "OUTPUT VARIABLES" {
 			transitionMode(&state, OUTPUT_VARIABLES)
 			continue
 		}
@@ -162,7 +153,7 @@ func ParseOutputFile(filename string) OutputFileRecord {
 				if (len(state.csvFieldMap) != 0) {
 					log.Fatal("Parsing multiple 'var_out' lines can't be right")
 				}
-				err :=  ParseVarOutLine(line, &(state.csvFieldMap))
+				err := ParseVarOutLine(line, &(state.csvFieldMap))
 				if err != nil {
 					log.Fatalf("Couldn't parse output variable declaration '%s'\n", err)
 				}
@@ -326,20 +317,4 @@ func WriteHssCsvFile(filename string, entries []model.SimEntry) error {
 	}
 	fmt.Println("Successfully written ", max, " sim card records.")
 	return f.Close()
-}
-
-//
-// Entrypoint
-// TODO: Move this entrypoint into the the command processor
-//
-
-func ConvertInputfileToOutputfile(inputFile string, outputFilePrefix string) {
-	outRecord := ParseOutputFile(inputFile)
-	outputFile := outputFilePrefix + outRecord.OutputFileName + ".csv"
-	fmt.Println("outputFile = ", outputFile)
-
-	err := WriteHssCsvFile(outputFile, outRecord.Entries)
-	if err != nil {
-		log.Fatal("Couldn't close output file '", outputFilePrefix, "'.  Error = '", err, "'")
-	}
 }
