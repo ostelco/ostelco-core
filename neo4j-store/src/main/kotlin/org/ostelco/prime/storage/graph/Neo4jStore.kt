@@ -1,6 +1,9 @@
 package org.ostelco.prime.storage.graph
 
 import arrow.core.Either
+import arrow.core.Either.Left
+import arrow.core.Either.Right
+import arrow.core.EitherOf
 import arrow.core.fix
 import arrow.core.flatMap
 import arrow.core.getOrElse
@@ -33,6 +36,7 @@ import org.ostelco.prime.dsl.withId
 import org.ostelco.prime.dsl.withKyc
 import org.ostelco.prime.dsl.withMsisdn
 import org.ostelco.prime.dsl.withSku
+import org.ostelco.prime.dsl.withSubscription
 import org.ostelco.prime.dsl.writeTransaction
 import org.ostelco.prime.ekyc.DaveKycService
 import org.ostelco.prime.ekyc.MyInfoKycService
@@ -333,6 +337,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     private val onNewCustomerAction: OnNewCustomerAction = config.onNewCustomerAction.getKtsService()
     private val allowedRegionsService: AllowedRegionsService = config.allowedRegionsService.getKtsService()
+    private val onKycApprovedAction: OnKycApprovedAction = config.onKycApprovedAction.getKtsService()
     private val onRegionApprovedAction: OnRegionApprovedAction = config.onRegionApprovedAction.getKtsService()
     private val hssNameLookup: HssNameLookupService = config.hssNameLookupService.getKtsService()
 
@@ -493,12 +498,12 @@ object Neo4jStoreSingleton : GraphStore {
     //
 
     override fun getAllRegionDetails(identity: org.ostelco.prime.model.Identity): Either<StoreError, Collection<RegionDetails>> = readTransaction {
-        getCustomerId(identity = identity)
-                .flatMap { customerId ->
-                    getAllowedRegionIds(identity, transaction).map { allowedIds ->
+        getCustomer(identity = identity)
+                .flatMap { customer ->
+                    allowedRegionsService.get(customer, transaction).map { allowedIds ->
                         val allRegions = getAvailableRegionDetails(transaction)
                         val customerRegions = getRegionDetails(
-                                customerId = customerId,
+                                customerId = customer.id,
                                 transaction = transaction)
                         combineRegions(allRegions, customerRegions)
                                 .filter { allowedIds.contains(it.region.id) }
@@ -510,24 +515,17 @@ object Neo4jStoreSingleton : GraphStore {
             identity: org.ostelco.prime.model.Identity,
             regionCode: String): Either<StoreError, RegionDetails> = readTransaction {
 
-        getCustomerId(identity = identity)
-                .flatMap { customerId ->
-                    getAllowedRegionIds(identity, transaction).flatMap { allowedIds ->
+        getCustomer(identity = identity)
+                .flatMap { customer ->
+                    allowedRegionsService.get(customer, transaction).flatMap { allowedIds ->
                         getRegionDetails(
-                                customerId = customerId,
+                                customerId = customer.id,
                                 regionCode = regionCode,
                                 transaction = transaction).singleOrNull { allowedIds.contains(it.region.id) }
                                 ?.right()
-                                ?: NotFoundError(type = customerRegionRelation.name, id = "$customerId -> $regionCode").left()
+                                ?: NotFoundError(type = customerRegionRelation.name, id = "${customer.id} -> $regionCode").left()
                     }
                 }
-    }
-
-    // Retrieve the list of allowed region Ids from AllowedRegionsService
-    private fun getAllowedRegionIds(
-            identity: org.ostelco.prime.model.Identity,
-            transaction: PrimeTransaction): Either<StoreError, Collection<String>> = getCustomer(identity).flatMap {
-        allowedRegionsService.get(identity, it, transaction)
     }
 
     private fun getRegionDetails(
@@ -577,6 +575,7 @@ object Neo4jStoreSingleton : GraphStore {
                                 region = region,
                                 status = cr.status,
                                 kycStatusMap = cr.kycStatusMap,
+                                kycExpiryDateMap = cr.kycExpiryDateMap,
                                 simProfiles = simProfiles)
                     }
                     .requireNoNulls()
@@ -1026,13 +1025,20 @@ object Neo4jStoreSingleton : GraphStore {
                             -[:${customerToSegmentRelation.name}]->(:${segmentEntity.name})
                             <-[:${offerToSegmentRelation.name}]-(:${offerEntity.name})
                             -[:${offerToProductRelation.name}]->(product:${productEntity.name} {sku: '$sku'})
-                            RETURN product;
+                            RETURN DISTINCT product;
                             """.trimIndent(),
                             transaction) { statementResult ->
-                        if (statementResult.hasNext()) {
-                            Either.right(productEntity.createEntity(statementResult.single().get("product").asMap()))
-                        } else {
-                            Either.left(NotFoundError(type = productEntity.name, id = sku))
+
+                        val products = statementResult
+                                    .list { productEntity.createEntity(it["product"].asMap()) }
+                                    .toList()
+                        when(products.size) {
+                            0 -> NotFoundError(type = productEntity.name, id = sku).left()
+                            1 -> products.single().right()
+                            else -> {
+                                logger.warn("Found multiple products: {} with same sku:{} for customerId: {}", products, sku, customerId)
+                                products.first().right()
+                            }
                         }
                     }
                 }
@@ -1742,7 +1748,8 @@ object Neo4jStoreSingleton : GraphStore {
                                         customer = customer,
                                         regionCode = updatedScanInformation.countryCode.toLowerCase(),
                                         kycType = JUMIO,
-                                        kycExpiryDate = updatedScanInformation?.scanResult?.expiry,
+                                        kycExpiryDate = updatedScanInformation.scanResult?.expiry,
+                                        kycIdType = updatedScanInformation.scanResult?.type,
                                         transaction = transaction)
                             }
                 } else {
@@ -1769,25 +1776,30 @@ object Neo4jStoreSingleton : GraphStore {
 
     private fun verifyAndUpdateScanStatus(scanInformation: ScanInformation): ScanStatus {
 
-        val is18yrsOfAge = scanInformation.scanResult
+        val above18yrsOfAge = scanInformation.scanResult
                 ?.dob
                 ?.let(LocalDate::parse)
-                ?.plusYears(18)
-                ?.isBefore(LocalDate.now())
-                ?: true
+                .isLessThan18yrsAgo()
+                .not()
 
-        return if (is18yrsOfAge) {
+        return if (above18yrsOfAge) {
             scanInformation.status
         } else {
             ScanStatus.REJECTED
         }
     }
 
+    /**
+     * Return true if value is null or if it is more than 18 years ago.
+     */
+    private fun LocalDate?.isLessThan18yrsAgo() = this
+            ?.plusYears(18)
+            ?.isAfter(LocalDate.now())
+            ?: false
     //
     // eKYC - MyInfo
     //
 
-    private val myInfoKycV2Service by lazy { getResource<MyInfoKycService>("v2") }
     private val myInfoKycV3Service by lazy { getResource<MyInfoKycService>("v3") }
 
     private val secureArchiveService by lazy { getResource<SecureArchiveService>() }
@@ -1820,34 +1832,35 @@ object Neo4jStoreSingleton : GraphStore {
                         id = authorisationCode,
                         message = "Failed to fetched MyInfo $version").left().bind()
 
-                // TODO vihang: Should we set status for NRIC_FIN to APPROVED?
-
-                // set NRIC_FIN KYC Status to Approved
-//                setKycStatus(
-//                        customerId = customerId,
-//                        regionCode = "sg",
-//                        kycType = NRIC_FIN).bind()
-
                 val personData = myInfoData.personData ?: SystemError(
                         type = "MyInfo Auth Code",
                         id = authorisationCode,
                         message = "Failed to fetched MyInfo $version").left().bind()
 
-                secureArchiveService.archiveEncrypted(
-                        customerId = customer.id,
-                        fileName = "myInfoData",
-                        regionCodes = listOf("sg"),
-                        dataMap = mapOf(
-                                "uinFin" to myInfoData.uinFin.toByteArray(),
-                                "personData" to personData.toByteArray()
-                        )
-                ).bind()
+                val kycStatus = if(myInfoData.birthDate.isLessThan18yrsAgo()) {
+                    AuditLog.warn(customerId = customer.id, message = "Customer age is less than 18yrs.")
+                    REJECTED
+                } else {
+                    // store data only if approved
+                    secureArchiveService.archiveEncrypted(
+                            customerId = customer.id,
+                            fileName = "myInfoData",
+                            regionCodes = listOf("sg"),
+                            dataMap = mapOf(
+                                    "uinFin" to myInfoData.uinFin.toByteArray(),
+                                    "personData" to personData.toByteArray()
+                            )
+                    ).bind()
+                    KycStatus.APPROVED
+                }
 
                 // set MY_INFO KYC Status to Approved
                 setKycStatus(
                         customer = customer,
                         regionCode = "sg",
-                        kycType = MY_INFO).bind()
+                        kycType = MY_INFO,
+                        kycStatus = kycStatus,
+                        kycExpiryDate = myInfoData.passExpiryDate?.toString()).bind()
 
                 personData
             }.fix()
@@ -1946,6 +1959,7 @@ object Neo4jStoreSingleton : GraphStore {
             customer: Customer,
             regionCode: String,
             kycType: KycType,
+            kycExpiryDate: String? = null,
             kycStatus: KycStatus = KycStatus.APPROVED) = writeTransaction {
 
         setKycStatus(
@@ -1953,18 +1967,20 @@ object Neo4jStoreSingleton : GraphStore {
                 regionCode = regionCode,
                 kycType = kycType,
                 kycStatus = kycStatus,
+                kycExpiryDate = kycExpiryDate,
                 transaction = transaction)
                 .ifFailedThenRollback(transaction)
     }
 
     // FIXME: vihang This implementation has risk of loss of data due during concurrency to stale read since it does
     // READ-UPDATE-WRITE.
-    private fun setKycStatus(
+    fun setKycStatus(
             customer: Customer,
             regionCode: String,
             kycType: KycType,
             kycStatus: KycStatus = KycStatus.APPROVED,
             kycExpiryDate: String? = null,
+            kycIdType: String? = null,
             transaction: Transaction): Either<StoreError, Unit> {
 
         return IO {
@@ -1993,6 +2009,17 @@ object Neo4jStoreSingleton : GraphStore {
                     } else {
                         AuditLog.info(customerId = customer.id, message = "Setting $kycType status from $existingKycStatus to $newKycStatus instead of $kycStatus")
                     }
+                    if (newKycStatus == KycStatus.APPROVED) {
+                        onKycApprovedAction.apply(
+                                customer = customer,
+                                regionCode = regionCode,
+                                kycType = kycType,
+                                kycExpiryDate = kycExpiryDate,
+                                kycIdType = kycIdType,
+                                allowedRegionsService = allowedRegionsService,
+                                transaction = PrimeTransaction(transaction)
+                        ).bind()
+                    }
                 } else {
                     AuditLog.info(customerId = customer.id, message = "Ignoring setting $kycType status to $kycStatus since it is already $existingKycStatus")
                 }
@@ -2020,10 +2047,18 @@ object Neo4jStoreSingleton : GraphStore {
                     ).bind()
                 }
 
+                val newKycExpiryDateMap = kycExpiryDate
+                        ?.let { existingCustomerRegion.kycExpiryDateMap.copy(key = kycType, value = it) }
+                        ?: existingCustomerRegion.kycExpiryDateMap
+
                 customerRegionRelationStore
                         .createOrUpdate(
                                 fromId = customer.id,
-                                relation = CustomerRegion(status = newStatus, kycStatusMap = newKycStatusMap),
+                                relation = CustomerRegion(
+                                        status = newStatus,
+                                        kycStatusMap = newKycStatusMap,
+                                        kycExpiryDateMap = newKycExpiryDateMap
+                                ),
                                 toId = regionCode,
                                 transaction = transaction)
                         .bind()
@@ -2061,6 +2096,7 @@ object Neo4jStoreSingleton : GraphStore {
 
         AuditLog.info(customerId = customerId, message = "Approved for region - $regionCode by Admin")
 
+        // create, but fail if already exists
         customerRegionRelationStore.create(
                 fromId = customerId,
                 relation = CustomerRegion(
@@ -2069,28 +2105,47 @@ object Neo4jStoreSingleton : GraphStore {
                 ),
                 toId = regionCode,
                 transaction = transaction
-        )
+        ).flatMapLeft { storeError ->
+            // if already exists
+            if(storeError is AlreadyExistsError) {
+                // then get the stored relation value
+                customerRegionRelationStore.get(
+                        fromId = customerId,
+                        toId = regionCode,
+                        transaction = transaction)
+                        .map { customerRegion ->
+                            if (customerRegion.status != APPROVED) {
+                                // and store the updated relation value
+                                customerRegionRelationStore.createOrUpdate(
+                                        fromId = customerId,
+                                        relation = customerRegion.copy(status = APPROVED), // with only status modified to APPROVED
+                                        toId = regionCode,
+                                        transaction = transaction)
+                            }
+                        }
+            } else {
+                // return other store errors which are not AlreadyExistsError
+                storeError.left()
+            }
+        }
     }
 
+    private inline fun <A, B> EitherOf<A, B>.flatMapLeft(f: (A) -> Either<A, B>): Either<A, B> =
+            fix().let {
+                when (it) {
+                    is Right -> it
+                    is Left -> f(it.a)
+                }
+            }
     //
     // Balance (Customer - Subscription - Bundle)
     //
 
-    override fun getCustomerForMsisdn(msisdn: String): Either<StoreError, Customer> = readTransaction {
-        read("""
-                MATCH (customer:${customerEntity.name})-[:${subscriptionRelation.name}]->(subscription:${subscriptionEntity.name} {msisdn: '$msisdn'})
-                RETURN customer
-                """.trimIndent(),
-                transaction) {
-            if (it.hasNext())
-                Either.right(customerEntity.createEntity(it.single().get("customer").asMap()))
-            else
-                Either.left(NotFoundError(type = customerEntity.name, id = msisdn))
-        }
+    override fun getCustomersForMsisdn(msisdn: String): Either<StoreError, Collection<Customer>> = readTransaction {
+        get(Customer withSubscription (Subscription withMsisdn msisdn))
     }
 
-
-    override fun getIdentityForCustomerId(id: String): Either<StoreError, ModelIdentity> = readTransaction {
+    override fun getAnyIdentityForCustomerId(id: String): Either<StoreError, ModelIdentity> = readTransaction {
         read("""
                 MATCH (:${customerEntity.name} { id:'$id' })<-[r:${identifiesRelation.name}]-(identity:${identityEntity.name})
                 RETURN identity, r.provider as provider
@@ -2111,7 +2166,7 @@ object Neo4jStoreSingleton : GraphStore {
         read("""
                 MATCH (c:${customerEntity.name})<-[r:${identifiesRelation.name}]-(identity:${identityEntity.name})
                 WHERE c.contactEmail contains '$queryString' or c.nickname contains '$queryString' or c.id contains '$queryString'
-                RETURN c, identity, r.provider as provider
+                RETURN identity, r.provider as provider
                 """.trimIndent(),
                 transaction) {
             if (it.hasNext()) {
@@ -2125,6 +2180,20 @@ object Neo4jStoreSingleton : GraphStore {
             } else {
                 Either.left(NotFoundError(type = customerEntity.name, id = queryString))
             }
+        }
+    }
+
+    override fun getAllIdentities(): Either<StoreError, Collection<org.ostelco.prime.model.Identity>> = readTransaction {
+        read("""
+                MATCH (:${customerEntity.name})<-[r:${identifiesRelation.name}]-(identity:${identityEntity.name})
+                RETURN identity, r.provider as provider
+                """.trimIndent(),
+                transaction) { statementResult ->
+            statementResult.list { record ->
+                val identity = identityEntity.createEntity(record.get("identity").asMap())
+                val provider = record.get("provider").asString()
+                ModelIdentity(id = identity.id, type = identity.type, provider = provider)
+            }.right()
         }
     }
 

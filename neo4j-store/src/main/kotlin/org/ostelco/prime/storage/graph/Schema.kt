@@ -548,7 +548,7 @@ object ObjectHandler {
 
     private fun toSimpleMap(map: Map<String, Any?>, prefix: String = ""): Map<String, Any> {
         val outputMap: MutableMap<String, Any> = LinkedHashMap()
-        map.forEach { key, value ->
+        map.forEach { (key, value) ->
             when (value) {
                 is Map<*, *> -> outputMap.putAll(toSimpleMap(value as Map<String, Any>, "$prefix$key$SEPARATOR"))
                 is List<*> -> println("Skipping list value: $value for key: $key")
@@ -569,7 +569,7 @@ object ObjectHandler {
 
     internal fun toNestedMap(map: Map<String, Any>): Map<String, Any> {
         val outputMap: MutableMap<String, Any> = LinkedHashMap()
-        map.forEach { key, value ->
+        map.forEach { (key, value) ->
             if (key.contains(SEPARATOR)) {
                 val keys = key.split(SEPARATOR)
                 var loopMap = outputMap

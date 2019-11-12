@@ -10,6 +10,7 @@ import org.ostelco.prime.model.PaymentProperties.TYPE
 import org.ostelco.prime.model.ProductProperties.NO_OF_BYTES
 import org.ostelco.prime.model.ProductProperties.PRODUCT_CLASS
 import org.ostelco.prime.model.ProductProperties.SEGMENT_IDS
+import org.ostelco.prime.model.SimProfileStatus.INSTALLED
 import java.util.*
 
 
@@ -57,8 +58,11 @@ data class RegionDetails(
         val region: Region,
         val status: CustomerRegionStatus,
         val kycStatusMap: Map<KycType, KycStatus> = emptyMap(),
-        val kycExpiryDate: String? = null,
+        val kycExpiryDateMap: Map<KycType, String> = emptyMap(),
         val simProfiles: Collection<SimProfile> = emptyList())
+
+// TODO vihang: Remove setting the SIM Profile status to INSTALLED
+fun RegionDetails.withSimProfileStatusAsInstalled() = this.copy(simProfiles = this.simProfiles.map { it.copy(status = INSTALLED) })
 
 enum class CustomerRegionStatus {
     PENDING,   // eKYC initiated, but not yet approved
