@@ -583,6 +583,62 @@ class Neo4jStoreTest {
     }
 
     @Test
+    fun `eKYCScan - update scan information with quotes in name`() {
+
+        job {
+            create { Region(REGION_CODE, "Norway") }
+        }.mapLeft { fail(it.message) }
+
+        Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER)
+                .mapLeft { fail(it.message) }
+
+        Neo4jStoreSingleton.createNewJumioKycScanId(identity = IDENTITY, regionCode = REGION_CODE).map {
+            val newScanInformation = ScanInformation(
+                    scanId = it.scanId,
+                    countryCode = REGION,
+                    status = ScanStatus.APPROVED,
+                    scanResult = ScanResult(
+                            vendorScanReference = UUID.randomUUID().toString(),
+                            time = 100,
+                            verificationStatus = "APPROVED",
+                            type = "ID",
+                            country = "NOR",
+                            firstName = "Test User",
+                            lastName = "Family' With Quote",
+                            dob = "1980-10-10",
+                            expiry = null,
+                            rejectReason = null
+                    )
+            )
+
+            val vendorData: MultivaluedMap<String, String> = MultivaluedHashMap<String, String>()
+            val imgUrl = "https://www.gstatic.com/webp/gallery3/1.png"
+            val imgUrl2 = "https://www.gstatic.com/webp/gallery3/2.png"
+            vendorData.add(JumioScanData.SCAN_ID.s, it.scanId)
+            vendorData.add(JumioScanData.SCAN_IMAGE.s, imgUrl)
+            vendorData.add(JumioScanData.SCAN_IMAGE_BACKSIDE.s, imgUrl2)
+
+            `when`(mockScanInformationStore.upsertVendorScanInformation(customerId = CUSTOMER.id, countryCode = REGION, vendorData = vendorData))
+                    .thenReturn(Unit.right())
+
+            Neo4jStoreSingleton.updateScanInformation(newScanInformation, vendorData).mapLeft {
+                fail(it.message)
+            }
+
+            Neo4jStoreSingleton.getScanInformation(identity = IDENTITY, scanId = it.scanId).map { updated ->
+                assertEquals(newScanInformation.scanId, updated.scanId, "Wrong scan returned.")
+                assertEquals(newScanInformation.scanResult?.lastName, updated.scanResult?.lastName, "Update of lastname failed.")
+            }.mapLeft {
+                fail(it.message)
+            }
+        }.mapLeft {
+            fail(it.message)
+        }
+    }
+
+    @Test
     fun `eKYCScan - update with unknown scanId`() {
 
         // prep

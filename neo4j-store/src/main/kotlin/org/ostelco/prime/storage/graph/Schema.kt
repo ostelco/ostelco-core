@@ -20,6 +20,7 @@ import org.ostelco.prime.storage.NotDeletedError
 import org.ostelco.prime.storage.NotFoundError
 import org.ostelco.prime.storage.NotUpdatedError
 import org.ostelco.prime.storage.StoreError
+import org.ostelco.prime.storage.graph.Graph.LOG
 import org.ostelco.prime.storage.graph.Graph.read
 import org.ostelco.prime.storage.graph.Graph.write
 import org.ostelco.prime.storage.graph.ObjectHandler.getProperties
@@ -58,6 +59,7 @@ data class RelationType<FROM : HasId, RELATION, TO : HasId>(
 }
 
 class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
+    private val LOG by getLogger()
 
     init {
         entityType.entityStore = this
@@ -77,11 +79,12 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
 
         return doNotExist(id = entity.id, transaction = transaction).flatMap {
 
-            val properties = getProperties(entity)
-            val strProps: String = properties.entries.joinToString(separator = ",") { """ `${it.key}`: "${it.value}"""" }
-                    .let { if (it.isNotBlank()) ",$it" else it }
-            write("""CREATE (node:${entityType.name} { id:"${entity.id}"$strProps });""",
-                    transaction) {
+            val properties = getProperties(entity).toMutableMap()
+            properties.putIfAbsent("id", entity.id)
+            val parameters:Map<String, Any> = mapOf("props" to properties)
+            write(query = """CREATE (node:${entityType.name} ${'$'}props);""",
+                    parameters = parameters,
+                    transaction= transaction) {
                 if (it.summary().counters().nodesCreated() == 1)
                     Unit.right()
                 else
@@ -147,11 +150,12 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
     fun update(entity: E, transaction: Transaction): Either<StoreError, Unit> {
 
         return exists(entity.id, transaction).flatMap {
-            val properties = getProperties(entity)
-            // TODO vihang: replace setClause with map based settings written by Kjell
-            val setClause: String = properties.entries.fold("") { acc, entry -> """$acc SET node.`${entry.key}` = '${entry.value}' """ }
-            write("""MATCH (node:${entityType.name} { id: '${entity.id}' }) $setClause ;""",
-                    transaction) { statementResult ->
+            val properties = getProperties(entity).toMutableMap()
+            properties.putIfAbsent("id", entity.id)
+            val parameters: Map<String, Any> = mapOf("props" to properties)
+            write(query = """MATCH (node:${entityType.name} { id: '${entity.id}' }) SET node = ${'$'}props ;""",
+                    parameters = parameters,
+                    transaction = transaction) { statementResult ->
                 Either.cond(
                         test = statementResult.summary().counters().containsUpdates(), // TODO vihang: this is not perfect way to check if updates are applied
                         ifTrue = {},
@@ -194,6 +198,7 @@ sealed class BaseRelationStore
 
 // TODO vihang: check if relation already exists, with allow duplicate boolean flag param
 class RelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType: RelationType<FROM, RELATION, TO>) : BaseRelationStore() {
+    private val logger by getLogger()
 
     init {
         relationType.relationStore = this
@@ -202,12 +207,13 @@ class RelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType
     fun create(from: FROM, relation: RELATION, to: TO, transaction: Transaction): Either<StoreError, Unit> {
 
         val properties = getProperties(relation as Any)
-        val strProps: String = properties.entries.joinToString(",") { """`${it.key}`: "${it.value}"""" }
-        return write("""
+        val parameters: Map<String, Any> = mapOf("props" to properties)
+        return write( query = """
                     MATCH (from:${relationType.from.name} { id: '${from.id}' }),(to:${relationType.to.name} { id: '${to.id}' })
-                    CREATE (from)-[:${relationType.name} { $strProps } ]->(to);
+                    CREATE (from)-[:${relationType.name} ${'$'}props ]->(to);
                     """.trimIndent(),
-                transaction) { statementResult ->
+                parameters = parameters,
+                transaction = transaction) { statementResult ->
 
             // TODO vihang: validate if 'from' and 'to' node exists
             Either.cond(
@@ -246,12 +252,13 @@ class RelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType
     fun create(fromId: String, relation: RELATION, toId: String, transaction: Transaction): Either<StoreError, Unit> {
 
         val properties = getProperties(relation as Any)
-        val strProps: String = properties.entries.joinToString(",") { """`${it.key}`: "${it.value}"""" }
-        return write("""
+        val parameters: Map<String, Any> = mapOf("props" to properties)
+        return write(query = """
                 MATCH (from:${relationType.from.name} { id: '$fromId' }),(to:${relationType.to.name} { id: '$toId' })
-                CREATE (from)-[:${relationType.name} { $strProps } ]->(to);
+                CREATE (from)-[:${relationType.name} ${'$'}props ]->(to);
                 """.trimIndent(),
-                transaction) { statementResult ->
+                parameters = parameters,
+                transaction = transaction) { statementResult ->
 
             // TODO vihang: validate if 'from' and 'to' node exists
             Either.cond(
@@ -512,6 +519,13 @@ object Graph {
         LOG.trace("write:[\n$query\n]")
         return trace.childSpan("neo4j.write") {
             transaction.run(query)
+        }.let(transform)
+    }
+
+    fun <R> write(query: String, parameters: Map<String, Any>, transaction: Transaction, transform: (StatementResult) -> R): R {
+        LOG.trace("write:[\n$query\n]")
+        return trace.childSpan("neo4j.write") {
+            transaction.run(query, parameters)
         }.let(transform)
     }
 
