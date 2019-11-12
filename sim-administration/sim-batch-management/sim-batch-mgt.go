@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/es2plus"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/fieldsyntaxchecks"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/outfileparser"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/store"
@@ -44,8 +45,7 @@ var (
 
 	es2    = kingpin.Command("es2", "Do things with the ES2+ protocol")
 	es2cmd = es2.Arg("cmd",
-		"The ES2+ subcommand, one of get-status, recover-profile, download-order, confirm-order, cancel-profile, bulk-activate-iccids, activate-iccid ").Required().String()
-	//  .String()
+		"The ES2+ subcommand, one of get-status, recover-profile, download-order, confirm-order, cancel-profile, bulk-activate-iccids, activate-iccid, get-profile-activation-statuses-for-batch").Required().String()
 	es2iccid        = es2.Arg("iccid", "Iccid of profile to manipulate").String()
 	es2Target       = es2.Arg("target-state", "Target state of recover-profile or cancel-profile command").Default("AVAILABLE").String()
 	es2CertFilePath = es2.Flag("cert", "Certificate pem file.").Required().String()
@@ -110,6 +110,7 @@ var (
 	addMsisdnFromFile        = kingpin.Command("add-msisdn-from-file", "Add MSISDN from CSV file containing at least ICCID/MSISDN, but also possibly IMSI.")
 	addMsisdnFromFileBatch   = addMsisdnFromFile.Flag("batch", "The batch to augment").Required().String()
 	addMsisdnFromFileCsvfile = addMsisdnFromFile.Flag("csv-file", "The CSV file to read from").Required().ExistingFile()
+	addMsisdnFromFileAddLuhn = addMsisdnFromFile.Flag("add-luhn-checksums", "Assume that the checksums for the ICCIDs are not present, and add them").Default("false").Bool()
 
 	generateUploadBatch      = kingpin.Command("generate-batch-upload-script", "Generate a batch upload script")
 	generateUploadBatchBatch = generateUploadBatch.Arg("batch", "The batch to generate upload script from").String()
@@ -242,6 +243,7 @@ func main() {
 	case "add-msisdn-from-file":
 		batchName := *addMsisdnFromFileBatch
 		csvFilename := *addMsisdnFromFileCsvfile
+		addLuhns := *addMsisdnFromFileAddLuhn
 
 		batch, err := db.GetBatchByName(batchName)
 		if err != nil {
@@ -297,8 +299,14 @@ func main() {
 				log.Fatal(error)
 			}
 
+			iccid := line[columnMap["iccid"]]
+
+			if addLuhns {
+				iccid = fieldsyntaxchecks.AddLuhnChecksum(iccid)
+			}
+
 			record := csvRecord{
-				iccid:  line[columnMap["iccid"]],
+				iccid:  iccid,
 				imsi:   line[columnMap["imsi"]],
 				msisdn: line[columnMap["msisdn"]],
 			}
@@ -411,6 +419,76 @@ func main() {
 				panic(err)
 			}
 			fmt.Printf("%s, %s\n", iccid, result.ACToken)
+
+		case "get-profile-activation-statuses-for-batch":
+			batchName := iccid
+
+			fmt.Printf("Getting statuses for all profiles in batch  named %s\n", batchName)
+
+			batch, err := db.GetBatchByName(batchName)
+			if err != nil {
+				fmt.Errorf("Unknown batch '%s'\n", batchName)
+			}
+
+			entries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
+			if err != nil {
+				panic(err)
+			}
+
+			if len(entries) != batch.Quantity {
+				panic(fmt.Sprintf("Batch quantity retrieved from database (%d) different from batch quantity (%d)\n", len(entries), batch.Quantity))
+			}
+
+			fmt.Printf("Found %d profiles\n", len(entries))
+
+			// XXX Is this really necessary? I don't think so
+			var mutex = &sync.Mutex{}
+
+			var waitgroup sync.WaitGroup
+
+			// Limit concurrency of the for-loop below
+			// to 160 goroutines.  The reason is that if we get too
+			// many we run out of file descriptors, and we don't seem to
+			// get much speedup after hundred or so.
+
+			concurrency := 160
+			sem := make(chan bool, concurrency)
+			tx := db.Begin()
+			for _, entry := range entries {
+
+				//
+				// Only apply activation if not already noted in the
+				// database.
+				//
+
+				sem <- true
+
+				waitgroup.Add(1)
+				go func(entry model.SimEntry) {
+
+					defer func() { <-sem }()
+
+					result, err := client.GetStatus(entry.Iccid)
+					if err != nil {
+						panic(err)
+					}
+
+					if result == nil {
+						panic(fmt.Sprintf("Couldn't find any status for iccid='%s'\n", entry.Iccid))
+					}
+
+					mutex.Lock()
+					fmt.Printf("%s, %s\n", entry.Iccid, result.State)
+					mutex.Unlock()
+					waitgroup.Done()
+				}(entry)
+			}
+
+			waitgroup.Wait()
+			for i := 0; i < cap(sem); i++ {
+				sem <- true
+			}
+			tx.Commit()
 
 		case "set-batch-activation-codes":
 			batchName := iccid

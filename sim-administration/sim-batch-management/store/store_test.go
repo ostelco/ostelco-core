@@ -54,6 +54,7 @@ func setup() {
 
 func cleanTables() {
 
+	// return
 	// The tables don't seem to be guaranteed to be empty
 	simProfileDeletionResult, err := sdb.Db.Exec("DELETE FROM SIM_PROFILE")
 	if err != nil {
@@ -65,8 +66,8 @@ func cleanTables() {
 	}
 
 	simRows, _ := simProfileDeletionResult.RowsAffected()
-	batchRows,_ := batchDeleteResult.RowsAffected()
-	fmt.Printf("simProfileDeletionResult = %d, batchDeleteResult=%d\n",simRows, batchRows)
+	batchRows, _ := batchDeleteResult.RowsAffected()
+	fmt.Printf("simProfileDeletionResult = %d, batchDeleteResult=%d\n", simRows, batchRows)
 }
 
 func shutdown() {
@@ -167,7 +168,7 @@ func declareTestBatch(t *testing.T) *model.Batch {
 		"localhost",            // uploadHostname string,
 		"8088",                 // uploadPortnumber string,
 		"snuff",                // profileVendor string,
-		"ACTIVE") // initialHlrActivationStatusOfProfiles string
+		"ACTIVE")               // initialHlrActivationStatusOfProfiles string
 
 	if err != nil {
 		t.Fatal(err)
@@ -193,7 +194,7 @@ func TestDeclareBatch(t *testing.T) {
 }
 
 func entryEqual(a *model.SimEntry, b *model.SimEntry) bool {
-	return ((a.ActivationCode == b.ActivationCode) && (a.BatchID == b.BatchID) && (a.RawIccid == b.RawIccid) && a.IccidWithChecksum == b.IccidWithChecksum	&& a.IccidWithoutChecksum == b.IccidWithoutChecksum && a.Iccid == b.Iccid && a.Imsi == b.Imsi && a.Msisdn == b.Msisdn && a.Ki == b.Ki)
+	return ((a.ActivationCode == b.ActivationCode) && (a.BatchID == b.BatchID) && (a.RawIccid == b.RawIccid) && a.IccidWithChecksum == b.IccidWithChecksum && a.IccidWithoutChecksum == b.IccidWithoutChecksum && a.Iccid == b.Iccid && a.Imsi == b.Imsi && a.Msisdn == b.Msisdn && a.Ki == b.Ki)
 }
 
 func TestDeclareAndRetrieveSimEntries(t *testing.T) {
