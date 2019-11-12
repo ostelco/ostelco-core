@@ -47,6 +47,11 @@ func LuhnChecksum(number int) int {
 	return generateControlDigit(strconv.Itoa(number))
 }
 
+func AddLuhnChecksum(original string) string {
+	checksum := generateControlDigit(original)
+	return fmt.Sprintf("%s%1d", original, checksum)
+}
+
 func IsICCID(s string) bool {
 	match, _ := regexp.MatchString("^\\d{18}\\d?\\d?$", s)
 	return match
