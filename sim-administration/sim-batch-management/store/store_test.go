@@ -190,10 +190,6 @@ func TestDeclareBatch(t *testing.T) {
 
 }
 
-func entryEqual(a *model.SimEntry, b *model.SimEntry) bool {
-	return ((a.ActivationCode == b.ActivationCode) && (a.BatchID == b.BatchID) && (a.RawIccid == b.RawIccid) && a.IccidWithChecksum == b.IccidWithChecksum && a.IccidWithoutChecksum == b.IccidWithoutChecksum && a.Iccid == b.Iccid && a.Imsi == b.Imsi && a.Msisdn == b.Msisdn && a.Ki == b.Ki)
-}
-
 func TestDeclareAndRetrieveSimEntries(t *testing.T) {
 	cleanTables()
 	theBatch := declareTestBatch(t)
@@ -211,7 +207,7 @@ func TestDeclareAndRetrieveSimEntries(t *testing.T) {
 		ActivationCode:       "8",
 	}
 
-	// assert.Equal(t, 0, entry.Id)
+
 	sdb.CreateSimEntry(&entry)
 	assert.Assert(t, entry.Id != 0)
 
@@ -219,7 +215,8 @@ func TestDeclareAndRetrieveSimEntries(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !entryEqual(retrivedEntry, &entry) {
+
+	if !reflect.DeepEqual(retrivedEntry, &entry) {
 		t.Fatal("Retrieved and stored sim entry are different")
 	}
 }
