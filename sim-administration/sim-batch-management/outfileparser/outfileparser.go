@@ -1,36 +1,17 @@
-package outfileconversion
+package outfileparser
 
 import (
 	"bufio"
 	"flag"
 	"fmt"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/loltelutils"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
 	"log"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 )
-
-///
-/// Data structures
-///
-
-type OutputFileRecord struct {
-	Filename          string
-	inputVariables    map[string]string
-	headerDescription map[string]string
-	Entries           []SimEntry
-	// TODO: As it is today, the noOfEntries is just the number of Entries,
-	//       but I may want to change that to be the declared number of Entries,
-	//       and then later, dynamically, read in the individual Entries
-	//       in a channel that is just piped to the goroutine that writes
-	//       them to file, and fails if the number of declared Entries
-	//       differs from the actual number of Entries.  .... but that is
-	//       for another day.
-	noOfEntries    int
-	OutputFileName string
-}
 
 const (
 	INITIAL            = "initial"
@@ -40,26 +21,18 @@ const (
 	UNKNOWN_HEADER     = "unknown"
 )
 
-type SimEntry struct {
-	rawIccid             string
-	iccidWithChecksum    string
-	iccidWithoutChecksum string
-	imsi                 string
-	ki                   string
-	outputFileName       string
-}
-
-type ParserState struct {
-	currentState      string
-	inputVariables    map[string]string
-	headerDescription map[string]string
-	entries           []SimEntry
+type OutputFileRecord struct {
+	Filename          string
+	InputVariables    map[string]string
+	HeaderDescription map[string]string
+	Entries           []model.SimEntry
+	NoOfEntries       int
+	OutputFileName    string
 }
 
 ///
 ///  Functions
 ///
-
 
 func ParseOutputToHssConverterCommandLine() (string, string) {
 	inputFile := flag.String("input-file",
@@ -87,7 +60,34 @@ func ParseLineIntoKeyValueMap(line string, theMap map[string]string) {
 	theMap[key] = value
 }
 
-func ReadOutputFile(filename string) OutputFileRecord {
+type ParserState struct {
+	currentState      string
+	inputVariables    map[string]string
+	headerDescription map[string]string
+	entries           []model.SimEntry
+	csvFieldMap       map[string]int
+}
+
+func ParseVarOutLine(varOutLine string, result *map[string]int) (error) {
+	varOutSplit := strings.Split(varOutLine, ":")
+
+	if len(varOutSplit) != 2 {
+		return fmt.Errorf("syntax error in var_out line, more than two colon separated fields")
+	}
+
+	varOutToken := strings.TrimSpace(string(varOutSplit[0]))
+	if strings.ToLower(varOutToken) != "var_out" {
+		return fmt.Errorf("syntax error in var_out line.  Does not start with 'var_out', was '%s'", varOutToken)
+	}
+
+	slashedFields := strings.Split(varOutSplit[1], "/")
+	for index, columnName := range slashedFields {
+		(*result)[columnName] = index
+	}
+	return nil
+}
+// Implement a state machine that parses an output file.
+func ParseOutputFile(filename string) OutputFileRecord {
 
 	_, err := os.Stat(filename)
 
@@ -109,6 +109,7 @@ func ReadOutputFile(filename string) OutputFileRecord {
 		currentState:      INITIAL,
 		inputVariables:    make(map[string]string),
 		headerDescription: make(map[string]string),
+		csvFieldMap:       make(map[string]int),
 	}
 
 	scanner := bufio.NewScanner(file)
@@ -126,6 +127,9 @@ func ReadOutputFile(filename string) OutputFileRecord {
 			nextMode := modeFromSectionHeader(line)
 			transitionMode(&state, nextMode)
 			continue
+		} else if line == "OUTPUT VARIABLES" {
+			transitionMode(&state, OUTPUT_VARIABLES)
+			continue
 		}
 
 		// ... or should we look closer at it and parse it
@@ -135,27 +139,38 @@ func ReadOutputFile(filename string) OutputFileRecord {
 		case HEADER_DESCRIPTION:
 			ParseLineIntoKeyValueMap(line, state.headerDescription)
 		case INPUT_VARIABLES:
-			if line == "var_In:" {
-				continue
-			}
-			ParseLineIntoKeyValueMap(line, state.inputVariables)
-		case OUTPUT_VARIABLES:
-			if line == "var_Out: ICCID/IMSI/KI" {
+			if line == "var_In:" || line == "Var_In_List:" || strings.TrimSpace(line) == "" {
 				continue
 			}
 
-			// We won't handle all variations, only the most common one
-			// if more fancy variations are necessary (with pin codes etc), then
-			// we'll add them as needed.
-			if strings.HasPrefix(line, "var_Out: ") {
-				log.Fatalf("Unknown output format, only know how to handle ICCID/IMSI/KI, but was '%s'\n", line)
+			ParseLineIntoKeyValueMap(line, state.inputVariables)
+		case OUTPUT_VARIABLES:
+
+			line = strings.TrimSpace(line)
+			lowercaseLine := strings.ToLower(line)
+
+			if (strings.HasPrefix(lowercaseLine, "var_out:")) {
+				if (len(state.csvFieldMap) != 0) {
+					log.Fatal("Parsing multiple 'var_out' lines can't be right")
+				}
+				err := ParseVarOutLine(line, &(state.csvFieldMap))
+				if err != nil {
+					log.Fatalf("Couldn't parse output variable declaration '%s'\n", err)
+				}
+				continue
+			}
+
+			if (len(state.csvFieldMap) == 0) {
+				fmt.Println("Line = ", line)
+				log.Fatal("Cannot parse CSV part of input file without having first parsed a CSV header.")
 			}
 
 			line = strings.TrimSpace(line)
 			if line == "" {
 				continue
 			}
-			rawIccid, imsi, ki := parseOutputLine(line)
+
+			rawIccid, imsi, ki := parseOutputLine(state, line)
 
 			iccidWithChecksum := rawIccid
 			if strings.HasSuffix(rawIccid, "F") {
@@ -164,12 +179,12 @@ func ReadOutputFile(filename string) OutputFileRecord {
 
 			var iccidWithoutChecksum = loltelutils.TrimSuffix(iccidWithChecksum, 1)
 			// TODO: Enable this!! checkICCIDSyntax(iccidWithChecksum)
-			entry := SimEntry{
-				rawIccid:             rawIccid,
-				iccidWithChecksum:    iccidWithChecksum,
-				iccidWithoutChecksum: iccidWithoutChecksum,
-				imsi:                 imsi,
-				ki:                   ki}
+			entry := model.SimEntry{
+				RawIccid:             rawIccid,
+				IccidWithChecksum:    iccidWithChecksum,
+				IccidWithoutChecksum: iccidWithoutChecksum,
+				Imsi:                 imsi,
+				Ki:                   ki}
 			state.entries = append(state.entries, entry)
 
 		case UNKNOWN_HEADER:
@@ -188,7 +203,7 @@ func ReadOutputFile(filename string) OutputFileRecord {
 	declaredNoOfEntities, err := strconv.Atoi(state.headerDescription["Quantity"])
 
 	if err != nil {
-		log.Fatal("Could not find  declared quantity of entities")
+		log.Fatal("Could not find 'Quantity' field while parsing file '", filename, "'")
 	}
 
 	if countedNoOfEntries != declaredNoOfEntities {
@@ -199,10 +214,10 @@ func ReadOutputFile(filename string) OutputFileRecord {
 
 	result := OutputFileRecord{
 		Filename:          filename,
-		inputVariables:    state.inputVariables,
-		headerDescription: state.headerDescription,
+		InputVariables:    state.inputVariables,
+		HeaderDescription: state.headerDescription,
 		Entries:           state.entries,
-		noOfEntries:       declaredNoOfEntities,
+		NoOfEntries:       declaredNoOfEntities,
 		OutputFileName:    getOutputFileName(state),
 	}
 
@@ -227,9 +242,9 @@ func getCustomer(state ParserState) string {
 	return state.headerDescription["Customer"]
 }
 
-func parseOutputLine(s string) (string, string, string) {
+func parseOutputLine(state ParserState, s string) (string, string, string) {
 	parsedString := strings.Split(s, " ")
-	return parsedString[0], parsedString[1], parsedString[2]
+	return parsedString[state.csvFieldMap["ICCID"]], parsedString[state.csvFieldMap["IMSI"]], parsedString[state.csvFieldMap["KI"]]
 }
 
 func transitionMode(state *ParserState, targetState string) {
@@ -238,11 +253,13 @@ func transitionMode(state *ParserState, targetState string) {
 
 // TODO: Consider replacing this thing with a map lookup.
 func modeFromSectionHeader(s string) string {
-	sectionName := s[1:]
+	sectionName := strings.Trim(s, "* ")
 	switch sectionName {
 	case "HEADER DESCRIPTION":
 		return HEADER_DESCRIPTION
 	case "INPUT VARIABLES":
+		return INPUT_VARIABLES
+	case "INPUT VARIABLES DESCRIPTION":
 		return INPUT_VARIABLES
 	case "OUTPUT VARIABLES":
 		return OUTPUT_VARIABLES
@@ -261,8 +278,6 @@ func isComment(s string) bool {
 	return match
 }
 
-
-
 // fileExists checks if a file exists and is not a directory before we
 // try using it to prevent further errors.
 func fileExists(filename string) bool {
@@ -273,8 +288,9 @@ func fileExists(filename string) bool {
 	return !info.IsDir()
 }
 
+// TODO: Move this into some other package. "hssoutput" or something.
 // TODO: Consider rewriting using https://golang.org/pkg/encoding/csv/
-func WriteHssCsvFile(filename string, entries []SimEntry) error {
+func WriteHssCsvFile(filename string, entries []model.SimEntry) error {
 
 	if fileExists(filename) {
 		log.Fatal("Output file already exists. '", filename, "'.")
@@ -292,7 +308,7 @@ func WriteHssCsvFile(filename string, entries []SimEntry) error {
 
 	max := 0
 	for i, entry := range entries {
-		s := fmt.Sprintf("%s, %s, %s\n", entry.iccidWithChecksum, entry.imsi, entry.ki)
+		s := fmt.Sprintf("%s, %s, %s\n", entry.IccidWithChecksum, entry.Imsi, entry.Ki)
 		_, err = f.WriteString(s)
 		if err != nil {
 			log.Fatal("Couldn't write to  hss csv file '", filename, "': ", err)
@@ -302,4 +318,3 @@ func WriteHssCsvFile(filename string, entries []SimEntry) error {
 	fmt.Println("Successfully written ", max, " sim card records.")
 	return f.Close()
 }
-

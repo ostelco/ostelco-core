@@ -76,7 +76,7 @@ data class Es2PlusDownloadOrder(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Es2DownloadOrderResponse(
         @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader(),
-        @JsonProperty("iccid") val iccid: String? = null
+        @JsonProperty("iccid")  val iccid: String? = null
 ): Es2Response(header)
 
 
@@ -131,6 +131,7 @@ data class Es2ProfileStatusResponse(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ProfileStatus(
         @JsonProperty("status_last_update_timestamp") val lastUpdateTimestamp:String? = null,
+        // TODO: Should the next line be deleted?
         @JsonProperty("profileStatusList") val profileStatusList: List<ProfileStatus>? = listOf(),
         @JsonProperty("acToken") val acToken: String? = null,
         @JsonProperty("state") val state: String? = null,
