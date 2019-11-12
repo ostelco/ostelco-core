@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"errors"
 	"github.com/google/uuid"
 )
 
@@ -295,6 +294,7 @@ func executeGenericEs2plusCommand(jsonStrB []byte, hostport string, es2plusComma
 	}
 
 	resp, err := httpClient.Do(req)
+	defer resp.Body.Close()
 
     // On http protocol failure return quickly
 	if err != nil {
@@ -338,14 +338,12 @@ func (client *Es2PlusClientState) GetStatus(iccid string) (*ProfileStatus, error
     }
 
     if (len(result.ProfileStatusList) == 0) {
-        fmt.Printf("No results found for iccid = '%s'", iccid)
         return nil, nil
     } else if (len(result.ProfileStatusList)  == 1) {
-        returnvalue := result.ProfileStatusList[0]
-        return &returnvalue, nil
+        return &result.ProfileStatusList[0], nil
     } else {
 
-       return nil, errors.New("GetStatus returned more than one profile")
+       return nil, fmt.Errorf("GetStatus returned more than one profile")
     }
 }
 
