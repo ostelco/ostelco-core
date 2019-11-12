@@ -26,6 +26,7 @@ import org.ostelco.prime.model.RegionDetails
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.SimProfile
 import org.ostelco.prime.model.Subscription
+import org.ostelco.prime.model.withSimProfileStatusAsInstalled
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.PlanAlredyPurchasedError
@@ -118,7 +119,11 @@ class SubscriberDAOImpl : SubscriberDAO {
                         storage.getAllRegionDetails(identity = identity)
                                 .fold(
                                         { Context(customer = customer) },
-                                        { regionDetailsCollection -> Context(customer = customer, regions = regionDetailsCollection) })
+                                        { regionDetailsCollection -> Context(
+                                                customer = customer,
+                                                regions = regionDetailsCollection.map { it.withSimProfileStatusAsInstalled() })
+                                        }
+                                )
                     }
         } catch (e: Exception) {
             logger.error("Failed to fetch context for customer with identity - $identity", e)
@@ -131,9 +136,11 @@ class SubscriberDAOImpl : SubscriberDAO {
     //
     override fun getRegions(identity: Identity): Either<ApiError, Collection<RegionDetails>> {
         return try {
-            storage.getAllRegionDetails(identity).mapLeft {
-                NotFoundError("Failed to get regions.", ApiErrorCode.FAILED_TO_FETCH_REGIONS, it)
-            }
+            storage.getAllRegionDetails(identity)
+                    .bimap(
+                            { NotFoundError("Failed to get regions.", ApiErrorCode.FAILED_TO_FETCH_REGIONS, it) },
+                            { regionDetailsList -> regionDetailsList.map { it.withSimProfileStatusAsInstalled() } }
+                    )
         } catch (e: Exception) {
             logger.error("Failed to get regions for customer with identity - $identity", e)
             Either.left(InternalServerError("Failed to get regions", ApiErrorCode.FAILED_TO_FETCH_REGIONS))
@@ -142,9 +149,11 @@ class SubscriberDAOImpl : SubscriberDAO {
 
     override fun getRegion(identity: Identity, regionCode: String): Either<ApiError, RegionDetails> {
         return try {
-            storage.getRegionDetails(identity, regionCode).mapLeft {
-                NotFoundError("Failed to get regions.", ApiErrorCode.FAILED_TO_FETCH_REGIONS, it)
-            }
+            storage.getRegionDetails(identity, regionCode)
+                    .bimap(
+                            { NotFoundError("Failed to get regions.", ApiErrorCode.FAILED_TO_FETCH_REGIONS, it) },
+                            { it.withSimProfileStatusAsInstalled() }
+                    )
         } catch (e: Exception) {
             logger.error("Failed to get regions for customer with identity - $identity", e)
             Either.left(InternalServerError("Failed to get regions", ApiErrorCode.FAILED_TO_FETCH_REGIONS))
