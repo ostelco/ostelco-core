@@ -59,7 +59,6 @@ data class RelationType<FROM : HasId, RELATION, TO : HasId>(
 }
 
 class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
-    private val LOG by getLogger()
 
     init {
         entityType.entityStore = this
