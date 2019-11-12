@@ -282,7 +282,10 @@ func executeGenericEs2plusCommand(jsonStrB []byte, hostport string, es2plusComma
     // byte array jsonStrB in a POST request.   Set up the required
     // headers for ES2+ and content type.
 	url := fmt.Sprintf("https://%s/gsma/rsp2/es2plus/%s", hostport, es2plusCommand)
-	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonStrB))
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStrB))
+	if err != nil {
+	    return nil, err
+	}
 	req.Header.Set("X-Admin-Protocol", "gsma/rsp/v2.0.0")
 	req.Header.Set("Content-Type", "application/json")
 
