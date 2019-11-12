@@ -173,6 +173,10 @@ func newHttpClient(certFilePath string, keyFilePath string) *http.Client {
 	if err != nil {
 		log.Fatalf("server: loadkeys: %s", err)
 	}
+
+	// TODO: The certificate used to sign the other end of the TLS connection
+	//       is privately signed, and at this time we don't require the full
+	//       certificate chain to  be available.
 	config := tls.Config{Certificates: []tls.Certificate{cert}, InsecureSkipVerify: true}
 	client := &http.Client{
 		Transport: &http.Transport{
