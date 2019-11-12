@@ -6,6 +6,7 @@ import (
 
 func TestLuhn(t *testing.T) {
 	validNumbers := []int{
+		8965030119110000013,
 		79927398713,
 		4929972884676289,
 		4532733309529845,
@@ -44,11 +45,23 @@ func TestLuhn(t *testing.T) {
 		6387065788050980,
 		6388464094939979}
 
+	invalidNumbers := []int{
+		896503011911000001,
+	}
+
 	for _, number := range validNumbers {
 
 		checksum := LuhnChecksum(number / 10)
 		if checksum != number%10 {
 			t.Errorf("%v's check number should be %v, but got %v", number, number%10, checksum)
+		}
+	}
+
+	for _, number := range invalidNumbers {
+
+		checksum := LuhnChecksum(number / 10)
+		if checksum == number%10 {
+			t.Errorf("%v's check number should  _not_ be %v, but got %v", number, number%10, checksum)
 		}
 	}
 }
