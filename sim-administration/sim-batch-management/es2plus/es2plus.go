@@ -239,14 +239,14 @@ func newUuid() (string, error) {
 }
 
 
-func newEs2plusHeader(client Es2PlusClient) (*ES2PlusHeader) {
+func newEs2plusHeader(client Es2PlusClient) (*ES2PlusHeader, error) {
 
    functionCallIdentifier, err := newUuid()
    if err != nil  {
-        panic(err)
+      return nil, err
    }
 
-   return &ES2PlusHeader{FunctionCallIdentifier: functionCallIdentifier, FunctionRequesterIdentifier: client.RequesterId()}
+   return &ES2PlusHeader{FunctionCallIdentifier: functionCallIdentifier, FunctionRequesterIdentifier: client.RequesterId()}, nil
 }
 
 
@@ -321,12 +321,15 @@ func executeGenericEs2plusCommand(jsonStrB []byte, hostport string, es2plusComma
 func (client *Es2PlusClientState) GetStatus(iccid string) (*ProfileStatus, error) {
     result := new(ES2ProfileStatusResponse)
     es2plusCommand := "getProfileStatus"
-    header := newEs2plusHeader(client)
+    header, err := newEs2plusHeader(client)
+    if err != nil {
+        return nil, err
+    }
     payload := &ES2PlusGetProfileStatusRequest{
                		Header:    *header,
                		IccidList: [] ES2PlusIccid{ES2PlusIccid{Iccid: iccid}},
                	}
-    err := marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result)
+    err = marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result)
     if err != nil {
         return nil, err
     }
@@ -348,7 +351,10 @@ func (client *Es2PlusClientState) GetStatus(iccid string) (*ProfileStatus, error
 func(client *Es2PlusClientState)  RecoverProfile(iccid string, targetState string) (*ES2PlusRecoverProfileResponse, error) {
     result := new(ES2PlusRecoverProfileResponse)
     es2plusCommand := "recoverProfile"
-    header := newEs2plusHeader(client)
+    header, err := newEs2plusHeader(client)
+    if err != nil {
+        return nil, err
+    }
     payload := &ES2PlusRecoverProfileRequest{
                		Header:        *header,
                		Iccid:         iccid,
@@ -361,7 +367,10 @@ func(client *Es2PlusClientState)  RecoverProfile(iccid string, targetState strin
 func (client *Es2PlusClientState)  CancelOrder(iccid string, targetState string) (*ES2PlusCancelOrderResponse, error) {
     result := new(ES2PlusCancelOrderResponse)
     es2plusCommand := "cancelOrder"
-    header := newEs2plusHeader(client)
+    header, err  := newEs2plusHeader(client)
+    if err != nil {
+       return nil, err
+    }
     payload := &ES2PlusCancelOrderRequest {
                		Header:        *header,
                		Iccid:         iccid,
@@ -374,14 +383,17 @@ func (client *Es2PlusClientState)  CancelOrder(iccid string, targetState string)
 func (client *Es2PlusClientState)  DownloadOrder(iccid string) (*ES2PlusDownloadOrderResponse, error) {
     result := new(ES2PlusDownloadOrderResponse)
     es2plusCommand := "downloadOrder"
-    header := newEs2plusHeader(client)
+    header, err  := newEs2plusHeader(client)
+    if err != nil {
+       return nil, err
+    }
     payload := &ES2PlusDownloadOrderRequest {
                		Header:        *header,
                		Iccid:         iccid,
                		Eid:           "",
                		Profiletype:   "",
                	}
-    err :=  marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result)
+    err =  marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result)
     if err != nil {
             return nil, err
     }
@@ -399,7 +411,10 @@ func (client *Es2PlusClientState)  DownloadOrder(iccid string) (*ES2PlusDownload
 func (client *Es2PlusClientState)  ConfirmOrder(iccid string) (*ES2PlusConfirmOrderResponse, error) {
     result := new(ES2PlusConfirmOrderResponse)
     es2plusCommand := "confirmOrder"
-    header := newEs2plusHeader(client)
+    header, err  := newEs2plusHeader(client)
+    if err != nil {
+           return nil, err
+    }
     payload := &ES2PlusConfirmOrderRequest {
                		Header:        *header,
                		Iccid:         iccid,
@@ -410,7 +425,7 @@ func (client *Es2PlusClientState)  ConfirmOrder(iccid string) (*ES2PlusConfirmOr
                		ReleaseFlag: true,
                	}
 
-    err :=  marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result)
+    err =  marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result)
     if err != nil {
             return nil, err
     }
