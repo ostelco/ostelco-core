@@ -99,6 +99,7 @@ func (sdb SimBatchDB) GetBatchById(id int64) (*model.Batch, error) {
 
 func (sdb SimBatchDB) GetBatchByName(name string) (*model.Batch, error) {
 	var result model.Batch
+	result.BatchId = -1
 	return &result, sdb.Db.Get(&result, "select * from BATCH where name = ?", name)
 }
 
@@ -159,7 +160,7 @@ func (sdb SimBatchDB) CreateBatch(theBatch *model.Batch) error {
 
 	// "UPDATE SIM_PROFILE SET msisdn=:msisdn WHERE id = :simId",
 
-	res, err = sdb.Db.NamedExec("UPDATE BATCH  SET firstIccid = :firstIccid, firstImsi = :firstImsi, firstMsisdn = :firstMsisdn, msisdnIncrement = :msisdnIncrement, iccidIncrement = :iccidIncrement, imsiIncrement = :imsiIncrement, url=:url WHERE id = :id",
+	_, err = sdb.Db.NamedExec("UPDATE BATCH  SET firstIccid = :firstIccid, firstImsi = :firstImsi, firstMsisdn = :firstMsisdn, msisdnIncrement = :msisdnIncrement, iccidIncrement = :iccidIncrement, imsiIncrement = :imsiIncrement, url=:url WHERE id = :id",
 		theBatch)
 	// , :firstIccid,  :firstImsi,  :firstMsisdn, :msisdnIncrement, :iccidIncrement, :imsiIncrement, :url
 
@@ -219,7 +220,7 @@ func (sdb SimBatchDB) CreateSimEntry(theEntry *model.SimEntry) error {
 
 	id, err := res.LastInsertId()
 	if err != nil {
-		fmt.Errorf("Getting last inserted id failed '%s'", err)
+		return fmt.Errorf("getting last inserted id failed '%s'", err)
 	}
 	theEntry.Id = id
 	return err

@@ -329,13 +329,13 @@ func (client *Es2PlusClientState) GetStatus(iccid string) (*ProfileStatus, error
     }
 
     if (len(result.ProfileStatusList) == 0) {
-        fmt.Sprintf("No results found for iccid = '%s'", iccid)
+        fmt.Printf("No results found for iccid = '%s'", iccid)
         return nil, nil
     } else if (len(result.ProfileStatusList)  == 1) {
         returnvalue := result.ProfileStatusList[0]
         return &returnvalue, nil
     } else {
-       return nil, errors.New("GetStatus returned more than one profile!")
+       return nil, errors.New("GetStatus returned more than one profile")
     }
 }
 
@@ -381,10 +381,10 @@ func (client *Es2PlusClientState)  DownloadOrder(iccid string) (*ES2PlusDownload
     }
 
     executionStatus := result.Header.FunctionExecutionStatus.FunctionExecutionStatusType
-    if ("Executed-Success" != executionStatus) {
-        return result, errors.New(fmt.Sprintf("ExecutionStatus was: ''%s'",  executionStatus))
+    if ( executionStatus == "Executed-Success") {
+         return result, nil
     } else {
-        return result, nil
+         return result, fmt.Errorf("ExecutionStatus was: ''%s'",  executionStatus)
     }
 }
 
@@ -409,8 +409,8 @@ func (client *Es2PlusClientState)  ConfirmOrder(iccid string) (*ES2PlusConfirmOr
     }
 
     executionStatus := result.Header.FunctionExecutionStatus.FunctionExecutionStatusType
-    if ("Executed-Success" != executionStatus) {
-        return result, errors.New(fmt.Sprintf("ExecutionStatus was: ''%s'",  executionStatus))
+    if (executionStatus != "Executed-Success") {
+        return result, fmt.Errorf("ExecutionStatus was: ''%s'",  executionStatus)
     } else {
         return result, nil
     }
@@ -432,6 +432,9 @@ func (client *Es2PlusClientState)  ActivateIccid(iccid string)  (*ProfileStatus,
 					    return nil, err
 				    }
 				    result, err = client.GetStatus(iccid)
+				    if err != nil {
+				       return nil, err
+				    }
 				}
 
 				if  result.State == "ALLOCATED" {

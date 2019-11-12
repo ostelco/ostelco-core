@@ -28,12 +28,14 @@ var (
 	// Declare a profile-vendor with an SM-DP+ that can be referred to from
 	// batches.  Referential integrity required, so it won't be possible to
 	// declare bathes with non-existing profile vendors.
+	/** TODO
 	dpv             = kingpin.Command("declare-profile-vendor", "Declare a profile vendor with an SM-DP+ we can talk to")
 	dpvName         = dpv.Flag("name", "Name of profile-vendor").Required().String()
 	dpvCertFilePath = dpv.Flag("cert", "Certificate pem file.").Required().String()
 	dpvKeyFilePath  = dpv.Flag("key", "Certificate key file.").Required().String()
 	dpvHost         = dpv.Flag("host", "Host of ES2+ endpoint.").Required().String()
 	dpvPort         = dpv.Flag("port", "Port of ES2+ endpoint").Required().String()
+	 */
 	// TODO: Some command to list all profile-vendors, hsses, etc. , e.g. lspv, lshss, ...
 	// TODO: Add sftp coordinates to be used when fetching/uploding input/utput-files
 	// TODO: Declare hss-es, that can be refered to in profiles.
@@ -96,10 +98,7 @@ var (
 	// TODO: Check if this can be used for the key files.
 	// postImage   = post.Flag("image", "image to post").ExistingFile()
 
-	// TODO ???
-	batch = kingpin.Command("batch", "Utility for persisting and manipulating sim card batches.")
-
-	listBatches = kingpin.Command("list-batches", "List all known batches.")
+	// TODO: listBatches = kingpin.Command("list-batches", "List all known batches.")
 
 	describeBatch      = kingpin.Command("describe-batch", "Describe a batch with a particular name.")
 	describeBatchBatch = describeBatch.Arg("batch", "The batch to describe").String()
@@ -530,7 +529,7 @@ func main() {
 
 			batch, err := db.GetBatchByName(batchName)
 			if err != nil {
-				fmt.Errorf("Unknown batch '%s'\n", batchName)
+				panic(fmt.Errorf("unknown batch '%s'", batchName))
 			}
 
 			entries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
@@ -598,7 +597,7 @@ func main() {
 
 			batch, err := db.GetBatchByName(batchName)
 			if err != nil {
-				fmt.Errorf("Unknown batch '%s'\n", batchName)
+				panic(fmt.Errorf("unknown batch '%s'", batchName))
 			}
 
 			entries, err := db.GetAllSimEntriesForBatch(batch.BatchId)

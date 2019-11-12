@@ -31,7 +31,7 @@ func setup() {
 	sdb, err = OpenFileSqliteDatabase(filename)
 	// sdb, err = NewInMemoryDatabase()
 	if err != nil {
-		fmt.Sprintf("Couldn't open new in memory database  '%s", err)
+		panic(fmt.Errorf("Couldn't open new in memory database  '%s", err))
 	}
 	/*
 		batches, err := sdb.GetAllBatches()
@@ -83,7 +83,7 @@ func shutdown() {
 func TestMemoryDbPing(t *testing.T) {
 	err = sdb.Db.Ping()
 	if err != nil {
-		fmt.Errorf("Could not ping in-memory database. '%s'", err)
+		t.Errorf("Could not ping in-memory database. '%s'", err)
 	}
 }
 
@@ -102,8 +102,8 @@ func injectTestBatch() *model.Batch {
 	}
 
 	batch, _ := sdb.GetBatchByName(theBatch.Name)
-	if batch != nil {
-		fmt.Errorf("Duplicate batch detected %s", theBatch.Name)
+	if batch.BatchId != -1 {
+		panic(fmt.Errorf("Duplicate batch detected '%s'", theBatch.Name))
 	}
 
 	err := sdb.CreateBatch(&theBatch)
@@ -115,11 +115,17 @@ func injectTestBatch() *model.Batch {
 
 func TestGetBatchById(t *testing.T) {
 
+	cleanTables()
+	batch, _ := sdb.GetBatchByName("SOME UNIQUE NAME")
+	if batch.BatchId != -1  {
+		t.Errorf("Duplicate detected, error in test setup")
+	}
+
 	theBatch := injectTestBatch()
 
 	firstInputBatch, _ := sdb.GetBatchById(theBatch.BatchId)
 	if !reflect.DeepEqual(*firstInputBatch, *theBatch) {
-		fmt.Errorf("getBatchById failed")
+		t.Errorf("getBatchById failed")
 	}
 }
 
@@ -129,7 +135,7 @@ func TestGetAllBatches(t *testing.T) {
 
 	allBatches, err := sdb.GetAllBatches()
 	if err != nil {
-		fmt.Errorf("Reading query failed '%s'", err)
+		t.Errorf("Reading query failed '%s'", err)
 	}
 
 	assert.Equal(t, len(allBatches), 0)
@@ -138,14 +144,14 @@ func TestGetAllBatches(t *testing.T) {
 
 	allBatches, err = sdb.GetAllBatches()
 	if err != nil {
-		fmt.Errorf("Reading query failed '%s'", err)
+		t.Errorf("Reading query failed '%s'", err)
 	}
 
 	assert.Equal(t, len(allBatches), 1)
 
 	firstInputBatch := allBatches[0]
 	if !reflect.DeepEqual(firstInputBatch, theBatch) {
-		fmt.Errorf("getBatchById failed")
+		t.Errorf("getBatchById failed, returned batch not equal to initial batch")
 	}
 }
 

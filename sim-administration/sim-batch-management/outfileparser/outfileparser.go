@@ -1,10 +1,7 @@
 package outfileparser
 
-// TODO: Rename to oufileparser
-
 import (
 	"bufio"
-	"errors"
 	"flag"
 	"fmt"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/loltelutils"
@@ -84,12 +81,12 @@ func ParseVarOutLine(varOutLine string, result *map[string]int) (error) {
 	varOutSplit := strings.Split(varOutLine, ":")
 
 	if len(varOutSplit) != 2 {
-		return errors.New("syntax error in var_out line.  More than two colon separated fields.")
+		return fmt.Errorf("syntax error in var_out line, more than two colon separated fields")
 	}
 
 	varOutToken := strings.TrimSpace(string(varOutSplit[0]))
 	if strings.ToLower(varOutToken) != "var_out" {
-		return errors.New(fmt.Sprintf("syntax error in var_out line.  Does not start with 'var_out', was '%s'", varOutToken))
+		return fmt.Errorf("syntax error in var_out line.  Does not start with 'var_out', was '%s'", varOutToken)
 	}
 
 	slashedFields := strings.Split(varOutSplit[1], "/")
