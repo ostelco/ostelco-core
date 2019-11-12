@@ -153,6 +153,7 @@ func declareTestBatch(t *testing.T) *model.Batch {
 
 	theBatch, err := sdb.DeclareBatch(
 		"Name",
+		 false,
 		"Customer",
 		"8778fsda",             // batch number
 		"20200101",             // date string

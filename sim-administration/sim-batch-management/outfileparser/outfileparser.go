@@ -139,6 +139,9 @@ func ParseOutputFile(filename string) OutputFileRecord {
 			nextMode := modeFromSectionHeader(line)
 			transitionMode(&state, nextMode)
 			continue
+		}else if line == "OUTPUT VARIABLES" {
+			transitionMode(&state, OUTPUT_VARIABLES)
+			continue
 		}
 
 		// ... or should we look closer at it and parse it
@@ -148,9 +151,10 @@ func ParseOutputFile(filename string) OutputFileRecord {
 		case HEADER_DESCRIPTION:
 			ParseLineIntoKeyValueMap(line, state.headerDescription)
 		case INPUT_VARIABLES:
-			if line == "var_In:" {
+			if line == "var_In:" || line == "Var_In_List:" || strings.TrimSpace(line) == "" {
 				continue
 			}
+
 			ParseLineIntoKeyValueMap(line, state.inputVariables)
 		case OUTPUT_VARIABLES:
 
@@ -261,11 +265,13 @@ func transitionMode(state *ParserState, targetState string) {
 
 // TODO: Consider replacing this thing with a map lookup.
 func modeFromSectionHeader(s string) string {
-	sectionName := s[1:]
+	sectionName := strings.Trim(s, "* ")
 	switch sectionName {
 	case "HEADER DESCRIPTION":
 		return HEADER_DESCRIPTION
 	case "INPUT VARIABLES":
+		return INPUT_VARIABLES
+	case "INPUT VARIABLES DESCRIPTION":
 		return INPUT_VARIABLES
 	case "OUTPUT VARIABLES":
 		return OUTPUT_VARIABLES

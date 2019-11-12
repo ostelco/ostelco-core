@@ -163,7 +163,7 @@ func main() {
 		outfileparser.ConvertInputfileToOutputfile(*spUploadInputFile, *spUploadOutputFilePrefix)
 
 	case "declare-profile-vendor":
-		fmt.Println("Declaration of profile-vendors not yet implemented.\n")
+		fmt.Println("Declaration of profile-vendors not yet implemented.")
 
 	case "list-batches":
 
