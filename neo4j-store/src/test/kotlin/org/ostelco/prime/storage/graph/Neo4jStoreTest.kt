@@ -1283,6 +1283,12 @@ class Neo4jStoreTest {
                                     filename = "/AllowedRegionsService.kts"
                             )
                     ),
+                    onKycApprovedAction = KtsServiceFactory(
+                            serviceInterface = "org.ostelco.prime.storage.graph.OnKycApprovedAction",
+                            textReader = ClasspathResourceTextReader(
+                                    filename = "/OnKycApprovedAction.kts"
+                            )
+                    ),
                     onRegionApprovedAction = KtsServiceFactory(
                             serviceInterface = "org.ostelco.prime.storage.graph.OnRegionApprovedAction",
                             textReader = ClasspathResourceTextReader(
