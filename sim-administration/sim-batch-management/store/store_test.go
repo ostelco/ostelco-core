@@ -25,6 +25,7 @@ func setup() {
 	// In memory database fails, so we try this gonzo method of getting
 	// a fresh database
 	filename := "bazunka.db"
+
 	// delete file, ignore any errors
 	os.Remove(filename)
 
@@ -33,16 +34,6 @@ func setup() {
 	if err != nil {
 		panic(fmt.Errorf("Couldn't open new in memory database  '%s", err))
 	}
-	/*
-		batches, err := sdb.GetAllBatches()
-		if err == nil {
-			panic(fmt.Sprintf("Couldn't generate tables  '%s'", err))
-		}
-
-		if len(batches) != 0 {
-			panic(fmt.Sprintf("batches already registred, test misconfigured"))
-		}
-	*/
 
 	err = sdb.GenerateTables()
 	if err != nil {
@@ -116,7 +107,7 @@ func TestGetBatchById(t *testing.T) {
 
 	cleanTables()
 	batch, _ := sdb.GetBatchByName("SOME UNIQUE NAME")
-	if batch.BatchId != -1  {
+	if batch.BatchId != -1 {
 		t.Errorf("Duplicate detected, error in test setup")
 	}
 
@@ -158,7 +149,7 @@ func declareTestBatch(t *testing.T) *model.Batch {
 
 	theBatch, err := sdb.DeclareBatch(
 		"Name",
-		 false,
+		false,
 		"Customer",
 		"8778fsda",             // batch number
 		"20200101",             // date string
