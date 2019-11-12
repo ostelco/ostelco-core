@@ -65,9 +65,8 @@ func cleanTables() {
 		panic(fmt.Sprintf("Couldn't delete BATCH  '%s'", err))
 	}
 
-	simRows, _ := simProfileDeletionResult.RowsAffected()
-	batchRows, _ := batchDeleteResult.RowsAffected()
-	fmt.Printf("simProfileDeletionResult = %d, batchDeleteResult=%d\n", simRows, batchRows)
+	simProfileDeletionResult.RowsAffected()
+	batchDeleteResult.RowsAffected()
 }
 
 func shutdown() {
@@ -150,7 +149,7 @@ func TestGetAllBatches(t *testing.T) {
 	assert.Equal(t, len(allBatches), 1)
 
 	firstInputBatch := allBatches[0]
-	if !reflect.DeepEqual(firstInputBatch, theBatch) {
+	if !reflect.DeepEqual(firstInputBatch, *theBatch) {
 		t.Errorf("getBatchById failed, returned batch not equal to initial batch")
 	}
 }

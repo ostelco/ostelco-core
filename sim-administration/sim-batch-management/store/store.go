@@ -298,15 +298,10 @@ func (sdb SimBatchDB) DeclareBatch(
 	// Check parameters for syntactic correctness and
 	// semantic sanity.
 	//
-
-	fmt.Printf("Pre  adding luhn ? %t.   first='%s', last='%s'\n", addLuhn, firstIccid, lastIccid)
-
 	if addLuhn {
 		firstIccid = fieldsyntaxchecks.AddLuhnChecksum(firstIccid)
 		lastIccid = fieldsyntaxchecks.AddLuhnChecksum(lastIccid)
 	}
-
-	fmt.Printf("Post adding luhn ? %t.   first='%s',last='%s'\n", addLuhn, firstIccid, lastIccid)
 
 	fieldsyntaxchecks.CheckICCIDSyntax("first-rawIccid", firstIccid)
 	fieldsyntaxchecks.CheckICCIDSyntax("last-rawIccid", lastIccid)
