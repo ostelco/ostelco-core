@@ -104,7 +104,7 @@ func (sdb SimBatchDB) GetBatchByName(name string) (*model.Batch, error) {
 }
 
 func (sdb SimBatchDB) CreateBatch(theBatch *model.Batch) error {
-	// TODO: mutex
+	// TODO: mutex?
 
 	res, err := sdb.Db.NamedExec("INSERT INTO BATCH (name, filenameBase, orderDate, customer, profileType, batchNo, quantity) values (:name, :filenameBase, :orderDate, :customer, :profileType, :batchNo, :quantity)",
 		theBatch,
