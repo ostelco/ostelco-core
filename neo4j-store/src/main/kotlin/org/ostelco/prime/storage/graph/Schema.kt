@@ -513,14 +513,7 @@ object Graph {
 
     private val trace by lazy { getResource<Trace>() }
 
-    fun <R> write(query: String, transaction: Transaction, transform: (StatementResult) -> R): R {
-        LOG.trace("write:[\n$query\n]")
-        return trace.childSpan("neo4j.write") {
-            transaction.run(query)
-        }.let(transform)
-    }
-
-    fun <R> write(query: String, parameters: Map<String, Any>, transaction: Transaction, transform: (StatementResult) -> R): R {
+    fun <R> write(query: String, transaction: Transaction, parameters: Map<String, Any> = emptyMap(), transform: (StatementResult) -> R): R {
         LOG.trace("write:[\n$query\n]")
         return trace.childSpan("neo4j.write") {
             transaction.run(query, parameters)
@@ -534,11 +527,11 @@ object Graph {
         }.let(transform)
     }
 
-    suspend fun <R> writeSuspended(query: String, transaction: Transaction, transform: (CompletionStage<StatementResultCursor>) -> R) {
+    suspend fun <R> writeSuspended(query: String, transaction: Transaction, parameters: Map<String, Any> = emptyMap(), transform: (CompletionStage<StatementResultCursor>) -> R) {
         LOG.trace("write:[\n$query\n]")
         withContext(Dispatchers.IO) {
             trace.childSpan("neo4j.writeAsync") {
-                transaction.runAsync(query)
+                transaction.runAsync(query, parameters)
             }
         }.let(transform)
     }
