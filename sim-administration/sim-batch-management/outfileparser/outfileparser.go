@@ -299,16 +299,14 @@ func WriteHssCsvFile(filename string, entries []model.SimEntry) error {
 		return fmt.Errorf("couldn't create hss csv file '%s', %v", filename, err)
 	}
 
-	_, err = f.WriteString("ICCID, IMSI, KI\n")
-	if err != nil {
+	if _, err = f.WriteString("ICCID, IMSI, KI\n");  err != nil {
 		return fmt.Errorf("couldn't header to  hss csv file '%s', %v", filename, err)
 	}
 
 	max := 0
 	for i, entry := range entries {
 		s := fmt.Sprintf("%s, %s, %s\n", entry.IccidWithChecksum, entry.Imsi, entry.Ki)
-		_, err = f.WriteString(s)
-		if err != nil {
+		if _, err = f.WriteString(s); err != nil {
 			return fmt.Errorf("couldn't write to  hss csv file '%s', %v", filename, err)
 		}
 		max = i + 1
