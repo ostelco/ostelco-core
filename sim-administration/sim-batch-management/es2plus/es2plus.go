@@ -237,8 +237,7 @@ func newEs2plusHeader(client Es2PlusClient) (*ES2PlusHeader, error) {
 	return &ES2PlusHeader{FunctionCallIdentifier: functionCallIdentifier, FunctionRequesterIdentifier: client.RequesterId()}, nil
 }
 
-func execute(
-	client *Es2PlusClientState,
+func (client *Es2PlusClientState) execute(
 	es2plusCommand string,
 	payload interface{}, result interface{}) error {
 
@@ -293,7 +292,7 @@ func (client *Es2PlusClientState) GetStatus(iccid string) (*ProfileStatus, error
 		Header:    *header,
 		IccidList: []ES2PlusIccid{ES2PlusIccid{Iccid: iccid}},
 	}
-	if err = execute(client, es2plusCommand, payload, result); err != nil {
+	if err = client.execute(es2plusCommand, payload, result); err != nil {
 		return nil, err
 	}
 
@@ -318,7 +317,7 @@ func (client *Es2PlusClientState) RecoverProfile(iccid string, targetState strin
 		Iccid:         iccid,
 		ProfileStatus: targetState,
 	}
-	return result, execute(client, es2plusCommand, payload, result)
+	return result,  client.execute(es2plusCommand, payload, result)
 }
 
 func (client *Es2PlusClientState) CancelOrder(iccid string, targetState string) (*ES2PlusCancelOrderResponse, error) {
@@ -333,7 +332,7 @@ func (client *Es2PlusClientState) CancelOrder(iccid string, targetState string) 
 		Iccid:                       iccid,
 		FinalProfileStatusIndicator: targetState,
 	}
-	return result, execute(client, es2plusCommand, payload, result)
+	return result,  client.execute(es2plusCommand, payload, result)
 }
 
 func (client *Es2PlusClientState) DownloadOrder(iccid string) (*ES2PlusDownloadOrderResponse, error) {
@@ -349,7 +348,7 @@ func (client *Es2PlusClientState) DownloadOrder(iccid string) (*ES2PlusDownloadO
 		Eid:         "",
 		Profiletype: "",
 	}
-	err = execute(client, es2plusCommand, payload, result)
+	err =  client.execute(es2plusCommand, payload, result)
 	if err != nil {
 		return nil, err
 	}
@@ -379,7 +378,7 @@ func (client *Es2PlusClientState) ConfirmOrder(iccid string) (*ES2PlusConfirmOrd
 		ReleaseFlag:      true,
 	}
 
-	if err = execute(client, es2plusCommand, payload, result); err != nil {
+	if err =  client.execute(es2plusCommand, payload, result); err != nil {
 		return nil, err
 	}
 
