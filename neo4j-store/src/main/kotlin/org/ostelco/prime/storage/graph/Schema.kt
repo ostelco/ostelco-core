@@ -554,7 +554,7 @@ object ObjectHandler {
     //
     // Object to Map
     //
-    fun getStringProperties(any: Any): Map<String, String> = getProperties(any).map { it.key to it.value.toString() }.toMap()
+    fun getStringProperties(any: Any): Map<String, String> = getProperties(any).mapValues { it.value.toString() }
 
     fun getProperties(any: Any): Map<String, Any> = toSimpleMap(
             objectMapper.convertValue(any, object : TypeReference<Map<String, Any?>>() {}))
