@@ -27,7 +27,6 @@ type Es2PlusClient interface {
 ///
 ///  Generic headers for invocations and responses
 ///
-
 type ES2PlusHeader struct {
 	FunctionRequesterIdentifier string `json:"functionRequesterIdentifier"`
 	FunctionCallIdentifier      string `json:"functionCallIdentifier"`
