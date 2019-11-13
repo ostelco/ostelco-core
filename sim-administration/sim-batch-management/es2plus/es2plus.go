@@ -152,8 +152,8 @@ type Es2PlusClientState struct {
 	httpClient   *http.Client
 	hostport     string
 	requesterId  string
-	printPayload bool
-	printHeaders bool
+	logPayload   bool
+	logHeaders   bool
 }
 
 func Client(certFilePath string, keyFilePath string, hostport string, requesterId string) *Es2PlusClientState {
@@ -161,8 +161,8 @@ func Client(certFilePath string, keyFilePath string, hostport string, requesterI
 		httpClient:   newHttpClient(certFilePath, keyFilePath),
 		hostport:     hostport,
 		requesterId:  requesterId,
-		printPayload: false,
-		printHeaders: false,
+		logPayload:   false,
+		logHeaders:   false,
 	}
 }
 
@@ -239,7 +239,10 @@ func newEs2plusHeader(client Es2PlusClient) (*ES2PlusHeader, error) {
 	return &ES2PlusHeader{FunctionCallIdentifier: functionCallIdentifier, FunctionRequesterIdentifier: client.RequesterId()}, nil
 }
 
-func marshalUnmarshalGenericEs2plusCommand(client *Es2PlusClientState, es2plusCommand string, payload interface{}, result interface{}) error {
+func marshalUnmarshalGenericEs2plusCommand(
+    client *Es2PlusClientState,
+    es2plusCommand string,
+    payload interface{}, result interface{}) error {
 
 	// Serialize payload as json.
 	jsonStrB, err := json.Marshal(payload)
@@ -247,14 +250,19 @@ func marshalUnmarshalGenericEs2plusCommand(client *Es2PlusClientState, es2plusCo
 		return err
 	}
 
-	if client.printPayload {
-		fmt.Print("Payload ->", string(jsonStrB))
+	if client.logPayload {
+		log.Print("Payload ->", string(jsonStrB))
 	}
 
 	// Get the result of the HTTP POST as a byte array
 	// that can be deserialized into json.  Fail fast
 	// an error has been detected.
-	responseBytes, err := executeGenericEs2plusCommand(jsonStrB, client.hostport, es2plusCommand, client.httpClient, client.printHeaders)
+	responseBytes, err := executeGenericEs2plusCommand(
+	        jsonStrB,
+	        client.hostport,
+	        es2plusCommand,
+	        client.httpClient,
+	        client.logHeaders)
 	if err != nil {
 		return err
 	}
@@ -264,7 +272,7 @@ func marshalUnmarshalGenericEs2plusCommand(client *Es2PlusClientState, es2plusCo
 	return json.Unmarshal(responseBytes, result)
 }
 
-func executeGenericEs2plusCommand(jsonStrB []byte, hostport string, es2plusCommand string, httpClient *http.Client, printHeaders bool) ([]byte, error) {
+func executeGenericEs2plusCommand(jsonStrB []byte, hostport string, es2plusCommand string, httpClient *http.Client, logHeaders bool) ([]byte, error) {
 
 	// Build and execute an ES2+ protocol request by using the serialised JSON in the
 	// byte array jsonStrB in a POST request.   Set up the required
@@ -277,8 +285,8 @@ func executeGenericEs2plusCommand(jsonStrB []byte, hostport string, es2plusComma
 	req.Header.Set("X-Admin-Protocol", "gsma/rsp/v2.0.0")
 	req.Header.Set("Content-Type", "application/json")
 
-	if printHeaders {
-		fmt.Printf("Request -> %s\n", formatRequest(req))
+	if logHeaders {
+		log.Printf("Request -> %s\n", formatRequest(req))
 	}
 
 	resp, err := httpClient.Do(req)
