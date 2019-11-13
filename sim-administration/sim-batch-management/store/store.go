@@ -359,9 +359,8 @@ func (sdb SimBatchDB) DeclareBatch(
 	}()
 
 	// Persist the newly created batch,
-	err = sdb.CreateBatch(&batch)
-	if err != nil {
-		panic(err)
+	if err = sdb.CreateBatch(&batch) ; err != nil {
+		return nil, err
 	}
 
 	imsi, err := strconv.Atoi(batch.FirstImsi)
@@ -395,8 +394,7 @@ func (sdb SimBatchDB) DeclareBatch(
 			Ki:                   "", // Should be null
 		}
 
-		err = sdb.CreateSimEntry(simEntry)
-		if err != nil {
+		if err = sdb.CreateSimEntry(simEntry);  err != nil {
 			panic(err)
 		}
 

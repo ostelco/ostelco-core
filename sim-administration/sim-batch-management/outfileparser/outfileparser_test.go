@@ -48,10 +48,8 @@ func TestParseOutputVariablesLine(t *testing.T) {
 	varOutLine := "var_out:ICCID/IMSI/PIN1/PUK1/PIN2/PUK2/ADM1/KI/Access_Control/Code Retailer/Code ADM/ADM2/ADM3/ADM4"
 
 	m := make(map[string]int)
-	err := ParseVarOutLine(varOutLine, &m)
-	if err != nil {
+	if err := ParseVarOutLine(varOutLine, &m);  err != nil {
 		t.Error("Couldn't parse var_out line:", err)
-		t.Fail()
 	}
 
 	assert.Equal(t, m["ICCID"], 0)
