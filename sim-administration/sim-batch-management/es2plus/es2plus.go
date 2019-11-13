@@ -348,8 +348,7 @@ func (client *Es2PlusClientState) DownloadOrder(iccid string) (*ES2PlusDownloadO
 		Eid:         "",
 		Profiletype: "",
 	}
-	err =  client.execute(es2plusCommand, payload, result)
-	if err != nil {
+	if err =  client.execute(es2plusCommand, payload, result); err != nil {
 		return nil, err
 	}
 
