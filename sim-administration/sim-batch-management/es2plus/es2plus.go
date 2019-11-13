@@ -237,7 +237,7 @@ func newEs2plusHeader(client Es2PlusClient) (*ES2PlusHeader, error) {
 	return &ES2PlusHeader{FunctionCallIdentifier: functionCallIdentifier, FunctionRequesterIdentifier: client.RequesterId()}, nil
 }
 
-func marshalUnmarshalGenericEs2plusCommand(
+func execute(
 	client *Es2PlusClientState,
 	es2plusCommand string,
 	payload interface{}, result interface{}) error {
@@ -254,24 +254,7 @@ func marshalUnmarshalGenericEs2plusCommand(
 		log.Print("Payload ->", jsonStrB.String())
 	}
 
-	// Get the result of the HTTP POST as a byte array
-	// that can be deserialized into json.  Fail fast
-	// an error has been detected.
-	return executeGenericEs2plusCommand(
-		result,
-		jsonStrB,
-		client.hostport,
-		es2plusCommand,
-		client.httpClient,
-		client.logHeaders)
-}
-
-func executeGenericEs2plusCommand(result interface{}, jsonStrB *bytes.Buffer, hostport string, es2plusCommand string, httpClient *http.Client, logHeaders bool) error {
-
-	// Build and execute an ES2+ protocol request by using the serialised JSON in the
-	// byte array jsonStrB in a POST request.   Set up the required
-	// headers for ES2+ and content type.
-	url := fmt.Sprintf("https://%s/gsma/rsp2/es2plus/%s", hostport, es2plusCommand)
+	url := fmt.Sprintf("https://%s/gsma/rsp2/es2plus/%s", client.hostport, es2plusCommand)
 	req, err := http.NewRequest("POST", url, jsonStrB)
 	if err != nil {
 		return err
@@ -279,11 +262,11 @@ func executeGenericEs2plusCommand(result interface{}, jsonStrB *bytes.Buffer, ho
 	req.Header.Set("X-Admin-Protocol", "gsma/rsp/v2.0.0")
 	req.Header.Set("Content-Type", "application/json")
 
-	if logHeaders {
+	if client.logHeaders {
 		log.Printf("Request -> %s\n", formatRequest(req))
 	}
 
-	resp, err := httpClient.Do(req)
+	resp, err := client.httpClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -310,7 +293,7 @@ func (client *Es2PlusClientState) GetStatus(iccid string) (*ProfileStatus, error
 		Header:    *header,
 		IccidList: []ES2PlusIccid{ES2PlusIccid{Iccid: iccid}},
 	}
-	if err = marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result); err != nil {
+	if err = execute(client, es2plusCommand, payload, result); err != nil {
 		return nil, err
 	}
 
@@ -335,7 +318,7 @@ func (client *Es2PlusClientState) RecoverProfile(iccid string, targetState strin
 		Iccid:         iccid,
 		ProfileStatus: targetState,
 	}
-	return result, marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result)
+	return result, execute(client, es2plusCommand, payload, result)
 }
 
 func (client *Es2PlusClientState) CancelOrder(iccid string, targetState string) (*ES2PlusCancelOrderResponse, error) {
@@ -350,7 +333,7 @@ func (client *Es2PlusClientState) CancelOrder(iccid string, targetState string) 
 		Iccid:                       iccid,
 		FinalProfileStatusIndicator: targetState,
 	}
-	return result, marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result)
+	return result, execute(client, es2plusCommand, payload, result)
 }
 
 func (client *Es2PlusClientState) DownloadOrder(iccid string) (*ES2PlusDownloadOrderResponse, error) {
@@ -366,7 +349,7 @@ func (client *Es2PlusClientState) DownloadOrder(iccid string) (*ES2PlusDownloadO
 		Eid:         "",
 		Profiletype: "",
 	}
-	err = marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result)
+	err = execute(client, es2plusCommand, payload, result)
 	if err != nil {
 		return nil, err
 	}
@@ -396,7 +379,7 @@ func (client *Es2PlusClientState) ConfirmOrder(iccid string) (*ES2PlusConfirmOrd
 		ReleaseFlag:      true,
 	}
 
-	if err = marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result); err != nil {
+	if err = execute(client, es2plusCommand, payload, result); err != nil {
 		return nil, err
 	}
 

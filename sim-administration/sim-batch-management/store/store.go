@@ -23,6 +23,7 @@ type Store interface {
 	GetBatchById(id int64) (*model.Batch, error)
 	GetBatchByName(id string) (*model.Batch, error)
 
+	// TODO: Maybe make the argument list for this one a little shorter?
 	DeclareBatch(
 		db *SimBatchDB,
 		firstIccid string,
