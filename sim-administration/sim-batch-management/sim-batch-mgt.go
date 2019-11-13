@@ -167,8 +167,7 @@ func main() {
 		outputFile := outputFilePrefix + outRecord.OutputFileName + ".csv"
 		fmt.Println("outputFile = ", outputFile)
 
-		err := outfileparser.WriteHssCsvFile(outputFile, outRecord.Entries)
-		if err != nil {
+		if err := outfileparser.WriteHssCsvFile(outputFile, outRecord.Entries); err != nil {
 			log.Fatal("Couldn't close output file '", outputFilePrefix, "'.  Error = '", err, "'")
 		}
 
