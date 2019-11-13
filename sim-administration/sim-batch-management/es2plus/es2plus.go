@@ -335,7 +335,6 @@ func (client *Es2PlusClientState) GetStatus(iccid string) (*ProfileStatus, error
 	} else if len(result.ProfileStatusList) == 1 {
 		return &result.ProfileStatusList[0], nil
 	} else {
-
 		return nil, fmt.Errorf("GetStatus returned more than one profile")
 	}
 }
