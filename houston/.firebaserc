@@ -1,6 +1,0 @@
-{
-  "projects": {
-    "default": "redotter-admin-dev",
-    "prod": "redotter-admin"
-  }
-}

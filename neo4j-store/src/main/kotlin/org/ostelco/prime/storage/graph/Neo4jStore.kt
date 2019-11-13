@@ -1,6 +1,9 @@
 package org.ostelco.prime.storage.graph
 
 import arrow.core.Either
+import arrow.core.Either.Left
+import arrow.core.Either.Right
+import arrow.core.EitherOf
 import arrow.core.fix
 import arrow.core.flatMap
 import arrow.core.getOrElse
@@ -344,6 +347,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     private val onNewCustomerAction: OnNewCustomerAction = config.onNewCustomerAction.getKtsService()
     private val allowedRegionsService: AllowedRegionsService = config.allowedRegionsService.getKtsService()
+    private val onKycApprovedAction: OnKycApprovedAction = config.onKycApprovedAction.getKtsService()
     private val onRegionApprovedAction: OnRegionApprovedAction = config.onRegionApprovedAction.getKtsService()
     private val hssNameLookup: HssNameLookupService = config.hssNameLookupService.getKtsService()
 
@@ -504,12 +508,12 @@ object Neo4jStoreSingleton : GraphStore {
     //
 
     override fun getAllRegionDetails(identity: org.ostelco.prime.model.Identity): Either<StoreError, Collection<RegionDetails>> = readTransaction {
-        getCustomerId(identity = identity)
-                .flatMap { customerId ->
-                    getAllowedRegionIds(identity, transaction).map { allowedIds ->
+        getCustomer(identity = identity)
+                .flatMap { customer ->
+                    allowedRegionsService.get(customer, transaction).map { allowedIds ->
                         val allRegions = getAvailableRegionDetails(transaction)
                         val customerRegions = getRegionDetails(
-                                customerId = customerId,
+                                customerId = customer.id,
                                 transaction = transaction)
                         combineRegions(allRegions, customerRegions)
                                 .filter { allowedIds.contains(it.region.id) }
@@ -521,24 +525,17 @@ object Neo4jStoreSingleton : GraphStore {
             identity: org.ostelco.prime.model.Identity,
             regionCode: String): Either<StoreError, RegionDetails> = readTransaction {
 
-        getCustomerId(identity = identity)
-                .flatMap { customerId ->
-                    getAllowedRegionIds(identity, transaction).flatMap { allowedIds ->
+        getCustomer(identity = identity)
+                .flatMap { customer ->
+                    allowedRegionsService.get(customer, transaction).flatMap { allowedIds ->
                         getRegionDetails(
-                                customerId = customerId,
+                                customerId = customer.id,
                                 regionCode = regionCode,
                                 transaction = transaction).singleOrNull { allowedIds.contains(it.region.id) }
                                 ?.right()
-                                ?: NotFoundError(type = customerRegionRelation.name, id = "$customerId -> $regionCode").left()
+                                ?: NotFoundError(type = customerRegionRelation.name, id = "${customer.id} -> $regionCode").left()
                     }
                 }
-    }
-
-    // Retrieve the list of allowed region Ids from AllowedRegionsService
-    private fun getAllowedRegionIds(
-            identity: org.ostelco.prime.model.Identity,
-            transaction: PrimeTransaction): Either<StoreError, Collection<String>> = getCustomer(identity).flatMap {
-        allowedRegionsService.get(identity, it, transaction)
     }
 
     private fun getRegionDetails(
@@ -1797,6 +1794,7 @@ object Neo4jStoreSingleton : GraphStore {
                                         regionCode = updatedScanInformation.countryCode.toLowerCase(),
                                         kycType = JUMIO,
                                         kycExpiryDate = updatedScanInformation.scanResult?.expiry,
+                                        kycIdType = updatedScanInformation.scanResult?.type,
                                         transaction = transaction)
                             }
                 } else {
@@ -2021,12 +2019,13 @@ object Neo4jStoreSingleton : GraphStore {
 
     // FIXME: vihang This implementation has risk of loss of data due during concurrency to stale read since it does
     // READ-UPDATE-WRITE.
-    private fun setKycStatus(
+    fun setKycStatus(
             customer: Customer,
             regionCode: String,
             kycType: KycType,
             kycStatus: KycStatus = KycStatus.APPROVED,
             kycExpiryDate: String? = null,
+            kycIdType: String? = null,
             transaction: Transaction): Either<StoreError, Unit> {
 
         return IO {
@@ -2054,6 +2053,17 @@ object Neo4jStoreSingleton : GraphStore {
                         AuditLog.info(customerId = customer.id, message = "Setting $kycType status from $existingKycStatus to $newKycStatus")
                     } else {
                         AuditLog.info(customerId = customer.id, message = "Setting $kycType status from $existingKycStatus to $newKycStatus instead of $kycStatus")
+                    }
+                    if (newKycStatus == KycStatus.APPROVED) {
+                        onKycApprovedAction.apply(
+                                customer = customer,
+                                regionCode = regionCode,
+                                kycType = kycType,
+                                kycExpiryDate = kycExpiryDate,
+                                kycIdType = kycIdType,
+                                allowedRegionsService = allowedRegionsService,
+                                transaction = PrimeTransaction(transaction)
+                        ).bind()
                     }
                 } else {
                     AuditLog.info(customerId = customer.id, message = "Ignoring setting $kycType status to $kycStatus since it is already $existingKycStatus")
@@ -2131,6 +2141,7 @@ object Neo4jStoreSingleton : GraphStore {
 
         AuditLog.info(customerId = customerId, message = "Approved for region - $regionCode by Admin")
 
+        // create, but fail if already exists
         customerRegionRelationStore.create(
                 fromId = customerId,
                 relation = CustomerRegion(
@@ -2139,9 +2150,38 @@ object Neo4jStoreSingleton : GraphStore {
                 ),
                 toId = regionCode,
                 transaction = transaction
-        )
+        ).flatMapLeft { storeError ->
+            // if already exists
+            if(storeError is AlreadyExistsError) {
+                // then get the stored relation value
+                customerRegionRelationStore.get(
+                        fromId = customerId,
+                        toId = regionCode,
+                        transaction = transaction)
+                        .map { customerRegion ->
+                            if (customerRegion.status != APPROVED) {
+                                // and store the updated relation value
+                                customerRegionRelationStore.createOrUpdate(
+                                        fromId = customerId,
+                                        relation = customerRegion.copy(status = APPROVED), // with only status modified to APPROVED
+                                        toId = regionCode,
+                                        transaction = transaction)
+                            }
+                        }
+            } else {
+                // return other store errors which are not AlreadyExistsError
+                storeError.left()
+            }
+        }
     }
 
+    private inline fun <A, B> EitherOf<A, B>.flatMapLeft(f: (A) -> Either<A, B>): Either<A, B> =
+            fix().let {
+                when (it) {
+                    is Right -> it
+                    is Left -> f(it.a)
+                }
+            }
     //
     // Balance (Customer - Subscription - Bundle)
     //
