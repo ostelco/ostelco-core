@@ -196,7 +196,6 @@ sealed class BaseRelationStore
 
 // TODO vihang: check if relation already exists, with allow duplicate boolean flag param
 class RelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType: RelationType<FROM, RELATION, TO>) : BaseRelationStore() {
-    private val logger by getLogger()
 
     init {
         relationType.relationStore = this
