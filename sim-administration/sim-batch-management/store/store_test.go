@@ -35,8 +35,7 @@ func setup() {
 		panic(fmt.Errorf("Couldn't open new in memory database  '%s", err))
 	}
 
-	err = sdb.GenerateTables()
-	if err != nil {
+	if err = sdb.GenerateTables();  err != nil {
 		panic(fmt.Sprintf("Couldn't generate tables  '%s'", err))
 	}
 
@@ -62,8 +61,7 @@ func cleanTables() {
 
 func shutdown() {
 	cleanTables()
-	err := sdb.DropTables()
-	if err != nil {
+	if err := sdb.DropTables(); err != nil {
 		panic(fmt.Sprintf("Couldn't drop tables  '%s'", err))
 	}
 	sdb.Db.Close()
@@ -71,8 +69,7 @@ func shutdown() {
 
 // ... just to know that everything is sane.
 func TestMemoryDbPing(t *testing.T) {
-	err = sdb.Db.Ping()
-	if err != nil {
+	if err = sdb.Db.Ping(); err != nil {
 		t.Errorf("Could not ping in-memory database. '%s'", err)
 	}
 }
