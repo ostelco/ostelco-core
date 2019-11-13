@@ -2163,12 +2163,14 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     override fun getIdentitiesFor(queryString: String): Either<StoreError, Collection<ModelIdentity>> = readTransaction {
-        read("""
+        val parameters: Map<String, Any> = mapOf("queryString" to queryString.toLowerCase())
+        read(query = """
                 MATCH (c:${customerEntity.name})<-[r:${identifiesRelation.name}]-(identity:${identityEntity.name})
-                WHERE c.contactEmail contains '$queryString' or c.nickname contains '$queryString' or c.id contains '$queryString'
+                WHERE toLower(c.contactEmail) contains ${'$'}queryString or toLower(c.nickname) contains ${'$'}queryString or toLower(c.id) contains ${'$'}queryString
                 RETURN identity, r.provider as provider
                 """.trimIndent(),
-                transaction) {
+                transaction = transaction,
+                parameters = parameters) {
             if (it.hasNext()) {
                 val identityList = mutableListOf<ModelIdentity>()
                 it.forEach { record ->

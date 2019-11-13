@@ -527,10 +527,10 @@ object Graph {
         }.let(transform)
     }
 
-    fun <R> read(query: String, transaction: Transaction, transform: (StatementResult) -> R): R {
+    fun <R> read(query: String, transaction: Transaction, parameters: Map<String, Any> = emptyMap(), transform: (StatementResult) -> R): R {
         LOG.trace("read:[\n$query\n]")
         return trace.childSpan("neo4j.read") {
-            transaction.run(query)
+            transaction.run(query, parameters)
         }.let(transform)
     }
 
