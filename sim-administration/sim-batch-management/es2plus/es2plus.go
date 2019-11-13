@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
@@ -294,22 +293,34 @@ func marshalUnmarshalGenericEs2plusCommand(
 	// Get the result of the HTTP POST as a byte array
 	// that can be deserialized into json.  Fail fast
 	// an error has been detected.
-	responseBytes, err := executeGenericEs2plusCommand(
+	return executeGenericEs2plusCommand(
+	        result,
 	        jsonStrB,
 	        client.hostport,
 	        es2plusCommand,
 	        client.httpClient,
 	        client.logHeaders)
-	if err != nil {
-		return err
-	}
 
+
+/*
+u := User{Id: "US123", Balance: 8}
+	b := new(bytes.Buffer)
+	json.NewEncoder(b).Encode(u)
+	res, _ := http.Post("https://httpbin.org/post", "application/json; charset=utf-8", b)
+	var body struct {
+		// httpbin.org sends back key/value pairs, no map[string][]string
+		Headers map[string]string `json:"headers"`
+		Origin  string            `json:"origin"`
+	}
+	json.NewDecoder(res.Body).Decode(&body)
+	fmt.Println(body)
+	*/
 	// Return error code from deserialisation, result is put into
 	// result via referenced object.
-	return json.Unmarshal(responseBytes, result)
+	// return json.Unmarshal(responseBytes, result)
 }
 
-func executeGenericEs2plusCommand(jsonStrB *bytes.Buffer, hostport string, es2plusCommand string, httpClient *http.Client, logHeaders bool) ([]byte, error) {
+func executeGenericEs2plusCommand(result interface {}, jsonStrB *bytes.Buffer, hostport string, es2plusCommand string, httpClient *http.Client, logHeaders bool) (error) {
 
 	// Build and execute an ES2+ protocol request by using the serialised JSON in the
 	// byte array jsonStrB in a POST request.   Set up the required
@@ -317,7 +328,7 @@ func executeGenericEs2plusCommand(jsonStrB *bytes.Buffer, hostport string, es2pl
 	url := fmt.Sprintf("https://%s/gsma/rsp2/es2plus/%s", hostport, es2plusCommand)
 	req, err := http.NewRequest("POST", url, jsonStrB)
 	if err != nil {
-		return nil, err
+		return  err
 	}
 	req.Header.Set("X-Admin-Protocol", "gsma/rsp/v2.0.0")
 	req.Header.Set("Content-Type", "application/json")
@@ -331,20 +342,13 @@ func executeGenericEs2plusCommand(jsonStrB *bytes.Buffer, hostport string, es2pl
 
 	// On http protocol failure return quickly
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// TODO Should check response headers here!
 	// (in particular X-admin-protocol) and fail if not OK.
 
-	// Get payload bytes from response body and return them.
-	// Return an error if the bytes can't be retrieved.
-	response, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	responseBytes := []byte(response)
-	return responseBytes, nil
+	return json.NewDecoder(resp.Body).Decode(&result)
 }
 
 ///
