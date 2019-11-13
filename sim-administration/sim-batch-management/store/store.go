@@ -322,7 +322,7 @@ func (sdb SimBatchDB) DeclareBatch(
 
 	tail := flag.Args()
 	if len(tail) != 0 {
-		return nil, fmt.Errorf("Unknown parameters:  %s", flag.Args())
+		return nil, fmt.Errorf("unknown parameters:  %s", flag.Args())
 	}
 
 	filenameBase := fmt.Sprintf("%s%s%s", customer, orderDate, batchNo)

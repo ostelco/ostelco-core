@@ -148,10 +148,16 @@ var (
 )
 
 func main() {
+	if err := parseCommandLine() ; err != nil {
+		panic(err)
+	}
+}
+
+func parseCommandLine() error {
 
 	db, err := store.OpenFileSqliteDatabase("foobar.db")
 	if err != nil {
-		panic(fmt.Sprintf("Couldn't open sqlite database.  '%s'", err))
+		return fmt.Errorf("couldn't open sqlite database.  '%s'", err)
 	}
 
 	db.GenerateTables()
@@ -165,10 +171,10 @@ func main() {
 
 		outRecord := outfileparser.ParseOutputFile(inputFile)
 		outputFile := outputFilePrefix + outRecord.OutputFileName + ".csv"
-		fmt.Println("outputFile = ", outputFile)
+		log.Println("outputFile = ", outputFile)
 
 		if err := outfileparser.WriteHssCsvFile(outputFile, outRecord.Entries); err != nil {
-			log.Fatal("Couldn't close output file '", outputFilePrefix, "'.  Error = '", err, "'")
+			return fmt.Errorf("couldn't close output file '%s', .  Error = '%v'", outputFilePrefix, err)
 		}
 
 	case "declare-profile-vendor":
@@ -178,7 +184,7 @@ func main() {
 
 		allBatches, err := db.GetAllBatches()
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		fmt.Println("Names of current batches: ")
@@ -190,15 +196,15 @@ func main() {
 
 		batch, err := db.GetBatchByName(*describeBatchBatch)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		if batch == nil {
-			fmt.Printf("No batch found with name '%s'\n", *describeBatchBatch)
+			return fmt.Errorf("no batch found with name '%s'", *describeBatchBatch)
 		} else {
 			bytes, err := json.MarshalIndent(batch, "    ", "     ")
 			if err != nil {
-				fmt.Println("Can't serialize", batch)
+				return fmt.Errorf("can't serialize batch '%v'", batch)
 			}
 
 			fmt.Printf("%v\n", string(bytes))
@@ -207,13 +213,12 @@ func main() {
 	case "generate-activation-code-updating-sql":
 		batch, err := db.GetBatchByName(*generateActivationCodeSqlBatch)
 		if err != nil {
-			msg := fmt.Sprintf("Couldn't find batch named '%s' (%s) ", *generateActivationCodeSqlBatch, err)
-			panic(msg)
+				return fmt.Errorf("couldn't find batch named '%s' (%s) ", *generateActivationCodeSqlBatch, err)
 		}
 
 		simEntries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		for _, b := range simEntries {
@@ -226,11 +231,11 @@ func main() {
 	case "generate-batch-upload-script":
 		batch, err := db.GetBatchByName(*generateUploadBatchBatch)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		if batch == nil {
-			fmt.Printf("No batch found with name '%s'\n", *describeBatchBatch)
+			return fmt.Errorf("no batch found with name '%s'", *describeBatchBatch)
 		} else {
 			var csvPayload = uploadtoprime.GenerateCsvPayload3(db, *batch)
 			uploadtoprime.GeneratePostingCurlscript(batch.Url, csvPayload)
@@ -243,7 +248,7 @@ func main() {
 		}
 
 		if batch == nil {
-			fmt.Printf("No batch found with name '%s'\n", *generateInputFileBatchname)
+			return fmt.Errorf("no batch found with name '%s'", *generateInputFileBatchname)
 		} else {
 			var result = GenerateInputFile(batch)
 			fmt.Println(result)
@@ -256,7 +261,7 @@ func main() {
 
 		batch, err := db.GetBatchByName(batchName)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		csvFile, _ := os.Open(csvFilename)
@@ -264,11 +269,11 @@ func main() {
 
 		defer csvFile.Close()
 
-		headerLine, error := reader.Read()
-		if error == io.EOF {
+		headerLine, err := reader.Read()
+		if err == io.EOF {
 			break
-		} else if error != nil {
-			log.Fatal(error)
+		} else if err != nil {
+			return err
 		}
 
 		var columnMap map[string]int
@@ -279,15 +284,15 @@ func main() {
 		}
 
 		if _, hasIccid := columnMap["Iccid"]; !hasIccid {
-			panic("No ICCID  column in CSV file")
+			return fmt.Errorf("no ICCID  column in CSV file")
 		}
 
 		if _, hasMsisdn := columnMap["msisdn"]; !hasMsisdn {
-			panic("No MSISDN  column in CSV file")
+			return fmt.Errorf("no MSISDN  column in CSV file")
 		}
 
 		if _, hasImsi := columnMap["imsi"]; !hasImsi {
-			panic("No IMSI  column in CSV file")
+			return fmt.Errorf("no IMSI  column in CSV file")
 		}
 
 		type csvRecord struct {
@@ -321,7 +326,7 @@ func main() {
 			}
 
 			if _, duplicateRecordExists := recordMap[record.iccid]; duplicateRecordExists {
-				panic(fmt.Sprintf("Duplicate ICCID record in map: %s", record.iccid))
+				return fmt.Errorf("duplicate ICCID record in map: %s", record.iccid)
 			}
 
 			recordMap[record.iccid] = record
@@ -344,12 +349,12 @@ func main() {
 
 			if entry.Imsi != record.imsi {
 				tx.Rollback()
-				panic(fmt.Sprintf("IMSI mismatch for ICCID=%s.  Batch has %s, csv file has %s", entry.Iccid, entry.Imsi, record.iccid))
+				return fmt.Errorf("IMSI mismatch for ICCID=%s.  Batch has %s, csv file has %s", entry.Iccid, entry.Imsi, record.iccid)
 			}
 
 			if entry.Msisdn != "" && record.msisdn != "" && record.msisdn != entry.Msisdn {
 				tx.Rollback()
-				panic(fmt.Sprintf("MSISDN mismatch for ICCID=%s.  Batch has %s, csv file has %s", entry.Iccid, entry.Msisdn, record.msisdn))
+				return fmt.Errorf("MSISDN mismatch for ICCID=%s.  Batch has %s, csv file has %s", entry.Iccid, entry.Msisdn, record.msisdn)
 			}
 
 			if entry.Msisdn == "" && record.msisdn != "" {
@@ -363,10 +368,10 @@ func main() {
 		}
 		tx.Commit()
 
-		fmt.Printf("Updated %d of a total of %d records in batch '%s'\n", noOfRecordsUpdated, len(simEntries), batchName)
+		log.Printf("Updated %d of a total of %d records in batch '%s'\n", noOfRecordsUpdated, len(simEntries), batchName)
 
 	case "declare-batch":
-		fmt.Println("Declare batch")
+		log.Println("Declare batch")
 		db.DeclareBatch(
 			*dbName,
 			*dbAddLuhn,
@@ -398,34 +403,37 @@ func main() {
 
 			result, err := client.GetStatus(iccid)
 			if err != nil {
-				panic(err)
+				return err
 			}
 
-			fmt.Printf("Iccid='%s', state='%s', acToken='%s'\n", iccid, (*result).State, (*result).ACToken)
+			log.Printf("Iccid='%s', state='%s', acToken='%s'\n", iccid, (*result).State, (*result).ACToken)
 		case "recover-profile":
-			checkEs2TargetState(es2Target)
+			err := checkEs2TargetState(es2Target)
+			if err != nil {
+				return err
+			}
 			result, err := client.RecoverProfile(iccid, *es2Target)
 			if err != nil {
-				panic(err)
+				return err
 			}
-			fmt.Println("result -> ", result)
+			log.Println("result -> ", result)
 		case "download-order":
 			result, err := client.DownloadOrder(iccid)
 			if err != nil {
-				panic(err)
+				return err
 			}
-			fmt.Println("result -> ", result)
+			log.Println("result -> ", result)
 		case "confirm-order":
 			result, err := client.ConfirmOrder(iccid)
 			if err != nil {
-				panic(err)
+				return err
 			}
 			fmt.Println("result -> ", result)
 		case "activate-Iccid":
 			result, err := client.ActivateIccid(iccid)
 
 			if err != nil {
-				panic(err)
+				return err
 			}
 			fmt.Printf("%s, %s\n", iccid, result.ACToken)
 
@@ -464,11 +472,11 @@ func main() {
 
 			// Read all the lines into the record map.
 			for {
-				line, error := reader.Read()
-				if error == io.EOF {
+				line, err := reader.Read()
+				if err == io.EOF {
 					break
-				} else if error != nil {
-					log.Fatal(error)
+				} else if err != nil {
+					return err
 				}
 
 				iccid := line[columnMap["Iccid"]]
@@ -535,11 +543,11 @@ func main() {
 		case "get-profile-activation-statuses-for-batch":
 			batchName := iccid
 
-			fmt.Printf("Getting statuses for all profiles in batch  named %s\n", batchName)
+			log.Printf("Getting statuses for all profiles in batch  named %s\n", batchName)
 
 			batch, err := db.GetBatchByName(batchName)
 			if err != nil {
-				panic(fmt.Errorf("unknown batch '%s'", batchName))
+				return fmt.Errorf("unknown batch '%s'", batchName)
 			}
 
 			entries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
@@ -548,10 +556,10 @@ func main() {
 			}
 
 			if len(entries) != batch.Quantity {
-				panic(fmt.Sprintf("Batch quantity retrieved from database (%d) different from batch quantity (%d)\n", len(entries), batch.Quantity))
+				return fmt.Errorf("batch quantity retrieved from database (%d) different from batch quantity (%d)", len(entries), batch.Quantity)
 			}
 
-			fmt.Printf("Found %d profiles\n", len(entries))
+			log.Printf("Found %d profiles\n", len(entries))
 
 			// XXX Is this really necessary? I don't think so
 			var mutex = &sync.Mutex{}
@@ -585,7 +593,7 @@ func main() {
 					}
 
 					if result == nil {
-						panic(fmt.Sprintf("Couldn't find any status for Iccid='%s'\n", entry.Iccid))
+						log.Printf("ERROR: Couldn't find any status for Iccid='%s'\n", entry.Iccid)
 					}
 
 					mutex.Lock()
@@ -607,7 +615,7 @@ func main() {
 
 			batch, err := db.GetBatchByName(batchName)
 			if err != nil {
-				panic(fmt.Errorf("unknown batch '%s'", batchName))
+				return fmt.Errorf("unknown batch '%s'", batchName)
 			}
 
 			entries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
@@ -616,7 +624,7 @@ func main() {
 			}
 
 			if len(entries) != batch.Quantity {
-				panic(fmt.Sprintf("Batch quantity retrieved from database (%d) different from batch quantity (%d)\n", len(entries), batch.Quantity))
+				return fmt.Errorf("batch quantity retrieved from database (%d) different from batch quantity (%d)", len(entries), batch.Quantity)
 			}
 
 			// XXX Is this really necessary? I don't think so
@@ -701,25 +709,32 @@ func main() {
 			}
 
 		case "cancel-profile":
-			checkEs2TargetState(es2Target)
-			_, err := client.CancelOrder(iccid, *es2Target)
+			err := checkEs2TargetState(es2Target)
 			if err != nil {
-				panic(err)
+				return err
+			}
+			_, err = client.CancelOrder(iccid, *es2Target)
+			if err != nil {
+				return err
 			}
 		default:
-			panic(fmt.Sprintf("Unknown es2+ subcommand '%s', try --help", *es2cmd))
+			return fmt.Errorf("unknown es2+ subcommand '%s', try --help", *es2cmd)
 		}
 	case "batch":
 		fmt.Println("Doing the batch thing.")
 		// storage.doTheBatchThing()
 	default:
-		panic(fmt.Sprintf("Unknown command: '%s'\n", cmd))
+		return fmt.Errorf("unknown command: '%s'", cmd)
 	}
+
+	return nil
 }
 
-func checkEs2TargetState(target *string) {
+func checkEs2TargetState(target *string) error {
 	if *target != "AVAILABLE" {
-		panic("Target ES2+ state unexpected, legal value(s) is(are): 'AVAILABLE'")
+		return fmt.Errorf("target ES2+ state unexpected, legal value(s) is(are): 'AVAILABLE'")
+	} else {
+		return nil
 	}
 }
 
