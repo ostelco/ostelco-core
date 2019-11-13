@@ -168,7 +168,7 @@ func Client(certFilePath string, keyFilePath string, hostport string, requesterI
 func newHttpClient(certFilePath string, keyFilePath string) *http.Client {
 	cert, err := tls.LoadX509KeyPair(
 		certFilePath,
-		keyFilePath)
+		keyFilePath);
 	if err != nil {
 		log.Fatalf("server: loadkeys: %s", err)
 	}
@@ -221,7 +221,7 @@ func formatRequest(r *http.Request) string {
 }
 
 func newUuid() (string, error) {
-	uuid, err := uuid.NewRandom()
+	uuid, err := uuid.NewRandom();
 	if err != nil {
 		return "", err
 	}
@@ -274,7 +274,7 @@ func executeGenericEs2plusCommand(result interface {}, jsonStrB *bytes.Buffer, h
 	// byte array jsonStrB in a POST request.   Set up the required
 	// headers for ES2+ and content type.
 	url := fmt.Sprintf("https://%s/gsma/rsp2/es2plus/%s", hostport, es2plusCommand)
-	req, err := http.NewRequest("POST", url, jsonStrB)
+	req, err := http.NewRequest("POST", url, jsonStrB);
 	if err != nil {
 		return  err
 	}
@@ -306,7 +306,7 @@ func executeGenericEs2plusCommand(result interface {}, jsonStrB *bytes.Buffer, h
 func (client *Es2PlusClientState) GetStatus(iccid string) (*ProfileStatus, error) {
 	result := new(ES2ProfileStatusResponse)
 	es2plusCommand := "getProfileStatus"
-	header, err := newEs2plusHeader(client)
+	header, err := newEs2plusHeader(client);
 	if err != nil {
 		return nil, err
 	}
@@ -314,8 +314,7 @@ func (client *Es2PlusClientState) GetStatus(iccid string) (*ProfileStatus, error
 		Header:    *header,
 		IccidList: []ES2PlusIccid{ES2PlusIccid{Iccid: iccid}},
 	}
-	err = marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result)
-	if err != nil {
+	if err = marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result); err != nil {
 		return nil, err
 	}
 
@@ -331,7 +330,7 @@ func (client *Es2PlusClientState) GetStatus(iccid string) (*ProfileStatus, error
 func (client *Es2PlusClientState) RecoverProfile(iccid string, targetState string) (*ES2PlusRecoverProfileResponse, error) {
 	result := new(ES2PlusRecoverProfileResponse)
 	es2plusCommand := "recoverProfile"
-	header, err := newEs2plusHeader(client)
+	header, err := newEs2plusHeader(client);
 	if err != nil {
 		return nil, err
 	}
@@ -346,7 +345,7 @@ func (client *Es2PlusClientState) RecoverProfile(iccid string, targetState strin
 func (client *Es2PlusClientState) CancelOrder(iccid string, targetState string) (*ES2PlusCancelOrderResponse, error) {
 	result := new(ES2PlusCancelOrderResponse)
 	es2plusCommand := "cancelOrder"
-	header, err := newEs2plusHeader(client)
+	header, err := newEs2plusHeader(client);
 	if err != nil {
 		return nil, err
 	}
@@ -361,7 +360,7 @@ func (client *Es2PlusClientState) CancelOrder(iccid string, targetState string) 
 func (client *Es2PlusClientState) DownloadOrder(iccid string) (*ES2PlusDownloadOrderResponse, error) {
 	result := new(ES2PlusDownloadOrderResponse)
 	es2plusCommand := "downloadOrder"
-	header, err := newEs2plusHeader(client)
+	header, err := newEs2plusHeader(client);
 	if err != nil {
 		return nil, err
 	}
@@ -371,8 +370,8 @@ func (client *Es2PlusClientState) DownloadOrder(iccid string) (*ES2PlusDownloadO
 		Eid:         "",
 		Profiletype: "",
 	}
-	err = marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result)
-	if err != nil {
+	err = marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result);
+	if  err != nil {
 		return nil, err
 	}
 
@@ -401,8 +400,7 @@ func (client *Es2PlusClientState) ConfirmOrder(iccid string) (*ES2PlusConfirmOrd
 		ReleaseFlag:      true,
 	}
 
-	err = marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result)
-	if err != nil {
+	if err = marshalUnmarshalGenericEs2plusCommand(client, es2plusCommand, payload, result);  err != nil {
 		return nil, err
 	}
 
@@ -416,8 +414,7 @@ func (client *Es2PlusClientState) ConfirmOrder(iccid string) (*ES2PlusConfirmOrd
 
 func (client *Es2PlusClientState) ActivateIccid(iccid string) (*ProfileStatus, error) {
 
-	result, err := client.GetStatus(iccid)
-
+	result, err := client.GetStatus(iccid);
 	if err != nil {
 		panic(err)
 	}
@@ -425,19 +422,16 @@ func (client *Es2PlusClientState) ActivateIccid(iccid string) (*ProfileStatus, e
 	if result.ACToken == "" {
 
 		if result.State == "AVAILABLE" {
-			_, err := client.DownloadOrder(iccid)
-			if err != nil {
+			if _, err := client.DownloadOrder(iccid); err != nil {
 				return nil, err
 			}
-			result, err = client.GetStatus(iccid)
-			if err != nil {
+			if result, err = client.GetStatus(iccid);  err != nil {
 				return nil, err
 			}
 		}
 
 		if result.State == "ALLOCATED" {
-			_, err = client.ConfirmOrder(iccid)
-			if err != nil {
+			if _, err = client.ConfirmOrder(iccid) ;  err != nil {
 				return nil, err
 			}
 		}
