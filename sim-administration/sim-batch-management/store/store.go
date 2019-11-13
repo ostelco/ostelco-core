@@ -275,11 +275,11 @@ func (sdb SimBatchDB) DeclareBatch(
 
 	batchLength, err := strconv.Atoi(batchLengthString)
 	if err != nil {
-		log.Fatalf("Not a valid batch Quantity string '%s'.\n", batchLengthString)
+		return nil, fmt.Errorf("not a valid batch Quantity string '%s'", batchLengthString)
 	}
 
 	if batchLength <= 0 {
-		log.Fatalf("OutputBatch Quantity must be positive, but was '%d'", batchLength)
+		return nil, fmt.Errorf("OutputBatch Quantity must be positive, but was '%d'", batchLength)
 	}
 
 	uploadUrl := fmt.Sprintf("http://%s:%s/ostelco/sim-inventory/%s/import-batch/profilevendor/%s?initialHssState=%s",
@@ -322,7 +322,7 @@ func (sdb SimBatchDB) DeclareBatch(
 
 	tail := flag.Args()
 	if len(tail) != 0 {
-		log.Printf("Unknown parameters:  %s", flag.Args())
+		return nil, fmt.Errorf("Unknown parameters:  %s", flag.Args())
 	}
 
 	filenameBase := fmt.Sprintf("%s%s%s", customer, orderDate, batchNo)
@@ -365,7 +365,7 @@ func (sdb SimBatchDB) DeclareBatch(
 
 	imsi, err := strconv.Atoi(batch.FirstImsi)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	// Now create all the sim profiles
@@ -375,7 +375,7 @@ func (sdb SimBatchDB) DeclareBatch(
 	// XXX !!! TODO THis is wrong, but I'm doing it now, just to get started!
 	var msisdn, err2 = strconv.Atoi(batch.FirstMsisdn)
 	if err2 != nil {
-		panic(err)
+		return nil, err
 	}
 
 	for i := 0; i < batch.Quantity; i++ {
@@ -395,7 +395,7 @@ func (sdb SimBatchDB) DeclareBatch(
 		}
 
 		if err = sdb.CreateSimEntry(simEntry);  err != nil {
-			panic(err)
+			return nil, err
 		}
 
 		iccidWithoutLuhnChecksum += batch.IccidIncrement
