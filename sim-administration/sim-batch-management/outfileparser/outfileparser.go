@@ -89,13 +89,12 @@ func ParseVarOutLine(varOutLine string, result *map[string]int) (error) {
 // Implement a state machine that parses an output file.
 func ParseOutputFile(filename string) OutputFileRecord {
 
-	_, err := os.Stat(filename)
-
-	if os.IsNotExist(err) {
-		log.Fatalf("Couldn't find file '%s'\n", filename)
-	}
-	if err != nil {
-		log.Fatalf("Couldn't stat file '%s'\n", filename)
+	if _, err := os.Stat(filename) ;  err != nil {
+		if os.IsNotExist(err) {
+			log.Fatalf("Couldn't find file '%s'\n", filename)
+		} else {
+			log.Fatalf("Couldn't stat file '%s'\n", filename)
+		}
 	}
 
 	file, err := os.Open(filename) // For read access.
@@ -153,8 +152,7 @@ func ParseOutputFile(filename string) OutputFileRecord {
 				if (len(state.csvFieldMap) != 0) {
 					log.Fatal("Parsing multiple 'var_out' lines can't be right")
 				}
-				err := ParseVarOutLine(line, &(state.csvFieldMap))
-				if err != nil {
+				if err := ParseVarOutLine(line, &(state.csvFieldMap)); err != nil {
 					log.Fatalf("Couldn't parse output variable declaration '%s'\n", err)
 				}
 				continue
@@ -293,17 +291,17 @@ func fileExists(filename string) bool {
 func WriteHssCsvFile(filename string, entries []model.SimEntry) error {
 
 	if fileExists(filename) {
-		log.Fatal("Output file already exists. '", filename, "'.")
+		return fmt.Errorf("output file already exists.  '%s'", filename)
 	}
 
 	f, err := os.Create(filename)
 	if err != nil {
-		log.Fatal("Couldn't create hss csv file '", filename, "': ", err)
+		return fmt.Errorf("couldn't create hss csv file '%s', %v", filename, err)
 	}
 
 	_, err = f.WriteString("ICCID, IMSI, KI\n")
 	if err != nil {
-		log.Fatal("Couldn't header to  hss csv file '", filename, "': ", err)
+		return fmt.Errorf("couldn't header to  hss csv file '%s', %v", filename, err)
 	}
 
 	max := 0
@@ -311,7 +309,7 @@ func WriteHssCsvFile(filename string, entries []model.SimEntry) error {
 		s := fmt.Sprintf("%s, %s, %s\n", entry.IccidWithChecksum, entry.Imsi, entry.Ki)
 		_, err = f.WriteString(s)
 		if err != nil {
-			log.Fatal("Couldn't write to  hss csv file '", filename, "': ", err)
+			return fmt.Errorf("couldn't write to  hss csv file '%s', %v", filename, err)
 		}
 		max = i + 1
 	}

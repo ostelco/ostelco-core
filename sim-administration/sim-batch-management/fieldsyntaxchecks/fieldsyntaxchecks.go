@@ -93,8 +93,7 @@ func CheckMSISDNSyntax(name string, potentialMSISDN string) {
 }
 
 func CheckURLSyntax(name string, theUrl string) {
-	_, err := url.ParseRequestURI(theUrl)
-	if err != nil {
+	if _, err := url.ParseRequestURI(theUrl);  err != nil {
 		log.Fatalf("Not a valid %s URL: '%s'.", name, theUrl)
 	}
 }
