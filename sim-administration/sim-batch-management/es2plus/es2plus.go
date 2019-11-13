@@ -239,7 +239,8 @@ func newEs2plusHeader(client Es2PlusClient) (*ES2PlusHeader, error) {
 	return &ES2PlusHeader{FunctionCallIdentifier: functionCallIdentifier, FunctionRequesterIdentifier: client.RequesterId()}, nil
 }
 
-func marshalUnmarshalGenericEs2plusCommand(
+/*
+func originalMarshalUnmarshalGenericEs2plusCommand(
     client *Es2PlusClientState,
     es2plusCommand string,
     payload interface{}, result interface{}) error {
@@ -271,14 +272,50 @@ func marshalUnmarshalGenericEs2plusCommand(
 	// result via referenced object.
 	return json.Unmarshal(responseBytes, result)
 }
+*/
 
-func executeGenericEs2plusCommand(jsonStrB []byte, hostport string, es2plusCommand string, httpClient *http.Client, logHeaders bool) ([]byte, error) {
+func marshalUnmarshalGenericEs2plusCommand(
+    client *Es2PlusClientState,
+    es2plusCommand string,
+    payload interface{}, result interface{}) error {
+
+	// Serialize payload as json.
+    jsonStrB := new(bytes.Buffer)
+    err := json.NewEncoder(jsonStrB).Encode(payload)
+
+	if err != nil {
+		return err
+	}
+
+	if client.logPayload {
+		log.Print("Payload ->", jsonStrB.String())
+	}
+
+	// Get the result of the HTTP POST as a byte array
+	// that can be deserialized into json.  Fail fast
+	// an error has been detected.
+	responseBytes, err := executeGenericEs2plusCommand(
+	        jsonStrB,
+	        client.hostport,
+	        es2plusCommand,
+	        client.httpClient,
+	        client.logHeaders)
+	if err != nil {
+		return err
+	}
+
+	// Return error code from deserialisation, result is put into
+	// result via referenced object.
+	return json.Unmarshal(responseBytes, result)
+}
+
+func executeGenericEs2plusCommand(jsonStrB *bytes.Buffer, hostport string, es2plusCommand string, httpClient *http.Client, logHeaders bool) ([]byte, error) {
 
 	// Build and execute an ES2+ protocol request by using the serialised JSON in the
 	// byte array jsonStrB in a POST request.   Set up the required
 	// headers for ES2+ and content type.
 	url := fmt.Sprintf("https://%s/gsma/rsp2/es2plus/%s", hostport, es2plusCommand)
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStrB))
+	req, err := http.NewRequest("POST", url, jsonStrB)
 	if err != nil {
 		return nil, err
 	}
