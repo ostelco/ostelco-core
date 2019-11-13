@@ -23,6 +23,7 @@ import org.ostelco.prime.storage.StoreError
 import org.ostelco.prime.storage.graph.Graph.read
 import org.ostelco.prime.storage.graph.Graph.write
 import org.ostelco.prime.storage.graph.ObjectHandler.getProperties
+import org.ostelco.prime.storage.graph.ObjectHandler.getStringProperties
 import org.ostelco.prime.tracing.Trace
 import java.util.concurrent.CompletionStage
 
@@ -77,9 +78,9 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
 
         return doNotExist(id = entity.id, transaction = transaction).flatMap {
 
-            val properties = getProperties(entity).toMutableMap()
+            val properties = getStringProperties(entity).toMutableMap()
             properties.putIfAbsent("id", entity.id)
-            val parameters:Map<String, Any> = mapOf("props" to properties)
+            val parameters: Map<String, Any> = mapOf("props" to properties)
             write(query = """CREATE (node:${entityType.name} ${'$'}props);""",
                     parameters = parameters,
                     transaction= transaction) {
@@ -148,7 +149,7 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
     fun update(entity: E, transaction: Transaction): Either<StoreError, Unit> {
 
         return exists(entity.id, transaction).flatMap {
-            val properties = getProperties(entity).toMutableMap()
+            val properties = getStringProperties(entity).toMutableMap()
             properties.putIfAbsent("id", entity.id)
             val parameters: Map<String, Any> = mapOf("props" to properties)
             write(query = """MATCH (node:${entityType.name} { id: '${entity.id}' }) SET node = ${'$'}props ;""",
@@ -203,7 +204,7 @@ class RelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType
 
     fun create(from: FROM, relation: RELATION, to: TO, transaction: Transaction): Either<StoreError, Unit> {
 
-        val properties = getProperties(relation as Any)
+        val properties = getStringProperties(relation as Any)
         val parameters: Map<String, Any> = mapOf("props" to properties)
         return write( query = """
                     MATCH (from:${relationType.from.name} { id: '${from.id}' }),(to:${relationType.to.name} { id: '${to.id}' })
@@ -248,7 +249,7 @@ class RelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType
 
     fun create(fromId: String, relation: RELATION, toId: String, transaction: Transaction): Either<StoreError, Unit> {
 
-        val properties = getProperties(relation as Any)
+        val properties = getStringProperties(relation as Any)
         val parameters: Map<String, Any> = mapOf("props" to properties)
         return write(query = """
                 MATCH (from:${relationType.from.name} { id: '$fromId' }),(to:${relationType.to.name} { id: '$toId' })
@@ -553,6 +554,7 @@ object ObjectHandler {
     //
     // Object to Map
     //
+    fun getStringProperties(any: Any): Map<String, String> = getProperties(any).map { it.key to it.value.toString() }.toMap()
 
     fun getProperties(any: Any): Map<String, Any> = toSimpleMap(
             objectMapper.convertValue(any, object : TypeReference<Map<String, Any?>>() {}))
