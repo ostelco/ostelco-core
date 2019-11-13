@@ -104,6 +104,7 @@ class ProtobufDataSource {
     private fun removeFromSessionMap(creditControlContext: CreditControlContext) {
         if (ProtobufToDiameterConverter.getRequestType(creditControlContext) == CreditControlRequestType.TERMINATION_REQUEST) {
             sessionIdMap.remove(creditControlContext.creditControlRequest.msisdn)
+            logger.debug("Number of active sessions : ${sessionIdMap.size}")
         }
     }
 
