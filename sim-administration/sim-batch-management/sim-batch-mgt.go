@@ -244,7 +244,7 @@ func parseCommandLine() error {
 	case "generate-input-file":
 		batch, err := db.GetBatchByName(*generateInputFileBatchname)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		if batch == nil {
@@ -334,7 +334,7 @@ func parseCommandLine() error {
 
 		simEntries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		// Check for compatibility
@@ -344,7 +344,7 @@ func parseCommandLine() error {
 			record, iccidRecordIsPresent := recordMap[entry.Iccid]
 			if !iccidRecordIsPresent {
 				tx.Rollback()
-				panic(fmt.Sprintf("ICCID not in batch: %s", entry.Iccid))
+				return fmt.Errorf("ICCID not in batch: %s", entry.Iccid)
 			}
 
 			if entry.Imsi != record.imsi {
@@ -361,7 +361,7 @@ func parseCommandLine() error {
 				err = db.UpdateSimEntryMsisdn(entry.Id, record.msisdn)
 				if err != nil {
 					tx.Rollback()
-					panic(err)
+					return err
 				}
 				noOfRecordsUpdated += 1
 			}
@@ -460,7 +460,7 @@ func parseCommandLine() error {
 			}
 
 			if _, hasIccid := columnMap["iccid"]; !hasIccid {
-				panic("No ICCID  column in CSV file")
+				return fmt.Errorf("no ICCID  column in CSV file")
 			}
 
 			type csvRecord struct {
@@ -486,7 +486,7 @@ func parseCommandLine() error {
 				}
 
 				if _, duplicateRecordExists := recordMap[record.Iccid]; duplicateRecordExists {
-					panic(fmt.Sprintf("Duplicate ICCID record in map: %s", record.Iccid))
+					return fmt.Errorf("duplicate ICCID record in map: %s", record.Iccid)
 				}
 
 				recordMap[record.Iccid] = record
@@ -552,7 +552,7 @@ func parseCommandLine() error {
 
 			entries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
 			if err != nil {
-				panic(err)
+				return err
 			}
 
 			if len(entries) != batch.Quantity {
@@ -620,7 +620,7 @@ func parseCommandLine() error {
 
 			entries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
 			if err != nil {
-				panic(err)
+				return err
 			}
 
 			if len(entries) != batch.Quantity {

@@ -393,7 +393,7 @@ func (client *Es2PlusClientState) ActivateIccid(iccid string) (*ProfileStatus, e
 
 	result, err := client.GetStatus(iccid)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	if result.ACToken == "" {
