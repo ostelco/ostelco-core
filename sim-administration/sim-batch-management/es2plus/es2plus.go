@@ -441,7 +441,6 @@ func (client *Es2PlusClientState) ActivateIccid(iccid string) (*ProfileStatus, e
 				return nil, err
 			}
 		}
-
 	}
 	result, err = client.GetStatus(iccid)
 	return result, err
