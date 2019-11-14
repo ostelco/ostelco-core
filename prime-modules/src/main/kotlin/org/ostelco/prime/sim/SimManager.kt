@@ -42,5 +42,5 @@ interface SimManager {
      * The status changes will typically originate from  ES2+ callbacks sent from the sim
      * profile vendor's SM-DP+ to the  sim manager instance.
      */
-    fun getSimProfileStatusUpdates(onUpdate:(iccId:String, status: SimProfileStatus) -> Unit)
+    fun addSimProfileStatusUpdateListener(listener:(iccId:String, status: SimProfileStatus) -> Unit)
 }

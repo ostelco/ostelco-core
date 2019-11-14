@@ -653,24 +653,38 @@ object Neo4jStoreSingleton : GraphStore {
             }
         }
 
-        override fun getSimProfileStatusUpdates(onUpdate: (iccId: String, status: SimProfileStatus) -> Unit) {
-            return trace.childSpan("simManager.getSimProfileStatusUpdates") {
-                simManager.getSimProfileStatusUpdates(onUpdate)
-            }
+        override fun addSimProfileStatusUpdateListener(listener: (iccId: String, status: SimProfileStatus) -> Unit) {
+            simManager.addSimProfileStatusUpdateListener(listener)
         }
     }
 
     fun subscribeToSimProfileStatusUpdates() {
-        simManager.getSimProfileStatusUpdates { iccId, status ->
+        simManager.addSimProfileStatusUpdateListener { iccId, status ->
             readTransaction {
                 IO {
                     Either.monad<StoreError>().binding {
-                        val subscriptions = get(Subscription under (SimProfile withId iccId)).bind()
-                        subscriptions.forEach { subscription ->
-                            analyticsReporter.reportSubscriptionStatusUpdate(subscription.analyticsId, status)
+                        logger.info("Received status {} for iccId {}", status, iccId)
+                        val simProfiles = getSimProfilesUsingIccId(iccId = iccId, transaction = transaction)
+                        if (simProfiles.size != 1) {
+                            logger.warn("Found {} SIM Profiles with iccId {}", simProfiles.size, iccId)
+                        }
+                        simProfiles.forEach { simProfile ->
+                            val subscriptions = get(Subscription under (SimProfile withId simProfile.id)).bind()
+                            subscriptions.forEach { subscription ->
+                                logger.info("Notify status {} for subscription.analyticsId {}", status, subscription.analyticsId)
+                                analyticsReporter.reportSubscriptionStatusUpdate(subscription.analyticsId, status)
+                            }
                         }
                     }.fix()
                 }.unsafeRunSync()
+            }
+        }
+    }
+
+    private fun getSimProfilesUsingIccId(iccId: String, transaction: Transaction): Collection<SimProfile> {
+        return read("""MATCH (sp:${simProfileEntity.name} {iccId:"$iccId"}) RETURN sp""", transaction) { statementResult ->
+            statementResult.list { record ->
+                simProfileEntity.createEntity(record["sp"].asMap())
             }
         }
     }
@@ -2163,12 +2177,14 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     override fun getIdentitiesFor(queryString: String): Either<StoreError, Collection<ModelIdentity>> = readTransaction {
-        read("""
+        val parameters: Map<String, Any> = mapOf("queryString" to queryString.toLowerCase())
+        read(query = """
                 MATCH (c:${customerEntity.name})<-[r:${identifiesRelation.name}]-(identity:${identityEntity.name})
-                WHERE c.contactEmail contains '$queryString' or c.nickname contains '$queryString' or c.id contains '$queryString'
+                WHERE toLower(c.contactEmail) contains ${'$'}queryString or toLower(c.nickname) contains ${'$'}queryString or toLower(c.id) contains ${'$'}queryString
                 RETURN identity, r.provider as provider
                 """.trimIndent(),
-                transaction) {
+                transaction = transaction,
+                parameters = parameters) {
             if (it.hasNext()) {
                 val identityList = mutableListOf<ModelIdentity>()
                 it.forEach { record ->
