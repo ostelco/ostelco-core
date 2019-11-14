@@ -47,6 +47,20 @@ var (
 	recoverProfileIccid = recoverProfile.Flag("iccid", "Iccid to recover profile  for").Required().String()
 	recoverProfileTarget = recoverProfile.Flag("target-state", "Desired target state").Required().String()
 
+	downloadOrder = kingpin.Command("download-order", "Execute es2p download-order.")
+	downloadOrderVendor = downloadOrder.Flag("profile-vendor", "Name of profile vendor").Required().String()
+	downloadOrderIccid = downloadOrder.Flag("iccid", "Iccid to recover profile  for").Required().String()
+
+	confirmOrder = kingpin.Command("confirm-order", "Execute es2p confirm-order.")
+	confirmOrderVendor = confirmOrder.Flag("profile-vendor", "Name of profile vendor").Required().String()
+	confirmOrderIccid = confirmOrder.Flag("iccid", "Iccid to confirm profile  for").Required().String()
+
+	activateIccid = kingpin.Command("activate-iccid", "Execute es2p confirm-order.")
+	activateIccidVendor = activateIccid.Flag("profile-vendor", "Name of profile vendor").Required().String()
+	activateIccidIccid = activateIccid.Flag("iccid", "Iccid to confirm profile  for").Required().String()
+
+
+
 	// TODO: Some command to list all profile-vendors, hsses, etc. , e.g. lspv, lshss, ...
 	// TODO: Add sftp coordinates to be used when fetching/uploding input/utput-files
 	// TODO: Declare hss-es, that can be refered to in profiles.
@@ -302,7 +316,6 @@ func parseCommandLine() error {
 		}
 
 	case "sim-profile-upload":
-
 		inputFile := *spUploadInputFile
 		outputFilePrefix := *spUploadOutputFilePrefix
 
@@ -315,7 +328,6 @@ func parseCommandLine() error {
 		}
 
 	case "list-batches":
-
 		allBatches, err := db.GetAllBatches()
 		if err != nil {
 			return err
@@ -555,6 +567,42 @@ func parseCommandLine() error {
 		}
 		log.Println("result -> ", result)
 
+	case "download-order":
+		client, err := ClientForVendor(db, *downloadOrderVendor)
+		if err != nil {
+			return err
+		}
+		result, err := client.DownloadOrder(*downloadOrderIccid)
+		if err != nil {
+			return err
+		}
+		log.Println("result -> ", result)
+
+	case "confirm-order":
+		client, err := ClientForVendor(db, *confirmOrderVendor)
+		if err != nil {
+			return err
+		}
+		result, err := client.ConfirmOrder(*confirmOrderIccid)
+		if err != nil {
+			return err
+		}
+		fmt.Println("result -> ", result)
+
+	case "activate-iccid":
+		client, err := ClientForVendor(db, *activateIccidVendor)
+		if err != nil {
+			return err
+		}
+
+		result, err := client.ActivateIccid(*activateIccidIccid)
+
+		if err != nil {
+			return err
+		}
+		fmt.Printf("%s, %s\n", *activateIccidIccid, result.ACToken)
+
+
 	case "es2":
 
 		vendor, err := db.GetProfileVendorByName(*es2ProfileVendor)
@@ -572,25 +620,8 @@ func parseCommandLine() error {
 		iccid := *es2iccid
 		switch *es2cmd {
 
-		case "download-order":
-			result, err := client.DownloadOrder(iccid)
-			if err != nil {
-				return err
-			}
-			log.Println("result -> ", result)
-		case "confirm-order":
-			result, err := client.ConfirmOrder(iccid)
-			if err != nil {
-				return err
-			}
-			fmt.Println("result -> ", result)
-		case "activate-Iccid":
-			result, err := client.ActivateIccid(iccid)
 
-			if err != nil {
-				return err
-			}
-			fmt.Printf("%s, %s\n", iccid, result.ACToken)
+
 
 		case "get-profile-activation-statuses-for-iccids-in-file":
 			csvFilename := iccid
