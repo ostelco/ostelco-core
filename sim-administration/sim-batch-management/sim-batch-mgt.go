@@ -229,13 +229,8 @@ func parseCommandLine() error {
 		if err != nil {
 			return fmt.Errorf("unknown batch '%s'", batchName)
 		}
-
-		// This is a monkeypatch
-		profileVendorName := "Idemia"
-		// TODO Should have been profileVendorName := batdh.ProfileVendor
-
-
-		client, err := ClientForVendor(db, profileVendorName)
+		
+		client, err := ClientForVendor(db,  batch.ProfileVendor)
 		if err != nil {
 			return err
 		}
