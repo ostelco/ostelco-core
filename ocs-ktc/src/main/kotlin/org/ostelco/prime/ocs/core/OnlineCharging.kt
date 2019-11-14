@@ -1,8 +1,6 @@
 package org.ostelco.prime.ocs.core
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.ostelco.ocs.api.CreditControlAnswerInfo
 import org.ostelco.ocs.api.CreditControlRequestInfo
 import org.ostelco.ocs.api.MultipleServiceCreditControl
@@ -96,7 +94,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                                     msisdn: String,
                                     responseBuilder: CreditControlAnswerInfo.Builder) {
 
-        val doneSignal = CountDownLatch(request.msccList.size)
+        val deferredList = mutableListOf<Deferred<Any>>()
 
         var reservationCounter = 0
 
@@ -108,7 +106,6 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                 reportAnalytics(consumptionResult, request)
                 Notifications.lowBalanceAlert(msisdn, consumptionResult.granted, consumptionResult.balance)
                 reservationCounter++
-                doneSignal.countDown()
             }
 
             suspend fun consumeRequestHandler(consumptionRequest: ConsumptionRequest) {
@@ -123,30 +120,31 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                                         // FixMe : should all store errors be unknown user?
                                         logger.error(storeError.message)
                                         responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN
-                                        doneSignal.countDown()
                                     },
                                     { consumptionResult ->  consumptionResultHandler(consumptionResult) }
                             )
                 }
             }
 
-            val requested = mscc.requested?.totalOctets ?: 0
-            if (requested > 0) {
-                consumptionPolicy.checkConsumption(
-                        msisdn = msisdn,
-                        multipleServiceCreditControl = mscc,
-                        sgsnMccMnc = request.serviceInformation.psInformation.sgsnMccMnc,
-                        apn = request.serviceInformation.psInformation.calledStationId,
-                        imsiMccMnc = request.serviceInformation.psInformation.imsiMccMnc)
-                        .bimap(
-                                { consumptionResult -> consumptionResultHandler(consumptionResult) },
-                                { consumptionRequest ->  consumeRequestHandler(consumptionRequest) }
-                        )
-            } else {
-                doneSignal.countDown()
+            val deferred = CoroutineScope(Dispatchers.Default).async {
+                val requested = mscc.requested?.totalOctets ?: 0
+                if (requested > 0) {
+                    consumptionPolicy.checkConsumption(
+                            msisdn = msisdn,
+                            multipleServiceCreditControl = mscc,
+                            sgsnMccMnc = request.serviceInformation.psInformation.sgsnMccMnc,
+                            apn = request.serviceInformation.psInformation.calledStationId,
+                            imsiMccMnc = request.serviceInformation.psInformation.imsiMccMnc)
+                            .bimap(
+                                    { consumptionResult -> consumptionResultHandler(consumptionResult) },
+                                    { consumptionRequest -> consumeRequestHandler(consumptionRequest) }
+                            )
+                }
             }
+            deferredList.add(deferred)
         }
-        doneSignal.await(2, TimeUnit.SECONDS)
+
+        deferredList.forEach{ it.await() }
 
         // In case there was no granted reservations the Validity-Time is set on base level, else it is set in each MSCC
         if (reservationCounter == 0) {
