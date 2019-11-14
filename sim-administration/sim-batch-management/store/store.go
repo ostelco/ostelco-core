@@ -18,14 +18,15 @@ type Store interface {
 	GenerateTables() error
 	DropTables() error
 
-	Create(theBatch *model.Batch) error
+	CreateBath(theBatch *model.Batch) error
 	GetAllBatches(id string) ([]model.Batch, error)
 	GetBatchById(id int64) (*model.Batch, error)
 	GetBatchByName(id string) (*model.Batch, error)
 
-	// TODO: Maybe make the argument list for this one a little shorter?
+	// TODO: Maybe make the argument list for this one a little shorter, or
+	//       perhaps this should be taken out of the store interface altogether
+	//       (probably the best)?
 	DeclareBatch(
-		db *SimBatchDB,
 		firstIccid string,
 		lastIccid string,
 		firstIMSI string,
@@ -44,6 +45,10 @@ type Store interface {
 	UpdateSimEntryMsisdn(simId int64, msisdn string)
 	UpdateActivationCode(simId int64, activationCode string) error
 	GetAllSimEntriesForBatch(batchId int64) ([]model.SimEntry, error)
+
+	CreateProfileVendor(*model.ProfileVendor) error
+	GetProfileVendorById(id int64) (*model.ProfileVendor, error)
+	GetProfileVendorByName(name string) (*model.ProfileVendor, error)
 
 	Begin()
 }
@@ -131,7 +136,7 @@ func (sdb SimBatchDB) CreateBatch(theBatch *model.Batch) error {
 }
 
 func (sdb *SimBatchDB) GenerateTables() error {
-	foo := `CREATE TABLE IF NOT EXISTS BATCH (
+	sql := `CREATE TABLE IF NOT EXISTS BATCH (
      id integer primary key autoincrement,
 	 name VARCHAR NOT NULL UNIQUE,
 	 filenameBase VARCHAR,
@@ -147,12 +152,12 @@ func (sdb *SimBatchDB) GenerateTables() error {
 	 imsiIncrement INTEGER,
 	 iccidIncrement INTEGER,
 	 url VARCHAR)`
-	_, err := sdb.Db.Exec(foo)
+	_, err := sdb.Db.Exec(sql)
 	if err != nil {
 		return err
 	}
 
-	foo = `CREATE TABLE IF NOT EXISTS SIM_PROFILE (
+	sql = `CREATE TABLE IF NOT EXISTS SIM_PROFILE (
          id INTEGER PRIMARY KEY AUTOINCREMENT,
          batchId INTEGER NOT NULL,
          activationCode VARCHAR NOT NULL,
@@ -163,22 +168,84 @@ func (sdb *SimBatchDB) GenerateTables() error {
          iccid VARCHAR NOT NULL,
          ki VARCHAR NOT NULL,
          msisdn VARCHAR NOT NULL)`
-	_, err = sdb.Db.Exec(foo)
+	_, err = sdb.Db.Exec(sql)
+	if err != nil {
+		return err
+	}
+
+	sql = `CREATE TABLE IF NOT EXISTS PROFILE_VENDOR (
+         id INTEGER PRIMARY KEY AUTOINCREMENT,
+         name VARCHAR NOT NULL UNIQUE,
+         es2PlusCertPath  VARCHAR
+         es2PlusKeyPath VARCHAR
+         es2PlusHostPath VARCHAR
+         es2PlusPort VARCHAR
+        )`
+	_, err = sdb.Db.Exec(sql)
+
+
 	return err
 }
+
+
+
+func (sdb SimBatchDB) CreateProfileVendor(theEntry *model.ProfileVendor) error {
+	// TODO: This insert string can be made through reflection, and at some point should be.
+	res, err := sdb.Db.NamedExec(`INSERT INTO PROFILE_VENDOR (name,   es2PlusCertPath, es2PlusKeyPath,  es2PlusHostPath,  es2PlusPort)
+                                                    VALUES (:name, :es2PlusKeyPath, :es2PlusKeyPath, :es2PlusHostPath, :es2PlusPort)`,
+		theEntry)
+	if err != nil {
+		return err
+	}
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		return fmt.Errorf("getting last inserted id failed '%s'", err)
+	}
+	theEntry.Id = id
+	return nil
+}
+
+func (sdb SimBatchDB) GetProfileVendorById(id int64) (*model.ProfileVendor, error) {
+	result:= []model.ProfileVendor{}
+	if err :=  sdb.Db.Select(&result, "select * from SIM_PROFILE where id = ?", id); err != nil {
+		return nil, err
+	}
+
+	if len(result) == 0 {
+		return nil, nil
+	} else {
+		return &result[0], nil
+	}
+}
+
+func (sdb SimBatchDB) GetProfileVendorByName(name string) (*model.ProfileVendor, error) {
+	result:= []model.ProfileVendor{}
+	if err :=  sdb.Db.Select(&result, "select * from SIM_PROFILE where name = ?", name); err != nil {
+		return nil, err
+	}
+
+	if len(result) == 0 {
+		return nil, nil
+	} else {
+		return &result[0], nil
+	}
+}
+
+
 
 func (sdb SimBatchDB) CreateSimEntry(theEntry *model.SimEntry) error {
 
 	res := sdb.Db.MustExec("INSERT INTO SIM_PROFILE (batchId, activationCode, rawIccid, iccidWithChecksum, iccidWithoutChecksum, iccid, imsi, msisdn, ki) values (?,?,?,?,?,?,?,?,?)",
-		(*theEntry).BatchID, // XXX Fix this!
-		(*theEntry).ActivationCode,
-		(*theEntry).RawIccid,
-		(*theEntry).IccidWithChecksum,
-		(*theEntry).IccidWithoutChecksum,
-		(*theEntry).Iccid,
-		(*theEntry).Imsi,
-		(*theEntry).Msisdn,
-		(*theEntry).Ki,
+		theEntry.BatchID,
+		theEntry.ActivationCode,
+		theEntry.RawIccid,
+		theEntry.IccidWithChecksum,
+		theEntry.IccidWithoutChecksum,
+		theEntry.Iccid,
+		theEntry.Imsi,
+		theEntry.Msisdn,
+		theEntry.Ki,
 	)
 
 	id, err := res.LastInsertId()
@@ -206,7 +273,6 @@ func (sdb SimBatchDB) UpdateSimEntryMsisdn(simId int64, msisdn string) error {
 			"msisdn": msisdn,
 		})
 	return err
-
 }
 
 func (sdb SimBatchDB) UpdateActivationCode(simId int64, activationCode string) error {

@@ -41,11 +41,11 @@ type Batch struct {
 	FirstMsisdn     string `db:"firstMsisdn" json:"firstMsisdn"`
 }
 
-type ProfileVendor {
+type ProfileVendor struct {
 	Id             int64   `db:"id" json:"id"`
 	Name           string  `db:"name" json:"name"`
-	Es2plusCert    string  `db:"es2PlusCert" json:"es2plusCert"`
-	Es2plusKey     string  `db:"es2PlusKey"  json:"es2PlusKey"`
-	Es2plusHost    string  `db:"es2PlusHost" json:"es2plusHost"`
-	Es2plusPort    string  `db:"es2PlusPort" json:"es2plusPort"`
+	Es2plusCert    string  `db:"es2PlusCertPath" json:"es2plusCertPath"`
+	Es2plusKey     string  `db:"es2PlusKeyPath"  json:"es2PlusKeyPath"`
+	Es2plusHost    string  `db:"es2PlusHostPath" json:"es2plusHostPath"`
+	Es2plusPort    int     `db:"es2PlusPort" json:"es2plusPort"`
 }
