@@ -44,8 +44,8 @@ type Batch struct {
 type ProfileVendor struct {
 	Id             int64   `db:"id" json:"id"`
 	Name           string  `db:"name" json:"name"`
-	Es2plusCert    string  `db:"es2PlusCertPath" json:"es2plusCertPath"`
-	Es2plusKey     string  `db:"es2PlusKeyPath"  json:"es2PlusKeyPath"`
-	Es2plusHost    string  `db:"es2PlusHostPath" json:"es2plusHostPath"`
-	Es2plusPort    int     `db:"es2PlusPort" json:"es2plusPort"`
+	Es2PlusCert    string  `db:"es2PlusCertPath" json:"es2plusCertPath"`
+	Es2PlusKey     string  `db:"es2PlusKeyPath"  json:"es2PlusKeyPath"`
+	Es2PlusHost    string  `db:"es2PlusHostPath" json:"es2plusHostPath"`
+	Es2PlusPort    int     `db:"es2PlusPort" json:"es2plusPort"`
 }
