@@ -116,7 +116,6 @@ func (sdb SimBatchDB) GetBatchByName(name string) (*model.Batch, error) {
 	if err := sdb.Db.Select(&result, "select * from BATCH where name = ?", name); err != nil {
 		return nil, err
 	} else if len(result) == 0 {
-		// fmt.Println("GetBatchByName: returning null  while searching for ", name)
 		return nil, nil
 	} else {
 		fmt.Println("returning batch: ", result[0])

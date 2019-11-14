@@ -195,8 +195,6 @@ func declareTestBatch(t *testing.T) *model.Batch {
 func TestDeclareBatch(t *testing.T) {
 	injectTestprofileVendor(t)
 	theBatch := declareTestBatch(t)
-	
-	fmt.Println("TestDeclareBatch: The batch id =", theBatch.BatchId)
 
 	retrievedValue, _ := sdb.GetBatchById(theBatch.BatchId)
 	if retrievedValue == nil {
@@ -213,7 +211,6 @@ func TestDeclareBatch(t *testing.T) {
 	assert.Equal(t, 1, len(retrievedEntries))
 
 	// TODO: Add check for content of retrieved entity
-
 }
 
 
