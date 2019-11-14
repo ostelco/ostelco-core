@@ -154,7 +154,7 @@ type Es2PlusClientState struct {
 	logHeaders  bool
 }
 
-func Client(certFilePath string, keyFilePath string, hostport string, requesterId string) *Es2PlusClientState {
+func NewClient(certFilePath string, keyFilePath string, hostport string, requesterId string) *Es2PlusClientState {
 	return &Es2PlusClientState{
 		httpClient:  newHttpClient(certFilePath, keyFilePath),
 		hostport:    hostport,

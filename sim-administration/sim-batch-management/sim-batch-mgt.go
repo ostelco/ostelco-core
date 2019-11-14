@@ -234,19 +234,11 @@ func parseCommandLine() error {
 		profileVendorName := "Idemia"
 		// TODO Should have been profileVendorName := batdh.ProfileVendor
 
-		vendor, err := db.GetProfileVendorByName(profileVendorName)
+
+		client, err := ClientForVendor(db, profileVendorName)
 		if err != nil {
 			return err
 		}
-		if vendor == nil {
-			return fmt.Errorf("unknown profile vendor '%s'", profileVendorName)
-		}
-
-
-		hostport := fmt.Sprintf("%s:%d", vendor.Es2PlusHost, vendor.Es2PlusPort)
-		client := es2plus.Client(vendor.Es2PlusCert, vendor.Es2PlusKey, hostport, vendor.Es2PlusRequesterId)
-
-
 
 		entries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
 		if err != nil {
@@ -537,17 +529,17 @@ func parseCommandLine() error {
 		if err != nil {
 			return err
 		}
+
 		if vendor == nil {
 			return fmt.Errorf("unknown profile vendor '%s'", *es2ProfileVendor)
 		}
 
 
 		hostport := fmt.Sprintf("%s:%d", vendor.Es2PlusHost, vendor.Es2PlusPort)
-		client := es2plus.Client(vendor.Es2PlusCert, vendor.Es2PlusKey, hostport, vendor.Es2PlusRequesterId)
+		client := es2plus.NewClient(vendor.Es2PlusCert, vendor.Es2PlusKey, hostport, vendor.Es2PlusRequesterId)
 
 		iccid := *es2iccid
 		switch *es2cmd {
-
 
 		case "get-status":
 
@@ -844,4 +836,18 @@ func GenerateInputFile(batch *model.Batch) string {
 		"***************************************\n" +
 		"var_Out: ICCID/IMSI/KI\n"
 	return result
+}
+
+func ClientForVendor(db *store.SimBatchDB, vendorName string) (es2plus.Es2PlusClient, error) {
+	vendor, err := db.GetProfileVendorByName(vendorName)
+	if err != nil {
+		return nil, err
+	}
+
+	if vendor == nil {
+		return nil, fmt.Errorf("unknown profile vendor '%s'", vendorName)
+	}
+
+	hostport := fmt.Sprintf("%s:%d", vendor.Es2PlusHost, vendor.Es2PlusPort)
+	return es2plus.NewClient(vendor.Es2PlusCert, vendor.Es2PlusKey, hostport, vendor.Es2PlusRequesterId), nil
 }
