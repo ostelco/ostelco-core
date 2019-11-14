@@ -128,7 +128,6 @@ func (sdb SimBatchDB) CreateBatch(theBatch *model.Batch) error {
 	}
 	theBatch.BatchId = id
 
-
 	_, err = sdb.Db.NamedExec("UPDATE BATCH  SET firstIccid = :firstIccid, firstImsi = :firstImsi, firstMsisdn = :firstMsisdn, msisdnIncrement = :msisdnIncrement, iccidIncrement = :iccidIncrement, imsiIncrement = :imsiIncrement, url=:url WHERE id = :id",
 		theBatch)
 
@@ -183,11 +182,8 @@ func (sdb *SimBatchDB) GenerateTables() error {
         )`
 	_, err = sdb.Db.Exec(sql)
 
-
 	return err
 }
-
-
 
 func (sdb SimBatchDB) CreateProfileVendor(theEntry *model.ProfileVendor) error {
 	// TODO: This insert string can be made through reflection, and at some point should be.
@@ -207,8 +203,8 @@ func (sdb SimBatchDB) CreateProfileVendor(theEntry *model.ProfileVendor) error {
 }
 
 func (sdb SimBatchDB) GetProfileVendorById(id int64) (*model.ProfileVendor, error) {
-	result:= []model.ProfileVendor{}
-	if err :=  sdb.Db.Select(&result, "select * from SIM_PROFILE where id = ?", id); err != nil {
+	result := []model.ProfileVendor{}
+	if err := sdb.Db.Select(&result, "select * from SIM_PROFILE where id = ?", id); err != nil {
 		return nil, err
 	}
 
@@ -220,8 +216,8 @@ func (sdb SimBatchDB) GetProfileVendorById(id int64) (*model.ProfileVendor, erro
 }
 
 func (sdb SimBatchDB) GetProfileVendorByName(name string) (*model.ProfileVendor, error) {
-	result:= []model.ProfileVendor{}
-	if err :=  sdb.Db.Select(&result, "select * from SIM_PROFILE where name = ?", name); err != nil {
+	result := []model.ProfileVendor{}
+	if err := sdb.Db.Select(&result, "select * from SIM_PROFILE where name = ?", name); err != nil {
 		return nil, err
 	}
 
@@ -231,8 +227,6 @@ func (sdb SimBatchDB) GetProfileVendorByName(name string) (*model.ProfileVendor,
 		return &result[0], nil
 	}
 }
-
-
 
 func (sdb SimBatchDB) CreateSimEntry(theEntry *model.SimEntry) error {
 
@@ -426,7 +420,7 @@ func (sdb SimBatchDB) DeclareBatch(
 	}()
 
 	// Persist the newly created batch,
-	if err = sdb.CreateBatch(&batch) ; err != nil {
+	if err = sdb.CreateBatch(&batch); err != nil {
 		return nil, err
 	}
 
@@ -461,7 +455,7 @@ func (sdb SimBatchDB) DeclareBatch(
 			Ki:                   "", // Should be null
 		}
 
-		if err = sdb.CreateSimEntry(simEntry);  err != nil {
+		if err = sdb.CreateSimEntry(simEntry); err != nil {
 			return nil, err
 		}
 
