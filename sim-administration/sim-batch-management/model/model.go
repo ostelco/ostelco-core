@@ -39,6 +39,7 @@ type Batch struct {
 	IccidIncrement  int    `db:"iccidIncrement" json:"msisdnIncrement"`
 	ImsiIncrement   int    `db:"imsiIncrement" json:"imsiIncrement"`
 	FirstMsisdn     string `db:"firstMsisdn" json:"firstMsisdn"`
+	ProfileVendor        string `db:"profileVendor" json:"profileVendor"`
 }
 
 type ProfileVendor struct {

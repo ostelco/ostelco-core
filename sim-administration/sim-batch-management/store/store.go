@@ -116,7 +116,7 @@ func (sdb SimBatchDB) GetBatchByName(name string) (*model.Batch, error) {
 func (sdb SimBatchDB) CreateBatch(theBatch *model.Batch) error {
 	// TODO: mutex?
 
-	res, err := sdb.Db.NamedExec("INSERT INTO BATCH (name, filenameBase, orderDate, customer, profileType, batchNo, quantity) values (:name, :filenameBase, :orderDate, :customer, :profileType, :batchNo, :quantity)",
+	res, err := sdb.Db.NamedExec("INSERT INTO BATCH (name, filenameBase, orderDate, customer, profileType, batchNo, quantity, profileVendor) values (:name, :filenameBase, :orderDate, :customer, :profileType, :batchNo, :quantity, :profileVendor)",
 		theBatch,
 	)
 
@@ -142,6 +142,7 @@ func (sdb *SimBatchDB) GenerateTables() error {
 	sql := `CREATE TABLE IF NOT EXISTS BATCH (
      id integer primary key autoincrement,
 	 name VARCHAR NOT NULL UNIQUE,
+	 profileVendor VARCHAR NOT NULL,
 	 filenameBase VARCHAR,
 	 customer VARCHAR,
 	 profileType VARCHAR,
@@ -191,6 +192,12 @@ func (sdb *SimBatchDB) GenerateTables() error {
 
 func (sdb SimBatchDB) CreateProfileVendor(theEntry *model.ProfileVendor) error {
 	// TODO: This insert string can be made through reflection, and at some point should be.
+
+	vendor, _ := sdb.GetProfileVendorByName(theEntry.Name)
+	if vendor != nil {
+		return fmt.Errorf("Duplicate profile vendor named %s,  %v\n", theEntry.Name, vendor)
+	}
+
 	res, err := sdb.Db.NamedExec(`
        INSERT INTO PROFILE_VENDOR (name,   es2PlusCertPath,  es2PlusKeyPath,  es2PlusHostPath,  es2PlusPort, es2PlusRequesterId)
                            VALUES (:name, :es2PlusCertPath, :es2PlusKeyPath, :es2PlusHostPath, :es2PlusPort, :es2PlusRequesterId)`,
@@ -313,9 +320,17 @@ func (sdb SimBatchDB) DeclareBatch(
 	batchLengthString string,
 	hssVendor string,
 	uploadHostname string,
-	uploadPortnumber string,
+    uploadPortnumber string,
 	profileVendor string,
 	initialHlrActivationStatusOfProfiles string) (*model.Batch, error) {
+
+	vendor, err := sdb.GetProfileVendorByName(profileVendor)
+	if err != nil {
+		return nil, err
+	}
+	if vendor == nil {
+		return nil, fmt.Errorf("unknown profile vendor: '%s'", profileVendor)
+	}
 
 	// TODO:
 	// 1. Check all the arguments (methods already written).
@@ -408,6 +423,7 @@ func (sdb SimBatchDB) DeclareBatch(
 		ImsiIncrement:   loltelutils.Sign(imsiLen),
 		FirstMsisdn:     firstMsisdn,
 		MsisdnIncrement: msisdnIncrement,
+		ProfileVendor:   profileVendor,
 	}
 
 	tx := sdb.Begin()

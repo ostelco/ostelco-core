@@ -10,9 +10,10 @@ import (
 	"testing"
 )
 
-
-var sdb *SimBatchDB
-var sdbSetupError error
+var (
+	sdb *SimBatchDB
+	sdbSetupError error
+)
 
 func TestMain(m *testing.M) {
 	setup()
@@ -30,7 +31,8 @@ func setup() {
 	// delete file, ignore any errors
 	os.Remove(filename)
 
-	sdb, sdbSetupError = OpenFileSqliteDatabase(filename)
+	sdb, sdbSetupError =
+		OpenFileSqliteDatabase(filename)
 
 	if sdbSetupError != nil {
 		panic(fmt.Errorf("Couldn't open new in memory database  '%s", sdbSetupError))
@@ -48,6 +50,7 @@ func setup() {
 }
 
 func cleanTables() {
+	fmt.Println("Cleaning tables ...")
 	_, err := sdb.Db.Exec("DELETE FROM SIM_PROFILE")
 	if err != nil {
 		panic(fmt.Sprintf("Couldn't delete SIM_PROFILE  '%s'", err))
@@ -57,6 +60,18 @@ func cleanTables() {
 	if err != nil {
 		panic(fmt.Sprintf("Couldn't delete BATCH  '%s'", err))
 	}
+
+	_, err = sdb.Db.Exec("DELETE FROM PROFILE_VENDOR")
+	if err != nil {
+		panic(fmt.Sprintf("Couldn't delete PROFILE_VENDOR  '%s'", err))
+	}
+	fmt.Println("    Cleaned tables ...")
+
+	vendor, _ := sdb.GetProfileVendorByName("Durian")
+	if vendor != nil {
+		fmt.Println("   Unclean Durian detected")
+	}
+
 }
 
 func shutdown() {
@@ -85,6 +100,7 @@ func injectTestBatch() *model.Batch {
 		Url:             "http://vg.no",
 		FirstIccid:      "1234567890123456789",
 		FirstImsi:       "123456789012345",
+		ProfileVendor:   "Durian",
 		MsisdnIncrement: -1,
 	}
 
@@ -104,7 +120,7 @@ func TestGetBatchById(t *testing.T) {
 
 	cleanTables()
 	batch, _ := sdb.GetBatchByName("SOME UNIQUE NAME")
-	if batch.BatchId != -1 {
+	if batch.BatchId != -1 { // TODO: REWRITE TO USE NULL TESTS INSTEAD!!
 		t.Errorf("Duplicate detected, error in test setup")
 	}
 
@@ -161,16 +177,17 @@ func declareTestBatch(t *testing.T) *model.Batch {
 		"LOL",                  // hssVendor string,
 		"localhost",            // uploadHostname string,
 		"8088",                 // uploadPortnumber string,
-		"snuff",                // profileVendor string,
+		"Durian",                // profileVendor string,
 		"ACTIVE")               // initialHlrActivationStatusOfProfiles string
 
 	if err != nil {
-		t.Fatal(err)
+		panic(err)
 	}
 	return theBatch
 }
 
 func TestDeclareBatch(t *testing.T) {
+	injectTestprofileVendor(t)
 	theBatch := declareTestBatch(t)
 	retrievedValue, _ := sdb.GetBatchById(theBatch.BatchId)
 	if !reflect.DeepEqual(*retrievedValue, *theBatch) {
@@ -187,10 +204,10 @@ func TestDeclareBatch(t *testing.T) {
 
 }
 
-func TestDeclareAndRetrieveProfileVendorEntry(t *testing.T) {
-	cleanTables()
+
+func injectTestprofileVendor( t *testing.T) *model.ProfileVendor {
 	v := &model.ProfileVendor{
-		Name: "MyName",
+		Name: "Durian",
 		Es2PlusCert: "cert",
 		Es2PlusKey: "key",
 		Es2PlusHost: "host",
@@ -199,10 +216,19 @@ func TestDeclareAndRetrieveProfileVendorEntry(t *testing.T) {
 	}
 
 	if err := sdb.CreateProfileVendor(v); err != nil {
-		t.Fatal(err)
+		panic(err)
+		// t.Fatal(err)
 	}
+	return v
+}
 
-	nameRetrievedVendor,err  := sdb.GetProfileVendorByName("MyName")
+func TestDeclareAndRetrieveProfileVendorEntry(t *testing.T) {
+	cleanTables()
+
+	v := injectTestprofileVendor(t)
+
+
+	nameRetrievedVendor,err  := sdb.GetProfileVendorByName(v.Name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -223,6 +249,7 @@ func TestDeclareAndRetrieveProfileVendorEntry(t *testing.T) {
 
 func TestDeclareAndRetrieveSimEntries(t *testing.T) {
 	cleanTables()
+	injectTestprofileVendor(t)
 	theBatch := declareTestBatch(t)
 	batchId := theBatch.BatchId
 
