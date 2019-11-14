@@ -43,8 +43,7 @@ enum class SmDpPlusState {
     DOWNLOADED,
     INSTALLED,
     ENABLED,
-
-
+    DELETED
 }
 
 enum class ProvisionState {
