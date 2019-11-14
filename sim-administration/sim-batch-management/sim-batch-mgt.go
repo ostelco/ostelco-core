@@ -59,6 +59,23 @@ var (
 	activateIccidVendor = activateIccid.Flag("profile-vendor", "Name of profile vendor").Required().String()
 	activateIccidIccid  = activateIccid.Flag("iccid", "Iccid to confirm profile  for").Required().String()
 
+	activateIccidFile       = kingpin.Command("activate-iccids-from-file", "Execute es2p confirm-order.")
+	activateIccidFileVendor = activateIccidFile.Flag("profile-vendor", "Name of profile vendor").Required().String()
+	activateIccidFileFile   = activateIccidFile.Flag("iccid-file", "Iccid to confirm profile  for").Required().String()
+
+	setBatchActivationCodes       = kingpin.Command("set-batch-activation-codes", "Execute es2p confirm-order.")
+	setBatchActivationCodesVendor = setBatchActivationCodes.Flag("profile-vendor", "Name of profile vendor").Required().String()
+	setBatchActivationCodesFile   = setBatchActivationCodes.Flag("iccid-file", "Iccid to confirm profile  for").Required().String()
+
+	bulkActivateIccids       = kingpin.Command("bulk-activate-iccids", "Execute es2p confirm-order.")
+	bulkActivateIccidsVendor = bulkActivateIccids.Flag("profile-vendor", "Name of profile vendor").Required().String()
+	bulkActivateIccidsIccids = bulkActivateIccids.Flag("iccid-file", "Iccid to confirm profile  for").Required().String()
+
+	cancelIccid       = kingpin.Command("cancel-iccid", "Execute es2p confirm-order.")
+	cancelIccidIccid  = cancelIccid.Flag("iccid", "The iccid to cancel").Required().String()
+	cancelIccidVendor = cancelIccid.Flag("profile-vendor", "Name of profile vendor").Required().String()
+	cancelIccidTarget = cancelIccid.Flag("target", "Tarfget t set profile to").Required().String()
+
 	// TODO: Some command to list all profile-vendors, hsses, etc. , e.g. lspv, lshss, ...
 	// TODO: Add sftp coordinates to be used when fetching/uploding input/utput-files
 	// TODO: Declare hss-es, that can be refered to in profiles.
@@ -598,239 +615,238 @@ func parseCommandLine() error {
 		}
 		fmt.Printf("%s, %s\n", *activateIccidIccid, result.ACToken)
 
-	case "es2":
-
-		vendor, err := db.GetProfileVendorByName(*es2ProfileVendor)
+	case "cancel-iccid":
+		client, err := ClientForVendor(db, *activateIccidVendor)
+		if err != nil {
+			return err
+		}
+		err = checkEs2TargetState(*cancelIccidTarget)
+		if err != nil {
+			return err
+		}
+		_, err = client.CancelOrder(*cancelIccidIccid, *cancelIccidTarget)
 		if err != nil {
 			return err
 		}
 
-		if vendor == nil {
-			return fmt.Errorf("unknown profile vendor '%s'", *es2ProfileVendor)
+	case "activate-iccids-from-file":
+		client, err := ClientForVendor(db, *activateIccidFileVendor)
+		if err != nil {
+			return err
 		}
 
-		hostport := fmt.Sprintf("%s:%d", vendor.Es2PlusHost, vendor.Es2PlusPort)
-		client := es2plus.NewClient(vendor.Es2PlusCert, vendor.Es2PlusKey, hostport, vendor.Es2PlusRequesterId)
+		csvFilename := *activateIccidFileFile
 
-		iccid := *es2iccid
-		switch *es2cmd {
+		csvFile, _ := os.Open(csvFilename)
+		reader := csv.NewReader(bufio.NewReader(csvFile))
 
-		case "get-profile-activation-statuses-for-iccids-in-file":
-			csvFilename := iccid
+		defer csvFile.Close()
 
-			csvFile, _ := os.Open(csvFilename)
-			reader := csv.NewReader(bufio.NewReader(csvFile))
+		headerLine, error := reader.Read()
+		if error == io.EOF {
+			break
+		} else if error != nil {
+			log.Fatal(error)
+		}
 
-			defer csvFile.Close()
+		var columnMap map[string]int
+		columnMap = make(map[string]int)
 
-			headerLine, error := reader.Read()
-			if error == io.EOF {
+		for index, fieldname := range headerLine {
+			columnMap[strings.TrimSpace(strings.ToLower(fieldname))] = index
+		}
+
+		if _, hasIccid := columnMap["iccid"]; !hasIccid {
+			return fmt.Errorf("no ICCID  column in CSV file")
+		}
+
+		type csvRecord struct {
+			Iccid string
+		}
+
+		var recordMap map[string]csvRecord
+		recordMap = make(map[string]csvRecord)
+
+		// Read all the lines into the record map.
+		for {
+			line, err := reader.Read()
+			if err == io.EOF {
 				break
-			} else if error != nil {
-				log.Fatal(error)
+			} else if err != nil {
+				return err
 			}
 
-			var columnMap map[string]int
-			columnMap = make(map[string]int)
+			iccid := line[columnMap["Iccid"]]
+			iccid = strings.TrimSpace(iccid)
 
-			for index, fieldname := range headerLine {
-				columnMap[strings.TrimSpace(strings.ToLower(fieldname))] = index
+			record := csvRecord{
+				Iccid: iccid,
 			}
 
-			if _, hasIccid := columnMap["iccid"]; !hasIccid {
-				return fmt.Errorf("no ICCID  column in CSV file")
+			if _, duplicateRecordExists := recordMap[record.Iccid]; duplicateRecordExists {
+				return fmt.Errorf("duplicate ICCID record in map: %s", record.Iccid)
 			}
 
-			type csvRecord struct {
-				Iccid string
-			}
+			recordMap[record.Iccid] = record
+		}
 
-			var recordMap map[string]csvRecord
-			recordMap = make(map[string]csvRecord)
+		// XXX Is this really necessary? I don't think so
+		var mutex = &sync.Mutex{}
 
-			// Read all the lines into the record map.
-			for {
-				line, err := reader.Read()
-				if err == io.EOF {
-					break
-				} else if err != nil {
-					return err
+		var waitgroup sync.WaitGroup
+
+		// Limit concurrency of the for-loop below
+		// to 160 goroutines.  The reason is that if we get too
+		// many we run out of file descriptors, and we don't seem to
+		// get much speedup after hundred or so.
+
+		concurrency := 160
+		sem := make(chan bool, concurrency)
+		fmt.Printf("%s, %s\n", "ICCID", "STATE")
+		for _, entry := range recordMap {
+
+			//
+			// Only apply activation if not already noted in the
+			// database.
+			//
+
+			sem <- true
+
+			waitgroup.Add(1)
+			go func(entry csvRecord) {
+
+				defer func() { <-sem }()
+
+				result, err := client.GetStatus(entry.Iccid)
+				if err != nil {
+					panic(err)
 				}
 
-				iccid := line[columnMap["Iccid"]]
-				iccid = strings.TrimSpace(iccid)
-
-				record := csvRecord{
-					Iccid: iccid,
+				if result == nil {
+					panic(fmt.Sprintf("Couldn't find any status for Iccid='%s'\n", entry.Iccid))
 				}
 
-				if _, duplicateRecordExists := recordMap[record.Iccid]; duplicateRecordExists {
-					return fmt.Errorf("duplicate ICCID record in map: %s", record.Iccid)
-				}
+				mutex.Lock()
+				fmt.Printf("%s, %s\n", entry.Iccid, result.State)
+				mutex.Unlock()
+				waitgroup.Done()
+			}(entry)
+		}
 
-				recordMap[record.Iccid] = record
-			}
+		waitgroup.Wait()
+		for i := 0; i < cap(sem); i++ {
+			sem <- true
+		}
 
-			// XXX Is this really necessary? I don't think so
-			var mutex = &sync.Mutex{}
+	case "set-batch-activation-codes":
+		client, err := ClientForVendor(db, *setBatchActivationCodesVendor)
+		if err != nil {
+			return err
+		}
 
-			var waitgroup sync.WaitGroup
+		batchName := *setBatchActivationCodesVendor
 
-			// Limit concurrency of the for-loop below
-			// to 160 goroutines.  The reason is that if we get too
-			// many we run out of file descriptors, and we don't seem to
-			// get much speedup after hundred or so.
+		fmt.Printf("Getting batch  named %s\n", batchName)
 
-			concurrency := 160
-			sem := make(chan bool, concurrency)
-			fmt.Printf("%s, %s\n", "ICCID", "STATE")
-			for _, entry := range recordMap {
+		batch, err := db.GetBatchByName(batchName)
+		if err != nil {
+			return fmt.Errorf("unknown batch '%s'", batchName)
+		}
 
-				//
-				// Only apply activation if not already noted in the
-				// database.
-				//
+		entries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
+		if err != nil {
+			return err
+		}
+
+		if len(entries) != batch.Quantity {
+			return fmt.Errorf("batch quantity retrieved from database (%d) different from batch quantity (%d)", len(entries), batch.Quantity)
+		}
+
+		// XXX Is this really necessary? I don't think so
+		var mutex = &sync.Mutex{}
+
+		var waitgroup sync.WaitGroup
+
+		// Limit concurrency of the for-loop below
+		// to 160 goroutines.  The reason is that if we get too
+		// many we run out of file descriptors, and we don't seem to
+		// get much speedup after hundred or so.
+
+		concurrency := 160
+		sem := make(chan bool, concurrency)
+		tx := db.Begin()
+		for _, entry := range entries {
+
+			//
+			// Only apply activation if not already noted in the
+			// database.
+
+			if entry.ActivationCode == "" {
 
 				sem <- true
 
 				waitgroup.Add(1)
-				go func(entry csvRecord) {
+				go func(entry model.SimEntry) {
 
 					defer func() { <-sem }()
 
-					result, err := client.GetStatus(entry.Iccid)
+					result, err := client.ActivateIccid(entry.Iccid)
 					if err != nil {
 						panic(err)
 					}
 
-					if result == nil {
-						panic(fmt.Sprintf("Couldn't find any status for Iccid='%s'\n", entry.Iccid))
-					}
-
 					mutex.Lock()
-					fmt.Printf("%s, %s\n", entry.Iccid, result.State)
+					fmt.Printf("%s, %s\n", entry.Iccid, result.ACToken)
+					db.UpdateActivationCode(entry.Id, result.ACToken)
 					mutex.Unlock()
 					waitgroup.Done()
 				}(entry)
 			}
-
-			waitgroup.Wait()
-			for i := 0; i < cap(sem); i++ {
-				sem <- true
-			}
-
-		case "set-batch-activation-codes":
-			batchName := iccid
-
-			fmt.Printf("Getting batch  named %s\n", batchName)
-
-			batch, err := db.GetBatchByName(batchName)
-			if err != nil {
-				return fmt.Errorf("unknown batch '%s'", batchName)
-			}
-
-			entries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
-			if err != nil {
-				return err
-			}
-
-			if len(entries) != batch.Quantity {
-				return fmt.Errorf("batch quantity retrieved from database (%d) different from batch quantity (%d)", len(entries), batch.Quantity)
-			}
-
-			// XXX Is this really necessary? I don't think so
-			var mutex = &sync.Mutex{}
-
-			var waitgroup sync.WaitGroup
-
-			// Limit concurrency of the for-loop below
-			// to 160 goroutines.  The reason is that if we get too
-			// many we run out of file descriptors, and we don't seem to
-			// get much speedup after hundred or so.
-
-			concurrency := 160
-			sem := make(chan bool, concurrency)
-			tx := db.Begin()
-			for _, entry := range entries {
-
-				//
-				// Only apply activation if not already noted in the
-				// database.
-
-				if entry.ActivationCode == "" {
-
-					sem <- true
-
-					waitgroup.Add(1)
-					go func(entry model.SimEntry) {
-
-						defer func() { <-sem }()
-
-						result, err := client.ActivateIccid(entry.Iccid)
-						if err != nil {
-							panic(err)
-						}
-
-						mutex.Lock()
-						fmt.Printf("%s, %s\n", entry.Iccid, result.ACToken)
-						db.UpdateActivationCode(entry.Id, result.ACToken)
-						mutex.Unlock()
-						waitgroup.Done()
-					}(entry)
-				}
-			}
-
-			waitgroup.Wait()
-			for i := 0; i < cap(sem); i++ {
-				sem <- true
-			}
-			tx.Commit()
-
-		case "bulk-activate-iccids":
-
-			file, err := os.Open(iccid)
-			if err != nil {
-				log.Fatal(err)
-			}
-			defer file.Close()
-
-			scanner := bufio.NewScanner(file)
-			var mutex = &sync.Mutex{}
-			var waitgroup sync.WaitGroup
-			for scanner.Scan() {
-				iccid := scanner.Text()
-				waitgroup.Add(1)
-				go func(i string) {
-
-					result, err := client.ActivateIccid(i)
-					if err != nil {
-						panic(err)
-					}
-					mutex.Lock()
-					fmt.Printf("%s, %s\n", i, result.ACToken)
-					mutex.Unlock()
-					waitgroup.Done()
-				}(iccid)
-			}
-
-			waitgroup.Wait()
-
-			if err := scanner.Err(); err != nil {
-				log.Fatal(err)
-			}
-
-		case "cancel-profile":
-			err := checkEs2TargetState(*es2Target)
-			if err != nil {
-				return err
-			}
-			_, err = client.CancelOrder(iccid, *es2Target)
-			if err != nil {
-				return err
-			}
-		default:
-			return fmt.Errorf("unknown es2+ subcommand '%s', try --help", *es2cmd)
 		}
+
+		waitgroup.Wait()
+		for i := 0; i < cap(sem); i++ {
+			sem <- true
+		}
+		tx.Commit()
+
+	case "bulk-activate-iccids":
+		client, err := ClientForVendor(db, *bulkActivateIccidsVendor)
+		if err != nil {
+			return err
+		}
+
+		file, err := os.Open(*bulkActivateIccidsIccids)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer file.Close()
+
+		scanner := bufio.NewScanner(file)
+		var mutex = &sync.Mutex{}
+		var waitgroup sync.WaitGroup
+		for scanner.Scan() {
+			iccid := scanner.Text()
+			waitgroup.Add(1)
+			go func(i string) {
+
+				result, err := client.ActivateIccid(i)
+				if err != nil {
+					panic(err)
+				}
+				mutex.Lock()
+				fmt.Printf("%s, %s\n", i, result.ACToken)
+				mutex.Unlock()
+				waitgroup.Done()
+			}(iccid)
+		}
+
+		waitgroup.Wait()
+
+		if err := scanner.Err(); err != nil {
+			log.Fatal(err)
+		}
+
 	default:
 		return fmt.Errorf("unknown command: '%s'", cmd)
 	}
