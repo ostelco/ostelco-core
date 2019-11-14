@@ -51,6 +51,14 @@ class NotDeletedError(type: String,
                 message = "$type - $id not deleted.",
                 error = error)
 
+class PartiallyNotDeletedError(type: String,
+                               id: String,
+                               error: InternalError? = null) :
+        StoreError(type = type,
+                id = id,
+                message = "$type - $id not deleted.",
+                error = error)
+
 class ValidationError(type: String,
                       id: String,
                       message: String,

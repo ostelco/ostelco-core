@@ -52,6 +52,7 @@ object ApiErrorMapper {
             is org.ostelco.prime.storage.NotCreatedError  ->  InternalServerError(description, errorCode)
             is org.ostelco.prime.storage.NotUpdatedError  ->  InternalServerError(description, errorCode)
             is org.ostelco.prime.storage.NotDeletedError  ->  InternalServerError(description, errorCode)
+            is org.ostelco.prime.storage.PartiallyNotDeletedError  ->  InternalServerError(description, errorCode)
             is org.ostelco.prime.storage.ValidationError  ->  ForbiddenError(description, errorCode, storeError)
             is org.ostelco.prime.storage.FileDownloadError  ->  InternalServerError(description, errorCode)
             is org.ostelco.prime.storage.FileDeleteError  ->  InternalServerError(description, errorCode)
