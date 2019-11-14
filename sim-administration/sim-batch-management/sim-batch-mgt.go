@@ -53,10 +53,11 @@ var (
 		"The ES2+ subcommand, one of get-status, recover-profile, download-order, confirm-order, cancel-profile, bulk-activate-iccids, activate-Iccid, get-profile-activation-statuses-for-batch, get-profile-activation-statuses-for-iccids-in-file").Required().String()
 	es2iccid        = es2.Arg("Iccid", "Iccid of profile to manipulate").String()
 	es2Target       = es2.Arg("target-state", "Target state of recover-profile or cancel-profile command").Default("AVAILABLE").String()
-	es2CertFilePath = es2.Flag("cert", "Certificate pem file.").Required().String()
-	es2KeyFilePath  = es2.Flag("key", "Certificate key file.").Required().String()
-	es2Hostport     = es2.Flag("hostport", "host:port of ES2+ endpoint.").Required().String()
-	es2RequesterId  = es2.Flag("requesterid", "ES2+ requester ID.").Required().String()
+	es2CertFilePath = es2.Flag("cert", "Certificate pem file.").String()
+	es2KeyFilePath  = es2.Flag("key", "Certificate key file.").String()
+	es2Hostport     = es2.Flag("hostport", "host:port of ES2+ endpoint.").String()
+	es2RequesterId  = es2.Flag("requesterid", "ES2+ requester ID.").String()
+	es2ProfileVendor = es2.Flag("profile-vendor", "Name of profile-vendor").Required().String()
 
 	//
 	// Convert an output (.out) file from an sim profile producer into an input file
@@ -213,7 +214,7 @@ func parseCommandLine() error {
 			Es2PlusPort: *dpvPort,
 			Es2PlusRequesterId: *dpvRequesterId,
 		}
-		
+
 		if err := db.CreateProfileVendor(v); err != nil {
 			return err
 		}
@@ -447,8 +448,18 @@ func parseCommandLine() error {
 
 	case "es2":
 
-		// TODO: Vet all the parameters, they can  very easily be bogus.
-		client := es2plus.Client(*es2CertFilePath, *es2KeyFilePath, *es2Hostport, *es2RequesterId)
+		vendor, err := db.GetProfileVendorByName(*es2ProfileVendor)
+		if err != nil {
+			return err
+		}
+		if vendor == nil {
+			return fmt.Errorf("unknown profile vendor '%s'", *es2ProfileVendor)
+		}
+
+
+		hostport := fmt.Sprintf("%s:%d", vendor.Es2PlusHost, vendor.Es2PlusPort)
+		client := es2plus.Client(vendor.Es2PlusCert, vendor.Es2PlusKey, hostport, vendor.Es2PlusRequesterId)
+
 		iccid := *es2iccid
 		switch *es2cmd {
 
