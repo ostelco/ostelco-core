@@ -148,6 +148,14 @@ class StripePaymentProcessor : PaymentProcessor {
             }
 
     override fun getPaymentProfile(customerId: String): Either<PaymentError, ProfileInfo> =
+            getCustomer(customerId)
+                    .flatMap { customer ->
+                        ProfileInfo(customer.id)
+                                .right()
+                    }
+
+    /* Fetch customer from Stripe with result checks. */
+    private fun getCustomer(customerId: String): Either<PaymentError, Customer> =
             Try {
                 Customer.retrieve(customerId)
             }.fold(
@@ -155,12 +163,12 @@ class StripePaymentProcessor : PaymentProcessor {
                         when {
                             customer.deleted == true -> NotFoundError("Payment profile for user $customerId was previously deleted")
                                     .left()
-                            else -> ProfileInfo(customer.id)
+                            else -> customer
                                     .right()
                         }
                     },
                     ifFailure = {
-                        NotFoundError("Could not find a payment profile for user $customerId")
+                        NotFoundError("Could not find a payment profile for customer $customerId")
                                 .left()
                     }
             )
@@ -220,11 +228,12 @@ class StripePaymentProcessor : PaymentProcessor {
                 SourceInfo(Customer.retrieve(customerId).defaultSource)
             }
 
-    override fun deletePaymentProfile(customerId: String): Either<PaymentError, ProfileInfo> =
-            either("Failed to delete customer $customerId") {
-                val customer = Customer.retrieve(customerId)
-                ProfileInfo(customer.delete().id)
-            }
+    override fun removePaymentProfile(customerId: String): Either<PaymentError, ProfileInfo> =
+            getCustomer(customerId)
+                    .flatMap { customer ->
+                        ProfileInfo(customer.delete().id)
+                                .right()
+                    }
 
     /* The 'expand' part will cause an immediate attempt at charging for the
        subscription when creating it. For interpreting the result see:

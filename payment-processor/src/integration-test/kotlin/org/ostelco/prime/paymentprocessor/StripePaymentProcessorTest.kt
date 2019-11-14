@@ -75,7 +75,7 @@ class StripePaymentProcessorTest {
 
     @After
     fun cleanUp() {
-        val resultDelete = paymentProcessor.deletePaymentProfile(customerId)
+        val resultDelete = paymentProcessor.removePaymentProfile(customerId)
         assertNotFailure(resultDelete)
     }
 

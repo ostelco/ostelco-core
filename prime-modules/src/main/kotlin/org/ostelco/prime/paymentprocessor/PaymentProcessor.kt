@@ -41,9 +41,9 @@ interface PaymentProcessor {
 
     /**
      * @param customerId Stripe customer id
-     * @return Stripe customerId if deleted
+     * @return Stripe customerId if removed
      */
-    fun deletePaymentProfile(customerId: String): Either<PaymentError, ProfileInfo>
+    fun removePaymentProfile(customerId: String): Either<PaymentError, ProfileInfo>
 
     /**
      * @param customerId: user email (Prime unique identifier for customer)
