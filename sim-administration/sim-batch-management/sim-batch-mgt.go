@@ -50,13 +50,9 @@ var (
 
 	es2    = kingpin.Command("es2", "Do things with the ES2+ protocol")
 	es2cmd = es2.Arg("cmd",
-		"The ES2+ subcommand, one of get-status, recover-profile, download-order, confirm-order, cancel-profile, bulk-activate-iccids, activate-Iccid, get-profile-activation-statuses-for-batch, get-profile-activation-statuses-for-iccids-in-file").Required().String()
+		"The ES2+ subcommand, one of get-status, recover-profile, download-order, confirm-order, cancel-profile, bulk-activate-iccids, activate-Iccid, get-profile-activation-statuses-for-iccids-in-file").Required().String()
 	es2iccid        = es2.Arg("Iccid", "Iccid of profile to manipulate").String()
 	es2Target       = es2.Arg("target-state", "Target state of recover-profile or cancel-profile command").Default("AVAILABLE").String()
-	es2CertFilePath = es2.Flag("cert", "Certificate pem file.").String()
-	es2KeyFilePath  = es2.Flag("key", "Certificate key file.").String()
-	es2Hostport     = es2.Flag("hostport", "host:port of ES2+ endpoint.").String()
-	es2RequesterId  = es2.Flag("requesterid", "ES2+ requester ID.").String()
 	es2ProfileVendor = es2.Flag("profile-vendor", "Name of profile-vendor").Required().String()
 
 
@@ -552,74 +548,6 @@ func parseCommandLine() error {
 		iccid := *es2iccid
 		switch *es2cmd {
 
-
-		case "get-profile-activation-statuses-for-batch":
-			batchName := iccid
-
-			log.Printf("Getting statuses for all profiles in batch  named %s\n", batchName)
-
-			batch, err := db.GetBatchByName(batchName)
-			if err != nil {
-				return fmt.Errorf("unknown batch '%s'", batchName)
-			}
-
-			entries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
-			if err != nil {
-				return err
-			}
-
-			if len(entries) != batch.Quantity {
-				return fmt.Errorf("batch quantity retrieved from database (%d) different from batch quantity (%d)", len(entries), batch.Quantity)
-			}
-
-			log.Printf("Found %d profiles\n", len(entries))
-
-			// XXX Is this really necessary? I don't think so
-			var mutex = &sync.Mutex{}
-
-			var waitgroup sync.WaitGroup
-
-			// Limit concurrency of the for-loop below
-			// to 160 goroutines.  The reason is that if we get too
-			// many we run out of file descriptors, and we don't seem to
-			// get much speedup after hundred or so.
-
-			concurrency := 160
-			sem := make(chan bool, concurrency)
-			for _, entry := range entries {
-
-				//
-				// Only apply activation if not already noted in the
-				// database.
-				//
-
-				sem <- true
-
-				waitgroup.Add(1)
-				go func(entry model.SimEntry) {
-
-					defer func() { <-sem }()
-
-					result, err := client.GetStatus(entry.Iccid)
-					if err != nil {
-						panic(err)
-					}
-
-					if result == nil {
-						log.Printf("ERROR: Couldn't find any status for Iccid='%s'\n", entry.Iccid)
-					}
-
-					mutex.Lock()
-					fmt.Printf("%s, %s\n", entry.Iccid, result.State)
-					mutex.Unlock()
-					waitgroup.Done()
-				}(entry)
-			}
-
-			waitgroup.Wait()
-			for i := 0; i < cap(sem); i++ {
-				sem <- true
-			}
 
 		case "get-status":
 
