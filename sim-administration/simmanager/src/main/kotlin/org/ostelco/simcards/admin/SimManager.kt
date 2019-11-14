@@ -6,7 +6,7 @@ import org.ostelco.prime.model.SimEntry
 import org.ostelco.prime.model.SimProfileStatus
 import org.ostelco.prime.sim.SimManager
 import org.ostelco.simcards.admin.ApiRegistry.simInventoryApi
-import org.ostelco.simcards.admin.ApiRegistry.simProfileStatusUpdateCallback
+import org.ostelco.simcards.admin.ApiRegistry.simProfileStatusUpdateListeners
 import org.ostelco.simcards.inventory.SmDpPlusState
 
 class ESimManager : SimManager by SimManagerSingleton
@@ -31,8 +31,8 @@ object SimManagerSingleton : SimManager {
                 }
     }
 
-    override fun getSimProfileStatusUpdates(onUpdate: (iccId: String, status: SimProfileStatus) -> Unit) {
-        simProfileStatusUpdateCallback = onUpdate
+    override fun addSimProfileStatusUpdateListener(listener: (iccId: String, status: SimProfileStatus) -> Unit) {
+        simProfileStatusUpdateListeners.add(listener)
     }
 
     private fun mapToModelSimEntry(simEntry: org.ostelco.simcards.inventory.SimEntry) : SimEntry {

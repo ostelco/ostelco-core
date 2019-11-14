@@ -653,20 +653,20 @@ object Neo4jStoreSingleton : GraphStore {
             }
         }
 
-        override fun getSimProfileStatusUpdates(onUpdate: (iccId: String, status: SimProfileStatus) -> Unit) {
-            return trace.childSpan("simManager.getSimProfileStatusUpdates") {
-                simManager.getSimProfileStatusUpdates(onUpdate)
-            }
+        override fun addSimProfileStatusUpdateListener(listener: (iccId: String, status: SimProfileStatus) -> Unit) {
+            simManager.addSimProfileStatusUpdateListener(listener)
         }
     }
 
     fun subscribeToSimProfileStatusUpdates() {
-        simManager.getSimProfileStatusUpdates { iccId, status ->
+        simManager.addSimProfileStatusUpdateListener { iccId, status ->
             readTransaction {
                 IO {
                     Either.monad<StoreError>().binding {
+                        logger.info("Received status {} for iccId {}", status, iccId)
                         val subscriptions = get(Subscription under (SimProfile withId iccId)).bind()
                         subscriptions.forEach { subscription ->
+                            logger.info("Notify status {} for subscription.analyticsId {}", status, subscription.analyticsId)
                             analyticsReporter.reportSubscriptionStatusUpdate(subscription.analyticsId, status)
                         }
                     }.fix()

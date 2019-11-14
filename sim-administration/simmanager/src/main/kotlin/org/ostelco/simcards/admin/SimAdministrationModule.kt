@@ -202,5 +202,5 @@ object ResourceRegistry {
 
 object ApiRegistry {
     lateinit var simInventoryApi: SimInventoryApi
-    var simProfileStatusUpdateCallback: ((iccId: String, status: SimProfileStatus) -> Unit)? = null
+    var simProfileStatusUpdateListeners = mutableListOf<(iccId: String, status: SimProfileStatus) -> Unit>()
 }

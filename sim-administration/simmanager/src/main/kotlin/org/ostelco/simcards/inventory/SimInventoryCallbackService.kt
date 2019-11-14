@@ -6,7 +6,7 @@ import org.ostelco.sim.es2plus.ES2NotificationPointStatus
 import org.ostelco.sim.es2plus.ES2RequestHeader
 import org.ostelco.sim.es2plus.FunctionExecutionStatusType
 import org.ostelco.sim.es2plus.SmDpPlusCallbackService
-import org.ostelco.simcards.admin.ApiRegistry.simProfileStatusUpdateCallback
+import org.ostelco.simcards.admin.ApiRegistry.simProfileStatusUpdateListeners
 import org.ostelco.simcards.admin.SimManagerSingleton.asSimProfileStatus
 
 /**
@@ -83,16 +83,22 @@ class SimInventoryCallbackService(val dao: SimInventoryDAO) : SmDpPlusCallbackSe
                     /* Unexpected check point value. */
                     logger.error("download-progress-info: Received message with unexpected 'notificationPointId' {} for ICCID {}" +
                             "(notificationPointStatus: {}, profileType: {}, resultData: {})",
-                            notificationPointId, numericIccId, notificationPointStatus,
-                            profileType, resultData)
+                            notificationPointId,
+                            numericIccId,
+                            notificationPointStatus,
+                            profileType,
+                            resultData)
                 }
             }
         } else {
             /* XXX Update to handle other cases explicitly + review of logging. */
             logger.warn("download-progress-info: Received message with notificationPointStatus {} for ICCID {}" +
                     "(notificationPointId: {}, profileType: {}, resultData: {})",
-                    notificationPointStatus, numericIccId, notificationPointId,
-                    profileType, resultData)
+                    notificationPointStatus,
+                    numericIccId,
+                    notificationPointId,
+                    profileType,
+                    resultData)
         }
     }
 
@@ -103,9 +109,11 @@ class SimInventoryCallbackService(val dao: SimInventoryDAO) : SmDpPlusCallbackSe
      *      errors are not si
      */
     private fun gotoState(iccid: String, targetSmdpPlusStatus: SmDpPlusState) {
-        logger.info("Updating SM-DP+ state to {} with value from 'download-progress-info' message' for ICCID {}",
+        logger.info("Updating SM-DP+ state to {} with value from 'download-progress-info' message for ICCID {}",
                 SmDpPlusState.DOWNLOADED, iccid)
         dao.setSmDpPlusStateUsingIccid(iccid, targetSmdpPlusStatus)
-        simProfileStatusUpdateCallback?.invoke(iccid, asSimProfileStatus(targetSmdpPlusStatus))
+        simProfileStatusUpdateListeners.forEach { listener ->
+            listener.invoke(iccid, asSimProfileStatus(targetSmdpPlusStatus))
+        }
     }
 }
