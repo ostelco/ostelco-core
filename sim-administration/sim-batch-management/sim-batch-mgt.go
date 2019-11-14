@@ -59,6 +59,9 @@ var (
 	es2RequesterId  = es2.Flag("requesterid", "ES2+ requester ID.").String()
 	es2ProfileVendor = es2.Flag("profile-vendor", "Name of profile-vendor").Required().String()
 
+
+	getProfActActStatusesForBatch    = kingpin.Command("get-profile-activation-statuses-for-batch", "Get current activation statuses from SM-DP+ for named batch.")
+	getProfActActStatusesForBatchBatch =getProfActActStatusesForBatch.Arg("batcgh", "The batch to get activation statuses for.").Required().String()
 	//
 	// Convert an output (.out) file from an sim profile producer into an input file
 	// for Prime.
@@ -220,6 +223,92 @@ func parseCommandLine() error {
 		}
 
 		fmt.Println("Declared a new vendor named ", *dpvName)
+
+	case "get-profile-activation-statuses-for-batch":
+		batchName := *getProfActActStatusesForBatchBatch
+
+		log.Printf("Getting statuses for all profiles in batch  named %s\n", batchName)
+
+		batch, err := db.GetBatchByName(batchName)
+		if err != nil {
+			return fmt.Errorf("unknown batch '%s'", batchName)
+		}
+
+		// This is a monkeypatch
+		profileVendorName := "Idemia"
+		// TODO Should have been profileVendorName := batdh.ProfileVendor
+
+		vendor, err := db.GetProfileVendorByName(profileVendorName)
+		if err != nil {
+			return err
+		}
+		if vendor == nil {
+			return fmt.Errorf("unknown profile vendor '%s'", profileVendorName)
+		}
+
+
+		hostport := fmt.Sprintf("%s:%d", vendor.Es2PlusHost, vendor.Es2PlusPort)
+		client := es2plus.Client(vendor.Es2PlusCert, vendor.Es2PlusKey, hostport, vendor.Es2PlusRequesterId)
+
+
+
+		entries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
+		if err != nil {
+			return err
+		}
+
+		if len(entries) != batch.Quantity {
+			return fmt.Errorf("batch quantity retrieved from database (%d) different from batch quantity (%d)", len(entries), batch.Quantity)
+		}
+
+		log.Printf("Found %d profiles\n", len(entries))
+
+		// XXX Is this really necessary? I don't think so
+		var mutex = &sync.Mutex{}
+
+		var waitgroup sync.WaitGroup
+
+		// Limit concurrency of the for-loop below
+		// to 160 goroutines.  The reason is that if we get too
+		// many we run out of file descriptors, and we don't seem to
+		// get much speedup after hundred or so.
+
+		concurrency := 160
+		sem := make(chan bool, concurrency)
+		for _, entry := range entries {
+
+			//
+			// Only apply activation if not already noted in the
+			// database.
+			//
+
+			sem <- true
+
+			waitgroup.Add(1)
+			go func(entry model.SimEntry) {
+
+				defer func() { <-sem }()
+
+				result, err := client.GetStatus(entry.Iccid)
+				if err != nil {
+					panic(err)
+				}
+
+				if result == nil {
+					log.Printf("ERROR: Couldn't find any status for Iccid='%s'\n", entry.Iccid)
+				}
+
+				mutex.Lock()
+				fmt.Printf("%s, %s\n", entry.Iccid, result.State)
+				mutex.Unlock()
+				waitgroup.Done()
+			}(entry)
+		}
+
+		waitgroup.Wait()
+		for i := 0; i < cap(sem); i++ {
+			sem <- true
+		}
 
 	case "sim-profile-upload":
 
@@ -463,6 +552,75 @@ func parseCommandLine() error {
 		iccid := *es2iccid
 		switch *es2cmd {
 
+
+		case "get-profile-activation-statuses-for-batch":
+			batchName := iccid
+
+			log.Printf("Getting statuses for all profiles in batch  named %s\n", batchName)
+
+			batch, err := db.GetBatchByName(batchName)
+			if err != nil {
+				return fmt.Errorf("unknown batch '%s'", batchName)
+			}
+
+			entries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
+			if err != nil {
+				return err
+			}
+
+			if len(entries) != batch.Quantity {
+				return fmt.Errorf("batch quantity retrieved from database (%d) different from batch quantity (%d)", len(entries), batch.Quantity)
+			}
+
+			log.Printf("Found %d profiles\n", len(entries))
+
+			// XXX Is this really necessary? I don't think so
+			var mutex = &sync.Mutex{}
+
+			var waitgroup sync.WaitGroup
+
+			// Limit concurrency of the for-loop below
+			// to 160 goroutines.  The reason is that if we get too
+			// many we run out of file descriptors, and we don't seem to
+			// get much speedup after hundred or so.
+
+			concurrency := 160
+			sem := make(chan bool, concurrency)
+			for _, entry := range entries {
+
+				//
+				// Only apply activation if not already noted in the
+				// database.
+				//
+
+				sem <- true
+
+				waitgroup.Add(1)
+				go func(entry model.SimEntry) {
+
+					defer func() { <-sem }()
+
+					result, err := client.GetStatus(entry.Iccid)
+					if err != nil {
+						panic(err)
+					}
+
+					if result == nil {
+						log.Printf("ERROR: Couldn't find any status for Iccid='%s'\n", entry.Iccid)
+					}
+
+					mutex.Lock()
+					fmt.Printf("%s, %s\n", entry.Iccid, result.State)
+					mutex.Unlock()
+					waitgroup.Done()
+				}(entry)
+			}
+
+			waitgroup.Wait()
+			for i := 0; i < cap(sem); i++ {
+				sem <- true
+			}
+
 		case "get-status":
 
 			result, err := client.GetStatus(iccid)
@@ -591,74 +749,6 @@ func parseCommandLine() error {
 
 					if result == nil {
 						panic(fmt.Sprintf("Couldn't find any status for Iccid='%s'\n", entry.Iccid))
-					}
-
-					mutex.Lock()
-					fmt.Printf("%s, %s\n", entry.Iccid, result.State)
-					mutex.Unlock()
-					waitgroup.Done()
-				}(entry)
-			}
-
-			waitgroup.Wait()
-			for i := 0; i < cap(sem); i++ {
-				sem <- true
-			}
-
-		case "get-profile-activation-statuses-for-batch":
-			batchName := iccid
-
-			log.Printf("Getting statuses for all profiles in batch  named %s\n", batchName)
-
-			batch, err := db.GetBatchByName(batchName)
-			if err != nil {
-				return fmt.Errorf("unknown batch '%s'", batchName)
-			}
-
-			entries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
-			if err != nil {
-				return err
-			}
-
-			if len(entries) != batch.Quantity {
-				return fmt.Errorf("batch quantity retrieved from database (%d) different from batch quantity (%d)", len(entries), batch.Quantity)
-			}
-
-			log.Printf("Found %d profiles\n", len(entries))
-
-			// XXX Is this really necessary? I don't think so
-			var mutex = &sync.Mutex{}
-
-			var waitgroup sync.WaitGroup
-
-			// Limit concurrency of the for-loop below
-			// to 160 goroutines.  The reason is that if we get too
-			// many we run out of file descriptors, and we don't seem to
-			// get much speedup after hundred or so.
-
-			concurrency := 160
-			sem := make(chan bool, concurrency)
-			for _, entry := range entries {
-
-				//
-				// Only apply activation if not already noted in the
-				// database.
-				//
-
-				sem <- true
-
-				waitgroup.Add(1)
-				go func(entry model.SimEntry) {
-
-					defer func() { <-sem }()
-
-					result, err := client.GetStatus(entry.Iccid)
-					if err != nil {
-						panic(err)
-					}
-
-					if result == nil {
-						log.Printf("ERROR: Couldn't find any status for Iccid='%s'\n", entry.Iccid)
 					}
 
 					mutex.Lock()
