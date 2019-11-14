@@ -28,14 +28,14 @@ var (
 	// Declare a profile-vendor with an SM-DP+ that can be referred to from
 	// batches.  Referential integrity required, so it won't be possible to
 	// declare bathes with non-existing profile vendors.
-	/** TODO
+
 	dpv             = kingpin.Command("declare-profile-vendor", "Declare a profile vendor with an SM-DP+ we can talk to")
 	dpvName         = dpv.Flag("name", "Name of profile-vendor").Required().String()
 	dpvCertFilePath = dpv.Flag("cert", "Certificate pem file.").Required().String()
 	dpvKeyFilePath  = dpv.Flag("key", "Certificate key file.").Required().String()
 	dpvHost         = dpv.Flag("host", "Host of ES2+ endpoint.").Required().String()
-	dpvPort         = dpv.Flag("port", "Port of ES2+ endpoint").Required().String()
-	*/
+	dpvPort         = dpv.Flag("port", "Port of ES2+ endpoint").Required().Int()
+
 	// TODO: Some command to list all profile-vendors, hsses, etc. , e.g. lspv, lshss, ...
 	// TODO: Add sftp coordinates to be used when fetching/uploding input/utput-files
 	// TODO: Declare hss-es, that can be refered to in profiles.
@@ -164,6 +164,46 @@ func parseCommandLine() error {
 
 	cmd := kingpin.Parse()
 	switch cmd {
+
+	case "declare-profile-vendor":
+
+		vendor, err := db.GetProfileVendorByName(*dpvName)
+		if err != nil {
+			return err
+		}
+
+		if vendor != nil {
+			return fmt.Errorf("already declared profile vendor '%s'", *dpvName)
+		}
+
+		if _, err := os.Stat(*dpvCertFilePath); os.IsNotExist(err) {
+			return fmt.Errorf("can't find certificate file '%s'", *dpvCertFilePath)
+		}
+
+		if _, err := os.Stat(*dpvKeyFilePath); os.IsNotExist(err) {
+			return fmt.Errorf("can't find key file '%s'", *dpvKeyFilePath)
+		}
+
+		if *dpvPort <= 0 {
+			return fmt.Errorf("port  must be positive was '%d'", *dpvPort)
+		}
+
+		if 65534 < *dpvPort {
+			return fmt.Errorf("port must be smaller than or equal to 65535, was '%d'", *dpvPort)
+		}
+
+		v := &model.ProfileVendor{
+			Name:        *dpvName,
+			Es2PlusCert: *dpvCertFilePath,
+			Es2PlusKey:  *dpvKeyFilePath,
+			Es2PlusHost: *dpvHost,
+			Es2PlusPort: *dpvPort,
+		}
+
+		if err := db.CreateProfileVendor(v); err != nil {
+			return err
+		}
+
 	case "sim-profile-upload":
 
 		inputFile := *spUploadInputFile
@@ -176,9 +216,6 @@ func parseCommandLine() error {
 		if err := outfileparser.WriteHssCsvFile(outputFile, outRecord.Entries); err != nil {
 			return fmt.Errorf("couldn't close output file '%s', .  Error = '%v'", outputFilePrefix, err)
 		}
-
-	case "declare-profile-vendor":
-		fmt.Println("Declaration of profile-vendors not yet implemented.")
 
 	case "list-batches":
 
