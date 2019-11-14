@@ -1385,7 +1385,7 @@ object Neo4jStoreSingleton : GraphStore {
 
                 val subscriptionDetailsInfo = paymentProcessor.createSubscription(
                         planId = planStripeId,
-                        stripeCustomerId = profileInfo.id,
+                        customerId = profileInfo.id,
                         trialEnd = trialEnd,
                         taxRegionId = taxRegionId)
                         .mapLeft {
