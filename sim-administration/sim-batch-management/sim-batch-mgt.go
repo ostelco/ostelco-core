@@ -42,24 +42,22 @@ var (
 	getStatusProfileVendor = getStatus.Flag("profile-vendor", "Name of profile vendor").Required().String()
 	getStatusProfileIccid  = getStatus.Arg("iccid", "Iccid to get status for").Required().String()
 
-	recoverProfile = kingpin.Command("recover-profile", "Change state of profile.")
+	recoverProfile       = kingpin.Command("recover-profile", "Change state of profile.")
 	recoverProfileVendor = recoverProfile.Flag("profile-vendor", "Name of profile vendor").Required().String()
-	recoverProfileIccid = recoverProfile.Flag("iccid", "Iccid to recover profile  for").Required().String()
+	recoverProfileIccid  = recoverProfile.Flag("iccid", "Iccid to recover profile  for").Required().String()
 	recoverProfileTarget = recoverProfile.Flag("target-state", "Desired target state").Required().String()
 
-	downloadOrder = kingpin.Command("download-order", "Execute es2p download-order.")
+	downloadOrder       = kingpin.Command("download-order", "Execute es2p download-order.")
 	downloadOrderVendor = downloadOrder.Flag("profile-vendor", "Name of profile vendor").Required().String()
-	downloadOrderIccid = downloadOrder.Flag("iccid", "Iccid to recover profile  for").Required().String()
+	downloadOrderIccid  = downloadOrder.Flag("iccid", "Iccid to recover profile  for").Required().String()
 
-	confirmOrder = kingpin.Command("confirm-order", "Execute es2p confirm-order.")
+	confirmOrder       = kingpin.Command("confirm-order", "Execute es2p confirm-order.")
 	confirmOrderVendor = confirmOrder.Flag("profile-vendor", "Name of profile vendor").Required().String()
-	confirmOrderIccid = confirmOrder.Flag("iccid", "Iccid to confirm profile  for").Required().String()
+	confirmOrderIccid  = confirmOrder.Flag("iccid", "Iccid to confirm profile  for").Required().String()
 
-	activateIccid = kingpin.Command("activate-iccid", "Execute es2p confirm-order.")
+	activateIccid       = kingpin.Command("activate-iccid", "Execute es2p confirm-order.")
 	activateIccidVendor = activateIccid.Flag("profile-vendor", "Name of profile vendor").Required().String()
-	activateIccidIccid = activateIccid.Flag("iccid", "Iccid to confirm profile  for").Required().String()
-
-
+	activateIccidIccid  = activateIccid.Flag("iccid", "Iccid to confirm profile  for").Required().String()
 
 	// TODO: Some command to list all profile-vendors, hsses, etc. , e.g. lspv, lshss, ...
 	// TODO: Add sftp coordinates to be used when fetching/uploding input/utput-files
@@ -73,12 +71,11 @@ var (
 	es2    = kingpin.Command("es2", "Do things with the ES2+ protocol")
 	es2cmd = es2.Arg("cmd",
 		"The ES2+ subcommand, one of get-status, recover-profile, download-order, confirm-order, cancel-profile, bulk-activate-iccids, activate-Iccid, get-profile-activation-statuses-for-iccids-in-file").Required().String()
-	es2iccid        = es2.Arg("Iccid", "Iccid of profile to manipulate").String()
-	es2Target       = es2.Arg("target-state", "Target state of recover-profile or cancel-profile command").Default("AVAILABLE").String()
+	es2iccid         = es2.Arg("Iccid", "Iccid of profile to manipulate").String()
+	es2Target        = es2.Arg("target-state", "Target state of recover-profile or cancel-profile command").Default("AVAILABLE").String()
 	es2ProfileVendor = es2.Flag("profile-vendor", "Name of profile-vendor").Required().String()
 
-
-	getProfActActStatusesForBatch    = kingpin.Command("get-profile-activation-statuses-for-batch", "Get current activation statuses from SM-DP+ for named batch.")
+	getProfActActStatusesForBatch      = kingpin.Command("get-profile-activation-statuses-for-batch", "Get current activation statuses from SM-DP+ for named batch.")
 	getProfActActStatusesForBatchBatch = getProfActActStatusesForBatch.Arg("batcgh", "The batch to get activation statuses for.").Required().String()
 	//
 	// Convert an output (.out) file from an sim profile producer into an input file
@@ -223,16 +220,16 @@ func parseCommandLine() error {
 		if err != nil {
 			return err
 		}
-		absDpvKeyFilePath, err  := filepath.Abs(*dpvKeyFilePath)
+		absDpvKeyFilePath, err := filepath.Abs(*dpvKeyFilePath)
 		if err != nil {
 			return err
 		}
 		v := &model.ProfileVendor{
-			Name:        *dpvName,
-			Es2PlusCert: absDpvCertFilePath,
-			Es2PlusKey:  absDpvKeyFilePath ,
-			Es2PlusHost: *dpvHost,
-			Es2PlusPort: *dpvPort,
+			Name:               *dpvName,
+			Es2PlusCert:        absDpvCertFilePath,
+			Es2PlusKey:         absDpvKeyFilePath,
+			Es2PlusHost:        *dpvHost,
+			Es2PlusPort:        *dpvPort,
 			Es2PlusRequesterId: *dpvRequesterId,
 		}
 
@@ -252,7 +249,7 @@ func parseCommandLine() error {
 			return fmt.Errorf("unknown batch '%s'", batchName)
 		}
 
-		client, err := ClientForVendor(db,  batch.ProfileVendor)
+		client, err := ClientForVendor(db, batch.ProfileVendor)
 		if err != nil {
 			return err
 		}
@@ -538,7 +535,6 @@ func parseCommandLine() error {
 			*dbProfileVendor,
 			*dbInitialHlrActivationStatusOfProfiles)
 
-
 	case "get-status":
 		client, err := ClientForVendor(db, *getStatusProfileVendor)
 		if err != nil {
@@ -602,7 +598,6 @@ func parseCommandLine() error {
 		}
 		fmt.Printf("%s, %s\n", *activateIccidIccid, result.ACToken)
 
-
 	case "es2":
 
 		vendor, err := db.GetProfileVendorByName(*es2ProfileVendor)
@@ -619,9 +614,6 @@ func parseCommandLine() error {
 
 		iccid := *es2iccid
 		switch *es2cmd {
-
-
-
 
 		case "get-profile-activation-statuses-for-iccids-in-file":
 			csvFilename := iccid
@@ -839,9 +831,6 @@ func parseCommandLine() error {
 		default:
 			return fmt.Errorf("unknown es2+ subcommand '%s', try --help", *es2cmd)
 		}
-	case "batch":
-		fmt.Println("Doing the batch thing.")
-		// storage.doTheBatchThing()
 	default:
 		return fmt.Errorf("unknown command: '%s'", cmd)
 	}
