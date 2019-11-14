@@ -10,8 +10,9 @@ import (
 	"testing"
 )
 
+
 var sdb *SimBatchDB
-var err error
+var sdbSetupError error
 
 func TestMain(m *testing.M) {
 	setup()
@@ -29,14 +30,18 @@ func setup() {
 	// delete file, ignore any errors
 	os.Remove(filename)
 
-	sdb, err = OpenFileSqliteDatabase(filename)
-	// sdb, err = NewInMemoryDatabase()
-	if err != nil {
-		panic(fmt.Errorf("Couldn't open new in memory database  '%s", err))
+	sdb, sdbSetupError = OpenFileSqliteDatabase(filename)
+
+	if sdbSetupError != nil {
+		panic(fmt.Errorf("Couldn't open new in memory database  '%s", sdbSetupError))
 	}
 
-	if err = sdb.GenerateTables();  err != nil {
-		panic(fmt.Sprintf("Couldn't generate tables  '%s'", err))
+	if sdb == nil {
+		panic("Returned null database object")
+	}
+
+	if sdbSetupError = sdb.GenerateTables();  sdbSetupError != nil {
+		panic(fmt.Sprintf("Couldn't generate tables  '%s'", sdbSetupError))
 	}
 
 	cleanTables()
@@ -44,19 +49,19 @@ func setup() {
 
 func cleanTables() {
 
-	// return
-	// The tables don't seem to be guaranteed to be empty
-	simProfileDeletionResult, err := sdb.Db.Exec("DELETE FROM SIM_PROFILE")
+	fmt.Println("1 --> ", *sdb)
+	_, err := sdb.Db.Exec("DELETE FROM SIM_PROFILE")
+	fmt.Println("1.1 -->")
 	if err != nil {
 		panic(fmt.Sprintf("Couldn't delete SIM_PROFILE  '%s'", err))
 	}
-	batchDeleteResult, err := sdb.Db.Exec("DELETE FROM BATCH")
+
+	fmt.Println("2 -->")
+	_, err = sdb.Db.Exec("DELETE FROM BATCH")
 	if err != nil {
 		panic(fmt.Sprintf("Couldn't delete BATCH  '%s'", err))
 	}
-
-	simProfileDeletionResult.RowsAffected()
-	batchDeleteResult.RowsAffected()
+	fmt.Println("3 -->")
 }
 
 func shutdown() {
@@ -69,7 +74,7 @@ func shutdown() {
 
 // ... just to know that everything is sane.
 func TestMemoryDbPing(t *testing.T) {
-	if err = sdb.Db.Ping(); err != nil {
+	if err := sdb.Db.Ping(); err != nil {
 		t.Errorf("Could not ping in-memory database. '%s'", err)
 	}
 }
@@ -187,6 +192,39 @@ func TestDeclareBatch(t *testing.T) {
 
 }
 
+func TestDeclareAndRetrieveProfileVendorEntry(t *testing.T) {
+	cleanTables()
+	v := &model.ProfileVendor{
+		Name: "MyName",
+		Es2PlusCert: "cert",
+		Es2PlusKey: "key",
+		Es2PlusHost: "host",
+		Es2PlusPort:  4711,
+	}
+
+	if err := sdb.CreateProfileVendor(v); err != nil {
+		t.Fatal(err)
+	}
+
+	nameRetrievedVendor,err  := sdb.GetProfileVendorByName("MyName")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(nameRetrievedVendor, v) {
+		t.Fatalf("name retrieved and stored profile vendor entries are different, %v v.s. %v", nameRetrievedVendor, v)
+	}
+
+	idRetrievedVendor,err  := sdb.GetProfileVendorById(v.Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(idRetrievedVendor, v) {
+		t.Fatalf("name retrieved and stored profile vendor entries are different, %v v.s. %v", idRetrievedVendor, v)
+	}
+}
+
 func TestDeclareAndRetrieveSimEntries(t *testing.T) {
 	cleanTables()
 	theBatch := declareTestBatch(t)
@@ -203,7 +241,6 @@ func TestDeclareAndRetrieveSimEntries(t *testing.T) {
 		Ki:                   "7",
 		ActivationCode:       "8",
 	}
-
 
 	sdb.CreateSimEntry(&entry)
 	assert.Assert(t, entry.Id != 0)

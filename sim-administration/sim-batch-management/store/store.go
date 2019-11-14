@@ -191,8 +191,9 @@ func (sdb *SimBatchDB) GenerateTables() error {
 
 func (sdb SimBatchDB) CreateProfileVendor(theEntry *model.ProfileVendor) error {
 	// TODO: This insert string can be made through reflection, and at some point should be.
-	res, err := sdb.Db.NamedExec(`INSERT INTO PROFILE_VENDOR (name,   es2PlusCertPath, es2PlusKeyPath,  es2PlusHostPath,  es2PlusPort)
-                                                    VALUES (:name, :es2PlusKeyPath, :es2PlusKeyPath, :es2PlusHostPath, :es2PlusPort)`,
+	res, err := sdb.Db.NamedExec(`
+       INSERT INTO PROFILE_VENDOR (name,   es2PlusCertPath,  es2PlusKeyPath,  es2PlusHostPath,  es2PlusPort)
+                           VALUES (:name, :es2PlusCertPath, :es2PlusKeyPath, :es2PlusHostPath, :es2PlusPort)`,
 		theEntry)
 	if err != nil {
 		return err
