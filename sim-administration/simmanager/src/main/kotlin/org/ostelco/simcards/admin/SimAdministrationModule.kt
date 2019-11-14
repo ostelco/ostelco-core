@@ -202,5 +202,5 @@ object ResourceRegistry {
 
 object ApiRegistry {
     lateinit var simInventoryApi: SimInventoryApi
-    var simProfileStatusUpdateListeners = mutableListOf<(iccId: String, status: SimProfileStatus) -> Unit>()
+    val simProfileStatusUpdateListeners = mutableSetOf<(iccId: String, status: SimProfileStatus) -> Unit>()
 }
