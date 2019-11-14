@@ -48,4 +48,5 @@ type ProfileVendor struct {
 	Es2PlusKey     string  `db:"es2PlusKeyPath"  json:"es2PlusKeyPath"`
 	Es2PlusHost    string  `db:"es2PlusHostPath" json:"es2plusHostPath"`
 	Es2PlusPort    int     `db:"es2PlusPort" json:"es2plusPort"`
+	Es2PlusRequesterId string  `db:"es2PlusRequesterId" json:"es2PlusRequesterId"`
 }

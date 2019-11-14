@@ -195,6 +195,7 @@ func TestDeclareAndRetrieveProfileVendorEntry(t *testing.T) {
 		Es2PlusKey: "key",
 		Es2PlusHost: "host",
 		Es2PlusPort:  4711,
+		Es2PlusRequesterId:  "1.2.3",
 	}
 
 	if err := sdb.CreateProfileVendor(v); err != nil {
