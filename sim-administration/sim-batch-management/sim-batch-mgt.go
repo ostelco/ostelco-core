@@ -16,6 +16,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 )
@@ -192,10 +193,20 @@ func parseCommandLine() error {
 			return fmt.Errorf("port must be smaller than or equal to 65535, was '%d'", *dpvPort)
 		}
 
+		// Modify the paths to absolute  paths.
+
+		absDpvCertFilePath, err := filepath.Abs(*dpvCertFilePath)
+		if err != nil {
+			return err
+		}
+		absDpvKeyFilePath, err  := filepath.Abs(*dpvKeyFilePath)
+		if err != nil {
+			return err
+		}
 		v := &model.ProfileVendor{
 			Name:        *dpvName,
-			Es2PlusCert: *dpvCertFilePath,
-			Es2PlusKey:  *dpvKeyFilePath,
+			Es2PlusCert: absDpvCertFilePath,
+			Es2PlusKey:  absDpvKeyFilePath ,
 			Es2PlusHost: *dpvHost,
 			Es2PlusPort: *dpvPort,
 		}
