@@ -118,16 +118,22 @@ func injectTestBatch() *model.Batch {
 
 func TestGetBatchById(t *testing.T) {
 
+	fmt.Print("TestGetBatchById starts")
 	cleanTables()
 	batch, _ := sdb.GetBatchByName("SOME UNIQUE NAME")
-	if batch != nil  { // TODO: REWRITE TO USE NULL TESTS INSTEAD!!
+	if batch != nil  {
 		t.Errorf("Duplicate detected, error in test setup")
 	}
 
+	// Inject a sample batch
+	injectTestprofileVendor(t)
 	theBatch := injectTestBatch()
 
-	firstInputBatch, _ := sdb.GetBatchById(theBatch.BatchId)
-	if !reflect.DeepEqual(*firstInputBatch, *theBatch) {
+	batchById, _ := sdb.GetBatchById(theBatch.BatchId)
+	if !reflect.DeepEqual(batchById, theBatch) {
+
+		t.Logf("theBatch  = %v\n", theBatch)
+		t.Logf("batchById  = %v\n", batchById)
 		t.Errorf("getBatchById failed")
 	}
 }
@@ -189,8 +195,14 @@ func declareTestBatch(t *testing.T) *model.Batch {
 func TestDeclareBatch(t *testing.T) {
 	injectTestprofileVendor(t)
 	theBatch := declareTestBatch(t)
+	
+	fmt.Println("TestDeclareBatch: The batch id =", theBatch.BatchId)
+
 	retrievedValue, _ := sdb.GetBatchById(theBatch.BatchId)
-	if !reflect.DeepEqual(*retrievedValue, *theBatch) {
+	if retrievedValue == nil {
+		t.Fatalf("Null retrievedValue")
+	}
+	if !reflect.DeepEqual(retrievedValue, theBatch) {
 		t.Fatal("getBatchById failed, stored batch not equal to retrieved batch")
 	}
 

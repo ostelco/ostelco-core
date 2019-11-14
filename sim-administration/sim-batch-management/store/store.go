@@ -100,18 +100,26 @@ func (sdb SimBatchDB) GetAllBatches() ([]model.Batch, error) {
 
 func (sdb SimBatchDB) GetBatchById(id int64) (*model.Batch, error) {
 	result := []model.Batch{}
-	if err := sdb.Db.Get(&result, "select * from BATCH where where id = ?", id); err != nil {
+	if err := sdb.Db.Select(&result, "SELECT * FROM BATCH WHERE id = ?", id); err != nil {
 		return nil, err
+	} else if len(result) == 0 {
+		fmt.Println("returning null")
+		return nil, nil
 	} else {
+		fmt.Println("returning batch: ", result[0])
 		return &(result[0]), nil
 	}
 }
 
 func (sdb SimBatchDB) GetBatchByName(name string) (*model.Batch, error) {
 	result := []model.Batch{}
-	if err := sdb.Db.Get(&result, "select * from BATCH where name = ?", name); err != nil {
+	if err := sdb.Db.Select(&result, "select * from BATCH where name = ?", name); err != nil {
 		return nil, err
+	} else if len(result) == 0 {
+		// fmt.Println("GetBatchByName: returning null  while searching for ", name)
+		return nil, nil
 	} else {
+		fmt.Println("returning batch: ", result[0])
 		return &(result[0]), nil
 	}
 }
