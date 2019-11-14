@@ -48,20 +48,15 @@ func setup() {
 }
 
 func cleanTables() {
-
-	fmt.Println("1 --> ", *sdb)
 	_, err := sdb.Db.Exec("DELETE FROM SIM_PROFILE")
-	fmt.Println("1.1 -->")
 	if err != nil {
 		panic(fmt.Sprintf("Couldn't delete SIM_PROFILE  '%s'", err))
 	}
 
-	fmt.Println("2 -->")
 	_, err = sdb.Db.Exec("DELETE FROM BATCH")
 	if err != nil {
 		panic(fmt.Sprintf("Couldn't delete BATCH  '%s'", err))
 	}
-	fmt.Println("3 -->")
 }
 
 func shutdown() {
