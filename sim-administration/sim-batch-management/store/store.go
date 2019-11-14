@@ -14,6 +14,12 @@ import (
 	"strconv"
 )
 
+
+
+type SimBatchDB struct {
+	Db *sqlx.DB
+}
+
 type Store interface {
 	GenerateTables() error
 	DropTables() error
@@ -61,9 +67,7 @@ func (sdb *SimBatchDB) Begin() *sql.Tx {
 	return tx
 }
 
-type SimBatchDB struct {
-	Db *sqlx.DB
-}
+
 
 func NewInMemoryDatabase() (*SimBatchDB, error) {
 	db, err := sqlx.Connect("sqlite3", ":memory:")
@@ -175,9 +179,9 @@ func (sdb *SimBatchDB) GenerateTables() error {
 	sql = `CREATE TABLE IF NOT EXISTS PROFILE_VENDOR (
          id INTEGER PRIMARY KEY AUTOINCREMENT,
          name VARCHAR NOT NULL UNIQUE,
-         es2PlusCertPath  VARCHAR
-         es2PlusKeyPath VARCHAR
-         es2PlusHostPath VARCHAR
+         es2PlusCertPath  VARCHAR,
+         es2PlusKeyPath VARCHAR,
+         es2PlusHostPath VARCHAR,
          es2PlusPort VARCHAR
         )`
 	_, err = sdb.Db.Exec(sql)
@@ -204,7 +208,7 @@ func (sdb SimBatchDB) CreateProfileVendor(theEntry *model.ProfileVendor) error {
 
 func (sdb SimBatchDB) GetProfileVendorById(id int64) (*model.ProfileVendor, error) {
 	result := []model.ProfileVendor{}
-	if err := sdb.Db.Select(&result, "select * from SIM_PROFILE where id = ?", id); err != nil {
+	if err := sdb.Db.Select(&result, "select * from PROFILE_VENDOR where id = ?", id); err != nil {
 		return nil, err
 	}
 
@@ -217,7 +221,7 @@ func (sdb SimBatchDB) GetProfileVendorById(id int64) (*model.ProfileVendor, erro
 
 func (sdb SimBatchDB) GetProfileVendorByName(name string) (*model.ProfileVendor, error) {
 	result := []model.ProfileVendor{}
-	if err := sdb.Db.Select(&result, "select * from SIM_PROFILE where name = ?", name); err != nil {
+	if err := sdb.Db.Select(&result, "select * from PROFILE_VENDOR where name = ?", name); err != nil {
 		return nil, err
 	}
 
