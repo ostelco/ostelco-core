@@ -148,7 +148,7 @@ var (
 )
 
 func main() {
-	if err := parseCommandLine() ; err != nil {
+	if err := parseCommandLine(); err != nil {
 		panic(err)
 	}
 }
@@ -213,7 +213,7 @@ func parseCommandLine() error {
 	case "generate-activation-code-updating-sql":
 		batch, err := db.GetBatchByName(*generateActivationCodeSqlBatch)
 		if err != nil {
-				return fmt.Errorf("couldn't find batch named '%s' (%s) ", *generateActivationCodeSqlBatch, err)
+			return fmt.Errorf("couldn't find batch named '%s' (%s) ", *generateActivationCodeSqlBatch, err)
 		}
 
 		simEntries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
@@ -456,7 +456,7 @@ func parseCommandLine() error {
 			columnMap = make(map[string]int)
 
 			for index, fieldname := range headerLine {
-				columnMap[strings.ToLower(fieldname)] = index
+				columnMap[strings.TrimSpace(strings.ToLower(fieldname))] = index
 			}
 
 			if _, hasIccid := columnMap["iccid"]; !hasIccid {
@@ -480,6 +480,7 @@ func parseCommandLine() error {
 				}
 
 				iccid := line[columnMap["Iccid"]]
+				iccid = strings.TrimSpace(iccid)
 
 				record := csvRecord{
 					Iccid: iccid,

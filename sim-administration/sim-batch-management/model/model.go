@@ -1,8 +1,8 @@
 package model
 
 
-// TODO: This  type SimEntry struct { struct isn't fully baked.
-
+// TODO: Delete all the ICCID entries that are not necessary, that would be at
+//       about three of them.
 type SimEntry struct {
 	Id                   int64  `db:"id" json:"id"`
 	BatchID              int64  `db:"batchId" json:"batchId"`
@@ -39,4 +39,13 @@ type Batch struct {
 	IccidIncrement  int    `db:"iccidIncrement" json:"msisdnIncrement"`
 	ImsiIncrement   int    `db:"imsiIncrement" json:"imsiIncrement"`
 	FirstMsisdn     string `db:"firstMsisdn" json:"firstMsisdn"`
+}
+
+type ProfileVendor {
+	Id             int64   `db:"id" json:"id"`
+	Name           string  `db:"name" json:"name"`
+	Es2plusCert    string  `db:"es2PlusCert" json:"es2plusCert"`
+	Es2plusKey     string  `db:"es2PlusKey"  json:"es2PlusKey"`
+	Es2plusHost    string  `db:"es2PlusHost" json:"es2plusHost"`
+	Es2plusPort    string  `db:"es2PlusPort" json:"es2plusPort"`
 }
