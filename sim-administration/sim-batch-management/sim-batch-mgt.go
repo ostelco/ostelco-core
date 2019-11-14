@@ -64,8 +64,7 @@ var (
 	activateIccidFileFile   = activateIccidFile.Flag("iccid-file", "Iccid to confirm profile  for").Required().String()
 
 	setBatchActivationCodes       = kingpin.Command("set-batch-activation-codes", "Execute es2p confirm-order.")
-	setBatchActivationCodesVendor = setBatchActivationCodes.Flag("profile-vendor", "Name of profile vendor").Required().String()
-	setBatchActivationCodesFile   = setBatchActivationCodes.Flag("iccid-file", "Iccid to confirm profile  for").Required().String()
+	setBatchActivationCodesBatch   = setBatchActivationCodes.Arg("batch", "Batch to get activation codes for").Required().String()
 
 	bulkActivateIccids       = kingpin.Command("bulk-activate-iccids", "Execute es2p confirm-order.")
 	bulkActivateIccidsVendor = bulkActivateIccids.Flag("profile-vendor", "Name of profile vendor").Required().String()
@@ -85,12 +84,6 @@ var (
 	//        profile/vendor/hss/prime combos are constrained.  It should be possible
 	//        to specify prod/dev primes.
 
-	es2    = kingpin.Command("es2", "Do things with the ES2+ protocol")
-	es2cmd = es2.Arg("cmd",
-		"The ES2+ subcommand, one of get-status, recover-profile, download-order, confirm-order, cancel-profile, bulk-activate-iccids, activate-Iccid, get-profile-activation-statuses-for-iccids-in-file").Required().String()
-	es2iccid         = es2.Arg("Iccid", "Iccid of profile to manipulate").String()
-	es2Target        = es2.Arg("target-state", "Target state of recover-profile or cancel-profile command").Default("AVAILABLE").String()
-	es2ProfileVendor = es2.Flag("profile-vendor", "Name of profile-vendor").Required().String()
 
 	getProfActActStatusesForBatch      = kingpin.Command("get-profile-activation-statuses-for-batch", "Get current activation statuses from SM-DP+ for named batch.")
 	getProfActActStatusesForBatchBatch = getProfActActStatusesForBatch.Arg("batcgh", "The batch to get activation statuses for.").Required().String()
@@ -616,7 +609,7 @@ func parseCommandLine() error {
 		fmt.Printf("%s, %s\n", *activateIccidIccid, result.ACToken)
 
 	case "cancel-iccid":
-		client, err := ClientForVendor(db, *activateIccidVendor)
+		client, err := ClientForVendor(db, *cancelIccidVendor)
 		if err != nil {
 			return err
 		}
@@ -739,19 +732,13 @@ func parseCommandLine() error {
 		}
 
 	case "set-batch-activation-codes":
-		client, err := ClientForVendor(db, *setBatchActivationCodesVendor)
+
+		batchName := *setBatchActivationCodesBatch
+		client, batch, err := ClientForBatch(db, batchName)
 		if err != nil {
 			return err
 		}
 
-		batchName := *setBatchActivationCodesVendor
-
-		fmt.Printf("Getting batch  named %s\n", batchName)
-
-		batch, err := db.GetBatchByName(batchName)
-		if err != nil {
-			return fmt.Errorf("unknown batch '%s'", batchName)
-		}
 
 		entries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
 		if err != nil {
@@ -900,3 +887,24 @@ func ClientForVendor(db *store.SimBatchDB, vendorName string) (es2plus.Es2PlusCl
 	hostport := fmt.Sprintf("%s:%d", vendor.Es2PlusHost, vendor.Es2PlusPort)
 	return es2plus.NewClient(vendor.Es2PlusCert, vendor.Es2PlusKey, hostport, vendor.Es2PlusRequesterId), nil
 }
+
+
+func ClientForBatch(db *store.SimBatchDB, batchName string) (es2plus.Es2PlusClient, *model.Batch,  error) {
+
+	batch, err := db.GetBatchByName(batchName)
+	if err != nil {
+		return nil, nil, err
+	}
+	if batch == nil {
+		return nil, nil, fmt.Errorf("unknown batch '%s'", batchName)
+	}
+
+	client, err := ClientForVendor(db, batch.ProfileVendor)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return client, batch,  nil
+}
+
+
