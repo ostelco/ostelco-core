@@ -183,8 +183,7 @@ func (sdb *SimBatchDB) GenerateTables() error {
          es2PlusKeyPath VARCHAR,
          es2PlusHostPath VARCHAR,
          es2PlusPort VARCHAR,
-         es2PlusRequesterId VARCHAR
-        )`
+         es2PlusRequesterId VARCHAR)`
 	_, err = sdb.Db.Exec(sql)
 
 	return err

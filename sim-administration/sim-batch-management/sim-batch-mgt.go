@@ -36,7 +36,7 @@ var (
 	dpvKeyFilePath  = dpv.Flag("key", "Certificate key file.").Required().String()
 	dpvHost         = dpv.Flag("host", "Host of ES2+ endpoint.").Required().String()
 	dpvPort         = dpv.Flag("port", "Port of ES2+ endpoint").Required().Int()
-	dpvRequesterId  = es2.Flag("requester-id", "ES2+ requester ID.").Required().String()
+	dpvRequesterId  = dpv.Flag("requester-id", "ES2+ requester ID.").Required().String()
 
 
 	// TODO: Some command to list all profile-vendors, hsses, etc. , e.g. lspv, lshss, ...
@@ -213,12 +213,12 @@ func parseCommandLine() error {
 			Es2PlusPort: *dpvPort,
 			Es2PlusRequesterId: *dpvRequesterId,
 		}
-
-		fmt.Printf("Profilevendor = %v", v)
-		os.Exit(1)
+		
 		if err := db.CreateProfileVendor(v); err != nil {
 			return err
 		}
+
+		fmt.Println("Declared a new vendor named ", *dpvName)
 
 	case "sim-profile-upload":
 
