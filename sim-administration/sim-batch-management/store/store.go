@@ -14,8 +14,6 @@ import (
 	"strconv"
 )
 
-
-
 type SimBatchDB struct {
 	Db *sqlx.DB
 }
@@ -67,8 +65,6 @@ func (sdb *SimBatchDB) Begin() *sql.Tx {
 	return tx
 }
 
-
-
 func NewInMemoryDatabase() (*SimBatchDB, error) {
 	db, err := sqlx.Connect("sqlite3", ":memory:")
 	if err != nil {
@@ -103,14 +99,21 @@ func (sdb SimBatchDB) GetAllBatches() ([]model.Batch, error) {
 }
 
 func (sdb SimBatchDB) GetBatchById(id int64) (*model.Batch, error) {
-	var result model.Batch
-	return &result, sdb.Db.Get(&result, "select * from BATCH where id = ?", id)
+	result := []model.Batch{}
+	if err := sdb.Db.Get(&result, "select * from BATCH where where id = ?", id); err != nil {
+		return nil, err
+	} else {
+		return &(result[0]), nil
+	}
 }
 
 func (sdb SimBatchDB) GetBatchByName(name string) (*model.Batch, error) {
-	var result model.Batch
-	result.BatchId = -1
-	return &result, sdb.Db.Get(&result, "select * from BATCH where name = ?", name)
+	result := []model.Batch{}
+	if err := sdb.Db.Get(&result, "select * from BATCH where name = ?", name); err != nil {
+		return nil, err
+	} else {
+		return &(result[0]), nil
+	}
 }
 
 func (sdb SimBatchDB) CreateBatch(theBatch *model.Batch) error {
@@ -195,7 +198,7 @@ func (sdb SimBatchDB) CreateProfileVendor(theEntry *model.ProfileVendor) error {
 
 	vendor, _ := sdb.GetProfileVendorByName(theEntry.Name)
 	if vendor != nil {
-		return fmt.Errorf("Duplicate profile vendor named %s,  %v\n", theEntry.Name, vendor)
+		return fmt.Errorf("duplicate profile vendor named %s,  %v", theEntry.Name, vendor)
 	}
 
 	res, err := sdb.Db.NamedExec(`
@@ -263,13 +266,29 @@ func (sdb SimBatchDB) CreateSimEntry(theEntry *model.SimEntry) error {
 }
 
 func (sdb SimBatchDB) GetSimEntryById(simId int64) (*model.SimEntry, error) {
-	var result model.SimEntry
-	return &result, sdb.Db.Get(&result, "select * from SIM_PROFILE where id = ?", simId)
+	result := []model.SimEntry{}
+	if err := sdb.Db.Select(&result, "select * from SIM_PROFILE where id = ?", simId); err != nil {
+		return nil, err
+	}
+
+	if len(result) == 0 {
+		return nil, nil
+	} else {
+		return &result[0], nil
+	}
 }
 
 func (sdb SimBatchDB) GetAllSimEntriesForBatch(batchId int64) ([]model.SimEntry, error) {
 	result := []model.SimEntry{}
-	return result, sdb.Db.Select(&result, "SELECT * from SIM_PROFILE WHERE batchId = ?", batchId)
+	if err := sdb.Db.Select(&result, "SELECT * from SIM_PROFILE WHERE batchId = ?", batchId) ; err != nil {
+		return nil, err
+	}
+
+	if len(result) == 0 {
+		return nil, nil
+	} else {
+		return result, nil
+	}
 }
 
 func (sdb SimBatchDB) UpdateSimEntryMsisdn(simId int64, msisdn string) error {
@@ -320,7 +339,7 @@ func (sdb SimBatchDB) DeclareBatch(
 	batchLengthString string,
 	hssVendor string,
 	uploadHostname string,
-    uploadPortnumber string,
+	uploadPortnumber string,
 	profileVendor string,
 	initialHlrActivationStatusOfProfiles string) (*model.Batch, error) {
 

@@ -105,7 +105,7 @@ func injectTestBatch() *model.Batch {
 	}
 
 	batch, _ := sdb.GetBatchByName(theBatch.Name)
-	if batch.BatchId != -1 {
+	if batch != nil {
 		panic(fmt.Errorf("Duplicate batch detected '%s'", theBatch.Name))
 	}
 
@@ -120,7 +120,7 @@ func TestGetBatchById(t *testing.T) {
 
 	cleanTables()
 	batch, _ := sdb.GetBatchByName("SOME UNIQUE NAME")
-	if batch.BatchId != -1 { // TODO: REWRITE TO USE NULL TESTS INSTEAD!!
+	if batch != nil  { // TODO: REWRITE TO USE NULL TESTS INSTEAD!!
 		t.Errorf("Duplicate detected, error in test setup")
 	}
 
