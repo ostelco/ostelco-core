@@ -94,39 +94,41 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                                     msisdn: String,
                                     responseBuilder: CreditControlAnswerInfo.Builder) {
 
-        val deferredList = mutableListOf<Deferred<Any>>()
 
         var reservationCounter = 0
 
-        request.msccList.forEach { mscc ->
+        coroutineScope {
 
-            fun consumptionResultHandler(consumptionResult: ConsumptionResult) {
-                addGrantedQuota(consumptionResult.granted, mscc, responseBuilder)
-                addInfo(consumptionResult.balance, mscc, responseBuilder)
-                reportAnalytics(consumptionResult, request)
-                Notifications.lowBalanceAlert(msisdn, consumptionResult.granted, consumptionResult.balance)
-                reservationCounter++
-            }
+            request.msccList.forEach { mscc ->
 
-            suspend fun consumeRequestHandler(consumptionRequest: ConsumptionRequest) {
-                storage.consume(
-                        msisdn = consumptionRequest.msisdn,
-                        usedBytes = consumptionRequest.usedBytes,
-                        requestedBytes = consumptionRequest.requestedBytes) { storeResult ->
-
-                    storeResult
-                            .fold(
-                                    { storeError ->
-                                        // FixMe : should all store errors be unknown user?
-                                        logger.error(storeError.message)
-                                        responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN
-                                    },
-                                    { consumptionResult ->  consumptionResultHandler(consumptionResult) }
-                            )
+                fun consumptionResultHandler(consumptionResult: ConsumptionResult) {
+                    addGrantedQuota(consumptionResult.granted, mscc, responseBuilder)
+                    addInfo(consumptionResult.balance, mscc, responseBuilder)
+                    reportAnalytics(consumptionResult, request)
+                    Notifications.lowBalanceAlert(msisdn, consumptionResult.granted, consumptionResult.balance)
+                    reservationCounter++
                 }
-            }
 
-            val deferred = CoroutineScope(Dispatchers.Default).async {
+                suspend fun consumeRequestHandler(consumptionRequest: ConsumptionRequest) {
+                    async {
+                        storage.consume(
+                                msisdn = consumptionRequest.msisdn,
+                                usedBytes = consumptionRequest.usedBytes,
+                                requestedBytes = consumptionRequest.requestedBytes) { storeResult ->
+
+                            storeResult
+                                    .fold(
+                                            { storeError ->
+                                                // FixMe : should all store errors be unknown user?
+                                                logger.error(storeError.message)
+                                                responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN
+                                            },
+                                            { consumptionResult -> consumptionResultHandler(consumptionResult) }
+                                    )
+                        }
+                    }
+                }
+
                 val requested = mscc.requested?.totalOctets ?: 0
                 if (requested > 0) {
                     consumptionPolicy.checkConsumption(
@@ -141,10 +143,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                             )
                 }
             }
-            deferredList.add(deferred)
         }
-
-        deferredList.forEach{ it.await() }
 
         // In case there was no granted reservations the Validity-Time is set on base level, else it is set in each MSCC
         if (reservationCounter == 0) {
