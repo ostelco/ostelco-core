@@ -38,6 +38,14 @@ var (
 	dpvPort         = dpv.Flag("port", "Port of ES2+ endpoint").Required().Int()
 	dpvRequesterId  = dpv.Flag("requester-id", "ES2+ requester ID.").Required().String()
 
+	getStatus              = kingpin.Command("get-status", "Get status for an iccid")
+	getStatusProfileVendor = getStatus.Flag("profile-vendor", "Name of profile vendor").Required().String()
+	getStatusProfileIccid  = getStatus.Arg("iccid", "Iccid to get status for").Required().String()
+
+	recoverProfile = kingpin.Command("recover-profile", "Change state of profile.")
+	recoverProfileVendor = recoverProfile.Flag("profile-vendor", "Name of profile vendor").Required().String()
+	recoverProfileIccid = recoverProfile.Flag("iccid", "Iccid to recover profile  for").Required().String()
+	recoverProfileTarget = recoverProfile.Flag("target-state", "Desired target state").Required().String()
 
 	// TODO: Some command to list all profile-vendors, hsses, etc. , e.g. lspv, lshss, ...
 	// TODO: Add sftp coordinates to be used when fetching/uploding input/utput-files
@@ -57,7 +65,7 @@ var (
 
 
 	getProfActActStatusesForBatch    = kingpin.Command("get-profile-activation-statuses-for-batch", "Get current activation statuses from SM-DP+ for named batch.")
-	getProfActActStatusesForBatchBatch =getProfActActStatusesForBatch.Arg("batcgh", "The batch to get activation statuses for.").Required().String()
+	getProfActActStatusesForBatchBatch = getProfActActStatusesForBatch.Arg("batcgh", "The batch to get activation statuses for.").Required().String()
 	//
 	// Convert an output (.out) file from an sim profile producer into an input file
 	// for Prime.
@@ -229,7 +237,7 @@ func parseCommandLine() error {
 		if err != nil {
 			return fmt.Errorf("unknown batch '%s'", batchName)
 		}
-		
+
 		client, err := ClientForVendor(db,  batch.ProfileVendor)
 		if err != nil {
 			return err
@@ -518,6 +526,35 @@ func parseCommandLine() error {
 			*dbProfileVendor,
 			*dbInitialHlrActivationStatusOfProfiles)
 
+
+	case "get-status":
+		client, err := ClientForVendor(db, *getStatusProfileVendor)
+		if err != nil {
+			return err
+		}
+
+		result, err := client.GetStatus(*getStatusProfileIccid)
+		if err != nil {
+			return err
+		}
+		log.Printf("Iccid='%s', state='%s', acToken='%s'\n", *getStatusProfileIccid, (*result).State, (*result).ACToken)
+
+	case "recover-profile":
+		client, err := ClientForVendor(db, *recoverProfileVendor)
+		if err != nil {
+			return err
+		}
+
+		err = checkEs2TargetState(*recoverProfileTarget)
+		if err != nil {
+			return err
+		}
+		result, err := client.RecoverProfile(*recoverProfileIccid, *recoverProfileTarget)
+		if err != nil {
+			return err
+		}
+		log.Println("result -> ", result)
+
 	case "es2":
 
 		vendor, err := db.GetProfileVendorByName(*es2ProfileVendor)
@@ -529,31 +566,12 @@ func parseCommandLine() error {
 			return fmt.Errorf("unknown profile vendor '%s'", *es2ProfileVendor)
 		}
 
-
 		hostport := fmt.Sprintf("%s:%d", vendor.Es2PlusHost, vendor.Es2PlusPort)
 		client := es2plus.NewClient(vendor.Es2PlusCert, vendor.Es2PlusKey, hostport, vendor.Es2PlusRequesterId)
 
 		iccid := *es2iccid
 		switch *es2cmd {
 
-		case "get-status":
-
-			result, err := client.GetStatus(iccid)
-			if err != nil {
-				return err
-			}
-
-			log.Printf("Iccid='%s', state='%s', acToken='%s'\n", iccid, (*result).State, (*result).ACToken)
-		case "recover-profile":
-			err := checkEs2TargetState(es2Target)
-			if err != nil {
-				return err
-			}
-			result, err := client.RecoverProfile(iccid, *es2Target)
-			if err != nil {
-				return err
-			}
-			log.Println("result -> ", result)
 		case "download-order":
 			result, err := client.DownloadOrder(iccid)
 			if err != nil {
@@ -779,7 +797,7 @@ func parseCommandLine() error {
 			}
 
 		case "cancel-profile":
-			err := checkEs2TargetState(es2Target)
+			err := checkEs2TargetState(*es2Target)
 			if err != nil {
 				return err
 			}
@@ -800,8 +818,8 @@ func parseCommandLine() error {
 	return nil
 }
 
-func checkEs2TargetState(target *string) error {
-	if *target != "AVAILABLE" {
+func checkEs2TargetState(target string) error {
+	if target != "AVAILABLE" {
 		return fmt.Errorf("target ES2+ state unexpected, legal value(s) is(are): 'AVAILABLE'")
 	} else {
 		return nil
