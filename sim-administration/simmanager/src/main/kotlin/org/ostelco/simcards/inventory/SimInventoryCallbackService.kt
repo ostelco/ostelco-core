@@ -77,7 +77,8 @@ class SimInventoryCallbackService(val dao: SimInventoryDAO) : SmDpPlusCallbackSe
                     gotoState(numericIccId, SmDpPlusState.INSTALLED)
                 }
                 5 -> {
-                    /* Non standard, but non-error state */
+                    /* BPP deleted */
+                    gotoState(numericIccId, SmDpPlusState.DELETED)
                 }
                 else -> {
                     /* Unexpected check point value. */

@@ -54,6 +54,7 @@ object SimManagerSingleton : SimManager {
             SmDpPlusState.DOWNLOADED -> SimProfileStatus.DOWNLOADED
             SmDpPlusState.INSTALLED -> SimProfileStatus.INSTALLED
             SmDpPlusState.ENABLED -> SimProfileStatus.ENABLED
+            SmDpPlusState.DELETED -> SimProfileStatus.DELETED
         }
     }
 }
