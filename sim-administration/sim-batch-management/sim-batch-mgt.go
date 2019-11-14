@@ -745,17 +745,17 @@ func checkEs2TargetState(target *string) error {
 func GenerateInputFile(batch *model.Batch) string {
 	result := "*HEADER DESCRIPTION\n" +
 		"***************************************\n" +
-		fmt.Sprintf("Customer        : %s\n", (*batch).Customer) +
-		fmt.Sprintf("ProfileType     : %s\n", (*batch).ProfileType) +
-		fmt.Sprintf("Order Date      : %s\n", (*batch).OrderDate) +
-		fmt.Sprintf("Batch No        : %s\n", (*batch).BatchNo) +
-		fmt.Sprintf("Quantity        : %d\n", (*batch).Quantity) +
+		fmt.Sprintf("Customer        : %s\n", batch.Customer) +
+		fmt.Sprintf("ProfileType     : %s\n", batch.ProfileType) +
+		fmt.Sprintf("Order Date      : %s\n", batch.OrderDate) +
+		fmt.Sprintf("Batch No        : %s\n", batch.BatchNo) +
+		fmt.Sprintf("Quantity        : %d\n", batch.Quantity) +
 		"***************************************\n" +
 		"*INPUT VARIABLES\n" +
 		"***************************************\n" +
 		"var_In:\n" +
-		fmt.Sprintf(" ICCID: %s\n", (*batch).FirstIccid) +
-		fmt.Sprintf("IMSI: %s\n", (*batch).FirstImsi) +
+		fmt.Sprintf(" ICCID: %s\n", batch.FirstIccid) +
+		fmt.Sprintf("IMSI: %s\n", batch.FirstImsi) +
 		"***************************************\n" +
 		"*OUTPUT VARIABLES\n" +
 		"***************************************\n" +
