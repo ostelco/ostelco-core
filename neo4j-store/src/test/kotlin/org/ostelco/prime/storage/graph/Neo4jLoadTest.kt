@@ -23,7 +23,6 @@ import org.ostelco.prime.model.ProductProperties.PRODUCT_CLASS
 import org.ostelco.prime.model.Region
 import org.ostelco.prime.storage.graph.model.Segment
 import java.util.*
-import java.util.concurrent.CountDownLatch
 import kotlin.system.measureTimeMillis
 import kotlin.test.BeforeTest
 import kotlin.test.Ignore
@@ -101,8 +100,6 @@ class Neo4jLoadTest {
 
         val durationInMillis = measureTimeMillis {
 
-            val cdl = CountDownLatch(COUNT)
-
             runBlocking(Dispatchers.Default) {
                 repeat(COUNT) { i ->
                     launch {
@@ -110,7 +107,6 @@ class Neo4jLoadTest {
                             storeResult.bimap(
                                     { fail(it.message) },
                                     {
-                                        cdl.countDown()
                                         // println("Balance = %,d, Granted = %,d".format(it.balance, it.granted))
                                     })
                         }
@@ -120,8 +116,6 @@ class Neo4jLoadTest {
                 // Wait for all the responses to be returned
                 println("Waiting for all responses to be returned")
             }
-
-            cdl.await()
         }
 
         // Print load test results
