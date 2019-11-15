@@ -15,7 +15,7 @@ func GeneratePostingCurlscript(url string, payload string) {
 	fmt.Print("EOF\n")
 }
 
-func GenerateCsvPayload3(db *store.SimBatchDB, batch model.Batch) string {
+func GenerateCsvPayload(db *store.SimBatchDB, batch model.Batch) string {
 	var sb strings.Builder
 	sb.WriteString("ICCID, IMSI, MSISDN, PIN1, PIN2, PUK1, PUK2, PROFILE\n")
 
