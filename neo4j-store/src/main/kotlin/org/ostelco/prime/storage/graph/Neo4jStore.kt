@@ -663,24 +663,38 @@ object Neo4jStoreSingleton : GraphStore {
             }
         }
 
-        override fun getSimProfileStatusUpdates(onUpdate: (iccId: String, status: SimProfileStatus) -> Unit) {
-            return trace.childSpan("simManager.getSimProfileStatusUpdates") {
-                simManager.getSimProfileStatusUpdates(onUpdate)
-            }
+        override fun addSimProfileStatusUpdateListener(listener: (iccId: String, status: SimProfileStatus) -> Unit) {
+            simManager.addSimProfileStatusUpdateListener(listener)
         }
     }
 
     fun subscribeToSimProfileStatusUpdates() {
-        simManager.getSimProfileStatusUpdates { iccId, status ->
+        simManager.addSimProfileStatusUpdateListener { iccId, status ->
             readTransaction {
                 IO {
                     Either.monad<StoreError>().binding {
-                        val subscriptions = get(Subscription under (SimProfile withId iccId)).bind()
-                        subscriptions.forEach { subscription ->
-                            analyticsReporter.reportSubscriptionStatusUpdate(subscription.analyticsId, status)
+                        logger.info("Received status {} for iccId {}", status, iccId)
+                        val simProfiles = getSimProfilesUsingIccId(iccId = iccId, transaction = transaction)
+                        if (simProfiles.size != 1) {
+                            logger.warn("Found {} SIM Profiles with iccId {}", simProfiles.size, iccId)
+                        }
+                        simProfiles.forEach { simProfile ->
+                            val subscriptions = get(Subscription under (SimProfile withId simProfile.id)).bind()
+                            subscriptions.forEach { subscription ->
+                                logger.info("Notify status {} for subscription.analyticsId {}", status, subscription.analyticsId)
+                                analyticsReporter.reportSubscriptionStatusUpdate(subscription.analyticsId, status)
+                            }
                         }
                     }.fix()
                 }.unsafeRunSync()
+            }
+        }
+    }
+
+    private fun getSimProfilesUsingIccId(iccId: String, transaction: Transaction): Collection<SimProfile> {
+        return read("""MATCH (sp:${simProfileEntity.name} {iccId:"$iccId"}) RETURN sp""", transaction) { statementResult ->
+            statementResult.list { record ->
+                simProfileEntity.createEntity(record["sp"].asMap())
             }
         }
     }

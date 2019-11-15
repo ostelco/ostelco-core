@@ -369,6 +369,7 @@ enum class SimProfileStatus {
     DOWNLOADED,
     INSTALLED,
     ENABLED,
+    DELETED
 }
 
 data class Context(
