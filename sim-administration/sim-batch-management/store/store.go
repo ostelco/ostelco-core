@@ -12,6 +12,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type SimBatchDB struct {
@@ -80,12 +81,28 @@ func NewInMemoryDatabase() (*SimBatchDB, error) {
 }
 
 func OpenFileSqliteDatabaseFromPathInEnvironmentVariable(variablename string) (*SimBatchDB, error) {
-	variableValue := os.Getenv(variablename)
+	variableValue := strings.TrimSpace(os.Getenv(variablename))
+	if variableValue == "" {
+		return nil, fmt.Errorf("Environment variable '%s' is empty, is should contain the path to a sqlite database used by this program.", variablename)
+	}
 	db, err := OpenFileSqliteDatabase(variableValue)
 	return db, err
 }
 
 func OpenFileSqliteDatabase(path string) (*SimBatchDB, error) {
+	
+	if _, err := os.Stat(path); err == nil {
+		log.Printf("Using database file  at '%s'", path)
+
+	} else if os.IsNotExist(err) {
+		log.Printf("No databasefile found at '%s', will create one", path)
+		// path/to/whatever does *not* exist
+
+	} else {
+		// Schrodinger: file may or may not exist. See err for details.
+		// Therefore, do *NOT* use !os.IsNotExist(err) to test for file existence
+	}
+
 	db, err := sqlx.Open("sqlite3", path)
 	if err != nil {
 		return nil, err

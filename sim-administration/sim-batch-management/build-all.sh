@@ -28,3 +28,11 @@ fi
  ~/go/bin/staticcheck ./...
 
 
+mv sim-batch-management sbm
+
+# If sourcing this script, then the line below
+# will modify command line compesion in bash
+
+if [[ $_ != $0 ]] ; then 
+    eval "$(./sbm  --completion-script-bash)"
+fi

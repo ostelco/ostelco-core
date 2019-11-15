@@ -1,8 +1,9 @@
 TODO
 ==
-1. Make the build-all script run without errors (including linter errors)
-1. Clean up the code a lot
-1. Take pending code review comments into account.
+
+1. Use a different database than hardcoded "foobar.db" :-) Read it from an
+    environment variable or something at least a bit portable.
+1. Write up a nice markdown documentation describing common usecases.
 1. Create a very clean PR for future code review.
 1. Compress the utility scripts into very close to nothing, by adding their functionality to the .go code.
 1. Add crypto resources so that the program can talk to external parties.
@@ -18,4 +19,13 @@ TODO
       directly from the script later.   In either case 
       it will be assumed that tunnels are set up out of band, and
       tunnel setup is not part of this program.
+      
+ 	// TODO: Some command to list all profile-vendors, hsses, etc. , e.g. lspv, lshss, ...
+ 	// TODO: Add sftp coordinates to be used when fetching/uploding input/utput-files
+ 	// TODO: Declare hss-es, that can be refered to in profiles.
+ 	// TODO: Declare legal hss/dpv combinations, batches must use legal combos.
+ 	// TODO: Declare contact methods for primes.  It might be a good idea to
+ 	//        impose referential integrity constraint on this too, so that
+ 	//        profile/vendor/hss/prime combos are constrained.  It should be possible
+ 	//        to specify prod/dev primes.
 
