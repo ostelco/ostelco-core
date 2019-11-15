@@ -164,7 +164,7 @@ func main() {
 
 func parseCommandLine() error {
 
-	db, err := store.OpenFileSqliteDatabase("foobar.db")
+	db, err := store.OpenFileSqliteDatabaseFromPathInEnvironmentVariable("SIM_BATCH_DATABASE")
 
 	if err != nil {
 		return fmt.Errorf("couldn't open sqlite database.  '%s'", err)

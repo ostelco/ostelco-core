@@ -83,25 +83,21 @@ func NewInMemoryDatabase() (*SimBatchDB, error) {
 func OpenFileSqliteDatabaseFromPathInEnvironmentVariable(variablename string) (*SimBatchDB, error) {
 	variableValue := strings.TrimSpace(os.Getenv(variablename))
 	if variableValue == "" {
-		return nil, fmt.Errorf("Environment variable '%s' is empty, is should contain the path to a sqlite database used by this program.", variablename)
+		return nil, fmt.Errorf("environment variable '%s' is empty, is should contain the path to a sqlite database used by this program.  The file will be created if it's not there, but the path can't be empty", variablename)
 	}
 	db, err := OpenFileSqliteDatabase(variableValue)
 	return db, err
 }
 
 func OpenFileSqliteDatabase(path string) (*SimBatchDB, error) {
-	
+
+	/*  TODO: Introduce 'debug' flag, and let that flag light up this code.
 	if _, err := os.Stat(path); err == nil {
 		log.Printf("Using database file  at '%s'", path)
-
-	} else if os.IsNotExist(err) {
+	} else  {
 		log.Printf("No databasefile found at '%s', will create one", path)
-		// path/to/whatever does *not* exist
-
-	} else {
-		// Schrodinger: file may or may not exist. See err for details.
-		// Therefore, do *NOT* use !os.IsNotExist(err) to test for file existence
 	}
+	 */
 
 	db, err := sqlx.Open("sqlite3", path)
 	if err != nil {
@@ -123,7 +119,6 @@ func (sdb SimBatchDB) GetBatchById(id int64) (*model.Batch, error) {
 		fmt.Println("returning null")
 		return nil, nil
 	} else {
-		fmt.Println("returning batch: ", result[0])
 		return &(result[0]), nil
 	}
 }

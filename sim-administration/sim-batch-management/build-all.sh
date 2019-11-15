@@ -33,6 +33,7 @@ mv sim-batch-management sbm
 # If sourcing this script, then the line below
 # will modify command line compesion in bash
 
-if [[ $_ != $0 ]] ; then 
-    eval "$(./sbm  --completion-script-bash)"
+if [[ $_ != $0 ]] ; then
+    rm -f /tmp/tmp.db
+    eval "$(SIM_BATCH_DATABASE=/tmp/tmp.db ./sbm  --completion-script-bash)"
 fi
