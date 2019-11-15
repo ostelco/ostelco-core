@@ -142,15 +142,13 @@ func (sdb SimBatchDB) CreateBatch(theBatch *model.Batch) error {
 		theBatch,
 	)
 
-	if err != nil {
-		// XXX Should be error logging
-		return fmt.Errorf("failed to insert new batch '%s'", err)
+	if err != nil {git sta
+		return log.Printf("failed to insert new batch '%s'", err)
 	}
 
 	id, err := res.LastInsertId()
 	if err != nil {
-		// XXX Should be error logging
-		return fmt.Errorf("getting last inserted id failed '%s'", err)
+		return log.Printf("getting last inserted id failed '%s'", err)
 	}
 	theBatch.BatchId = id
 
