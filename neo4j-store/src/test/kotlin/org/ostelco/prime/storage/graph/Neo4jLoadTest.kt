@@ -17,7 +17,10 @@ import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
+import org.ostelco.prime.model.ProductClass.SIMPLE_DATA
 import org.ostelco.prime.model.ProductProperties.NO_OF_BYTES
+import org.ostelco.prime.model.ProductProperties.PRODUCT_CLASS
+import org.ostelco.prime.model.Region
 import org.ostelco.prime.storage.graph.model.Segment
 import java.util.*
 import java.util.concurrent.CountDownLatch
@@ -45,15 +48,26 @@ class Neo4jLoadTest {
             create {
                 Product(sku = "2GB_FREE_ON_JOINING",
                         price = Price(0, ""),
-                        properties = mapOf(NO_OF_BYTES.s to "2_147_483_648"))
+                        properties = mapOf(
+                                PRODUCT_CLASS.s to SIMPLE_DATA.name,
+                                NO_OF_BYTES.s to "${2.GiB()}"
+                        )
+                )
             }
             create {
                 Product(sku = "1GB_FREE_ON_REFERRED",
                         price = Price(0, ""),
-                        properties = mapOf(NO_OF_BYTES.s to "1_000_000_000"))
+                        properties = mapOf(
+                                PRODUCT_CLASS.s to SIMPLE_DATA.name,
+                                NO_OF_BYTES.s to "1_000_000_000"
+                        )
+                )
             }
             create {
-                Segment(id = "country-${COUNTRY.toLowerCase()}")
+                Segment(id = "country-$COUNTRY_CODE}")
+            }
+            create {
+                Region(id  = COUNTRY_CODE, name = "Norway")
             }
         }
     }
@@ -93,12 +107,11 @@ class Neo4jLoadTest {
                 repeat(COUNT) { i ->
                     launch {
                         Neo4jStoreSingleton.consume(msisdn = "${i % USERS}", usedBytes = USED, requestedBytes = REQUESTED) { storeResult ->
-                            storeResult.fold(
+                            storeResult.bimap(
                                     { fail(it.message) },
                                     {
-                                        // println("Balance = %,d, Granted = %,d".format(it.second, it.first))
                                         cdl.countDown()
-                                        assert(true)
+                                        // println("Balance = %,d, Granted = %,d".format(it.balance, it.granted))
                                     })
                         }
                     }
@@ -120,7 +133,7 @@ class Neo4jLoadTest {
                 .fold(
                         { fail(it.message) },
                         {
-                            assertEquals(expected = 100_000_000 - COUNT / USERS * USED - REQUESTED,
+                            assertEquals(expected = 2.GiB() - COUNT / USERS * USED - REQUESTED,
                                     actual = it.single().balance,
                                     message = "Balance does not match")
                         }
@@ -136,7 +149,7 @@ class Neo4jLoadTest {
         const val REQUESTED = 100L
 
         const val NAME = "Test User"
-        const val COUNTRY = "NO"
+        const val COUNTRY_CODE = "no"
 
         @ClassRule
         @JvmField
@@ -197,3 +210,5 @@ class Neo4jLoadTest {
         }
     }
 }
+
+fun Int.GiB() = this.toLong() * 1024 * 1024 * 1024
