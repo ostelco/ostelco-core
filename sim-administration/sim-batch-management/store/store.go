@@ -360,6 +360,8 @@ func (sdb SimBatchDB) DeclareBatch(
 	profileVendor string,
 	initialHlrActivationStatusOfProfiles string) (*model.Batch, error) {
 
+		log.Println("Declaring batch ...")
+
 	vendor, err := sdb.GetProfileVendorByName(profileVendor)
 	if err != nil {
 		return nil, err
