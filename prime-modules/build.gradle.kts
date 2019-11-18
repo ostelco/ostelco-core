@@ -9,6 +9,7 @@ dependencies {
   api(kotlin("stdlib-jdk8"))
   api(kotlin("reflect"))
   api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Version.kotlinXCoroutines}")
+  api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${Version.kotlinXCoroutines}")
 
   api("io.dropwizard:dropwizard-auth:${Version.dropwizard}")
   implementation("com.google.cloud:google-cloud-pubsub:${Version.googleCloudPubSub}")
