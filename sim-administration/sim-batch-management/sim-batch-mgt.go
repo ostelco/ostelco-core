@@ -317,6 +317,8 @@ func parseCommandLine() error {
 		// TODO: Do all of this in a transaction!
 		for _, e := range outRecord.Entries {
 			log.Printf("Processing entry %v\n", e)
+			// TODO: The ICCIDs may be paddec with F values, and I don't want to
+			//       deal with that now, so I'm
 			// simProfile, err := db.GetSimProfileByIccid(e.Iccid)
 			simProfile, err := db.GetSimProfileByImsi(e.Imsi)
 			if err != nil {return err}

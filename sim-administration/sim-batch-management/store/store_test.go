@@ -286,3 +286,41 @@ func TestDeclareAndRetrieveSimEntries(t *testing.T) {
 		t.Fatal("Retrieved and stored sim entry are different")
 	}
 }
+
+func TestSimBatchDB_UpdateSimEntryKi(t *testing.T) {
+	cleanTables()
+	injectTestprofileVendor(t)
+	theBatch := declareTestBatch(t)
+	batchId := theBatch.BatchId
+
+	entry := model.SimEntry{
+		BatchID:              batchId,
+		RawIccid:             "1",
+		IccidWithChecksum:    "2",
+		IccidWithoutChecksum: "3",
+		Iccid:                "4",
+		Imsi:                 "5",
+		Msisdn:               "6",
+		Ki:                   "7",
+		ActivationCode:       "8",
+	}
+
+	sdb.CreateSimEntry(&entry)
+	assert.Assert(t, entry.Id != 0)
+
+	newKi := "12"
+	err := sdb.UpdateSimEntryKi(entry.Id, newKi)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	retrivedEntry, err := sdb.GetSimEntryById(entry.Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if retrivedEntry.Ki != "12" {
+		t.Fatalf("Retrieved (%s) and stored  (%s) ki values are different", retrivedEntry.Ki, newKi)
+	}
+}
