@@ -7,6 +7,7 @@ import arrow.core.left
 import arrow.core.right
 import arrow.effects.IO
 import arrow.instances.either.monad.monad
+import org.apache.commons.codec.digest.DigestUtils
 import org.ostelco.prime.dsl.withId
 import org.ostelco.prime.dsl.writeTransaction
 import org.ostelco.prime.model.Bundle
@@ -127,3 +128,28 @@ private fun emailAsIdentity(email: String) = Identity(
         type = "EMAIL",
         provider = "email"
 )
+
+fun identifyCustomer(idDigests: Set<String>) = IO {
+    Either.monad<StoreError>().binding {
+        adminStore
+                // get all Identity values
+                .getAllIdentities()
+                .bind()
+                // map to <Digest of id, Identity>
+                .map { String(Base64.getEncoder().encode(DigestUtils.sha256(it.id))) to it }
+                .toMap()
+                // filter on idDigests we want to find
+                .filterKeys { idDigests.contains(it) }
+                // find customer for each filtered Identity
+                .forEach { (idDigest, identity) ->
+                    adminStore.getCustomer(identity).bimap(
+                            { println("No Customer found for digest: $idDigest. - ${it.message}") },
+                            { println("Found Customer ID: ${it.id} for digest: $idDigest") }
+                    )
+                }
+        }.fix()
+    }
+        .unsafeRunSync()
+        .mapLeft {
+            println(it.message)
+        }

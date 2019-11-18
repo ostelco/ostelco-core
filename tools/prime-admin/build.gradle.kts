@@ -9,6 +9,8 @@ plugins {
 dependencies {
   implementation(kotlin("stdlib-jdk8"))
 
+  implementation(project(":prime-modules"))
+
   implementation(project(":prime"))
   implementation(project(":neo4j-store"))
   

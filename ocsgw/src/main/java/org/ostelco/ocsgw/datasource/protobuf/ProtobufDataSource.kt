@@ -96,6 +96,7 @@ class ProtobufDataSource {
                     creditControlContext.creditControlRequest.serviceInformation[0].psInformation[0].calledStationId,
                     creditControlContext.creditControlRequest.serviceInformation[0].psInformation[0].sgsnMccMnc)
             sessionIdMap[creditControlContext.creditControlRequest.msisdn] = sessionContext
+            logger.debug("Number of active sessions : ${sessionIdMap.size}")
         } catch (e: Exception) {
             logger.error("Failed to update session map []",creditControlContext.sessionId, e)
         }
@@ -104,6 +105,7 @@ class ProtobufDataSource {
     private fun removeFromSessionMap(creditControlContext: CreditControlContext) {
         if (ProtobufToDiameterConverter.getRequestType(creditControlContext) == CreditControlRequestType.TERMINATION_REQUEST) {
             sessionIdMap.remove(creditControlContext.creditControlRequest.msisdn)
+            logger.debug("Number of active sessions : ${sessionIdMap.size}")
         }
     }
 

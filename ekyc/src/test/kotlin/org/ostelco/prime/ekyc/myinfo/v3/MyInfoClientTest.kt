@@ -41,7 +41,8 @@ import kotlin.system.measureTimeMillis
  * VERSION: `/v2`
  */
 // Using certs from https://github.com/jamesleegovtech/myinfo-demo-app/tree/master/ssl
-private val templateTestConfig = String(File("src/test/resources/stg-demoapp-client-privatekey-2018.pem").readBytes())
+private val templateTestConfig = File("src/test/resources/stg-demoapp-client-privatekey-2018.pem")
+        .readText()
         .replace("\n","")
         .removePrefix("-----BEGIN PRIVATE KEY-----")
         .removeSuffix("-----END PRIVATE KEY-----")
@@ -193,7 +194,8 @@ class RSAKeyTest {
     fun `test loading MyInfo Staging client private key`() {
 
         // Using cert from https://github.com/jamesleegovtech/myinfo-demo-app/tree/master/ssl
-        val base64Encoded = String(File("src/test/resources/stg-demoapp-client-privatekey-2018.pem").readBytes())
+        val base64Encoded = File("src/test/resources/stg-demoapp-client-privatekey-2018.pem")
+                .readText()
                 .replace("\n","")
                 .removePrefix("-----BEGIN PRIVATE KEY-----")
                 .removeSuffix("-----END PRIVATE KEY-----")

@@ -8,7 +8,6 @@ import io.dropwizard.auth.Auth
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.apierror.ApiErrorCode
 import org.ostelco.prime.apierror.ApiErrorCode.FAILED_TO_FETCH_AUDIT_LOGS
-import org.ostelco.prime.apierror.ApiErrorMapper
 import org.ostelco.prime.apierror.InternalServerError
 import org.ostelco.prime.apierror.NotFoundError
 import org.ostelco.prime.apierror.responseBuilder
@@ -32,7 +31,6 @@ import java.util.regex.Pattern
 import javax.validation.constraints.NotNull
 import javax.ws.rs.DELETE
 import javax.ws.rs.GET
-import javax.ws.rs.POST
 import javax.ws.rs.PUT
 import javax.ws.rs.Path
 import javax.ws.rs.PathParam
@@ -63,8 +61,6 @@ class ProfilesResource {
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
                 val trimmedQuery = query.trim()
-                        .replace("'", "")
-                        .replace("\"", "")
                 if (isMsisdn(trimmedQuery)) {
                     logger.info("${token.name} Accessing profile for msisdn: $query")
                     getProfileListForMsisdn(trimmedQuery)
@@ -115,7 +111,7 @@ class ProfilesResource {
 
     private fun getAllScanInformation(customerId: String): Either<ApiError, Collection<ScanInformation>> {
         return try {
-            storage.getIdentityForCustomerId(id = customerId).flatMap { identity: Identity ->
+            storage.getAnyIdentityForCustomerId(id = customerId).flatMap { identity: Identity ->
                 storage.getAllScanInformation(identity = identity)
             }.mapLeft {
                 NotFoundError("Failed to fetch scan information.", ApiErrorCode.FAILED_TO_FETCH_SCAN_INFORMATION, it)
@@ -162,10 +158,8 @@ class ProfilesResource {
 
     private fun getProfileListForMsisdn(msisdn: String): Either<ApiError, Collection<Customer>> {
         return try {
-            storage.getCustomerForMsisdn(msisdn).mapLeft {
+            storage.getCustomersForMsisdn(msisdn).mapLeft {
                 NotFoundError("Failed to fetch profile.", ApiErrorCode.FAILED_TO_FETCH_CUSTOMER, it)
-            }.map {
-                listOf(it)
             }
         } catch (e: Exception) {
             logger.error("Failed to fetch profile for msisdn $msisdn", e)
@@ -176,7 +170,7 @@ class ProfilesResource {
     // TODO: Reuse the one from SubscriberDAO
     private fun getSubscriptions(customerId: String): Either<ApiError, Collection<Subscription>> {
         return try {
-            storage.getIdentityForCustomerId(id = customerId).flatMap { identity: Identity ->
+            storage.getAnyIdentityForCustomerId(id = customerId).flatMap { identity: Identity ->
                 storage.getSubscriptions(identity)
             }.mapLeft {
                 NotFoundError("Failed to get subscriptions.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS, it)
@@ -216,7 +210,7 @@ class BundlesResource {
     // TODO: Reuse the one from SubscriberDAO
     private fun getBundles(customerId: String): Either<ApiError, Collection<Bundle>> {
         return try {
-            storage.getIdentityForCustomerId(id = customerId).flatMap { identity: Identity ->
+            storage.getAnyIdentityForCustomerId(id = customerId).flatMap { identity: Identity ->
                 storage.getBundles(identity)
             }.mapLeft {
                 NotFoundError("Failed to get bundles. ${it.message}", ApiErrorCode.FAILED_TO_FETCH_BUNDLES)
@@ -256,7 +250,7 @@ class PurchaseResource {
     // TODO: Reuse the one from SubscriberDAO
     private fun getPurchaseHistory(customerId: String): Either<ApiError, Collection<PurchaseRecord>> {
         return try {
-            storage.getIdentityForCustomerId(id = customerId).flatMap { identity: Identity ->
+            storage.getAnyIdentityForCustomerId(id = customerId).flatMap { identity: Identity ->
                 storage.getPurchaseRecords(identity)
             }.bimap(
                     { NotFoundError("Failed to get purchase history.", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_HISTORY, it) },
@@ -306,7 +300,7 @@ class RefundResource {
 
     private fun refundPurchase(customerId: String, purchaseRecordId: String, reason: String): Either<ApiError, ProductInfo> {
         return try {
-            storage.getIdentityForCustomerId(id = customerId).flatMap { identity: Identity ->
+            storage.getAnyIdentityForCustomerId(id = customerId).flatMap { identity: Identity ->
                 storage.refundPurchase(identity, purchaseRecordId, reason)
             }.mapLeft {
                 when (it) {
@@ -350,7 +344,7 @@ class ContextResource {
     // TODO: Reuse the one from SubscriberDAO
     private fun getContext(customerId: String): Either<ApiError, Context> {
         return try {
-            storage.getIdentityForCustomerId(id = customerId).flatMap { identity: Identity ->
+            storage.getAnyIdentityForCustomerId(id = customerId).flatMap { identity: Identity ->
                 storage.getCustomer(identity).map { customer ->
                     storage.getAllRegionDetails(identity = identity)
                             .fold(
@@ -459,7 +453,7 @@ class CustomerResource {
     // TODO: Reuse the one from SubscriberDAO
     private fun removeCustomer(customerId: String): Either<ApiError, Unit> {
         return try {
-            storage.getIdentityForCustomerId(id = customerId).flatMap { identity: Identity ->
+            storage.getAnyIdentityForCustomerId(id = customerId).flatMap { identity: Identity ->
                 storage.removeCustomer(identity)
             }.mapLeft {
                 NotFoundError("Failed to remove customer.", ApiErrorCode.FAILED_TO_REMOVE_CUSTOMER, it)
