@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/loltelutils"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
+	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/store"
+
 	"log"
 	"os"
 	"regexp"
@@ -286,9 +288,12 @@ func fileExists(filename string) bool {
 	return !info.IsDir()
 }
 
+
+
+
 // TODO: Move this into some other package. "hssoutput" or something.
 // TODO: Consider rewriting using https://golang.org/pkg/encoding/csv/
-func WriteHssCsvFile(filename string, entries []model.SimEntry) error {
+func WriteHssCsvFile(filename string, sdb *store.SimBatchDB, batch *model.Batch) error {
 
 	if fileExists(filename) {
 		return fmt.Errorf("output file already exists.  '%s'", filename)
@@ -302,6 +307,10 @@ func WriteHssCsvFile(filename string, entries []model.SimEntry) error {
 	if _, err = f.WriteString("ICCID, IMSI, KI\n");  err != nil {
 		return fmt.Errorf("couldn't header to  hss csv file '%s', %v", filename, err)
 	}
+
+
+	entries, err := sdb.GetAllSimEntriesForBatch(batch.BatchId)
+
 
 	max := 0
 	for i, entry := range entries {

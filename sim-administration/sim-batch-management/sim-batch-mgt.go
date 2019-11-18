@@ -102,13 +102,20 @@ var (
 	addMsisdnFromFileCsvfile = addMsisdnFromFile.Flag("csv-file", "The CSV file to read from").Required().ExistingFile()
 	addMsisdnFromFileAddLuhn = addMsisdnFromFile.Flag("add-luhn-checksums", "Assume that the checksums for the ICCIDs are not present, and add them").Default("false").Bool()
 
-	generateUploadBatch      = kingpin.Command("batch-generate-upload-script", "Generate a batch upload script")
-	generateUploadBatchBatch = generateUploadBatch.Arg("batch-name", "The batch to generate upload script from").String()
+
+	bwBatch      = kingpin.Command("batch-write-hss", "Generate a batch upload script")
+	bwBatchName  = bwBatch.Arg("batch-name", "The batch to generate upload script from").String()
+	bwOutputDirName  = bwBatch.Arg("output-dir-name", "The directory in which to place the output file.").String()
 
 
 	spUpload                 = kingpin.Command("batch-read-out-file", "Convert an output (.out) file from an sim profile producer into an input file for an HSS.")
 	spBatchName              = spUpload.Arg("batch-name", "The batch to augment").Required().String()
 	spUploadInputFile        = spUpload.Arg("input-file", "path to .out file used as input file").Required().String()
+
+
+	generateUploadBatch = kingpin.Command("batch-generate-upload-script", "Write a file that can be used by an HSS to insert profiles.")
+	generateUploadBatchBatch = generateUploadBatch.Arg("batch", "The batch to output from").Required().String()
+
 
 // TODO: Delete this asap!
 //	spUploadOutputFilePrefix = spUpload.Flag("output-file-prefix",
@@ -329,14 +336,25 @@ func parseCommandLine() error {
 			db.UpdateSimEntryKi(simProfile.Id, e.Ki)
 		}
 
-		/** TODO: Put this into another command
-		outputFile := outputFilePrefix + outRecord.OutputFileName + ".csv"
+
+	case "batch-write-hss":
+
+		batch, err := db.GetBatchByName(*bwBatchName)
+
+		if err != nil {
+			return err
+		}
+
+		if batch == nil {
+			return fmt.Errorf("no batch found with name '%s'", *bwBatchName)
+		}
+
+		outputFile := fmt.Sprintf("%s%s.csv", *bwOutputDirName,   batch.Name)
 		log.Println("outputFile = ", outputFile)
 
-		if err := outfileparser.WriteHssCsvFile(outputFile, outRecord.Entries); err != nil {
-			return fmt.Errorf("couldn't close output file '%s', .  Error = '%v'", outputFilePrefix, err)
+		if err := outfileparser.WriteHssCsvFile(outputFile, db, batch); err != nil {
+			return fmt.Errorf("couldn't write hss output to file  '%s', .  Error = '%v'", outputFile, err)
 		}
-		*/
 
 
 	case "batches-list":
