@@ -25,7 +25,7 @@ fun <L, R> Either<L, R>.print() = this.fold(
             this
         },
         { right ->
-            println(right)
+            println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(right))
             this
         }
 )

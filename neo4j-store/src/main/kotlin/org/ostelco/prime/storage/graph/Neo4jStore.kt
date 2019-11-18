@@ -806,26 +806,43 @@ object Neo4jStoreSingleton : GraphStore {
         }
 
         return IO {
-            Either.monad<StoreError>()
-                    .binding {
-                        simProfiles.bind().map { simProfile ->
-                            val regionId = (regionCode ?: map[simProfile.id])
-                                    ?: ValidationError(type = simProfileEntity.name, id = simProfile.iccId, message = "SimProfile not linked to any region")
-                                            .left()
-                                            .bind()
+            Either.monad<StoreError>().binding {
+                simProfiles.bind().map { simProfile ->
 
-                            val simEntry = simManager.getSimProfile(
-                                    hlr = hssNameLookup.getHssName(regionId),
-                                    iccId = simProfile.iccId)
-                                    .mapLeft { NotFoundError(type = simProfileEntity.name, id = simProfile.iccId) }
-                                    .bind()
-                            org.ostelco.prime.model.SimProfile(
-                                    iccId = simProfile.iccId,
-                                    alias = simProfile.alias,
-                                    eSimActivationCode = simEntry.eSimActivationCode,
-                                    status = simEntry.status)
-                        }
-                    }.fix()
+                    val regionId = (regionCode ?: map[simProfile.id])
+
+                    val simEntry = if (regionId != null) {
+                        simManager.getSimProfile(
+                                hlr = hssNameLookup.getHssName(regionId),
+                                iccId = simProfile.iccId).fold(
+                                { error ->
+                                    logger.warn("SimProfile not found in SIM Manager DB. region: {}, iccId: {}, error: {}", regionId, simProfile.iccId, error)
+                                    SimEntry(
+                                            iccId = simProfile.iccId,
+                                            status = NOT_READY,
+                                            eSimActivationCode = "Dummy eSIM",
+                                            msisdnList = emptyList()
+                                    )
+                                },
+                                { it }
+                        )
+                    } else {
+                        logger.warn("SimProfile not linked to any region. iccId: {}", simProfile.iccId)
+                        SimEntry(
+                                iccId = simProfile.iccId,
+                                status = NOT_READY,
+                                eSimActivationCode = "Dummy eSIM",
+                                msisdnList = emptyList()
+                        )
+                    }
+
+                    org.ostelco.prime.model.SimProfile(
+                            iccId = simProfile.iccId,
+                            alias = simProfile.alias,
+                            eSimActivationCode = simEntry.eSimActivationCode,
+                            status = simEntry.status)
+                }
+            }.fix()
         }.unsafeRunSync()
     }
 
