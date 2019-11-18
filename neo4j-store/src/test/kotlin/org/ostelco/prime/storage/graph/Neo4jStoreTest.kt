@@ -321,9 +321,8 @@ class Neo4jStoreTest {
 
         // test
 
-        // balance = 100_000_000
+        // balance = 2_147_483_648
         // reserved = 0
-
         // requested = 40_000_000
         val dataBucketSize = 40_000_000L
         Neo4jStoreSingleton.consume(msisdn = MSISDN, usedBytes = 0, requestedBytes = dataBucketSize) { storeResult ->
@@ -331,9 +330,10 @@ class Neo4jStoreTest {
                     { fail(it.message) },
                     {
                         assertEquals(dataBucketSize, it.granted) // reserved = 40_000_000
-                        assertEquals(60_000_000L, it.balance) // balance = 60_000_000
+                        assertEquals(2_107_483_648L, it.balance) // balance = 2_107_483_648
                     })
         }
+
         // used = 50_000_000
         // requested = 40_000_000
         Neo4jStoreSingleton.consume(msisdn = MSISDN, usedBytes = 50_000_000L, requestedBytes = dataBucketSize) { storeResult ->
@@ -341,7 +341,7 @@ class Neo4jStoreTest {
                     { fail(it.message) },
                     {
                         assertEquals(dataBucketSize, it.granted) // reserved = 40_000_000
-                        assertEquals(10_000_000L, it.balance) // balance = 10_000_000
+                        assertEquals(2_057_483_648L, it.balance) // balance = 2_057_483_648
                     })
         }
 
@@ -351,8 +351,8 @@ class Neo4jStoreTest {
             storeResult.fold(
                     { fail(it.message) },
                     {
-                        assertEquals(20_000_000L, it.granted) // reserved = 20_000_000
-                        assertEquals(0L, it.balance) // balance = 0
+                        assertEquals(dataBucketSize, it.granted) // reserved = 40_000_000
+                        assertEquals(2_027_483_648L, it.balance) // balance = 2_027_483_648
                     })
         }
     }

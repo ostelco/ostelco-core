@@ -12,6 +12,8 @@ import arrow.core.leftIfNull
 import arrow.core.right
 import arrow.effects.IO
 import arrow.instances.either.monad.monad
+import kotlinx.coroutines.future.asDeferred
+import kotlinx.coroutines.withContext
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.appnotifier.AppNotifier
@@ -138,6 +140,7 @@ import javax.ws.rs.core.MultivaluedMap
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.set
+import kotlin.coroutines.coroutineContext
 import kotlin.reflect.KClass
 import org.ostelco.prime.model.Identity as ModelIdentity
 import org.ostelco.prime.paymentprocessor.core.NotFoundError as NotFoundPaymentError
@@ -1100,7 +1103,6 @@ object Neo4jStoreSingleton : GraphStore {
         // Ref: https://neo4j.com/docs/java-reference/current/transactions/#transactions-isolation
 
         suspendedWriteTransaction {
-
             writeSuspended("""
                             MATCH (sn:${subscriptionEntity.name} {id: '$msisdn'})-[r:${subscriptionToBundleRelation.name}]->(bundle:${bundleEntity.name})
                             SET bundle._LOCK_ = true, r._LOCK_ = true
@@ -1111,27 +1113,25 @@ object Neo4jStoreSingleton : GraphStore {
                             RETURN msisdnAnalyticsId, r.reservedBytes AS granted, bundle.balance AS balance
                             """.trimIndent(),
                     transaction) { completionStage ->
-                completionStage
-                        .thenApply { it.singleAsync() }
-                        .thenAcceptAsync {
-                            it.handle { record, throwable ->
+                withContext(coroutineContext) {
+                    try {
+                        val cursor = completionStage.asDeferred().await()
+                        val record = cursor.singleAsync().asDeferred().await()
 
-                                if (throwable != null) {
-                                    callback(NotUpdatedError(type = "Balance for ${subscriptionEntity.name}", id = msisdn).left())
-                                } else {
-                                    val balance = record.get("balance").asString("0").toLong()
-                                    val granted = record.get("granted").asString("0").toLong()
-                                    val msisdnAnalyticsId = record.get("msisdnAnalyticsId").asString(msisdn)
+                        val balance = record.get("balance").asString("0").toLong()
+                        val granted = record.get("granted").asString("0").toLong()
+                        val msisdnAnalyticsId = record.get("msisdnAnalyticsId").asString(msisdn)
 
-                                    logger.trace("requestedBytes = %,d, balance = %,d, granted = %,d".format(requestedBytes, balance, granted))
-                                    callback(ConsumptionResult(msisdnAnalyticsId = msisdnAnalyticsId, granted = granted, balance = balance).right())
-                                }
-                            }
-                        }
+                        logger.trace("requestedBytes = %,d, balance = %,d, granted = %,d".format(requestedBytes, balance, granted))
+                        callback(ConsumptionResult(msisdnAnalyticsId = msisdnAnalyticsId, granted = granted, balance = balance).right())
+                    } catch (e: Exception) {
+                        logger.error(e.toString())
+                        callback(NotUpdatedError(type = "Balance for ${subscriptionEntity.name}", id = msisdn).left())
+                    }
+                }
             }
         }
     }
-
     //
     // Purchase
     //
