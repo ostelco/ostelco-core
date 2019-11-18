@@ -11,7 +11,7 @@ jobs:
     steps:
       - checkout
       - run:
-          name: upgrading Java to open-jdk-12
+          name: upgrading Java to open-jdk-13
           command: |
             # sudo apt update; sudo apt install -y wget
             sudo wget https://cdn.azul.com/zulu/bin/zulu13.28.11-ca-jdk13.0.1-linux_x64.tar.gz -O /tmp/zulu13.28.11-ca-jdk13.0.1-linux_x64.tar.gz
@@ -120,7 +120,7 @@ jobs:
     steps:
       - checkout
       - run:
-          name: upgrading Java to open-jdk-12
+          name: upgrading Java to open-jdk-13
           command: |
             # sudo apt update; sudo apt install -y wget
 

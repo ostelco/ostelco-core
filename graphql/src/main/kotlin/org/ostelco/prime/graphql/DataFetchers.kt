@@ -5,6 +5,7 @@ import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.model.Identity
+import org.ostelco.prime.model.withSimProfileStatusAsInstalled
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.ClientDataSource
 
@@ -37,14 +38,14 @@ class ContextDataFetcher : DataFetcher<Map<String, Any>> {
                     clientDataSource.getAllRegionDetails(identity)
                             .map { regions ->
                                 map.put("regions", regions.map { region ->
-                                    objectMapper.convertValue<Map<String, Any>>(region, object : TypeReference<Map<String, Any>>() {})
+                                    objectMapper.convertValue<Map<String, Any>>(region.withSimProfileStatusAsInstalled(), object : TypeReference<Map<String, Any>>() {})
                                 })
                             }
                 } else {
                     clientDataSource.getRegionDetails(identity, regionCode.toLowerCase())
                             .map { region ->
                                 map.put("regions",
-                                        listOf(objectMapper.convertValue<Map<String, Any>>(region, object : TypeReference<Map<String, Any>>() {}))
+                                        listOf(objectMapper.convertValue<Map<String, Any>>(region.withSimProfileStatusAsInstalled(), object : TypeReference<Map<String, Any>>() {}))
                                 )
                             }
                 }
