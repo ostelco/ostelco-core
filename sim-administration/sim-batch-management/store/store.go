@@ -49,7 +49,9 @@ type Store interface {
 	CreateSimEntry(simEntry *model.SimEntry) error
 	UpdateSimEntryMsisdn(simId int64, msisdn string)
 	UpdateActivationCode(simId int64, activationCode string) error
+	UpdateSimEntryKi(simId int64, ki string) error
 	GetAllSimEntriesForBatch(batchId int64) ([]model.SimEntry, error)
+	GetSimProfileByIccid(msisdn string) (*model.SimEntry, error)
 
 	CreateProfileVendor(*model.ProfileVendor) error
 	GetProfileVendorById(id int64) (*model.ProfileVendor, error)
@@ -247,6 +249,8 @@ func (sdb SimBatchDB) GetProfileVendorById(id int64) (*model.ProfileVendor, erro
 	}
 }
 
+
+
 func (sdb SimBatchDB) GetProfileVendorByName(name string) (*model.ProfileVendor, error) {
 	result := []model.ProfileVendor{}
 	if err := sdb.Db.Select(&result, "select * from PROFILE_VENDOR where name = ?", name); err != nil {
@@ -307,6 +311,18 @@ func (sdb SimBatchDB) GetAllSimEntriesForBatch(batchId int64) ([]model.SimEntry,
 		return result, nil
 	}
 }
+func (sdb SimBatchDB) GetSimProfileByIccid(iccid string) (*model.SimEntry, error) {
+	result := []model.SimEntry{}
+	if err := sdb.Db.Select(&result, "select * from SIM_PROFILES where icccid = ?", iccid); err != nil {
+		return nil, err
+	}
+
+	if len(result) == 0 {
+		return nil, nil
+	} else {
+		return &result[0], nil
+	}
+}
 
 func (sdb SimBatchDB) UpdateSimEntryMsisdn(simId int64, msisdn string) error {
 	_, err := sdb.Db.NamedExec("UPDATE SIM_PROFILE SET msisdn=:msisdn WHERE id = :simId",
@@ -316,6 +332,16 @@ func (sdb SimBatchDB) UpdateSimEntryMsisdn(simId int64, msisdn string) error {
 		})
 	return err
 }
+
+func (sdb SimBatchDB)  UpdateSimEntryKi(simId int64, ki string) error {
+	_, err := sdb.Db.NamedExec("UPDATE SIM_PROFILE SET ki=:ki WHERE id = :simId",
+		map[string]interface{}{
+			"simId": simId,
+			"ki":    ki,
+		})
+	return err
+}
+
 
 func (sdb SimBatchDB) UpdateActivationCode(simId int64, activationCode string) error {
 	_, err := sdb.Db.NamedExec("UPDATE SIM_PROFILE SET activationCode=:activationCode WHERE id = :simId",
