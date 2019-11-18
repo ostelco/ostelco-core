@@ -323,7 +323,6 @@ func parseCommandLine() error {
 
 		// TODO: Do all of this in a transaction!
 		for _, e := range outRecord.Entries {
-			log.Printf("Processing entry %v\n", e)
 			// TODO: The ICCIDs may be paddec with F values, and I don't want to
 			//       deal with that now, so I'm
 			// simProfile, err := db.GetSimProfileByIccid(e.Iccid)
@@ -349,7 +348,7 @@ func parseCommandLine() error {
 			return fmt.Errorf("no batch found with name '%s'", *bwBatchName)
 		}
 
-		outputFile := fmt.Sprintf("%s%s.csv", *bwOutputDirName,   batch.Name)
+		outputFile := fmt.Sprintf("%s/%s.csv", *bwOutputDirName,   batch.Name)
 		log.Println("outputFile = ", outputFile)
 
 		if err := outfileparser.WriteHssCsvFile(outputFile, db, batch); err != nil {
