@@ -74,18 +74,27 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                     .resultCode = ResultCode.DIAMETER_SUCCESS
 
             if (request.msccCount == 0) {
-                responseBuilder.validityTime = 86400
-                storage.consume(msisdn, 0L, 0L) { storeResult ->
-                    storeResult.fold(
-                            { responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN },
-                            { responseBuilder.resultCode = ResultCode.DIAMETER_SUCCESS })
-                }
+                checkUserExist(msisdn, responseBuilder)
             } else {
                 chargeMSCCs(request, msisdn, responseBuilder)
             }
 
             synchronized(OnlineCharging) {
                 returnCreditControlAnswer(responseBuilder.build())
+            }
+        }
+    }
+
+    private suspend fun checkUserExist(msisdn: String,
+                                       responseBuilder: CreditControlAnswerInfo.Builder) {
+        coroutineScope {
+            responseBuilder.validityTime = 86400
+            async {
+                storage.consume(msisdn, 0L, 0L) { storeResult ->
+                    storeResult.fold(
+                            { responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN },
+                            { responseBuilder.resultCode = ResultCode.DIAMETER_SUCCESS })
+                }
             }
         }
     }
