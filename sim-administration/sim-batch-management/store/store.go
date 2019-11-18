@@ -132,7 +132,6 @@ func (sdb SimBatchDB) GetBatchByName(name string) (*model.Batch, error) {
 	} else if len(result) == 0 {
 		return nil, nil
 	} else {
-		fmt.Println("returning batch: ", result[0])
 		return &(result[0]), nil
 	}
 }
