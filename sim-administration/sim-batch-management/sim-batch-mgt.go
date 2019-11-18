@@ -107,8 +107,8 @@ var (
 
 
 	spUpload                 = kingpin.Command("batch-read-out-file", "Convert an output (.out) file from an sim profile producer into an input file for an HSS.")
-	spBatchName              = spUpload.Flag("batch-name", "The batch to augment").Required().String()
-	spUploadInputFile        = spUpload.Flag("input-file", "path to .out file used as input file").Required().String()
+	spBatchName              = spUpload.Arg("batch-name", "The batch to augment").Required().String()
+	spUploadInputFile        = spUpload.Arg("input-file", "path to .out file used as input file").Required().String()
 
 // TODO: Delete this asap!
 //	spUploadOutputFilePrefix = spUpload.Flag("output-file-prefix",
@@ -316,9 +316,11 @@ func parseCommandLine() error {
 
 		// TODO: Do all of this in a transaction!
 		for _, e := range outRecord.Entries {
-			simProfile, err := db.GetSimProfileByIccid(e.Iccid)
+			log.Printf("Processing entry %v\n", e)
+			// simProfile, err := db.GetSimProfileByIccid(e.Iccid)
+			simProfile, err := db.GetSimProfileByImsi(e.Imsi)
 			if err != nil {return err}
-			if simProfile == nil { return fmt.Errorf("couldn't find profile enty for ICCID=%s", e.Iccid)}
+			if simProfile == nil { return fmt.Errorf("couldn't find profile enty for IMSI=%s", e.Imsi)}
 			if simProfile.Imsi != e.Imsi{
 				return fmt.Errorf("profile enty for ICCID=%s has IMSI (%s), but we expected (%s)",e.Iccid,  e.Imsi, simProfile.Imsi)
 			}

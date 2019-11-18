@@ -311,9 +311,13 @@ func (sdb SimBatchDB) GetAllSimEntriesForBatch(batchId int64) ([]model.SimEntry,
 		return result, nil
 	}
 }
+
+// TODO: Add unit test for this method.
+
+
 func (sdb SimBatchDB) GetSimProfileByIccid(iccid string) (*model.SimEntry, error) {
 	result := []model.SimEntry{}
-	if err := sdb.Db.Select(&result, "select * from SIM_PROFILES where icccid = ?", iccid); err != nil {
+	if err := sdb.Db.Select(&result, "select * from SIM_PROFILE where iccid = ?", iccid); err != nil {
 		return nil, err
 	}
 
@@ -323,6 +327,20 @@ func (sdb SimBatchDB) GetSimProfileByIccid(iccid string) (*model.SimEntry, error
 		return &result[0], nil
 	}
 }
+
+func (sdb SimBatchDB) GetSimProfileByImsi(imsi string) (*model.SimEntry, error) {
+	result := []model.SimEntry{}
+	if err := sdb.Db.Select(&result, "select * from SIM_PROFILE where imsi = ?", imsi); err != nil {
+		return nil, err
+	}
+
+	if len(result) == 0 {
+		return nil, nil
+	} else {
+		return &result[0], nil
+	}
+}
+
 
 func (sdb SimBatchDB) UpdateSimEntryMsisdn(simId int64, msisdn string) error {
 	_, err := sdb.Db.NamedExec("UPDATE SIM_PROFILE SET msisdn=:msisdn WHERE id = :simId",
