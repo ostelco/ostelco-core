@@ -527,14 +527,13 @@ object Graph {
         }.let(transform)
     }
 
-    suspend fun <R> writeSuspended(query: String, transaction: Transaction, parameters: Map<String, Any> = emptyMap(), transform: suspend (CompletionStage<StatementResultCursor>) -> R) {
+    suspend fun <R> writeSuspended(query: String, transaction: Transaction, parameters: Map<String, Any> = emptyMap(), transform: (CompletionStage<StatementResultCursor>) -> R) {
         LOG.trace("write:[\n$query\n]")
         withContext(Dispatchers.IO) {
-            val result = trace.childSpan("neo4j.writeAsync") {
+            trace.childSpan("neo4j.writeAsync") {
                 transaction.runAsync(query, parameters)
             }
-            transform(result)
-        }
+        }.let(transform)
     }
 }
 
