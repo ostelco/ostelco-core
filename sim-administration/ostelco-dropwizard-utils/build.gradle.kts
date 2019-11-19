@@ -27,10 +27,4 @@ dependencies {
   testImplementation("io.dropwizard:dropwizard-testing:${Version.dropwizard}")
 }
 
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-  kotlinOptions {
-    jvmTarget = JavaVersion.VERSION_12.majorVersion
-  }
-}
-
 apply(from = "../../gradle/jacoco.gradle.kts")
