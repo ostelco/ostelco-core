@@ -303,9 +303,23 @@ func parseCommandLine() error {
 
 	case "batch-read-out-file":
 
+		tx := db.Begin()
+
+		// By default we're not cool to commit.  Need to prove something first.
+		weCool := false
+
+		defer func() {
+			if weCool {
+				tx.Commit()
+			} else {
+				tx.Rollback()
+			}
+		}()
+
 		batch, err := db.GetBatchByName(*spBatchName)
 
 		if err != nil {
+			tx.Rollback()
 			return err
 		}
 
@@ -313,16 +327,17 @@ func parseCommandLine() error {
 			return fmt.Errorf("no batch found with name '%s'", *spBatchName)
 		}
 
+		outRecord, err  := outfileparser.ParseOutputFile(*spUploadInputFile)
+		if err != nil {
+			return err
+		}
 
-		// TODO handle error values
-		outRecord := outfileparser.ParseOutputFile(*spUploadInputFile)
+		if outRecord.NoOfEntries != batch.Quantity {
+			return fmt.Errorf("number of records returned from outfile (%d) does not match number of profiles (%d) in batch '%s'",
+				outRecord.NoOfEntries, batch.Quantity, batch.Name)
+		}
 
-		// TODO: Handle inconsistencies in the outRecord to ensure that
-		//       we're not reading an incongruent output file.
 
-
-		// TODO: Do all of this in a transaction!
-		tx := db.Begin()
 		for _, e := range outRecord.Entries {
 			simProfile, err := db.GetSimProfileByIccid(e.IccidWithChecksum)
 			if err != nil {return err}
@@ -332,7 +347,10 @@ func parseCommandLine() error {
 			}
 			db.UpdateSimEntryKi(simProfile.Id, e.Ki)
 		}
-		tx.Commit()
+
+		// Signal to defered transaction cleanup that we're cool
+		// with a commit.
+		weCool = true
 
 
 	case "batch-write-hss":

@@ -15,7 +15,10 @@ func TestKeywordValueParser(t *testing.T) {
 
 func TestReadingSimpleOutputFile(t *testing.T) {
 	sample_output_file_name := "sample_out_file_for_testing.out"
-	record := ParseOutputFile(sample_output_file_name)
+	record, err  := ParseOutputFile(sample_output_file_name)
+	if err != nil {
+		t.Error(t)
+	}
 
 	// First parameter to check
 	assert.Equal(t, sample_output_file_name, record.Filename)
@@ -38,7 +41,11 @@ func TestReadingSimpleOutputFile(t *testing.T) {
 
 func TestReadingComplexOutputFile(t *testing.T) {
 	sample_output_file_name := "sample-out-2.out"
-	record := ParseOutputFile(sample_output_file_name)
+	record, err := ParseOutputFile(sample_output_file_name)
+	if err != nil {
+		t.Error(t)
+	}
+
 	fmt.Println("Record = ", record)
 
 	// TODO: Check that we got all the fields

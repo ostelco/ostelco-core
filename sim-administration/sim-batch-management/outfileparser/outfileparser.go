@@ -31,7 +31,6 @@ type OutputFileRecord struct {
 	OutputFileName    string
 }
 
-
 func parseLineIntoKeyValueMap(line string, theMap map[string]string) {
 	var splitString = strings.Split(line, ":")
 	if len(splitString) != 2 {
@@ -70,13 +69,13 @@ func parseVarOutLine(varOutLine string, result *map[string]int) error {
 }
 
 // Implement a state machine that parses an output file.
-func ParseOutputFile(filename string) OutputFileRecord {
+func ParseOutputFile(filename string) (*OutputFileRecord, error) {
 
 	if _, err := os.Stat(filename); err != nil {
 		if os.IsNotExist(err) {
-			log.Fatalf("Couldn't find file '%s'\n", filename)
+			return nil, fmt.Errorf("couldn't find file '%s'", filename)
 		} else {
-			log.Fatalf("Couldn't stat file '%s'\n", filename)
+			return nil, fmt.Errorf("couldn't stat file '%s'", filename)
 		}
 	}
 
@@ -133,17 +132,16 @@ func ParseOutputFile(filename string) OutputFileRecord {
 
 			if strings.HasPrefix(lowercaseLine, "var_out:") {
 				if len(state.csvFieldMap) != 0 {
-					log.Fatal("Parsing multiple 'var_out' lines can't be right")
+					return nil, fmt.Errorf("parsing multiple 'var_out' lines can't be right")
 				}
 				if err := parseVarOutLine(line, &(state.csvFieldMap)); err != nil {
-					log.Fatalf("Couldn't parse output variable declaration '%s'\n", err)
+					return nil, fmt.Errorf("couldn't parse output variable declaration '%s'", err)
 				}
 				continue
 			}
 
 			if len(state.csvFieldMap) == 0 {
-				fmt.Println("Line = ", line)
-				log.Fatal("Cannot parse CSV part of input file without having first parsed a CSV header.")
+				return nil, fmt.Errorf("cannot parse CSV part of input file without having first parsed a CSV header, failed when processing line '%s'", line)
 			}
 
 			line = strings.TrimSpace(line)
@@ -172,7 +170,7 @@ func ParseOutputFile(filename string) OutputFileRecord {
 			continue
 
 		default:
-			log.Fatalf("Unknown parser state '%s'\n", state.currentState)
+			return nil, fmt.Errorf("unknown parser state '%s'", state.currentState)
 		}
 	}
 
@@ -184,11 +182,11 @@ func ParseOutputFile(filename string) OutputFileRecord {
 	declaredNoOfEntities, err := strconv.Atoi(state.headerDescription["Quantity"])
 
 	if err != nil {
-		log.Fatal("Could not find 'Quantity' field while parsing file '", filename, "'")
+		return nil, fmt.Errorf("could not find 'Quantity' field while parsing file '%s'", filename)
 	}
 
 	if countedNoOfEntries != declaredNoOfEntities {
-		log.Fatalf("Declared no of entities = %d, counted nunber of entities = %d. Mismatch!",
+		return nil, fmt.Errorf("mismatch between no of entities = %d, counted number of entities = %d",
 			declaredNoOfEntities,
 			countedNoOfEntries)
 	}
@@ -202,7 +200,7 @@ func ParseOutputFile(filename string) OutputFileRecord {
 		OutputFileName:    getOutputFileName(state),
 	}
 
-	return result
+	return &result, nil
 }
 
 func getOutputFileName(state parserState) string {
@@ -231,7 +229,6 @@ func parseOutputLine(state parserState, s string) (string, string, string) {
 func transitionMode(state *parserState, targetState string) {
 	state.currentState = targetState
 }
-
 
 func modeFromSectionHeader(s string) string {
 	sectionName := strings.Trim(s, "* ")
