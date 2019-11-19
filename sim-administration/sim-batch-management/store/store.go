@@ -28,24 +28,6 @@ type Store interface {
 	GetBatchById(id int64) (*model.Batch, error)
 	GetBatchByName(id string) (*model.Batch, error)
 
-	// TODO: Maybe make the argument list for this one a little shorter, or
-	//       perhaps this should be taken out of the store interface altogether
-	//       (probably the best)?
-	DeclareBatch(
-		firstIccid string,
-		lastIccid string,
-		firstIMSI string,
-		lastIMSI string,
-		firstMsisdn string,
-		lastMsisdn string,
-		profileType string,
-		batchLengthString string,
-		hssVendor string,
-		uploadHostname string,
-		uploadPortnumber string,
-		profileVendor string,
-		initialHlrActivationStatusOfProfiles string) (*model.Batch, error)
-
 	CreateSimEntry(simEntry *model.SimEntry) error
 	UpdateSimEntryMsisdn(simId int64, msisdn string)
 	UpdateActivationCode(simId int64, activationCode string) error

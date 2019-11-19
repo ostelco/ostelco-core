@@ -308,9 +308,10 @@ func WriteHssCsvFile(filename string, sdb *store.SimBatchDB, batch *model.Batch)
 		return fmt.Errorf("couldn't header to  hss csv file '%s', %v", filename, err)
 	}
 
-
 	entries, err := sdb.GetAllSimEntriesForBatch(batch.BatchId)
-
+	if err != nil {
+		return err
+	}
 
 	max := 0
 	for i, entry := range entries {
