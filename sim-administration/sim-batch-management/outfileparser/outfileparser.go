@@ -70,7 +70,7 @@ type ParserState struct {
 	csvFieldMap       map[string]int
 }
 
-func ParseVarOutLine(varOutLine string, result *map[string]int) (error) {
+func ParseVarOutLine(varOutLine string, result *map[string]int) error {
 	varOutSplit := strings.Split(varOutLine, ":")
 
 	if len(varOutSplit) != 2 {
@@ -88,10 +88,11 @@ func ParseVarOutLine(varOutLine string, result *map[string]int) (error) {
 	}
 	return nil
 }
+
 // Implement a state machine that parses an output file.
 func ParseOutputFile(filename string) OutputFileRecord {
 
-	if _, err := os.Stat(filename) ;  err != nil {
+	if _, err := os.Stat(filename); err != nil {
 		if os.IsNotExist(err) {
 			log.Fatalf("Couldn't find file '%s'\n", filename)
 		} else {
@@ -150,8 +151,8 @@ func ParseOutputFile(filename string) OutputFileRecord {
 			line = strings.TrimSpace(line)
 			lowercaseLine := strings.ToLower(line)
 
-			if (strings.HasPrefix(lowercaseLine, "var_out:")) {
-				if (len(state.csvFieldMap) != 0) {
+			if strings.HasPrefix(lowercaseLine, "var_out:") {
+				if len(state.csvFieldMap) != 0 {
 					log.Fatal("Parsing multiple 'var_out' lines can't be right")
 				}
 				if err := ParseVarOutLine(line, &(state.csvFieldMap)); err != nil {
@@ -160,7 +161,7 @@ func ParseOutputFile(filename string) OutputFileRecord {
 				continue
 			}
 
-			if (len(state.csvFieldMap) == 0) {
+			if len(state.csvFieldMap) == 0 {
 				fmt.Println("Line = ", line)
 				log.Fatal("Cannot parse CSV part of input file without having first parsed a CSV header.")
 			}
@@ -288,11 +289,7 @@ func fileExists(filename string) bool {
 	return !info.IsDir()
 }
 
-
-
-
 // TODO: Move this into some other package. "hssoutput" or something.
-// TODO: Consider rewriting using https://golang.org/pkg/encoding/csv/
 func WriteHssCsvFile(filename string, sdb *store.SimBatchDB, batch *model.Batch) error {
 
 	if fileExists(filename) {
@@ -304,7 +301,7 @@ func WriteHssCsvFile(filename string, sdb *store.SimBatchDB, batch *model.Batch)
 		return fmt.Errorf("couldn't create hss csv file '%s', %v", filename, err)
 	}
 
-	if _, err = f.WriteString("ICCID, IMSI, KI\n");  err != nil {
+	if _, err = f.WriteString("ICCID, IMSI, KI\n"); err != nil {
 		return fmt.Errorf("couldn't header to  hss csv file '%s', %v", filename, err)
 	}
 
