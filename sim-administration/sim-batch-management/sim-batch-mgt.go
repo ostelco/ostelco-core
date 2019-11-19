@@ -322,6 +322,7 @@ func parseCommandLine() error {
 
 
 		// TODO: Do all of this in a transaction!
+		tx := db.Begin()
 		for _, e := range outRecord.Entries {
 			simProfile, err := db.GetSimProfileByIccid(e.IccidWithChecksum)
 			if err != nil {return err}
@@ -331,6 +332,7 @@ func parseCommandLine() error {
 			}
 			db.UpdateSimEntryKi(simProfile.Id, e.Ki)
 		}
+		tx.Commit()
 
 
 	case "batch-write-hss":
