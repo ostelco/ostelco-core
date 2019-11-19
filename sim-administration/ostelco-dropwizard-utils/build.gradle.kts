@@ -7,12 +7,10 @@ plugins {
 
 dependencies {
   implementation(kotlin("stdlib-jdk8"))
+  implementation(kotlin("reflect"))
+
   implementation("io.dropwizard:dropwizard-core:${Version.dropwizard}")
   implementation("io.swagger.core.v3:swagger-jaxrs2:${Version.swagger}")
-
-
-  implementation(kotlin("reflect"))
-  implementation(kotlin("stdlib-jdk8"))
 
   implementation("io.dropwizard:dropwizard-client:${Version.dropwizard}")
 
@@ -27,6 +25,12 @@ dependencies {
   implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${Version.jackson}")
   implementation("org.apache.commons:commons-csv:${Version.csv}")
   testImplementation("io.dropwizard:dropwizard-testing:${Version.dropwizard}")
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+  kotlinOptions {
+    jvmTarget = JavaVersion.VERSION_12.majorVersion
+  }
 }
 
 apply(from = "../../gradle/jacoco.gradle.kts")
