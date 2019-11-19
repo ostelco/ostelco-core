@@ -23,7 +23,7 @@ type Store interface {
 	GenerateTables() error
 	DropTables() error
 
-	CreateBath(theBatch *model.Batch) error
+	CreateBatch(theBatch *model.Batch) error
 	GetAllBatches(id string) ([]model.Batch, error)
 	GetBatchById(id int64) (*model.Batch, error)
 	GetBatchByName(id string) (*model.Batch, error)
