@@ -8,7 +8,7 @@ import (
 
 func TestKeywordValueParser(t *testing.T) {
 	theMap := make(map[string]string)
-	ParseLineIntoKeyValueMap("ProfileType     : BAR_FOOTEL_STD", theMap)
+	parseLineIntoKeyValueMap("ProfileType     : BAR_FOOTEL_STD", theMap)
 
 	assert.Equal(t, "BAR_FOOTEL_STD", theMap["ProfileType"])
 }
@@ -48,7 +48,7 @@ func TestParseOutputVariablesLine(t *testing.T) {
 	varOutLine := "var_out:ICCID/IMSI/PIN1/PUK1/PIN2/PUK2/ADM1/KI/Access_Control/Code Retailer/Code ADM/ADM2/ADM3/ADM4"
 
 	m := make(map[string]int)
-	if err := ParseVarOutLine(varOutLine, &m);  err != nil {
+	if err := parseVarOutLine(varOutLine, &m);  err != nil {
 		t.Error("Couldn't parse var_out line:", err)
 	}
 
