@@ -323,10 +323,7 @@ func parseCommandLine() error {
 
 		// TODO: Do all of this in a transaction!
 		for _, e := range outRecord.Entries {
-			// TODO: The ICCIDs may be paddec with F values, and I don't want to
-			//       deal with that now, so I'm
-			// simProfile, err := db.GetSimProfileByIccid(e.Iccid)
-			simProfile, err := db.GetSimProfileByImsi(e.Imsi)
+			simProfile, err := db.GetSimProfileByIccid(e.IccidWithChecksum)
 			if err != nil {return err}
 			if simProfile == nil { return fmt.Errorf("couldn't find profile enty for IMSI=%s", e.Imsi)}
 			if simProfile.Imsi != e.Imsi{

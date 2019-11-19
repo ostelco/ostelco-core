@@ -159,7 +159,7 @@ func ParseOutputFile(filename string) OutputFileRecord {
 			}
 
 			var iccidWithoutChecksum = loltelutils.TrimSuffix(iccidWithChecksum, 1)
-			// TODO: Enable this!! checkICCIDSyntax(iccidWithChecksum)
+			//   TODO: Check syntax of iccid with checksum.
 			entry := model.SimEntry{
 				RawIccid:             rawIccid,
 				IccidWithChecksum:    iccidWithChecksum,
