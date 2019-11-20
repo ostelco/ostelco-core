@@ -198,7 +198,8 @@ jobs:
           at: ~/project
 
       # starts a remote docker environment to run docker commands
-      - setup_remote_docker
+      - setup_remote_docker:
+          docker_layer_caching: true
 
       - run:
           name: build Prime docker image and push image to GCR
@@ -234,7 +235,8 @@ jobs:
           at: ~/project
 
       # starts a remote docker environment to run docker commands
-      - setup_remote_docker
+      - setup_remote_docker:
+          docker_layer_caching: true
 
       - run:
           name: build scaninfo shredder docker image and push image to GCR
