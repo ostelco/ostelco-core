@@ -10,7 +10,7 @@ plugins {
 }
 
 // Update version in [script/start.sh] too.
-version = "1.73.1"
+version = "1.73.2"
 
 dependencies {
   // interface module between prime and prime-modules
