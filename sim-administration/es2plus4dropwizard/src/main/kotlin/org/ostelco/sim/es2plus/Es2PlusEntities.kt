@@ -77,7 +77,7 @@ data class Es2PlusDownloadOrder(
 data class Es2DownloadOrderResponse(
         @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader(),
         @JsonProperty("iccid") val iccid: String? = null
-): Es2Response(header)
+) : Es2Response(header)
 
 
 ///
@@ -118,7 +118,7 @@ data class IccidListEntry(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Es2ProfileStatusCommand(
         @JsonProperty("header") val header: ES2RequestHeader,
-        @JsonProperty("iccidList") val iccidList: List<IccidListEntry> =  listOf())
+        @JsonProperty("iccidList") val iccidList: List<IccidListEntry> = listOf())
 
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -126,11 +126,11 @@ data class Es2ProfileStatusResponse(
         @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader(),
         @JsonProperty("profileStatusList") val profileStatusList: List<ProfileStatus>? = listOf(),
         @JsonProperty("completionTimestamp") val completionTimestamp: String? = getNowAsDatetime()
-): Es2Response(myHeader = header)
+) : Es2Response(myHeader = header)
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ProfileStatus(
-        @JsonProperty("status_last_update_timestamp") val lastUpdateTimestamp:String? = null,
+        @JsonProperty("status_last_update_timestamp") val lastUpdateTimestamp: String? = null,
         @JsonProperty("profileStatusList") val profileStatusList: List<ProfileStatus>? = listOf(),
         @JsonProperty("acToken") val acToken: String? = null,
         @JsonProperty("state") val state: String? = null,
@@ -166,7 +166,7 @@ data class Es2ConfirmOrderResponse(
         @JsonProperty("eid") val eid: String? = null,
         @JsonProperty("matchingId") val matchingId: String? = null,
         @JsonProperty("smdpAddress") val smdsAddress: String? = null
-): Es2Response(myHeader =  header)
+) : Es2Response(myHeader = header)
 
 ///
 ///  The CancelOrder function
@@ -176,10 +176,10 @@ data class Es2ConfirmOrderResponse(
 // XXX CXHeck @JsonSchema("ES2+CancelOrder-def")
 data class Es2CancelOrder(
         @JsonProperty("header") val header: ES2RequestHeader,
-        @JsonProperty("eid") val eid: String?=null,
+        @JsonProperty("eid") val eid: String? = null,
         @JsonProperty("profileStatusList") val profileStatusList: String? = null,
         @JsonProperty("matchingId") val matchingId: String? = null,
-        @JsonProperty("iccid") val iccid: String?=null,
+        @JsonProperty("iccid") val iccid: String? = null,
         @JsonProperty("finalProfileStatusIndicator") val finalProfileStatusIndicator: String? = null
 )
 
@@ -219,7 +219,7 @@ data class Es2HandleDownloadProgressInfo(
         val imei: String? = null,
         // This field is added to ensure that the function signature of the primary and the actual
         // constructors are not confused by the JVM.  It is ignored by all business logic.
-        private val ignoreThisField : String? = null) {
+        private val ignoreThisField: String? = null) {
 
 
     // If the stored ICCID contains a trailing "F", which it may because some  vendors insist
@@ -232,16 +232,16 @@ data class Es2HandleDownloadProgressInfo(
     //     class.
 
     @JsonCreator
-    constructor (@JsonProperty("header")  header: ES2RequestHeader,
-                 @JsonProperty("eid")  eid: String? = null,
-                 @JsonProperty("iccid")  iccid: String,
-                 @JsonProperty("profileType")  profileType: String,
-                 @JsonProperty("timestamp")  timestamp: String = getNowAsDatetime(),
-                 @JsonProperty("tac")  tac: String? = null,
-                 @JsonProperty("notificationPointId")  notificationPointId: Int,
-                 @JsonProperty("notificationPointStatus")  notificationPointStatus: ES2NotificationPointStatus,
-                 @JsonInclude(JsonInclude.Include.NON_NULL) @JsonProperty("resultData")  resultData: String? = null,
-                 @JsonProperty("imei")  imei: String? = null) : this(
+    constructor (@JsonProperty("header") header: ES2RequestHeader,
+                 @JsonProperty("eid") eid: String? = null,
+                 @JsonProperty("iccid") iccid: String,
+                 @JsonProperty("profileType") profileType: String,
+                 @JsonProperty("timestamp") timestamp: String = getNowAsDatetime(),
+                 @JsonProperty("tac") tac: String? = null,
+                 @JsonProperty("notificationPointId") notificationPointId: Int,
+                 @JsonProperty("notificationPointStatus") notificationPointStatus: ES2NotificationPointStatus,
+                 @JsonInclude(JsonInclude.Include.NON_NULL) @JsonProperty("resultData") resultData: String? = null,
+                 @JsonProperty("imei") imei: String? = null) : this(
             header = header,
             eid = eid,
             iccid = if (!iccid.endsWith("F")) {  // Rewrite input value if necessary
@@ -263,13 +263,13 @@ data class Es2HandleDownloadProgressInfo(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ES2NotificationPointStatus(
         @JsonProperty("status") val status: FunctionExecutionStatusType = FunctionExecutionStatusType.ExecutedSuccess,
-        @JsonInclude(JsonInclude.Include.NON_NULL)  @JsonProperty("statusCodeData") val statusCodeData: ES2StatusCodeData? = null
+        @JsonInclude(JsonInclude.Include.NON_NULL) @JsonProperty("statusCodeData") val statusCodeData: ES2StatusCodeData? = null
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ES2StatusCodeData(
         @JsonProperty("subjectCode") val subjectCode: String, // "Executed-Success, Executed-WithWarning, Failed or
-        @JsonInclude(JsonInclude.Include.NON_NULL)  @JsonProperty("reasonCode") val statusCodeData: String,
+        @JsonInclude(JsonInclude.Include.NON_NULL) @JsonProperty("reasonCode") val statusCodeData: String,
         @JsonProperty("subjectIdentifier") val subjectIdentifier: String? = null,
         @JsonProperty("message") val message: String? = null
 )
@@ -286,6 +286,6 @@ fun newErrorHeader(exception: SmDpPlusException): ES2ResponseHeader {
                     statusCodeData = exception.statusCodeData))
 }
 
-fun eS2SuccessResponseHeader() =
+fun eS2SuccessResponseHeader(): ES2ResponseHeader =
         ES2ResponseHeader(functionExecutionStatus =
         FunctionExecutionStatus(status = FunctionExecutionStatusType.ExecutedSuccess))
