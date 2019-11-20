@@ -1,10 +1,11 @@
-version: 2
+version: 2.1
 jobs:
   ### JOBS FOR on-feature-branch-commit PIPELINE
   build-test-repo:
     # machine is needed to run Gradle build and to run docker compose tests
     machine:
       image: ubuntu-1604:201903-01
+    resource_class: large
     environment:
       JAVA_HOME: /usr/lib/jvm/zulu13.28.11-ca-jdk13.0.1-linux_x64
 
@@ -18,7 +19,7 @@ jobs:
             sudo tar -zxf /tmp/zulu13.28.11-ca-jdk13.0.1-linux_x64.tar.gz -C /usr/lib/jvm
       - run:
           # checking for merge conflicts and merging locally if none exist
-          name: merging ${CIRCLE_BRANCH} into develop locally
+          name: merging into develop locally
           command: |
             git config --global user.email "${GIT_USER_EMAIL}" 
             git config --global user.name "${GIT_USER_NAME}"
@@ -65,13 +66,14 @@ jobs:
             - .
 
       # generating selfsigned certs. Needed for docker compose tests
-      - run:
-          name: Generate self signed certs
-          command: |
-            scripts/generate-selfsigned-ssl-certs.sh   ocs.dev.ostelco.org 
-            cp certs/ocs.dev.ostelco.org/nginx.crt ocsgw/cert/ocs.crt
-            scripts/generate-selfsigned-ssl-certs.sh   metrics.dev.ostelco.org 
-            cp certs/metrics.dev.ostelco.org/nginx.crt ocsgw/cert/metrics.crt
+#      - run:
+#          name: Generate self signed certs
+#          command: |
+#            scripts/generate-selfsigned-ssl-certs.sh   ocs.dev.ostelco.org
+#            cp certs/ocs.dev.ostelco.org/nginx.crt ocsgw/cert/ocs.crt
+#            scripts/generate-selfsigned-ssl-certs.sh   metrics.dev.ostelco.org
+#            cp certs/metrics.dev.ostelco.org/nginx.crt ocsgw/cert/metrics.crt
+
       - run:
           name: Acceptance Tests
           command: docker-compose up --build --abort-on-container-exit
@@ -116,6 +118,7 @@ jobs:
   build-code:
     machine:
       image: ubuntu-1604:201903-01
+    resource_class: large
     environment:
       JAVA_HOME: /usr/lib/jvm/zulu13.28.11-ca-jdk13.0.1-linux_x64
 
@@ -195,7 +198,8 @@ jobs:
           at: ~/project
 
       # starts a remote docker environment to run docker commands
-      - setup_remote_docker
+      - setup_remote_docker:
+          docker_layer_caching: true
 
       - run:
           name: build Prime docker image and push image to GCR
@@ -231,7 +235,8 @@ jobs:
           at: ~/project
 
       # starts a remote docker environment to run docker commands
-      - setup_remote_docker
+      - setup_remote_docker:
+          docker_layer_caching: true
 
       - run:
           name: build scaninfo shredder docker image and push image to GCR
