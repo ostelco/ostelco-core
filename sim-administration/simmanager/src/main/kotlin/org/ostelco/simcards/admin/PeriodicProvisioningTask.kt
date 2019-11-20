@@ -76,37 +76,36 @@ class PreallocateProfilesTask(
                         }
                     }
 
+
+    // TODO: This method must be refactored. It is still _way_ too complex.
     private fun preProvisionSimProfile(hssEntry: HssEntry,
                                        simEntry: SimEntry): Either<SimManagerError, SimEntry> =
             if (simEntry.id == null) { // TODO: This idiom is _bad_, find something better!
                 AdapterError("simEntry.id == null for simEntry = '$simEntry'.").left()
             } else
                 getProfileVendorAdapterForProfileVendorId(simEntry.profileVendorId)
-                        .flatMap { preProvisionProfileAdapter(simEntry, hssEntry, simEntry.id, it) }
+                        .flatMap { profileVendorAdapter ->
+                            when {
+                                simEntry.hssState == HssState.NOT_ACTIVATED -> {
+                                    logger.debug("Preallocating (HSS not activated) for HSS with ID/metricName ${hssEntry.id}/${hssEntry.name} simEntry with ICCID=${simEntry.iccid}")
 
+                                    profileVendorAdapter.activate(simEntry = simEntry)
+                                            .flatMap {
+                                                hssAdapterProxy.activate(simEntry)
+                                            }
+                                            .flatMap {
+                                                simInventoryDAO.setHssState(simEntry.id, HssState.ACTIVATED)
+                                            }
 
-    private fun preProvisionProfileAdapter(simEntry: SimEntry, hssEntry: HssEntry, id: Long, profileVendorAdapter: ProfileVendorAdapter): Either<SimManagerError, SimEntry> {
-        when {
-            simEntry.hssState == HssState.NOT_ACTIVATED -> {
-                logger.debug("Preallocating (HSS not activated) for HSS with ID/metricName ${hssEntry.id}/${hssEntry.name} simEntry with ICCID=${simEntry.iccid}")
-
-                profileVendorAdapter.activate(simEntry = simEntry)
-                        .flatMap {
-                            hssAdapterProxy.activate(simEntry)
+                                }
+                                else -> {
+                                    // TODO: THis looks like  bug! It looks like the preallocation will _either_ run against the HSS, _or_ against the profile vendor adapter.
+                                    //       This is clearly wrong, it should run against both.
+                                    logger.debug("Preallocating (HSS preactivated) for HSS with ID/metricName ${hssEntry.id}/${hssEntry.name} simEntry with ICCID=${simEntry.iccid}")
+                                    profileVendorAdapter.activate(simEntry = simEntry)
+                                }
+                            }
                         }
-                        .flatMap {
-                            simInventoryDAO.setHssState(id, HssState.ACTIVATED)
-                        }
-            }
-            else -> {
-                // TODO: THis looks like  bug! It looks like the preallocation will _either_ run against the HSS, _or_ against the profile vendor adapter.
-                //       This is clearly wrong, it should run against both.
-                logger.debug("Preallocating (HSS preactivated) for HSS with ID/metricName ${hssEntry.id}/${hssEntry.name} simEntry with ICCID=${simEntry.iccid}")
-                profileVendorAdapter.activate(simEntry = simEntry)
-            }
-        }
-    }
-
 
 
     private fun batchPreprovisionSimProfiles(hssEntry: HssEntry,
