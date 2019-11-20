@@ -14,8 +14,6 @@ dependencies {
   implementation("org.neo4j.driver:neo4j-java-driver:${Version.neo4jDriver}")
   implementation("org.neo4j:neo4j-slf4j:${Version.neo4j}")
 
-  implementation("com.sun.jna:jna:3.0.9")
-
   testImplementation("com.palantir.docker.compose:docker-compose-rule-junit4:${Version.dockerComposeJunitRule}")
 
   testImplementation(kotlin("test"))

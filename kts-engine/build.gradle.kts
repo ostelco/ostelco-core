@@ -18,6 +18,8 @@ dependencies {
   implementation(project(":prime-modules"))
   implementation("com.fasterxml.jackson.core:jackson-databind:${Version.jacksonDatabind}")
 
+  implementation("net.java.dev.jna:jna:5.5.0")
+
   testImplementation(kotlin("test"))
   testImplementation(kotlin("test-junit"))
 
