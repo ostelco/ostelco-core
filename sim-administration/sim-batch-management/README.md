@@ -95,6 +95,7 @@ TODO
 1. Create a very clean PR for future code review.
 1. Write up a nice markdown documentation describing common usecases.
 1. Add crypto resources so that the program can talk to external parties.
+1. Add code to activate profiles in HSS (if API is known)
 1. Add config for crypto parameters  for HSSes, profile-vendors and operators (sftp in particular)
 1. Add misc. parameters about sim vendors, HSSes, Prime instances etc., so that
    batches can be properly constrained, defaults set the right way and external
