@@ -29,7 +29,7 @@ class AppleIdAuthResource {
         return AppleIdAuthClient.authorize(authCode.authCode)
                 .fold(
                         {
-                            logger.warn("error: {}", it.error)
+                            logger.warn("AppleId Auth Error Response: {}, cause: {}", it.error, it.error.error.cause)
                             Response.status(it.status).entity(asJson(it))
                         },
                         { tokenResponse ->

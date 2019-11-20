@@ -15,13 +15,13 @@ data class TokenResponse(
 
 data class ErrorResponse(val error: Error)
 
-enum class Error {
-    invalid_request,
-    invalid_client,
-    invalid_grant,
-    unauthorized_client,
-    unsupported_grant_type,
-    invalid_scope,
+enum class Error(val cause: String) {
+    invalid_request("The request is malformed, normally due to a missing parameter, contains an unsupported parameter, includes multiple credentials, or uses more than one mechanism for authenticating the client."),
+    invalid_client("The client authentication failed."),
+    invalid_grant("The authorization grant or refresh token is invalid."),
+    unauthorized_client("The client is not authorized to use this authorization grant type."),
+    unsupported_grant_type("The authenticated client is not authorized to use the grant type."),
+    invalid_scope("The requested scope is invalid."),
 }
 
 data class JWKKey(

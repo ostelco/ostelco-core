@@ -7,12 +7,10 @@ plugins {
 
 dependencies {
   implementation(kotlin("stdlib-jdk8"))
+  implementation(kotlin("reflect"))
+
   implementation("io.dropwizard:dropwizard-core:${Version.dropwizard}")
   implementation("io.swagger.core.v3:swagger-jaxrs2:${Version.swagger}")
-
-
-  implementation(kotlin("reflect"))
-  implementation(kotlin("stdlib-jdk8"))
 
   implementation("io.dropwizard:dropwizard-client:${Version.dropwizard}")
 
