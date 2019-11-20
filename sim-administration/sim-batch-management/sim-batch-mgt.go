@@ -919,7 +919,7 @@ func GenerateInputFile(batch *model.Batch) string {
 	return result
 }
 
-func ClientForVendor(db *store.SimBatchDB, vendorName string) (es2plus.Es2PlusClient, error) {
+func ClientForVendor(db *store.SimBatchDB, vendorName string) (es2plus.Client, error) {
 	vendor, err := db.GetProfileVendorByName(vendorName)
 	if err != nil {
 		return nil, err
@@ -933,7 +933,7 @@ func ClientForVendor(db *store.SimBatchDB, vendorName string) (es2plus.Es2PlusCl
 	return es2plus.NewClient(vendor.Es2PlusCert, vendor.Es2PlusKey, hostport, vendor.Es2PlusRequesterId), nil
 }
 
-func ClientForBatch(db *store.SimBatchDB, batchName string) (es2plus.Es2PlusClient, *model.Batch, error) {
+func ClientForBatch(db *store.SimBatchDB, batchName string) (es2plus.Client, *model.Batch, error) {
 
 	batch, err := db.GetBatchByName(batchName)
 	if err != nil {
