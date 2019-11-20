@@ -1,6 +1,8 @@
 package org.ostelco.prime.admin.resources
 
 import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.apierror.ApiErrorCode
@@ -77,7 +79,7 @@ class KYCResource {
         return null
     }
 
-    private fun toScanInformation(dataMap: Map<String, String>): ScanInformation? {
+    private fun toScanInformation(dataMap: Map<String, String>): Either<ApiError, ScanInformation> {
         try {
             val vendorScanReference: String = dataMap[JumioScanData.JUMIO_SCAN_ID.s]!!
             var status: ScanStatus = toScanStatus(dataMap[JumioScanData.SCAN_STATUS.s]!!)
@@ -110,29 +112,30 @@ class KYCResource {
                     }
                 }
             }
-            return getCountryCodeForScan(scanId)
-                    ?.let { countryCode ->
-                        ScanInformation(
-                                scanId,
-                                countryCode,
-                                status,
-                                ScanResult(
-                                        vendorScanReference = vendorScanReference,
-                                        verificationStatus = verificationStatus,
-                                        time = time,
-                                        type = type,
-                                        country = country,
-                                        firstName = firstName,
-                                        lastName = lastName,
-                                        dob = dob,
-                                        expiry = expiry,
-                                        rejectReason = rejectReason
-                                )
-                        )
-                    }
+            val countryCode = getCountryCodeForScan(scanId)
+            if (countryCode == null) {
+                return NotFoundError("Cannot find country for scan $scanId", ApiErrorCode.FAILED_TO_GET_COUNTRY_FOR_SCAN).left()
+            } else {
+                return ScanInformation(
+                        scanId,
+                        countryCode,
+                        status,
+                        ScanResult(
+                                vendorScanReference = vendorScanReference,
+                                verificationStatus = verificationStatus,
+                                time = time,
+                                type = type,
+                                country = country,
+                                firstName = firstName,
+                                lastName = lastName,
+                                dob = dob,
+                                expiry = expiry,
+                                rejectReason = rejectReason
+                        )).right()
+            }
         } catch (e: NullPointerException) {
             logger.error("Missing mandatory fields in scan result $dataMap", e)
-            return null
+            return BadRequestError("Missing mandatory fields in scan result", ApiErrorCode.FAILED_TO_CONVERT_SCAN_RESULT).left()
         }
     }
 
@@ -144,16 +147,16 @@ class KYCResource {
             @Context httpHeaders: HttpHeaders,
             formData: MultivaluedMap<String, String>): Response {
         dumpRequestInfo(request, httpHeaders, formData)
-        val scanInformation = toScanInformation(toRegularMap(formData))
-        if (scanInformation == null) {
-            logger.info("Unable to convert scan information from form data")
-            val reqError = BadRequestError("Missing mandatory fields in scan result", ApiErrorCode.FAILED_TO_UPDATE_SCAN_RESULTS)
-            return Response.status(reqError.status).entity(asJson(reqError)).build()
-        }
-        logger.info("Updating scan information ${scanInformation.scanId} jumioIdScanReference ${scanInformation.scanResult?.vendorScanReference}")
-        return updateScanInformation(scanInformation, formData).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { Response.status(Response.Status.OK).entity(asJson(scanInformation)) }).build()
+        return toScanInformation(toRegularMap(formData))
+                .fold({
+                    logger.info("Unable to convert scan information from form data")
+                    Response.status(it.status).entity(asJson(it))
+                }, { scanInformation ->
+                    logger.info("Updating scan information ${scanInformation.scanId} jumioIdScanReference ${scanInformation.scanResult?.vendorScanReference}")
+                    updateScanInformation(scanInformation, formData).fold(
+                            { Response.status(it.status).entity(asJson(it)) },
+                            { Response.status(Response.Status.OK).entity(asJson(scanInformation)) })
+                }).build()
     }
 
     private fun getCountryCodeForScan(scanId: String): String? {

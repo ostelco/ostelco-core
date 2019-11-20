@@ -32,7 +32,7 @@ object ApiErrorMapper {
     val logger by getLogger()
 
     fun mapPaymentErrorToApiError(description: String, errorCode: ApiErrorCode, paymentError: PaymentError) : ApiError {
-        logger.error("description: $description, errorCode: $errorCode, paymentError: ${asJson(paymentError)}")
+        logger.error("{}: {}, paymentError: {}", errorCode, description, asJson(paymentError))
         return when(paymentError) {
             is org.ostelco.prime.paymentprocessor.core.PlanAlredyPurchasedError -> ForbiddenError(description, errorCode, paymentError)
             /* TODO: (kmm) Update to return 'request failed' (402). */
@@ -46,7 +46,7 @@ object ApiErrorMapper {
     }
 
     fun mapStorageErrorToApiError(description: String, errorCode: ApiErrorCode, storeError: StoreError) : ApiError {
-        logger.error("description: $description, errorCode: $errorCode, storeError: ${asJson(storeError)}")
+        logger.error("{}: {}, storeError: {}", errorCode, description, asJson(storeError))
         return when(storeError) {
             is org.ostelco.prime.storage.NotFoundError  ->  NotFoundError(description, errorCode, storeError)
             is org.ostelco.prime.storage.AlreadyExistsError  ->  ForbiddenError(description, errorCode, storeError)
@@ -63,7 +63,7 @@ object ApiErrorMapper {
     }
 
     fun mapSimManagerErrorToApiError(description: String, errorCode: ApiErrorCode, simManagerError: SimManagerError) : ApiError {
-        logger.error("description: $description, errorCode: $errorCode, simManagerError: ${asJson(simManagerError)}")
+        logger.error("{}: {}, simManagerError: {}", errorCode, description, asJson(simManagerError))
         return when (simManagerError) {
             is org.ostelco.prime.simmanager.NotFoundError -> NotFoundError(description, errorCode, simManagerError)
             is org.ostelco.prime.simmanager.NotUpdatedError -> BadRequestError(description, errorCode, simManagerError)
