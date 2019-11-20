@@ -1,8 +1,6 @@
 package org.ostelco.prime.ocs.core
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.ostelco.ocs.api.CreditControlAnswerInfo
 import org.ostelco.ocs.api.CreditControlRequestInfo
 import org.ostelco.ocs.api.MultipleServiceCreditControl
@@ -76,12 +74,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                     .resultCode = ResultCode.DIAMETER_SUCCESS
 
             if (request.msccCount == 0) {
-                responseBuilder.validityTime = 86400
-                storage.consume(msisdn, 0L, 0L) { storeResult ->
-                    storeResult.fold(
-                            { responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN },
-                            { responseBuilder.resultCode = ResultCode.DIAMETER_SUCCESS })
-                }
+                checkUserExist(msisdn, responseBuilder)
             } else {
                 chargeMSCCs(request, msisdn, responseBuilder)
             }
@@ -92,61 +85,74 @@ object OnlineCharging : OcsAsyncRequestConsumer {
         }
     }
 
+    private suspend fun checkUserExist(msisdn: String,
+                                       responseBuilder: CreditControlAnswerInfo.Builder) {
+        coroutineScope {
+            responseBuilder.validityTime = 86400
+            async {
+                storage.consume(msisdn, 0L, 0L) { storeResult ->
+                    storeResult.fold(
+                            { responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN },
+                            { responseBuilder.resultCode = ResultCode.DIAMETER_SUCCESS })
+                }
+            }
+        }
+    }
+
     private suspend fun chargeMSCCs(request: CreditControlRequestInfo,
                                     msisdn: String,
                                     responseBuilder: CreditControlAnswerInfo.Builder) {
 
-        val doneSignal = CountDownLatch(request.msccList.size)
 
         var reservationCounter = 0
 
-        request.msccList.forEach { mscc ->
+        coroutineScope {
 
-            fun consumptionResultHandler(consumptionResult: ConsumptionResult) {
-                addGrantedQuota(consumptionResult.granted, mscc, responseBuilder)
-                addInfo(consumptionResult.balance, mscc, responseBuilder)
-                reportAnalytics(consumptionResult, request)
-                Notifications.lowBalanceAlert(msisdn, consumptionResult.granted, consumptionResult.balance)
-                reservationCounter++
-                doneSignal.countDown()
-            }
+            request.msccList.forEach { mscc ->
 
-            suspend fun consumeRequestHandler(consumptionRequest: ConsumptionRequest) {
-                storage.consume(
-                        msisdn = consumptionRequest.msisdn,
-                        usedBytes = consumptionRequest.usedBytes,
-                        requestedBytes = consumptionRequest.requestedBytes) { storeResult ->
+                fun consumptionResultHandler(consumptionResult: ConsumptionResult) {
+                    addGrantedQuota(consumptionResult.granted, mscc, responseBuilder)
+                    addInfo(consumptionResult.balance, mscc, responseBuilder)
+                    reportAnalytics(consumptionResult, request)
+                    Notifications.lowBalanceAlert(msisdn, consumptionResult.granted, consumptionResult.balance)
+                    reservationCounter++
+                }
 
-                    storeResult
-                            .fold(
-                                    { storeError ->
-                                        // FixMe : should all store errors be unknown user?
-                                        logger.error(storeError.message)
-                                        responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN
-                                        doneSignal.countDown()
-                                    },
-                                    { consumptionResult ->  consumptionResultHandler(consumptionResult) }
+                suspend fun consumeRequestHandler(consumptionRequest: ConsumptionRequest) {
+                    async {
+                        storage.consume(
+                                msisdn = consumptionRequest.msisdn,
+                                usedBytes = consumptionRequest.usedBytes,
+                                requestedBytes = consumptionRequest.requestedBytes) { storeResult ->
+
+                            storeResult
+                                    .fold(
+                                            { storeError ->
+                                                // FixMe : should all store errors be unknown user?
+                                                logger.error(storeError.message)
+                                                responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN
+                                            },
+                                            { consumptionResult -> consumptionResultHandler(consumptionResult) }
+                                    )
+                        }
+                    }
+                }
+
+                val requested = mscc.requested?.totalOctets ?: 0
+                if (requested > 0) {
+                    consumptionPolicy.checkConsumption(
+                            msisdn = msisdn,
+                            multipleServiceCreditControl = mscc,
+                            sgsnMccMnc = request.serviceInformation.psInformation.sgsnMccMnc,
+                            apn = request.serviceInformation.psInformation.calledStationId,
+                            imsiMccMnc = request.serviceInformation.psInformation.imsiMccMnc)
+                            .bimap(
+                                    { consumptionResult -> consumptionResultHandler(consumptionResult) },
+                                    { consumptionRequest -> consumeRequestHandler(consumptionRequest) }
                             )
                 }
             }
-
-            val requested = mscc.requested?.totalOctets ?: 0
-            if (requested > 0) {
-                consumptionPolicy.checkConsumption(
-                        msisdn = msisdn,
-                        multipleServiceCreditControl = mscc,
-                        sgsnMccMnc = request.serviceInformation.psInformation.sgsnMccMnc,
-                        apn = request.serviceInformation.psInformation.calledStationId,
-                        imsiMccMnc = request.serviceInformation.psInformation.imsiMccMnc)
-                        .bimap(
-                                { consumptionResult -> consumptionResultHandler(consumptionResult) },
-                                { consumptionRequest ->  consumeRequestHandler(consumptionRequest) }
-                        )
-            } else {
-                doneSignal.countDown()
-            }
         }
-        doneSignal.await(2, TimeUnit.SECONDS)
 
         // In case there was no granted reservations the Validity-Time is set on base level, else it is set in each MSCC
         if (reservationCounter == 0) {
