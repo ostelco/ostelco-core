@@ -1,7 +1,6 @@
 package org.ostelco.sim.es2plus
 
 
-
 class SmDpPlusException(val statusCodeData: StatusCodeData) : Exception()
 
 
@@ -11,7 +10,7 @@ interface SmDpPlusService {
     fun downloadOrder(eid: String?, iccid: String?, profileType: String?): Es2DownloadOrderResponse
 
     @Throws(SmDpPlusException::class)
-    fun confirmOrder(eid: String?, iccid: String?, smdsAddress: String?, machingId: String?, confirmationCode: String?, releaseFlag:Boolean): Es2ConfirmOrderResponse
+    fun confirmOrder(eid: String?, iccid: String?, smdsAddress: String?, machingId: String?, confirmationCode: String?, releaseFlag: Boolean): Es2ConfirmOrderResponse
 
     @Throws(SmDpPlusException::class)
     fun cancelOrder(eid: String?, iccid: String?, matchingId: String?, finalProfileStatusIndicator: String?)
@@ -23,7 +22,7 @@ interface SmDpPlusService {
     fun releaseProfile(iccid: String)
 }
 
-interface  SmDpPlusCallbackService {
+interface SmDpPlusCallbackService {
 
     @Throws(SmDpPlusException::class)
     fun handleDownloadProgressInfo(
