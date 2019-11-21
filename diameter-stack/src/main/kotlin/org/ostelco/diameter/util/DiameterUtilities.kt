@@ -77,6 +77,18 @@ class DiameterUtilities {
         return String(hexChars)
     }
 
+    fun hexStringToByteArray(hexString: String): ByteArray {
+        val len = hexString.length
+        val data = ByteArray(len / 2)
+        var i = 0
+        while (i < len) {
+            data[i / 2] = ((Character.digit(hexString[i], 16) shl 4)
+                    + Character.digit(hexString[i + 1], 16)).toByte()
+            i += 2
+        }
+        return data
+    }
+
     // TODO martin: for missing Avp, is code and vendorId as 0 okay?
     private fun isGrouped(avp: Avp?): Boolean  {
         if (avp?.code != null) {

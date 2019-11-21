@@ -1,8 +1,7 @@
-package org.ostelco.diameter.model
+package org.ostelco.diameter.parser
 
 import org.ostelco.diameter.getLogger
 import java.io.UnsupportedEncodingException
-import kotlin.experimental.and
 
 class UserLocation(var geographicLocationType: String?, var mnc: String?, var mcc: String?) {}
 
@@ -34,7 +33,7 @@ object UserLocationParser {
 
                 ub = userLocationObject[2].toUByte()
 
-                val mnc3 =  ub.toInt().ushr(4).toByte()
+                //val mnc3 =  ub.toInt().ushr(4).toByte()
                 val mcc3 = (ub and 15u).toByte()
 
                 ub = userLocationObject[3].toUByte()
@@ -45,7 +44,6 @@ object UserLocationParser {
                 val mnc = "" + mnc1 + mnc2
                 val mcc = "" + mcc1 + mcc2 + mcc3
 
-                logger.info("geographicLocationType $geographicLocationType mcc $mcc mnc $mnc")
                 parsedLocation = UserLocation(geographicLocationType, mnc, mcc)
             } catch (e: UnsupportedEncodingException) {
                     logger.info("Unsupported encoding", e)

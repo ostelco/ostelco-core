@@ -3,6 +3,7 @@ package org.ostelco.prime.ocs.core
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.ostelco.diameter.parser.UserLocationParser
 import org.ostelco.ocs.api.CreditControlAnswerInfo
 import org.ostelco.ocs.api.CreditControlRequestInfo
 import org.ostelco.ocs.api.MultipleServiceCreditControl
@@ -135,7 +136,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                 consumptionPolicy.checkConsumption(
                         msisdn = msisdn,
                         multipleServiceCreditControl = mscc,
-                        sgsnMccMnc = request.serviceInformation.psInformation.sgsnMccMnc,
+                        sgsnMccMnc = getUserLocationMccMnc(request),
                         apn = request.serviceInformation.psInformation.calledStationId,
                         imsiMccMnc = request.serviceInformation.psInformation.imsiMccMnc)
                         .bimap(
@@ -152,6 +153,15 @@ object OnlineCharging : OcsAsyncRequestConsumer {
         if (reservationCounter == 0) {
             responseBuilder.validityTime = 86400
         }
+    }
+
+    private fun getUserLocationMccMnc(request: CreditControlRequestInfo) : String {
+        var sgsnMccMnc = request.serviceInformation.psInformation.sgsnMccMnc
+        if (sgsnMccMnc.isEmpty() || (sgsnMccMnc.length < 3)) {
+            val userLocationInfo = UserLocationParser.getParsedUserLocation(request.serviceInformation.psInformation.userLocationInfo.toByteArray())
+            sgsnMccMnc = userLocationInfo?.mcc + userLocationInfo?.mnc
+        }
+        return sgsnMccMnc
     }
 
     private fun reportAnalytics(consumptionResult: ConsumptionResult, request: CreditControlRequestInfo) {

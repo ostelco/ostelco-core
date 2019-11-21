@@ -7,6 +7,7 @@ import org.ostelco.diameter.builder.set
 import org.ostelco.diameter.model.ReportingReason
 import org.ostelco.diameter.model.RequestType
 import org.ostelco.diameter.model.SubscriptionType
+import org.ostelco.diameter.util.DiameterUtilities
 
 /**
  * Helper class to create the most common AVP combinations
@@ -139,22 +140,10 @@ object TestHelper {
                     avp(CALLED_STATION_ID, apn, pFlag = true)
                     avp(Avp.GPP_SGSN_MCC_MNC, sgsnMccMnc, vendorId = VENDOR_ID_3GPP, asOctetString = true)
                     avp(Avp.TGPP_IMSI_MCC_MNC, sgsnMccMnc, vendorId = VENDOR_ID_3GPP, asOctetString = true)
-                    avp(Avp.GPP_USER_LOCATION_INFO, hexStringToByteArray("8205f261a8b705f261003b7fca"), vendorId = VENDOR_ID_3GPP, asOctetString = true, mFlag = false) // Norway
+                    avp(Avp.GPP_USER_LOCATION_INFO, DiameterUtilities().hexStringToByteArray("8205f261a8b705f261003b7fca"), vendorId = VENDOR_ID_3GPP, asOctetString = true, mFlag = false) // Norway
                 }
             }
         }
-    }
-
-    private fun hexStringToByteArray(hexString: String): ByteArray {
-        val len = hexString.length
-        val data = ByteArray(len / 2)
-        var i = 0
-        while (i < len) {
-            data[i / 2] = ((Character.digit(hexString[i], 16) shl 4)
-                    + Character.digit(hexString[i + 1], 16)).toByte()
-            i += 2
-        }
-        return data
     }
 
     @JvmStatic
