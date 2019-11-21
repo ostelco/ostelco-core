@@ -42,6 +42,7 @@ data class Offer(override val id: String) : HasId
 
 data class ExCustomer(
         override val id:String,
+        val createdOn: String? = null,
         val terminationDate: String) : HasId {
 
     companion object

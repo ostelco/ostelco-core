@@ -448,9 +448,10 @@ object Neo4jStoreSingleton : GraphStore {
         IO {
             Either.monad<StoreError>().binding {
                 // get customer id
-                val customerId = getCustomerId(identity).bind()
+                val customer = getCustomer(identity).bind()
+                val customerId = customer.id
                 // create ex-customer with same id
-                create { ExCustomer(id = customerId, terminationDate = LocalDate.now().toString()) }.bind()
+                create { ExCustomer(id = customerId, terminationDate = LocalDate.now().toString(), createdOn = customer.createdOn) }.bind()
                 // get all subscriptions and link them to ex-customer
                 val subscriptions = get(Subscription subscribedBy (Customer withId customerId)).bind()
                 for (subscription in subscriptions) {
