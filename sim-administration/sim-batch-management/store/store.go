@@ -272,9 +272,9 @@ func (sdb SimBatchDB) GetProfileVendorByName(name string) (*model.ProfileVendor,
 
 	if len(result) == 0 {
 		return nil, nil
-	} else {
-		return &result[0], nil
 	}
+
+	return &result[0], nil
 }
 
 // CreateSimEntry persists a SimEntry instance in the database.

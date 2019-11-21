@@ -11,9 +11,8 @@ import (
 	"strings"
 )
 
-///
-///   External interface for ES2+ client
-///
+
+// Client is an external interface for ES2+ client
 type Client interface {
 	GetStatus(iccid string) (*ProfileStatus, error)
 	RecoverProfile(iccid string, targetState string) (*RecoverProfileResponse, error)
@@ -93,7 +92,7 @@ type ProfileStatus struct {
 //  Profile reset invocation
 //
 
-// RecvoerProfileRequest is the payload of the recoverProfile request.
+// RecoverProfileRequest is the payload of the recoverProfile request.
 type RecoverProfileRequest struct {
 	Header        Header        `json:"header"`
 	Iccid         string        `json:"iccid"`

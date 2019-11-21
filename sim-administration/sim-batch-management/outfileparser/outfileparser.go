@@ -71,7 +71,7 @@ func parseVarOutLine(varOutLine string, result *map[string]int) error {
 }
 
 
-// Parse an output file, returning an OutputFileRecord, contained
+// ParseOutputFile parses an output file, returning an OutputFileRecord, contained
 // a parsed version of the inputfile.
 func ParseOutputFile(filePath string) (*OutputFileRecord, error) {
 

@@ -387,14 +387,15 @@ func parseCommandLine() error {
 
 		if batch == nil {
 			return fmt.Errorf("no batch found with name '%s'", *describeBatchBatch)
-		} else {
-			bytes, err := json.MarshalIndent(batch, "    ", "     ")
-			if err != nil {
-				return fmt.Errorf("can't serialize batch '%v'", batch)
-			}
-
-			fmt.Printf("%v\n", string(bytes))
 		}
+
+		bytes, err := json.MarshalIndent(batch, "    ", "     ")
+		if err != nil {
+			return fmt.Errorf("can't serialize batch '%v'", batch)
+		}
+
+		fmt.Printf("%v\n", string(bytes))
+
 
 	case "batch-generate-activation-code-updating-sql":
 		batch, err := db.GetBatchByName(*generateActivationCodeSQLBatch)
