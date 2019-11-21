@@ -1139,10 +1139,10 @@ object Neo4jStoreSingleton : GraphStore {
 
             writeSuspended("""
                             MATCH (sn:${subscriptionEntity.name} {id: '$msisdn'})-[r:${subscriptionToBundleRelation.name}]->(bundle:${bundleEntity.name})
-                            SET bundle._LOCK_ = true, r._LOCK_ = true
+                            SET bundle._LOCK_ = true, r._LOCK_ = true, sn.lastActiveOn="${utcTimeNow()}"
                             WITH r, bundle, sn.analyticsId AS msisdnAnalyticsId, (CASE WHEN ((toInteger(bundle.balance) + toInteger(r.reservedBytes) - $usedBytes) > 0) THEN (toInteger(bundle.balance) + toInteger(r.reservedBytes) - $usedBytes) ELSE 0 END) AS tmpBalance
                             WITH r, bundle, msisdnAnalyticsId, tmpBalance, (CASE WHEN (tmpBalance < $requestedBytes) THEN tmpBalance ELSE $requestedBytes END) as tmpGranted
-                            SET r.reservedBytes = toString(tmpGranted), bundle.balance = toString(tmpBalance - tmpGranted)
+                            SET r.reservedBytes = toString(tmpGranted), r.reservedOn = "${utcTimeNow()}", bundle.balance = toString(tmpBalance - tmpGranted), bundle.lastConsumedOn="${utcTimeNow()}"
                             REMOVE r._LOCK_, bundle._LOCK_
                             RETURN msisdnAnalyticsId, r.reservedBytes AS granted, bundle.balance AS balance
                             """.trimIndent(),

@@ -14,7 +14,10 @@ data class Identity(
 
 data class Identifies(val provider: String)
 
-data class SubscriptionToBundle(val reservedBytes: Long = 0)
+data class SubscriptionToBundle(
+        val reservedBytes: Long = 0,
+        val reservedOn: String? = null
+)
 
 data class PlanSubscription(
         val subscriptionId: String,

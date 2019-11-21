@@ -228,7 +228,8 @@ data class ApplicationToken(
 
 data class Subscription(
         val msisdn: String,
-        val analyticsId: String = UUID.randomUUID().toString()) : HasId {
+        val analyticsId: String = UUID.randomUUID().toString(),
+        val lastActiveOn: String? = null) : HasId {
 
     override val id: String
         @JsonIgnore
@@ -239,7 +240,8 @@ data class Subscription(
 
 data class Bundle(
         override val id: String,
-        val balance: Long) : HasId {
+        val balance: Long,
+        val lastConsumedOn: String? = null) : HasId {
 
     companion object
 }
