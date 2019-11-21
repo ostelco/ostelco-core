@@ -1165,6 +1165,10 @@ class Neo4jStoreTest {
     @Test
     fun `test delete customer`() {
 
+        // mock
+        `when`(mockPaymentProcessor.removePaymentProfile(customerId = CUSTOMER.id))
+                .thenReturn(ProfileInfo(EMAIL).right())
+
         // setup
         job {
             create { Region("sg", "Singapore") }
