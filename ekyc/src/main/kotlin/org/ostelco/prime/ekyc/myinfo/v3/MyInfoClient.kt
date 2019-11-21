@@ -228,11 +228,9 @@ object MyInfoClientSingleton : MyInfoKycService {
         }
 
         if (config.myInfoApiEnableSecurity && httpMethod == GET) {
-            // TODO vihang: Remove after initial testing is done.
-            logger.info("jwe PersonData: {}", content)
+            // logger.info("jwe PersonData: {}", content)
             val jws = decodeJweCompact(content)
-            // TODO vihang: Remove after initial testing is done.
-            logger.info("jws PersonData: {}", jws)
+            // logger.info("jws PersonData: {}", jws)
             return getPersonDataFromJwsClaims(jws)
         }
 

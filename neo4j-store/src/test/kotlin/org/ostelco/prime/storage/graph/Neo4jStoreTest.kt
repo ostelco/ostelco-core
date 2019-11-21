@@ -146,7 +146,7 @@ class Neo4jStoreTest {
 
         Neo4jStoreSingleton.getCustomer(IDENTITY).bimap(
                 { fail(it.message) },
-                { assertEquals(CUSTOMER, it) })
+                { assertEquals(CUSTOMER.copy(createdOn = it.createdOn), it) })
 
         // TODO vihang: fix argument captor for neo4j-store tests
 //        val bundleArgCaptor: ArgumentCaptor<Bundle> = ArgumentCaptor.forClass(Bundle::class.java)
@@ -169,7 +169,7 @@ class Neo4jStoreTest {
                     val identity: Identity  = list.first()
                     Neo4jStoreSingleton.getCustomer(identity).bimap(
                             { fail(it.message) },
-                            { assertEquals(CUSTOMER, it) })})
+                            { assertEquals(CUSTOMER.copy(createdOn = it.createdOn), it) })})
     }
 
     @Test
@@ -1209,7 +1209,7 @@ class Neo4jStoreTest {
 
                     val exCustomer = get(ExCustomer withId CUSTOMER.id).bind()
                     assertEquals(
-                            expected = ExCustomer(id = CUSTOMER.id, terminationDate = "%d-%02d-%02d".format(LocalDate.now().year, LocalDate.now().monthValue, LocalDate.now().dayOfMonth)),
+                            expected = ExCustomer(id = CUSTOMER.id, createdOn = exCustomer.createdOn, terminationDate = "%d-%02d-%02d".format(LocalDate.now().year, LocalDate.now().monthValue, LocalDate.now().dayOfMonth)),
                             actual = exCustomer,
                             message = "ExCustomer does not match")
 

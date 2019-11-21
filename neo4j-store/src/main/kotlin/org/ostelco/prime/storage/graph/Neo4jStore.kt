@@ -6,7 +6,6 @@ import arrow.core.Either.Right
 import arrow.core.EitherOf
 import arrow.core.fix
 import arrow.core.flatMap
-import arrow.core.getOrElse
 import arrow.core.left
 import arrow.core.leftIfNull
 import arrow.core.right
@@ -35,6 +34,7 @@ import org.ostelco.prime.dsl.withCode
 import org.ostelco.prime.dsl.withId
 import org.ostelco.prime.dsl.withKyc
 import org.ostelco.prime.dsl.withMsisdn
+import org.ostelco.prime.dsl.withSimProfile
 import org.ostelco.prime.dsl.withSku
 import org.ostelco.prime.dsl.withSubscription
 import org.ostelco.prime.dsl.writeTransaction
@@ -73,6 +73,8 @@ import org.ostelco.prime.model.ScanStatus
 import org.ostelco.prime.model.SimEntry
 import org.ostelco.prime.model.SimProfileStatus
 import org.ostelco.prime.model.SimProfileStatus.AVAILABLE_FOR_DOWNLOAD
+import org.ostelco.prime.model.SimProfileStatus.DELETED
+import org.ostelco.prime.model.SimProfileStatus.DOWNLOADED
 import org.ostelco.prime.model.SimProfileStatus.INSTALLED
 import org.ostelco.prime.model.SimProfileStatus.NOT_READY
 import org.ostelco.prime.model.Subscription
@@ -132,6 +134,8 @@ import org.ostelco.prime.storage.graph.model.SubscriptionToBundle
 import org.ostelco.prime.tracing.Trace
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 import java.util.*
 import java.util.stream.Collectors
 import javax.ws.rs.core.MultivaluedMap
@@ -410,7 +414,7 @@ object Neo4jStoreSingleton : GraphStore {
                 validateCreateCustomerParams(customer, referredBy).bind()
                 val bundleId = UUID.randomUUID().toString()
                 create { Identity(id = identity.id, type = identity.type) }.bind()
-                create { customer }.bind()
+                create { customer.copy(createdOn = utcTimeNow()) }.bind()
                 fact { (Identity withId identity.id) identifies (Customer withId customer.id) using Identifies(provider = identity.provider) }.bind()
                 create { Bundle(id = bundleId, balance = 0L) }.bind()
                 fact { (Customer withId customer.id) hasBundle (Bundle withId bundleId) }.bind()
@@ -446,9 +450,10 @@ object Neo4jStoreSingleton : GraphStore {
         IO {
             Either.monad<StoreError>().binding {
                 // get customer id
-                val customerId = getCustomerId(identity).bind()
+                val customer = getCustomer(identity).bind()
+                val customerId = customer.id
                 // create ex-customer with same id
-                create { ExCustomer(id = customerId, terminationDate = LocalDate.now().toString()) }.bind()
+                create { ExCustomer(id = customerId, terminationDate = LocalDate.now().toString(), createdOn = customer.createdOn) }.bind()
                 // get all subscriptions and link them to ex-customer
                 val subscriptions = get(Subscription subscribedBy (Customer withId customerId)).bind()
                 for (subscription in subscriptions) {
@@ -680,7 +685,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     fun subscribeToSimProfileStatusUpdates() {
         simManager.addSimProfileStatusUpdateListener { iccId, status ->
-            readTransaction {
+            writeTransaction {
                 IO {
                     Either.monad<StoreError>().binding {
                         logger.info("Received status {} for iccId {}", status, iccId)
@@ -689,6 +694,16 @@ object Neo4jStoreSingleton : GraphStore {
                             logger.warn("Found {} SIM Profiles with iccId {}", simProfiles.size, iccId)
                         }
                         simProfiles.forEach { simProfile ->
+                            val customers = get(Customer withSimProfile (SimProfile withId simProfile.id)).bind()
+                            customers.forEach { customer ->
+                                AuditLog.info(customerId = customer.id, message = "Sim Profile (iccId = $iccId) is $status")
+                            }
+                            when(status) {
+                                DOWNLOADED -> update { simProfile.copy(downloadedOn = utcTimeNow()) }.bind()
+                                INSTALLED -> update { simProfile.copy(installedOn = utcTimeNow()) }.bind()
+                                DELETED -> update { simProfile.copy(deletedOn = utcTimeNow()) }.bind()
+                                else -> logger.warn("Not storing timestamp for simProfile: {} for status: {}", iccId, status)
+                            }
                             val subscriptions = get(Subscription under (SimProfile withId simProfile.id)).bind()
                             subscriptions.forEach { subscription ->
                                 logger.info("Notify status {} for subscription.analyticsId {}", status, subscription.analyticsId)
@@ -697,6 +712,7 @@ object Neo4jStoreSingleton : GraphStore {
                         }
                     }.fix()
                 }.unsafeRunSync()
+                // Skipping transaction rollback since it is just updating timestamps
             }
         }
     }
@@ -740,7 +756,7 @@ object Neo4jStoreSingleton : GraphStore {
                 val simEntry = simManager.allocateNextEsimProfile(hlr = hssNameLookup.getHssName(region.id.toLowerCase()), phoneType = profileType)
                         .mapLeft { NotFoundError("eSIM profile", id = "Loltel") }
                         .bind()
-                val simProfile = SimProfile(id = UUID.randomUUID().toString(), iccId = simEntry.iccId)
+                val simProfile = SimProfile(id = UUID.randomUUID().toString(), iccId = simEntry.iccId, requestedOn = utcTimeNow())
                 create { simProfile }.bind()
                 fact { (Customer withId customerId) has (SimProfile withId simProfile.id) }.bind()
                 fact { (SimProfile withId simProfile.id) isFor (Region withCode regionCode.toLowerCase()) }.bind()
@@ -1123,10 +1139,10 @@ object Neo4jStoreSingleton : GraphStore {
 
             writeSuspended("""
                             MATCH (sn:${subscriptionEntity.name} {id: '$msisdn'})-[r:${subscriptionToBundleRelation.name}]->(bundle:${bundleEntity.name})
-                            SET bundle._LOCK_ = true, r._LOCK_ = true
+                            SET bundle._LOCK_ = true, r._LOCK_ = true, sn.lastActiveOn="${utcTimeNow()}"
                             WITH r, bundle, sn.analyticsId AS msisdnAnalyticsId, (CASE WHEN ((toInteger(bundle.balance) + toInteger(r.reservedBytes) - $usedBytes) > 0) THEN (toInteger(bundle.balance) + toInteger(r.reservedBytes) - $usedBytes) ELSE 0 END) AS tmpBalance
                             WITH r, bundle, msisdnAnalyticsId, tmpBalance, (CASE WHEN (tmpBalance < $requestedBytes) THEN tmpBalance ELSE $requestedBytes END) as tmpGranted
-                            SET r.reservedBytes = toString(tmpGranted), bundle.balance = toString(tmpBalance - tmpGranted)
+                            SET r.reservedBytes = toString(tmpGranted), r.reservedOn = "${utcTimeNow()}", bundle.balance = toString(tmpBalance - tmpGranted), bundle.lastConsumedOn="${utcTimeNow()}"
                             REMOVE r._LOCK_, bundle._LOCK_
                             RETURN msisdnAnalyticsId, r.reservedBytes AS granted, bundle.balance AS balance
                             """.trimIndent(),
@@ -1794,7 +1810,6 @@ object Neo4jStoreSingleton : GraphStore {
                                         customerId = customer.id,
                                         data = extendedStatus
                                 )
-                                logger.info(NOTIFY_OPS_MARKER, "Jumio verification succeeded for ${customer.contactEmail} Info: $extendedStatus")
                                 setKycStatus(
                                         customer = customer,
                                         regionCode = updatedScanInformation.countryCode.toLowerCase(),
@@ -1813,7 +1828,9 @@ object Neo4jStoreSingleton : GraphStore {
                                 data = extendedStatus
                         )
                     }
-                    logger.info(NOTIFY_OPS_MARKER, "Jumio verification failed for ${customer.contactEmail} Info: $extendedStatus")
+                    if(updatedScanInformation.scanResult?.verificationStatus != "NO_ID_UPLOADED") {
+                        logger.info(NOTIFY_OPS_MARKER, "Jumio verification failed for ${customer.contactEmail} Info: $extendedStatus")
+                    }
                     setKycStatus(
                             customer = customer,
                             regionCode = updatedScanInformation.countryCode.toLowerCase(),
@@ -2037,14 +2054,28 @@ object Neo4jStoreSingleton : GraphStore {
         return IO {
             Either.monad<StoreError>().binding {
 
+                // get combinations of KYC needed for this region to be Approved
                 val approvedKycTypeSetList = getApprovedKycTypeSetList(regionCode)
 
+                // fetch existing values from DB
                 val existingCustomerRegion = customerRegionRelationStore.get(
                         fromId = customer.id,
                         toId = regionCode,
                         transaction = transaction)
-                        .getOrElse { CustomerRegion(status = PENDING, kycStatusMap = getKycStatusMapForRegion(regionCode)) }
+                        .flatMapLeft { storeError ->
+                            if(storeError is NotFoundError && storeError.type == customerRegionRelation.name) {
+                                // default value if absent in DB
+                                CustomerRegion(
+                                        status = PENDING,
+                                        kycStatusMap = getKycStatusMapForRegion(regionCode),
+                                        initiatedOn = utcTimeNow()
+                                ).right()
+                            } else {
+                                storeError.left()
+                            }
+                        }.bind()
 
+                // using existing and received KYC status, compute new KYC status
                 val existingKycStatusMap = existingCustomerRegion.kycStatusMap
                 val existingKycStatus = existingKycStatusMap[kycType]
                 val newKycStatus = when (existingKycStatus) {
@@ -2054,6 +2085,7 @@ object Neo4jStoreSingleton : GraphStore {
                     else -> kycStatus
                 }
 
+                // if new status is different from existing status
                 if (existingKycStatus != newKycStatus) {
                     if (kycStatus == newKycStatus) {
                         AuditLog.info(customerId = customer.id, message = "Setting $kycType status from $existingKycStatus to $newKycStatus")
@@ -2075,29 +2107,42 @@ object Neo4jStoreSingleton : GraphStore {
                     AuditLog.info(customerId = customer.id, message = "Ignoring setting $kycType status to $kycStatus since it is already $existingKycStatus")
                 }
 
+                // update KYC status map with new value. This map will then be stored in DB.
                 val newKycStatusMap = existingKycStatusMap.copy(key = kycType, value = newKycStatus)
 
-                val approved = approvedKycTypeSetList.any { kycTypeSet ->
+                // check if Region is Approved.
+                val isRegionApproved = approvedKycTypeSetList.any { kycTypeSet ->
+                    // Region is approved if the set of Approved KYCs is a superset of any one of the set configured in the list - approvedKycTypeSetList.
                     newKycStatusMap.filter { it.value == KycStatus.APPROVED }.keys.containsAll(kycTypeSet)
                 }
 
-                val approvedNow = existingCustomerRegion.status == PENDING && approved
+                // if the Region status is Approved, but the existing status was not Approved, then it has been approved now.
+                val isRegionApprovedNow = existingCustomerRegion.status != APPROVED && isRegionApproved
 
-                val newStatus = if (approved) {
+                // Save Region status as APPROVED, if it is approved. Do not change Region status otherwise.
+                val newRegionStatus = if (isRegionApproved) {
                     APPROVED
                 } else {
                     existingCustomerRegion.status
                 }
 
-                if (approvedNow) {
+                // timestamp for region approval
+                val regionApprovedOn = if (isRegionApprovedNow) {
+
                     AuditLog.info(customerId = customer.id, message = "Approved for region - $regionCode")
+
                     onRegionApprovedAction.apply(
                             customer = customer,
                             regionCode = regionCode,
                             transaction = PrimeTransaction(transaction)
                     ).bind()
+
+                    utcTimeNow()
+                } else {
+                    existingCustomerRegion.approvedOn
                 }
 
+                // Save KYC expiry date if it is not null.
                 val newKycExpiryDateMap = kycExpiryDate
                         ?.let { existingCustomerRegion.kycExpiryDateMap.copy(key = kycType, value = it) }
                         ?: existingCustomerRegion.kycExpiryDateMap
@@ -2106,9 +2151,11 @@ object Neo4jStoreSingleton : GraphStore {
                         .createOrUpdate(
                                 fromId = customer.id,
                                 relation = CustomerRegion(
-                                        status = newStatus,
+                                        status = newRegionStatus,
                                         kycStatusMap = newKycStatusMap,
-                                        kycExpiryDateMap = newKycExpiryDateMap
+                                        kycExpiryDateMap = newKycExpiryDateMap,
+                                        initiatedOn = existingCustomerRegion.initiatedOn,
+                                        approvedOn = regionApprovedOn
                                 ),
                                 toId = regionCode,
                                 transaction = transaction)
@@ -2840,3 +2887,5 @@ fun <K, V> Map<K, V>.copy(key: K, value: V): Map<K, V> {
     mutableMap[key] = value
     return mutableMap.toMap()
 }
+
+fun utcTimeNow() = ZonedDateTime.now(ZoneOffset.UTC).toString()
