@@ -412,7 +412,7 @@ object Neo4jStoreSingleton : GraphStore {
                 validateCreateCustomerParams(customer, referredBy).bind()
                 val bundleId = UUID.randomUUID().toString()
                 create { Identity(id = identity.id, type = identity.type) }.bind()
-                create { customer }.bind()
+                create { customer.copy(createdOn = utcTimeNow()) }.bind()
                 fact { (Identity withId identity.id) identifies (Customer withId customer.id) using Identifies(provider = identity.provider) }.bind()
                 create { Bundle(id = bundleId, balance = 0L) }.bind()
                 fact { (Customer withId customer.id) hasBundle (Bundle withId bundleId) }.bind()

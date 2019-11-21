@@ -43,6 +43,7 @@ data class Customer(
         override val id: String = UUID.randomUUID().toString(),
         val nickname: String,
         val contactEmail: String,
+        val createdOn: String? = null,
         val analyticsId: String = UUID.randomUUID().toString(),
         val referralId: String = UUID.randomUUID().toString()) : HasId {
 
