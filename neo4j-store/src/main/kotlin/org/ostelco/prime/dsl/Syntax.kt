@@ -231,6 +231,11 @@ infix fun Customer.Companion.withSubscription(subscription: SubscriptionContext)
                 toId = subscription.id
         )
 
+infix fun Customer.Companion.withSimProfile(simProfile: SimProfileContext) =
+        RelatedToClause(
+                relationType = customerToSimProfileRelation,
+                toId = simProfile.id
+        )
 //
 // ExCustomer
 //
