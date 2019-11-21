@@ -341,7 +341,7 @@ func parseCommandLine() error {
 			if simProfile.Imsi != e.Imsi {
 				return fmt.Errorf("profile enty for ICCID=%s has IMSI (%s), but we expected (%s)", e.Iccid, e.Imsi, simProfile.Imsi)
 			}
-			db.UpdateSimEntryKi(simProfile.Id, e.Ki)
+			db.UpdateSimEntryKi(simProfile.ID, e.Ki)
 		}
 
 		// Signal to defered transaction cleanup that we're cool
@@ -422,10 +422,10 @@ func parseCommandLine() error {
 
 		if batch == nil {
 			return fmt.Errorf("no batch found with name '%s'", *describeBatchBatch)
-		} else {
-			var csvPayload = uploadtoprime.GenerateCsvPayload(db, *batch)
-			uploadtoprime.GeneratePostingCurlscript(batch.URL, csvPayload)
 		}
+
+		var csvPayload = uploadtoprime.GenerateCsvPayload(db, *batch)
+		uploadtoprime.GeneratePostingCurlscript(batch.URL, csvPayload)
 
 	case "batch-generate-input-file":
 		batch, err := db.GetBatchByName(*generateInputFileBatchname)
@@ -543,7 +543,7 @@ func parseCommandLine() error {
 			}
 
 			if entry.Msisdn == "" && record.msisdn != "" {
-				err = db.UpdateSimEntryMsisdn(entry.Id, record.msisdn)
+				err = db.UpdateSimEntryMsisdn(entry.ID, record.msisdn)
 				if err != nil {
 					tx.Rollback()
 					return err
@@ -820,7 +820,7 @@ func parseCommandLine() error {
 
 					mutex.Lock()
 					fmt.Printf("%s, %s\n", entry.Iccid, result.ACToken)
-					db.UpdateActivationCode(entry.Id, result.ACToken)
+					db.UpdateActivationCode(entry.ID, result.ACToken)
 					mutex.Unlock()
 					waitgroup.Done()
 				}(entry)

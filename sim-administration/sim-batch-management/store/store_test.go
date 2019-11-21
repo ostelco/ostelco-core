@@ -278,9 +278,9 @@ func TestDeclareAndRetrieveSimEntries(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Assert(t, entry.Id != 0)
+	assert.Assert(t, entry.ID != 0)
 
-	retrivedEntry, err := sdb.GetSimEntryByID(entry.Id)
+	retrivedEntry, err := sdb.GetSimEntryByID(entry.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -313,16 +313,16 @@ func TestSimBatchDB_UpdateSimEntryKi(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Assert(t, entry.Id != 0)
+	assert.Assert(t, entry.ID != 0)
 
 	newKi := "12"
-	err = sdb.UpdateSimEntryKi(entry.Id, newKi)
+	err = sdb.UpdateSimEntryKi(entry.ID, newKi)
 
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	retrivedEntry, err := sdb.GetSimEntryByID(entry.Id)
+	retrivedEntry, err := sdb.GetSimEntryByID(entry.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -28,7 +28,7 @@ fi
  ~/go/bin/staticcheck ./...
 
 
-mv sim-batch-management sbm
+
 
 # If sourcing this script, then the line below
 # will modify command line compesion in bash

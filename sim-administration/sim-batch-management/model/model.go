@@ -8,7 +8,7 @@ package model
 // subject to JSON serialisation/deserialisation, and can be stored
 // in persistent storage.
 type SimEntry struct {
-	Id                   int64  `db:"id" json:"id"`
+	ID                   int64  `db:"id" json:"id"`
 	BatchID              int64  `db:"batchID" json:"batchID"`
 	RawIccid             string `db:"rawIccid" json:"rawIccid"`
 	IccidWithChecksum    string `db:"iccidWithChecksum" json:"iccidWithChecksum"`
@@ -49,7 +49,7 @@ type Batch struct {
 }
 
 
-// Batch represents sim vendors.  Instances can be
+// ProfileVendor represents sim profile vendors.  Instances can be
 // subject to JSON serialisation/deserialisation, and can be stored
 // in persistent storage.
 type ProfileVendor struct {

@@ -5,7 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/mattn/go-sqlite3"  // We need this
+	_ "github.com/mattn/go-sqlite3" // We need this
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/fieldsyntaxchecks"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/loltelutils"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
@@ -277,7 +277,6 @@ func (sdb SimBatchDB) GetProfileVendorByName(name string) (*model.ProfileVendor,
 	}
 }
 
-
 // CreateSimEntry persists a SimEntry instance in the database.
 func (sdb SimBatchDB) CreateSimEntry(theEntry *model.SimEntry) error {
 
@@ -297,7 +296,7 @@ func (sdb SimBatchDB) CreateSimEntry(theEntry *model.SimEntry) error {
 	if err != nil {
 		return fmt.Errorf("getting last inserted id failed '%s'", err)
 	}
-	theEntry.Id = id
+	theEntry.ID = id
 	return err
 }
 
@@ -312,9 +311,9 @@ func (sdb SimBatchDB) GetSimEntryByID(simID int64) (*model.SimEntry, error) {
 
 	if len(result) == 0 {
 		return nil, nil
-	} else {
-		return &result[0], nil
 	}
+
+	return &result[0], nil
 }
 
 // GetAllSimEntriesForBatch retrieves a sim entryh instance stored in the database.  If no
@@ -331,7 +330,6 @@ func (sdb SimBatchDB) GetAllSimEntriesForBatch(batchID int64) ([]model.SimEntry,
 	}
 	return result, nil
 }
-
 
 // GetSimProfileByIccid gets a sim profile from the database, return nil of one
 // can't be found.
@@ -405,7 +403,6 @@ func (sdb *SimBatchDB) DropTables() error {
 	_, err = sdb.Db.Exec(foo)
 	return err
 }
-
 
 // DeclareBatch generates a batch instance  by first checking all of its
 // parameters, and then storing it, and finally returning it from the function.

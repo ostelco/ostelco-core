@@ -35,8 +35,6 @@ type Header struct {
 	FunctionCallIdentifier      string `json:"functionCallIdentifier"`
 }
 
-
-
 // GetProfileStatusRequest holds a request object for the profileStatus es2+ command.
 type GetProfileStatusRequest struct {
 	Header    Header  `json:"header"`
@@ -48,11 +46,13 @@ type ICCID struct {
 	Iccid string `json:"iccid"`
 }
 
+// FunctionExecutionStatus is part of the generic es2+ response.
 type FunctionExecutionStatus struct {
 	FunctionExecutionStatusType string                `json:"status"`
 	StatusCodeData              StatusCodeData `json:"statusCodeData"`
 }
 
+// ResponseHeader is part of the generic response header in es2+ reponses.
 type ResponseHeader struct {
 	FunctionExecutionStatus FunctionExecutionStatus `json:"FunctionExecutionStatus"`
 }
@@ -77,9 +77,9 @@ type es2ProfileStatusResponse struct {
 	CompletionTimestamp string                `json:"completionTimestamp"`
 }
 
-///
-/// The status of a profile as retrieved from the SM-DP+
-///
+
+// ProfileStatus holds the "profile status" part of a ProfileStatusResponse
+// - response returned from an es2+ request.
 type ProfileStatus struct {
 	StatusLastUpdateTimestamp string `json:"status_last_update_timestamp"`
 	ACToken                   string `json:"acToken"`
