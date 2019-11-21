@@ -29,7 +29,11 @@ data class CustomerRegion(
 data class SimProfile(
         override val id: String,
         val iccId: String,
-        val alias: String = "") : HasId {
+        val alias: String = "",
+        val requestedOn: String? = null,
+        val downloadedOn: String? = null,
+        val installedOn: String? = null,
+        val deletedOn: String? = null) : HasId {
 
     companion object
 }

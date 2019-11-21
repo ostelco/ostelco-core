@@ -35,6 +35,7 @@ import org.ostelco.prime.dsl.withCode
 import org.ostelco.prime.dsl.withId
 import org.ostelco.prime.dsl.withKyc
 import org.ostelco.prime.dsl.withMsisdn
+import org.ostelco.prime.dsl.withSimProfile
 import org.ostelco.prime.dsl.withSku
 import org.ostelco.prime.dsl.withSubscription
 import org.ostelco.prime.dsl.writeTransaction
@@ -73,6 +74,8 @@ import org.ostelco.prime.model.ScanStatus
 import org.ostelco.prime.model.SimEntry
 import org.ostelco.prime.model.SimProfileStatus
 import org.ostelco.prime.model.SimProfileStatus.AVAILABLE_FOR_DOWNLOAD
+import org.ostelco.prime.model.SimProfileStatus.DELETED
+import org.ostelco.prime.model.SimProfileStatus.DOWNLOADED
 import org.ostelco.prime.model.SimProfileStatus.INSTALLED
 import org.ostelco.prime.model.SimProfileStatus.NOT_READY
 import org.ostelco.prime.model.Subscription
@@ -683,7 +686,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     fun subscribeToSimProfileStatusUpdates() {
         simManager.addSimProfileStatusUpdateListener { iccId, status ->
-            readTransaction {
+            writeTransaction {
                 IO {
                     Either.monad<StoreError>().binding {
                         logger.info("Received status {} for iccId {}", status, iccId)
@@ -692,6 +695,16 @@ object Neo4jStoreSingleton : GraphStore {
                             logger.warn("Found {} SIM Profiles with iccId {}", simProfiles.size, iccId)
                         }
                         simProfiles.forEach { simProfile ->
+                            val customers = get(Customer withSimProfile (SimProfile withId simProfile.id)).bind()
+                            customers.forEach { customer ->
+                                AuditLog.info(customerId = customer.id, message = "Sim Profile (iccId = $iccId) is $status")
+                            }
+                            when(status) {
+                                DOWNLOADED -> update { simProfile.copy(downloadedOn = utcTimeNow()) }.bind()
+                                INSTALLED -> update { simProfile.copy(installedOn = utcTimeNow()) }.bind()
+                                DELETED -> update { simProfile.copy(deletedOn = utcTimeNow()) }.bind()
+                                else -> logger.warn("Not storing timestamp for simProfile: {} for status: {}", iccId, status)
+                            }
                             val subscriptions = get(Subscription under (SimProfile withId simProfile.id)).bind()
                             subscriptions.forEach { subscription ->
                                 logger.info("Notify status {} for subscription.analyticsId {}", status, subscription.analyticsId)
@@ -700,6 +713,7 @@ object Neo4jStoreSingleton : GraphStore {
                         }
                     }.fix()
                 }.unsafeRunSync()
+                // Skipping transaction rollback since it is just updating timestamps
             }
         }
     }
@@ -743,7 +757,7 @@ object Neo4jStoreSingleton : GraphStore {
                 val simEntry = simManager.allocateNextEsimProfile(hlr = hssNameLookup.getHssName(region.id.toLowerCase()), phoneType = profileType)
                         .mapLeft { NotFoundError("eSIM profile", id = "Loltel") }
                         .bind()
-                val simProfile = SimProfile(id = UUID.randomUUID().toString(), iccId = simEntry.iccId)
+                val simProfile = SimProfile(id = UUID.randomUUID().toString(), iccId = simEntry.iccId, requestedOn = utcTimeNow())
                 create { simProfile }.bind()
                 fact { (Customer withId customerId) has (SimProfile withId simProfile.id) }.bind()
                 fact { (SimProfile withId simProfile.id) isFor (Region withCode regionCode.toLowerCase()) }.bind()
