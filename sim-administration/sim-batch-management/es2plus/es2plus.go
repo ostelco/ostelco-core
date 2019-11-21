@@ -41,13 +41,13 @@ type es2PlusIccid struct {
 	Iccid string `json:"iccid"`
 }
 
-type functionExecutionStatus struct {
-	functionExecutionStatusType string                `json:"status"`
+type FunctionExecutionStatus struct {
+	FunctionExecutionStatusType string                `json:"status"`
 	StatusCodeData              es2PlusStatusCodeData `json:"statusCodeData"`
 }
 
 type es2PlusResponseHeader struct {
-	functionExecutionStatus functionExecutionStatus `json:"functionExecutionStatus"`
+	FunctionExecutionStatus FunctionExecutionStatus `json:"FunctionExecutionStatus"`
 }
 
 //
@@ -127,6 +127,9 @@ type DownloadOrderResponse struct {
 // ConfirmOrder invocation
 //
 
+
+// ConfirmOrderRequest contains parameters for the es2+ confirmOrder
+// command.
 type ConfirmOrderRequest struct {
 	Header           Es2PlusHeader `json:"header"`
 	Iccid            string        `json:"iccid"`
@@ -137,6 +140,9 @@ type ConfirmOrderRequest struct {
 	ReleaseFlag      bool          `json:"releaseFlag"`
 }
 
+
+// ConfirmOrderResponse contains the response value for the es2+ confirmOrder
+// command.
 type ConfirmOrderResponse struct {
 	Header      es2PlusResponseHeader `json:"header"`
 	Iccid       string                `json:"iccid"`
@@ -149,6 +155,8 @@ type ConfirmOrderResponse struct {
 //  Generating new ES2Plus clients
 //
 
+
+// ClientState struct representing the state of a ES2+ client.
 type ClientState struct {
 	httpClient  *http.Client
 	hostport    string
@@ -366,7 +374,7 @@ func (client *ClientState) DownloadOrder(iccid string) (*DownloadOrderResponse, 
 		return nil, err
 	}
 
-	executionStatus := result.Header.functionExecutionStatus.functionExecutionStatusType
+	executionStatus := result.Header.FunctionExecutionStatus.FunctionExecutionStatusType
 	if executionStatus == "Executed-Success" {
 		return result, nil
 	}
@@ -396,7 +404,7 @@ func (client *ClientState) ConfirmOrder(iccid string) (*ConfirmOrderResponse, er
 		return nil, err
 	}
 
-	executionStatus := result.Header.functionExecutionStatus.functionExecutionStatusType
+	executionStatus := result.Header.FunctionExecutionStatus.FunctionExecutionStatusType
 	if executionStatus != "Executed-Success" {
 		return result, fmt.Errorf("ExecutionStatus was: ''%s'", executionStatus)
 	}

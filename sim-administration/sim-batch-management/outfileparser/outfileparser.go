@@ -69,23 +69,28 @@ func parseVarOutLine(varOutLine string, result *map[string]int) error {
 	return nil
 }
 
-// Implement a state machine that parses an output file.
-func ParseOutputFile(filename string) (*OutputFileRecord, error) {
 
-	if _, err := os.Stat(filename); err != nil {
+// Parse an output file, returning an OutputFileRecord, contained
+// a parsed version of the inputfile.
+func ParseOutputFile(filePath string) (*OutputFileRecord, error) {
+
+	if _, err := os.Stat(filePath); err != nil {
 		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("couldn't find file '%s'", filename)
-		} else {
-			return nil, fmt.Errorf("couldn't stat file '%s'", filename)
+			return nil, fmt.Errorf("couldn't find file '%s'", filePath)
 		}
+		return nil, fmt.Errorf("couldn't stat file '%s'", filePath)
 	}
 
-	file, err := os.Open(filename) // For read access.
+	file, err := os.Open(filePath) // For read access.
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	defer file.Close()
+
+
+	// Implement a state machine that parses an output file.
+
 
 	state := parserState{
 		currentState:      INITIAL,
@@ -183,7 +188,7 @@ func ParseOutputFile(filename string) (*OutputFileRecord, error) {
 	declaredNoOfEntities, err := strconv.Atoi(state.headerDescription["Quantity"])
 
 	if err != nil {
-		return nil, fmt.Errorf("could not find 'Quantity' field while parsing file '%s'", filename)
+		return nil, fmt.Errorf("could not find 'Quantity' field while parsing file '%s'", filePath)
 	}
 
 	if countedNoOfEntries != declaredNoOfEntities {
@@ -193,7 +198,7 @@ func ParseOutputFile(filename string) (*OutputFileRecord, error) {
 	}
 
 	result := OutputFileRecord{
-		Filename:          filename,
+		Filename:          filePath,
 		InputVariables:    state.inputVariables,
 		HeaderDescription: state.headerDescription,
 		Entries:           state.entries,
@@ -268,19 +273,23 @@ func fileExists(filename string) bool {
 }
 
 // TODO: Move this into some other package. "hssoutput" or something.
-func WriteHssCsvFile(filename string, sdb *store.SimBatchDB, batch *model.Batch) error {
 
-	if fileExists(filename) {
-		return fmt.Errorf("output file already exists.  '%s'", filename)
+
+// WriteHssCsvFile  will write all sim profile instances associated to a
+// batch object to a file located at filepath.
+func WriteHssCsvFile(filepath string, sdb *store.SimBatchDB, batch *model.Batch) error {
+
+	if fileExists(filepath) {
+		return fmt.Errorf("output file already exists.  '%s'", filepath)
 	}
 
-	f, err := os.Create(filename)
+	f, err := os.Create(filepath)
 	if err != nil {
-		return fmt.Errorf("couldn't create hss csv file '%s', %v", filename, err)
+		return fmt.Errorf("couldn't create hss csv file '%s', %v", filepath, err)
 	}
 
 	if _, err = f.WriteString("ICCID, IMSI, KI\n"); err != nil {
-		return fmt.Errorf("couldn't header to  hss csv file '%s', %v", filename, err)
+		return fmt.Errorf("couldn't header to  hss csv file '%s', %v", filepath, err)
 	}
 
 	entries, err := sdb.GetAllSimEntriesForBatch(batch.BatchID)
@@ -292,7 +301,7 @@ func WriteHssCsvFile(filename string, sdb *store.SimBatchDB, batch *model.Batch)
 	for i, entry := range entries {
 		s := fmt.Sprintf("%s, %s, %s\n", entry.IccidWithChecksum, entry.Imsi, entry.Ki)
 		if _, err = f.WriteString(s); err != nil {
-			return fmt.Errorf("couldn't write to  hss csv file '%s', %v", filename, err)
+			return fmt.Errorf("couldn't write to  hss csv file '%s', %v", filepath, err)
 		}
 		max = i + 1
 	}

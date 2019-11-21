@@ -2,6 +2,11 @@ package model
 
 // TODO: Delete all the ICCID entries that are not necessary, that would be at
 //       about three of them.
+
+
+// SimEntry represents individual sim profiles.  Instances can be
+// subject to JSON serialisation/deserialisation, and can be stored
+// in persistent storage.
 type SimEntry struct {
 	Id                   int64  `db:"id" json:"id"`
 	BatchID              int64  `db:"batchID" json:"batchID"`
@@ -15,6 +20,9 @@ type SimEntry struct {
 	ActivationCode       string `db:"activationCode" json:"activationCode"`
 }
 
+// Batch represents batches of sim profiles.  Instances can be
+// subject to JSON serialisation/deserialisation, and can be stored
+// in persistent storage.
 type Batch struct {
 	BatchID int64  `db:"id" json:"id"` // TODO: SHould this be called 'Id'
 	Name    string `db:"name" json:"name"`
@@ -40,6 +48,10 @@ type Batch struct {
 	ProfileVendor   string `db:"profileVendor" json:"profileVendor"`
 }
 
+
+// Batch represents sim vendors.  Instances can be
+// subject to JSON serialisation/deserialisation, and can be stored
+// in persistent storage.
 type ProfileVendor struct {
 	Id                 int64  `db:"id" json:"id"`
 	Name               string `db:"name" json:"name"`

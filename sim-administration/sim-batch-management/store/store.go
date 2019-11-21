@@ -5,7 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/mattn/go-sqlite3"  // We need this
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/fieldsyntaxchecks"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/loltelutils"
 	"github.com/ostelco/ostelco-core/sim-administration/sim-batch-management/model"
@@ -45,6 +45,10 @@ type Store interface {
 	Begin()
 }
 
+// Begin starts a transaction, returns the
+// transaction objects. If for some reason the transaction
+// can't be started, the functioni will terminate the program
+// via panic.
 func (sdb *SimBatchDB) Begin() *sql.Tx {
 	tx, err := sdb.Db.Begin()
 	if err != nil {
@@ -53,7 +57,7 @@ func (sdb *SimBatchDB) Begin() *sql.Tx {
 	return tx
 }
 
-// Create a new in-memory instance of an SQLIte database
+// NewInMemoryDatabase creates a new in-memory instance of an SQLIte database
 func NewInMemoryDatabase() (*SimBatchDB, error) {
 	db, err := sqlx.Connect("sqlite3", ":memory:")
 	if err != nil {
@@ -68,6 +72,7 @@ func NewInMemoryDatabase() (*SimBatchDB, error) {
 	return &SimBatchDB{Db: db}, nil
 }
 
+// OpenFileSqliteDatabaseFromPathInEnvironmentVariable
 // Create a new  instance of an SQLIte database backed by a file whose path
 // is found in the named environment variable. If the
 // file doesn't exist, then it is created.  If the environment variable is not
@@ -100,14 +105,14 @@ func OpenFileSqliteDatabase(path string) (*SimBatchDB, error) {
 	return &SimBatchDB{Db: db}, nil
 }
 
-// Get a slice containing all the batches in the database
+// GetAllBatches gets a slice containing all the batches in the database
 func (sdb SimBatchDB) GetAllBatches() ([]model.Batch, error) {
 	//noinspection GoPreferNilSlice
 	result := []model.Batch{}
 	return result, sdb.Db.Select(&result, "SELECT * from BATCH")
 }
 
-// Get a batch identified by its datbase ID number.   If nothing is found
+// GetBatchByID gets a batch identified by its datbase ID number.   If nothing is found
 // a nil value is returned.
 func (sdb SimBatchDB) GetBatchByID(id int64) (*model.Batch, error) {
 	//noinspection GoPreferNilSlice
@@ -122,7 +127,7 @@ func (sdb SimBatchDB) GetBatchByID(id int64) (*model.Batch, error) {
 	}
 }
 
-// Get a batch identified by its name.   If nothing is found
+// GetBatchByName gets a batch identified by its name.   If nothing is found
 // a nil value is returned.
 func (sdb SimBatchDB) GetBatchByName(name string) (*model.Batch, error) {
 	//noinspection GoPreferNilSlice
@@ -136,7 +141,7 @@ func (sdb SimBatchDB) GetBatchByName(name string) (*model.Batch, error) {
 	}
 }
 
-// Create an instance of a batch in the database. Populate it with
+// CreateBatch Creates an instance of a batch in the database. Populate it with
 // fields from the parameter "theBatch".   No error checking
 // (except uniqueness of name field) is performed on the the
 // "theBatch" parameter.
@@ -217,7 +222,7 @@ func (sdb *SimBatchDB) GenerateTables() error {
 	return err
 }
 
-//
+//CreateProfileVendor inject a new profile vendor instance into the database.
 func (sdb SimBatchDB) CreateProfileVendor(theEntry *model.ProfileVendor) error {
 	// TODO: This insert string can be made through reflection, and at some point should be.
 
@@ -242,7 +247,7 @@ func (sdb SimBatchDB) CreateProfileVendor(theEntry *model.ProfileVendor) error {
 	return nil
 }
 
-// Find a profile vendor in the database by looking it up by name.
+// GetProfileVendorByID find a profile vendor in the database by looking it up by name.
 func (sdb SimBatchDB) GetProfileVendorByID(id int64) (*model.ProfileVendor, error) {
 	//noinspection GoPreferNilSlice
 	result := []model.ProfileVendor{}
@@ -257,7 +262,7 @@ func (sdb SimBatchDB) GetProfileVendorByID(id int64) (*model.ProfileVendor, erro
 	}
 }
 
-// Find a profile vendor in the database by looking it up by name.
+// GetProfileVendorByName find a profile vendor in the database by looking it up by name.
 func (sdb SimBatchDB) GetProfileVendorByName(name string) (*model.ProfileVendor, error) {
 	//noinspection GoPreferNilSlice
 	result := []model.ProfileVendor{}
@@ -272,6 +277,8 @@ func (sdb SimBatchDB) GetProfileVendorByName(name string) (*model.ProfileVendor,
 	}
 }
 
+
+// CreateSimEntry persists a SimEntry instance in the database.
 func (sdb SimBatchDB) CreateSimEntry(theEntry *model.SimEntry) error {
 
 	res := sdb.Db.MustExec("INSERT INTO SIM_PROFILE (batchID, activationCode, rawIccid, iccidWithChecksum, iccidWithoutChecksum, iccid, imsi, msisdn, ki) values (?,?,?,?,?,?,?,?,?)",
@@ -294,6 +301,8 @@ func (sdb SimBatchDB) CreateSimEntry(theEntry *model.SimEntry) error {
 	return err
 }
 
+// GetSimEntryById retrieves a sim entryh instance stored in the database.  If no
+// matching instance can be found, nil is returned.
 func (sdb SimBatchDB) GetSimEntryById(simID int64) (*model.SimEntry, error) {
 	//noinspection GoPreferNilSlice
 	result := []model.SimEntry{}
@@ -308,6 +317,8 @@ func (sdb SimBatchDB) GetSimEntryById(simID int64) (*model.SimEntry, error) {
 	}
 }
 
+// GetAllSimEntriesForBatch retrieves a sim entryh instance stored in the database.  If no
+// matching instance can be found, nil is returned.
 func (sdb SimBatchDB) GetAllSimEntriesForBatch(batchID int64) ([]model.SimEntry, error) {
 	//noinspection GoPreferNilSlice
 	result := []model.SimEntry{}
@@ -316,14 +327,15 @@ func (sdb SimBatchDB) GetAllSimEntriesForBatch(batchID int64) ([]model.SimEntry,
 	}
 
 	if len(result) == 0 {
-		return nil, nil
+		return nil, nil  // TODO: Evaluate if this is wrong.  Returning an empty slice isn't necessarily wrong.
 	} else {
 		return result, nil
 	}
 }
 
-// TODO: Add unit test for this method.
 
+// GetSimProfileByIccid gets a sim profile from the database, return nil of one
+// can't be found.
 func (sdb SimBatchDB) GetSimProfileByIccid(iccid string) (*model.SimEntry, error) {
 	//noinspection GoPreferNilSlice
 	result := []model.SimEntry{}
@@ -338,6 +350,8 @@ func (sdb SimBatchDB) GetSimProfileByIccid(iccid string) (*model.SimEntry, error
 	}
 }
 
+// GetSimProfileByIccid gets a sim profile from the database, return nil of one
+// can't be found.
 func (sdb SimBatchDB) GetSimProfileByImsi(imsi string) (*model.SimEntry, error) {
 	//noinspection GoPreferNilSlice
 	result := []model.SimEntry{}
@@ -352,6 +366,7 @@ func (sdb SimBatchDB) GetSimProfileByImsi(imsi string) (*model.SimEntry, error) 
 	}
 }
 
+// UpdateSimEntryMsisdn Sets the MSISDN field of a persisted instance of a sim entry.
 func (sdb SimBatchDB) UpdateSimEntryMsisdn(simID int64, msisdn string) error {
 	_, err := sdb.Db.NamedExec("UPDATE SIM_PROFILE SET msisdn=:msisdn WHERE id = :simID",
 		map[string]interface{}{
@@ -361,6 +376,7 @@ func (sdb SimBatchDB) UpdateSimEntryMsisdn(simID int64, msisdn string) error {
 	return err
 }
 
+// UpdateSimEntryKi Sets the Ki field of a persisted instance of a sim entry.
 func (sdb SimBatchDB) UpdateSimEntryKi(simID int64, ki string) error {
 	_, err := sdb.Db.NamedExec("UPDATE SIM_PROFILE SET ki=:ki WHERE id = :simID",
 		map[string]interface{}{
@@ -370,6 +386,7 @@ func (sdb SimBatchDB) UpdateSimEntryKi(simID int64, ki string) error {
 	return err
 }
 
+// UpdateActivationCode Sets the activation code field of a persisted instance of a sim entry.
 func (sdb SimBatchDB) UpdateActivationCode(simID int64, activationCode string) error {
 	_, err := sdb.Db.NamedExec("UPDATE SIM_PROFILE SET activationCode=:activationCode WHERE id = :simID",
 		map[string]interface{}{
@@ -379,7 +396,7 @@ func (sdb SimBatchDB) UpdateActivationCode(simID int64, activationCode string) e
 	return err
 }
 
-// Drop all tables used by the store package.
+// DropTables Drop all tables used by the store package.
 func (sdb *SimBatchDB) DropTables() error {
 	foo := `DROP  TABLE BATCH`
 	_, err := sdb.Db.Exec(foo)
@@ -391,9 +408,9 @@ func (sdb *SimBatchDB) DropTables() error {
 	return err
 }
 
-/**
- * DeclareBatch a new batch, assuming that it doesn't exist.  Do all kind of checking of fields etc.
- */
+
+// DeclareBatch generates a batch instance  by first checking all of its
+// parameters, and then storing it, and finally returning it from the function.
 func (sdb SimBatchDB) DeclareBatch(
 	name string,
 	addLuhn bool,
