@@ -222,7 +222,7 @@ func injectTestprofileVendor(t *testing.T) *model.ProfileVendor {
 		Es2PlusKey:         "key",
 		Es2PlusHost:        "host",
 		Es2PlusPort:        4711,
-		Es2PlusRequesterId: "1.2.3",
+		Es2PlusRequesterID: "1.2.3",
 	}
 
 	if err := sdb.CreateProfileVendor(v); err != nil {
@@ -246,7 +246,7 @@ func TestDeclareAndRetrieveProfileVendorEntry(t *testing.T) {
 		t.Fatalf("name retrieved and stored profile vendor entries are different, %v v.s. %v", nameRetrievedVendor, v)
 	}
 
-	idRetrievedVendor, err := sdb.GetProfileVendorByID(v.Id)
+	idRetrievedVendor, err := sdb.GetProfileVendorByID(v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

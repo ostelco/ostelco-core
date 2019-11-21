@@ -124,8 +124,9 @@ func CheckURLSyntax(name string, theUrl string) {
 	}
 }
 
+// IsProfileName checks if the parameter string is a syntactically valid profile name
 func IsProfileName(s string) bool {
-	match, _ := regexp.MatchString("^[A-Z][A-Z0-9_]*$", s)
+	match, _ := regexp.MatchString("^[A-Z][A-Z0-9_]+$", s)
 	return match
 }
 

@@ -16,13 +16,14 @@ import (
 
 //noinspection GoSnakeCaseUsage
 const (
-	INITIAL            = "initial"
-	HEADER_DESCRIPTION = "header_description"
-	INPUT_VARIABLES    = "input_variables"
-	OUTPUT_VARIABLES   = "output_variables"
-	UNKNOWN_HEADER     = "unknown"
+	initial           = "initial"
+	headerDescription = "header_description"
+	inputVariables    = "input_variables"
+	outputVariables   = "output_variables"
+	unknownHeader     = "unknown"
 )
 
+// OutputFileRecord is a struct used to represent a parsed outputfile.
 type OutputFileRecord struct {
 	Filename          string
 	InputVariables    map[string]string
@@ -93,7 +94,7 @@ func ParseOutputFile(filePath string) (*OutputFileRecord, error) {
 
 
 	state := parserState{
-		currentState:      INITIAL,
+		currentState:      initial,
 		inputVariables:    make(map[string]string),
 		headerDescription: make(map[string]string),
 		csvFieldMap:       make(map[string]int),
@@ -115,7 +116,7 @@ func ParseOutputFile(filePath string) (*OutputFileRecord, error) {
 			transitionMode(&state, nextMode)
 			continue
 		} else if line == "OUTPUT VARIABLES" {
-			transitionMode(&state, OUTPUT_VARIABLES)
+			transitionMode(&state, outputVariables)
 			continue
 		}
 
@@ -123,15 +124,15 @@ func ParseOutputFile(filePath string) (*OutputFileRecord, error) {
 		// looking for real content?
 
 		switch state.currentState {
-		case HEADER_DESCRIPTION:
+		case headerDescription:
 			parseLineIntoKeyValueMap(line, state.headerDescription)
-		case INPUT_VARIABLES:
+		case inputVariables:
 			if line == "var_In:" || line == "Var_In_List:" || strings.TrimSpace(line) == "" {
 				continue
 			}
 
 			parseLineIntoKeyValueMap(line, state.inputVariables)
-		case OUTPUT_VARIABLES:
+		case outputVariables:
 
 			line = strings.TrimSpace(line)
 			lowercaseLine := strings.ToLower(line)
@@ -172,7 +173,7 @@ func ParseOutputFile(filePath string) (*OutputFileRecord, error) {
 				Ki:                   ki}
 			state.entries = append(state.entries, entry)
 
-		case UNKNOWN_HEADER:
+		case unknownHeader:
 			continue
 
 		default:
@@ -240,15 +241,15 @@ func modeFromSectionHeader(s string) string {
 	sectionName := strings.Trim(s, "* ")
 	switch sectionName {
 	case "HEADER DESCRIPTION":
-		return HEADER_DESCRIPTION
+		return headerDescription
 	case "INPUT VARIABLES":
-		return INPUT_VARIABLES
+		return inputVariables
 	case "INPUT VARIABLES DESCRIPTION":
-		return INPUT_VARIABLES
+		return inputVariables
 	case "OUTPUT VARIABLES":
-		return OUTPUT_VARIABLES
+		return outputVariables
 	default:
-		return UNKNOWN_HEADER
+		return unknownHeader
 	}
 }
 

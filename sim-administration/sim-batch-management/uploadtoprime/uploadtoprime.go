@@ -7,6 +7,9 @@ import (
 	"strings"
 )
 
+
+// GeneratePostingCurlscript print on standard output a bash script
+// that can be used to upload the payload to an url.
 func GeneratePostingCurlscript(url string, payload string) {
 	fmt.Printf("#!/bin/bash\n")
 
@@ -15,6 +18,7 @@ func GeneratePostingCurlscript(url string, payload string) {
 	fmt.Print("EOF\n")
 }
 
+// GenerateCsvPayload generate the csv payload to be sent to prime
 func GenerateCsvPayload(db *store.SimBatchDB, batch model.Batch) string {
 	var sb strings.Builder
 	sb.WriteString("ICCID, IMSI, MSISDN, PIN1, PIN2, PUK1, PUK2, PROFILE\n")

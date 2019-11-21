@@ -446,6 +446,6 @@ func (client *ClientState) ActivateIccid(iccid string) (*ProfileStatus, error) {
 }
 
 // TODO: This shouldn't have to be public, but how can it be avoided?
-func (ClientState *ClientState) RequesterID() string {
-	return ClientState.requesterID
+func (state *ClientState) RequesterID() string {
+	return state.requesterID
 }

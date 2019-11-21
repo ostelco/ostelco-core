@@ -243,7 +243,7 @@ func (sdb SimBatchDB) CreateProfileVendor(theEntry *model.ProfileVendor) error {
 	if err != nil {
 		return fmt.Errorf("getting last inserted id failed '%s'", err)
 	}
-	theEntry.Id = id
+	theEntry.ID = id
 	return nil
 }
 
@@ -345,9 +345,9 @@ func (sdb SimBatchDB) GetSimProfileByIccid(iccid string) (*model.SimEntry, error
 
 	if len(result) == 0 {
 		return nil, nil
-	} else {
-		return &result[0], nil
 	}
+	return &result[0], nil
+
 }
 
 // GetSimProfileByImsi gets a sim profile from the database, return nil of one
