@@ -156,10 +156,8 @@ modules:
           profile: OYA_M1_STANDARD_ACB
         - regex: "Digi.*"
           profile: OYA_DIGI_STANDARD_ACB
-        - regex: "Loltel.android"
-          profile: Loltel_ANDROID_1
         - regex: "Loltel.*"
-          profile: LOLTEL_IPHONE_1
+          profile: OYA_LOLTEL_STD_ACB
       database:
         driverClass: org.postgresql.Driver
         user: ${DB_USER}
