@@ -327,10 +327,9 @@ func (sdb SimBatchDB) GetAllSimEntriesForBatch(batchID int64) ([]model.SimEntry,
 	}
 
 	if len(result) == 0 {
-		return nil, nil  // TODO: Evaluate if this is wrong.  Returning an empty slice isn't necessarily wrong.
-	} else {
-		return result, nil
+		return nil, nil // TODO: Evaluate if this is wrong.  Returning an empty slice isn't necessarily wrong.
 	}
+	return result, nil
 }
 
 

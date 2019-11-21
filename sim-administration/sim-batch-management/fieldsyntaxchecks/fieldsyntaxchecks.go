@@ -62,7 +62,7 @@ func IsICCID(s string) bool {
 	return match
 }
 
-// IsICCID if the string is an 18 or 19 digit positive integer.
+// CheckICCIDSyntax if the string is an 18 or 19 digit positive integer.
 // Does  check luhn checksum.
 func CheckICCIDSyntax(name string, potentialIccid string) {
 	if !IsICCID(potentialIccid) {
@@ -117,10 +117,10 @@ func CheckMSISDNSyntax(name string, potentialMSISDN string) {
 // the potential url is an actual url or not. If it isn't
 // then an error message is written and the program
 // terminates.
-func CheckURLSyntax(name string, theUrl string) {
-	if _, err := url.ParseRequestURI(theUrl);  err != nil {
+func CheckURLSyntax(name string, theURL string) {
+	if _, err := url.ParseRequestURI(theURL);  err != nil {
 		// TODO: Fix this to return error value instead.
-		log.Fatalf("Not a valid %s URL: '%s'.", name, theUrl)
+		log.Fatalf("Not a valid %s URL: '%s'.", name, theURL)
 	}
 }
 

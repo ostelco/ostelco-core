@@ -435,10 +435,9 @@ func parseCommandLine() error {
 
 		if batch == nil {
 			return fmt.Errorf("no batch found with name '%s'", *generateInputFileBatchname)
-		} else {
-			var result = generateInputFileString(batch)
-			fmt.Println(result)
 		}
+		var result = generateInputFileString(batch)
+		fmt.Println(result)
 
 	case "batch-add-msisdn-from-file":
 		batchName := *addMsisdnFromFileBatch
