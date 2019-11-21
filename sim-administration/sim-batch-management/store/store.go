@@ -29,7 +29,7 @@ type Store interface {
 
 	CreateBatch(theBatch *model.Batch) error
 	GetAllBatches(id string) ([]model.Batch, error)
-	GetBatchById(id int64) (*model.Batch, error)
+	GetBatchByID(id int64) (*model.Batch, error)
 	GetBatchByName(id string) (*model.Batch, error)
 
 	CreateSimEntry(simEntry *model.SimEntry) error
@@ -40,7 +40,7 @@ type Store interface {
 	GetSimProfileByIccid(msisdn string) (*model.SimEntry, error)
 
 	CreateProfileVendor(*model.ProfileVendor) error
-	GetProfileVendorById(id int64) (*model.ProfileVendor, error)
+	GetProfileVendorByID(id int64) (*model.ProfileVendor, error)
 	GetProfileVendorByName(name string) (*model.ProfileVendor, error)
 
 	Begin()
@@ -54,6 +54,8 @@ func (sdb *SimBatchDB) Begin() *sql.Tx {
 	return tx
 }
 
+
+// Create a new in-memory instance of an SQLIte database
 func NewInMemoryDatabase() (*SimBatchDB, error) {
 	db, err := sqlx.Connect("sqlite3", ":memory:")
 	if err != nil {
@@ -68,6 +70,10 @@ func NewInMemoryDatabase() (*SimBatchDB, error) {
 	return &SimBatchDB{Db: db}, nil
 }
 
+// Create a new  instance of an SQLIte database backed by a file whose path
+// is found in the named environment variable. If the
+// file doesn't exist, then it is created.  If the environment variable is not
+// defined or empty, an error is returned.
 func OpenFileSqliteDatabaseFromPathInEnvironmentVariable(variablename string) (*SimBatchDB, error) {
 	variableValue := strings.TrimSpace(os.Getenv(variablename))
 	if variableValue == "" {
@@ -77,6 +83,8 @@ func OpenFileSqliteDatabaseFromPathInEnvironmentVariable(variablename string) (*
 	return db, err
 }
 
+// Create a new  instance of an SQLIte database backed by a file. If the
+// file doesn't exist, then it is created.
 func OpenFileSqliteDatabase(path string) (*SimBatchDB, error) {
 
 	/*  TODO: Introduce 'debug' flag, and let that flag light up this code.
@@ -99,7 +107,7 @@ func (sdb SimBatchDB) GetAllBatches() ([]model.Batch, error) {
 	return result, sdb.Db.Select(&result, "SELECT * from BATCH")
 }
 
-func (sdb SimBatchDB) GetBatchById(id int64) (*model.Batch, error) {
+func (sdb SimBatchDB) GetBatchByID(id int64) (*model.Batch, error) {
 	result := []model.Batch{}
 	if err := sdb.Db.Select(&result, "SELECT * FROM BATCH WHERE id = ?", id); err != nil {
 		return nil, err
@@ -221,7 +229,7 @@ func (sdb SimBatchDB) CreateProfileVendor(theEntry *model.ProfileVendor) error {
 	return nil
 }
 
-func (sdb SimBatchDB) GetProfileVendorById(id int64) (*model.ProfileVendor, error) {
+func (sdb SimBatchDB) GetProfileVendorByID(id int64) (*model.ProfileVendor, error) {
 	result := []model.ProfileVendor{}
 	if err := sdb.Db.Select(&result, "select * from PROFILE_VENDOR where id = ?", id); err != nil {
 		return nil, err

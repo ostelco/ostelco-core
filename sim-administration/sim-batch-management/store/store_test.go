@@ -129,12 +129,12 @@ func TestGetBatchById(t *testing.T) {
 	injectTestprofileVendor(t)
 	theBatch := injectTestBatch()
 
-	batchById, _ := sdb.GetBatchById(theBatch.BatchID)
+	batchById, _ := sdb.GetBatchByID(theBatch.BatchID)
 	if !reflect.DeepEqual(batchById, theBatch) {
 
 		t.Logf("theBatch  = %v\n", theBatch)
 		t.Logf("batchById  = %v\n", batchById)
-		t.Errorf("getBatchById failed")
+		t.Errorf("getBatchByID failed")
 	}
 }
 
@@ -196,7 +196,7 @@ func TestDeclareBatch(t *testing.T) {
 	injectTestprofileVendor(t)
 	theBatch := declareTestBatch(t)
 
-	retrievedValue, _ := sdb.GetBatchById(theBatch.BatchID)
+	retrievedValue, _ := sdb.GetBatchByID(theBatch.BatchID)
 	if retrievedValue == nil {
 		t.Fatalf("Null retrievedValue")
 	}
@@ -246,7 +246,7 @@ func TestDeclareAndRetrieveProfileVendorEntry(t *testing.T) {
 		t.Fatalf("name retrieved and stored profile vendor entries are different, %v v.s. %v", nameRetrievedVendor, v)
 	}
 
-	idRetrievedVendor,err  := sdb.GetProfileVendorById(v.Id)
+	idRetrievedVendor,err  := sdb.GetProfileVendorByID(v.Id)
 	if err != nil {
 		t.Fatal(err)
 	}
