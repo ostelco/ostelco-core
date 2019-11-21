@@ -2279,7 +2279,7 @@
   </avpdefn>
 
   <avpdefn name="3GPP-User-Location-Info" code="22" vendor-id="TGPP" mandatory="must" protected="may" may-encrypt="no" vendor-bit="must" >
-    <type type-name="UTF8String" />
+    <type type-name="OctetString" />
   </avpdefn>
 
   <avpdefn name="3GPP-RAT-Type" code="21" vendor-id="TGPP" mandatory="must" protected="may" may-encrypt="no" vendor-bit="must" >
