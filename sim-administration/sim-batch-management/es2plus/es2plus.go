@@ -34,10 +34,10 @@ type es2PlusHeader struct {
 
 type ES2PlusGetProfileStatusRequest struct {
 	Header    es2PlusHeader  `json:"header"`
-	IccidList []ES2PlusIccid `json:"iccidList"`
+	IccidList []es2PlusIccid `json:"iccidList"`
 }
 
-type ES2PlusIccid struct {
+type es2PlusIccid struct {
 	Iccid string `json:"iccid"`
 }
 
@@ -290,7 +290,7 @@ func (client *ClientState) GetStatus(iccid string) (*ProfileStatus, error) {
 	}
 	payload := &ES2PlusGetProfileStatusRequest{
 		Header:    *header,
-		IccidList: []ES2PlusIccid{ES2PlusIccid{Iccid: iccid}},
+		IccidList: []es2PlusIccid{es2PlusIccid{Iccid: iccid}},
 	}
 	if err = client.execute(es2plusCommand, payload, result); err != nil {
 		return nil, err
