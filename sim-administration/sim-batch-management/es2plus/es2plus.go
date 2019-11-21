@@ -12,7 +12,7 @@ import (
 )
 
 ///
-///   External interface
+///   External interface for ES2+ client
 ///
 type Client interface {
 	GetStatus(iccid string) (*ProfileStatus, error)
@@ -27,13 +27,13 @@ type Client interface {
 ///
 ///  Generic headers for invocations and responses
 ///
-type ES2PlusHeader struct {
+type es2PlusHeader struct {
 	FunctionRequesterIdentifier string `json:"functionRequesterIdentifier"`
 	FunctionCallIdentifier      string `json:"functionCallIdentifier"`
 }
 
 type ES2PlusGetProfileStatusRequest struct {
-	Header    ES2PlusHeader  `json:"header"`
+	Header    es2PlusHeader  `json:"header"`
 	IccidList []ES2PlusIccid `json:"iccidList"`
 }
 
@@ -81,7 +81,7 @@ type ProfileStatus struct {
 //
 
 type ES2PlusRecoverProfileRequest struct {
-	Header        ES2PlusHeader `json:"header"`
+	Header        es2PlusHeader `json:"header"`
 	Iccid         string        `json:"iccid"`
 	ProfileStatus string        `json:"profileStatus"`
 }
@@ -95,7 +95,7 @@ type ES2PlusRecoverProfileResponse struct {
 //
 
 type ES2PlusCancelOrderRequest struct {
-	Header                      ES2PlusHeader `json:"header"`
+	Header                      es2PlusHeader `json:"header"`
 	Iccid                       string        `json:"iccid"`
 	FinalProfileStatusIndicator string        `json:"finalProfileStatusIndicator"`
 }
@@ -109,7 +109,7 @@ type ES2PlusCancelOrderResponse struct {
 //
 
 type ES2PlusDownloadOrderRequest struct {
-	Header      ES2PlusHeader `json:"header"`
+	Header      es2PlusHeader `json:"header"`
 	Iccid       string        `json:"iccid"`
 	Eid         string        `json:"eid,omitempty"`
 	Profiletype string        `json:"profiletype,omitempty"`
@@ -125,7 +125,7 @@ type ES2PlusDownloadOrderResponse struct {
 //
 
 type ES2PlusConfirmOrderRequest struct {
-	Header           ES2PlusHeader `json:"header"`
+	Header           es2PlusHeader `json:"header"`
 	Iccid            string        `json:"iccid"`
 	Eid              string        `json:"eid,omitempty"`
 	MatchingId       string        `json:"matchingId,omitempty"`
@@ -227,14 +227,14 @@ func newUuid() (string, error) {
 	return uuid.URN(), nil
 }
 
-func newEs2plusHeader(client Client) (*ES2PlusHeader, error) {
+func newEs2plusHeader(client Client) (*es2PlusHeader, error) {
 
 	functionCallIdentifier, err := newUuid()
 	if err != nil {
 		return nil, err
 	}
 
-	return &ES2PlusHeader{FunctionCallIdentifier: functionCallIdentifier, FunctionRequesterIdentifier: client.RequesterId()}, nil
+	return &es2PlusHeader{FunctionCallIdentifier: functionCallIdentifier, FunctionRequesterIdentifier: client.RequesterId()}, nil
 }
 
 func (client *ClientState) execute(
