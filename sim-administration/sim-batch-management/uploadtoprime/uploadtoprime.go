@@ -19,7 +19,7 @@ func GenerateCsvPayload(db *store.SimBatchDB, batch model.Batch) string {
 	var sb strings.Builder
 	sb.WriteString("ICCID, IMSI, MSISDN, PIN1, PIN2, PUK1, PUK2, PROFILE\n")
 
-	entries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
+	entries, err := db.GetAllSimEntriesForBatch(batch.BatchID)
 	if err != nil {
 		panic(err)
 	}

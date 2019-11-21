@@ -5,7 +5,7 @@ package model
 //       about three of them.
 type SimEntry struct {
 	Id                   int64  `db:"id" json:"id"`
-	BatchID              int64  `db:"batchId" json:"batchId"`
+	BatchID              int64  `db:"batchID" json:"batchID"`
 	RawIccid             string `db:"rawIccid" json:"rawIccid"`
 	IccidWithChecksum    string `db:"iccidWithChecksum" json:"iccidWithChecksum"`
 	IccidWithoutChecksum string `db:"iccidWithoutChecksum" json:"iccidWithoutChecksum"`
@@ -18,7 +18,7 @@ type SimEntry struct {
 
 
 type Batch struct {
-	BatchId int64  `db:"id" json:"id"`  // TODO: SHould this be called 'Id'
+	BatchID int64  `db:"id" json:"id"` // TODO: SHould this be called 'Id'
 	Name    string `db:"name" json:"name"`
 
 	// TODO: Customer is a misnomer: This is the customer name used when

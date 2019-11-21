@@ -15,10 +15,14 @@ import (
 	"strings"
 )
 
+
+/// Holding database abstraction for the sim batch management system.
 type SimBatchDB struct {
 	Db *sqlx.DB
 }
 
+// An interface used to abstract the CRUD operations on the
+// various entities in the sim batch management database.
 type Store interface {
 	GenerateTables() error
 	DropTables() error
@@ -29,10 +33,10 @@ type Store interface {
 	GetBatchByName(id string) (*model.Batch, error)
 
 	CreateSimEntry(simEntry *model.SimEntry) error
-	UpdateSimEntryMsisdn(simId int64, msisdn string)
-	UpdateActivationCode(simId int64, activationCode string) error
-	UpdateSimEntryKi(simId int64, ki string) error
-	GetAllSimEntriesForBatch(batchId int64) ([]model.SimEntry, error)
+	UpdateSimEntryMsisdn(simID int64, msisdn string)
+	UpdateActivationCode(simID int64, activationCode string) error
+	UpdateSimEntryKi(simID int64, ki string) error
+	GetAllSimEntriesForBatch(batchID int64) ([]model.SimEntry, error)
 	GetSimProfileByIccid(msisdn string) (*model.SimEntry, error)
 
 	CreateProfileVendor(*model.ProfileVendor) error
@@ -133,7 +137,7 @@ func (sdb SimBatchDB) CreateBatch(theBatch *model.Batch) error {
 	if err != nil {
 		return fmt.Errorf("getting last inserted id failed '%s'", err)
 	}
-	theBatch.BatchId = id
+	theBatch.BatchID = id
 
 	_, err = sdb.Db.NamedExec("UPDATE BATCH  SET firstIccid = :firstIccid, firstImsi = :firstImsi, firstMsisdn = :firstMsisdn, msisdnIncrement = :msisdnIncrement, iccidIncrement = :iccidIncrement, imsiIncrement = :imsiIncrement, url=:url WHERE id = :id",
 		theBatch)
@@ -166,7 +170,7 @@ func (sdb *SimBatchDB) GenerateTables() error {
 
 	sql = `CREATE TABLE IF NOT EXISTS SIM_PROFILE (
          id INTEGER PRIMARY KEY AUTOINCREMENT,
-         batchId INTEGER NOT NULL,
+         batchID INTEGER NOT NULL,
          activationCode VARCHAR NOT NULL,
          imsi VARCHAR NOT NULL,
          rawIccid VARCHAR NOT NULL,
@@ -247,7 +251,7 @@ func (sdb SimBatchDB) GetProfileVendorByName(name string) (*model.ProfileVendor,
 
 func (sdb SimBatchDB) CreateSimEntry(theEntry *model.SimEntry) error {
 
-	res := sdb.Db.MustExec("INSERT INTO SIM_PROFILE (batchId, activationCode, rawIccid, iccidWithChecksum, iccidWithoutChecksum, iccid, imsi, msisdn, ki) values (?,?,?,?,?,?,?,?,?)",
+	res := sdb.Db.MustExec("INSERT INTO SIM_PROFILE (batchID, activationCode, rawIccid, iccidWithChecksum, iccidWithoutChecksum, iccid, imsi, msisdn, ki) values (?,?,?,?,?,?,?,?,?)",
 		theEntry.BatchID,
 		theEntry.ActivationCode,
 		theEntry.RawIccid,
@@ -267,9 +271,9 @@ func (sdb SimBatchDB) CreateSimEntry(theEntry *model.SimEntry) error {
 	return err
 }
 
-func (sdb SimBatchDB) GetSimEntryById(simId int64) (*model.SimEntry, error) {
+func (sdb SimBatchDB) GetSimEntryById(simID int64) (*model.SimEntry, error) {
 	result := []model.SimEntry{}
-	if err := sdb.Db.Select(&result, "select * from SIM_PROFILE where id = ?", simId); err != nil {
+	if err := sdb.Db.Select(&result, "select * from SIM_PROFILE where id = ?", simID); err != nil {
 		return nil, err
 	}
 
@@ -280,9 +284,9 @@ func (sdb SimBatchDB) GetSimEntryById(simId int64) (*model.SimEntry, error) {
 	}
 }
 
-func (sdb SimBatchDB) GetAllSimEntriesForBatch(batchId int64) ([]model.SimEntry, error) {
+func (sdb SimBatchDB) GetAllSimEntriesForBatch(batchID int64) ([]model.SimEntry, error) {
 	result := []model.SimEntry{}
-	if err := sdb.Db.Select(&result, "SELECT * from SIM_PROFILE WHERE batchId = ?", batchId) ; err != nil {
+	if err := sdb.Db.Select(&result, "SELECT * from SIM_PROFILE WHERE batchID = ?", batchID) ; err != nil {
 		return nil, err
 	}
 
@@ -323,29 +327,29 @@ func (sdb SimBatchDB) GetSimProfileByImsi(imsi string) (*model.SimEntry, error) 
 }
 
 
-func (sdb SimBatchDB) UpdateSimEntryMsisdn(simId int64, msisdn string) error {
-	_, err := sdb.Db.NamedExec("UPDATE SIM_PROFILE SET msisdn=:msisdn WHERE id = :simId",
+func (sdb SimBatchDB) UpdateSimEntryMsisdn(simID int64, msisdn string) error {
+	_, err := sdb.Db.NamedExec("UPDATE SIM_PROFILE SET msisdn=:msisdn WHERE id = :simID",
 		map[string]interface{}{
-			"simId":  simId,
+			"simID":  simID,
 			"msisdn": msisdn,
 		})
 	return err
 }
 
-func (sdb SimBatchDB)  UpdateSimEntryKi(simId int64, ki string) error {
-	_, err := sdb.Db.NamedExec("UPDATE SIM_PROFILE SET ki=:ki WHERE id = :simId",
+func (sdb SimBatchDB)  UpdateSimEntryKi(simID int64, ki string) error {
+	_, err := sdb.Db.NamedExec("UPDATE SIM_PROFILE SET ki=:ki WHERE id = :simID",
 		map[string]interface{}{
-			"simId": simId,
+			"simID": simID,
 			"ki":    ki,
 		})
 	return err
 }
 
 
-func (sdb SimBatchDB) UpdateActivationCode(simId int64, activationCode string) error {
-	_, err := sdb.Db.NamedExec("UPDATE SIM_PROFILE SET activationCode=:activationCode WHERE id = :simId",
+func (sdb SimBatchDB) UpdateActivationCode(simID int64, activationCode string) error {
+	_, err := sdb.Db.NamedExec("UPDATE SIM_PROFILE SET activationCode=:activationCode WHERE id = :simID",
 		map[string]interface{}{
-			"simId":          simId,
+			"simID":          simID,
 			"activationCode": activationCode,
 		})
 	return err
@@ -528,7 +532,7 @@ func (sdb SimBatchDB) DeclareBatch(
 		iccidWithLuhnChecksum := fmt.Sprintf("%d%d", iccidWithoutLuhnChecksum, fieldsyntaxchecks.LuhnChecksum(iccidWithoutLuhnChecksum))
 
 		simEntry := &model.SimEntry{
-			BatchID:              batch.BatchId,
+			BatchID:              batch.BatchID,
 			ActivationCode:       "",
 			RawIccid:             fmt.Sprintf("%d", iccidWithoutLuhnChecksum),
 			IccidWithChecksum:    iccidWithLuhnChecksum,

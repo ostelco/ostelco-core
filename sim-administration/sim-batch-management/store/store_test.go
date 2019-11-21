@@ -129,7 +129,7 @@ func TestGetBatchById(t *testing.T) {
 	injectTestprofileVendor(t)
 	theBatch := injectTestBatch()
 
-	batchById, _ := sdb.GetBatchById(theBatch.BatchId)
+	batchById, _ := sdb.GetBatchById(theBatch.BatchID)
 	if !reflect.DeepEqual(batchById, theBatch) {
 
 		t.Logf("theBatch  = %v\n", theBatch)
@@ -196,7 +196,7 @@ func TestDeclareBatch(t *testing.T) {
 	injectTestprofileVendor(t)
 	theBatch := declareTestBatch(t)
 
-	retrievedValue, _ := sdb.GetBatchById(theBatch.BatchId)
+	retrievedValue, _ := sdb.GetBatchById(theBatch.BatchID)
 	if retrievedValue == nil {
 		t.Fatalf("Null retrievedValue")
 	}
@@ -204,7 +204,7 @@ func TestDeclareBatch(t *testing.T) {
 		t.Fatal("getBatchById failed, stored batch not equal to retrieved batch")
 	}
 
-	retrievedEntries, err := sdb.GetAllSimEntriesForBatch(theBatch.BatchId)
+	retrievedEntries, err := sdb.GetAllSimEntriesForBatch(theBatch.BatchID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -260,10 +260,10 @@ func TestDeclareAndRetrieveSimEntries(t *testing.T) {
 	cleanTables()
 	injectTestprofileVendor(t)
 	theBatch := declareTestBatch(t)
-	batchId := theBatch.BatchId
+	batchID := theBatch.BatchID
 
 	entry := model.SimEntry{
-		BatchID:              batchId,
+		BatchID:              batchID,
 		RawIccid:             "1",
 		IccidWithChecksum:    "2",
 		IccidWithoutChecksum: "3",
@@ -291,10 +291,10 @@ func TestSimBatchDB_UpdateSimEntryKi(t *testing.T) {
 	cleanTables()
 	injectTestprofileVendor(t)
 	theBatch := declareTestBatch(t)
-	batchId := theBatch.BatchId
+	batchID := theBatch.BatchID
 
 	entry := model.SimEntry{
-		BatchID:              batchId,
+		BatchID:              batchID,
 		RawIccid:             "1",
 		IccidWithChecksum:    "2",
 		IccidWithoutChecksum: "3",

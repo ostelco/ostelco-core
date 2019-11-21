@@ -236,7 +236,7 @@ func parseCommandLine() error {
 			return err
 		}
 
-		entries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
+		entries, err := db.GetAllSimEntriesForBatch(batch.BatchID)
 		if err != nil {
 			return err
 		}
@@ -402,7 +402,7 @@ func parseCommandLine() error {
 			return fmt.Errorf("couldn't find batch named '%s' (%s) ", *generateActivationCodeSqlBatch, err)
 		}
 
-		simEntries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
+		simEntries, err := db.GetAllSimEntriesForBatch(batch.BatchID)
 		if err != nil {
 			return err
 		}
@@ -518,7 +518,7 @@ func parseCommandLine() error {
 			recordMap[record.iccid] = record
 		}
 
-		simEntries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
+		simEntries, err := db.GetAllSimEntriesForBatch(batch.BatchID)
 		if err != nil {
 			return err
 		}
@@ -777,7 +777,7 @@ func parseCommandLine() error {
 			return err
 		}
 
-		entries, err := db.GetAllSimEntriesForBatch(batch.BatchId)
+		entries, err := db.GetAllSimEntriesForBatch(batch.BatchID)
 		if err != nil {
 			return err
 		}
