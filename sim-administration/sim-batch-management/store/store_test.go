@@ -116,9 +116,9 @@ func injectTestBatch() *model.Batch {
 	return &theBatch
 }
 
-func TestGetBatchById(t *testing.T) {
+func TestGetBatchByID(t *testing.T) {
 
-	fmt.Print("TestGetBatchById starts")
+	fmt.Print("TestGetBatchByID starts")
 	cleanTables()
 	batch, _ := sdb.GetBatchByName("SOME UNIQUE NAME")
 	if batch != nil {
@@ -129,11 +129,11 @@ func TestGetBatchById(t *testing.T) {
 	injectTestprofileVendor(t)
 	theBatch := injectTestBatch()
 
-	batchById, _ := sdb.GetBatchByID(theBatch.BatchID)
-	if !reflect.DeepEqual(batchById, theBatch) {
+	batchByID, _ := sdb.GetBatchByID(theBatch.BatchID)
+	if !reflect.DeepEqual(batchByID, theBatch) {
 
 		t.Logf("theBatch  = %v\n", theBatch)
-		t.Logf("batchById  = %v\n", batchById)
+		t.Logf("batchByID  = %v\n", batchByID)
 		t.Errorf("getBatchByID failed")
 	}
 }
