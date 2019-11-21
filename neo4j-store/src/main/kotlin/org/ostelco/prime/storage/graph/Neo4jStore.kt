@@ -6,7 +6,6 @@ import arrow.core.Either.Right
 import arrow.core.EitherOf
 import arrow.core.fix
 import arrow.core.flatMap
-import arrow.core.getOrElse
 import arrow.core.left
 import arrow.core.leftIfNull
 import arrow.core.right
@@ -2054,14 +2053,28 @@ object Neo4jStoreSingleton : GraphStore {
         return IO {
             Either.monad<StoreError>().binding {
 
+                // get combinations of KYC needed for this region to be Approved
                 val approvedKycTypeSetList = getApprovedKycTypeSetList(regionCode)
 
+                // fetch existing values from DB
                 val existingCustomerRegion = customerRegionRelationStore.get(
                         fromId = customer.id,
                         toId = regionCode,
                         transaction = transaction)
-                        .getOrElse { CustomerRegion(status = PENDING, kycStatusMap = getKycStatusMapForRegion(regionCode)) }
+                        .flatMapLeft { storeError ->
+                            if(storeError is NotFoundError && storeError.type == customerRegionRelation.name) {
+                                // default value if absent in DB
+                                CustomerRegion(
+                                        status = PENDING,
+                                        kycStatusMap = getKycStatusMapForRegion(regionCode),
+                                        initiatedOn = utcTimeNow()
+                                ).right()
+                            } else {
+                                storeError.left()
+                            }
+                        }.bind()
 
+                // using existing and received KYC status, compute new KYC status
                 val existingKycStatusMap = existingCustomerRegion.kycStatusMap
                 val existingKycStatus = existingKycStatusMap[kycType]
                 val newKycStatus = when (existingKycStatus) {
@@ -2071,6 +2084,7 @@ object Neo4jStoreSingleton : GraphStore {
                     else -> kycStatus
                 }
 
+                // if new status is different from existing status
                 if (existingKycStatus != newKycStatus) {
                     if (kycStatus == newKycStatus) {
                         AuditLog.info(customerId = customer.id, message = "Setting $kycType status from $existingKycStatus to $newKycStatus")
@@ -2092,29 +2106,42 @@ object Neo4jStoreSingleton : GraphStore {
                     AuditLog.info(customerId = customer.id, message = "Ignoring setting $kycType status to $kycStatus since it is already $existingKycStatus")
                 }
 
+                // update KYC status map with new value. This map will then be stored in DB.
                 val newKycStatusMap = existingKycStatusMap.copy(key = kycType, value = newKycStatus)
 
-                val approved = approvedKycTypeSetList.any { kycTypeSet ->
+                // check if Region is Approved.
+                val isRegionApproved = approvedKycTypeSetList.any { kycTypeSet ->
+                    // Region is approved if the set of Approved KYCs is a superset of any one of the set configured in the list - approvedKycTypeSetList.
                     newKycStatusMap.filter { it.value == KycStatus.APPROVED }.keys.containsAll(kycTypeSet)
                 }
 
-                val approvedNow = existingCustomerRegion.status == PENDING && approved
+                // if the Region status is Approved, but the existing status was not Approved, then it has been approved now.
+                val isRegionApprovedNow = existingCustomerRegion.status != APPROVED && isRegionApproved
 
-                val newStatus = if (approved) {
+                // Save Region status as APPROVED, if it is approved. Do not change Region status otherwise.
+                val newRegionStatus = if (isRegionApproved) {
                     APPROVED
                 } else {
                     existingCustomerRegion.status
                 }
 
-                if (approvedNow) {
+                // timestamp for region approval
+                val regionApprovedOn = if (isRegionApprovedNow) {
+
                     AuditLog.info(customerId = customer.id, message = "Approved for region - $regionCode")
+
                     onRegionApprovedAction.apply(
                             customer = customer,
                             regionCode = regionCode,
                             transaction = PrimeTransaction(transaction)
                     ).bind()
+
+                    utcTimeNow()
+                } else {
+                    existingCustomerRegion.approvedOn
                 }
 
+                // Save KYC expiry date if it is not null.
                 val newKycExpiryDateMap = kycExpiryDate
                         ?.let { existingCustomerRegion.kycExpiryDateMap.copy(key = kycType, value = it) }
                         ?: existingCustomerRegion.kycExpiryDateMap
@@ -2123,9 +2150,11 @@ object Neo4jStoreSingleton : GraphStore {
                         .createOrUpdate(
                                 fromId = customer.id,
                                 relation = CustomerRegion(
-                                        status = newStatus,
+                                        status = newRegionStatus,
                                         kycStatusMap = newKycStatusMap,
-                                        kycExpiryDateMap = newKycExpiryDateMap
+                                        kycExpiryDateMap = newKycExpiryDateMap,
+                                        initiatedOn = existingCustomerRegion.initiatedOn,
+                                        approvedOn = regionApprovedOn
                                 ),
                                 toId = regionCode,
                                 transaction = transaction)

@@ -24,7 +24,9 @@ data class PlanSubscription(
 data class CustomerRegion(
         val status: CustomerRegionStatus,
         val kycStatusMap: Map<KycType, KycStatus> = emptyMap(),
-        val kycExpiryDateMap: Map<KycType, String> = emptyMap())
+        val kycExpiryDateMap: Map<KycType, String> = emptyMap(),
+        val initiatedOn: String? = null,
+        val approvedOn: String? = null)
 
 data class SimProfile(
         override val id: String,
