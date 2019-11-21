@@ -29,7 +29,7 @@ func setup() {
 	filename := "bazunka.db"
 
 	// delete file, ignore any errors
-	os.Remove(filename)
+	_ = os.Remove(filename)
 
 	sdb, sdbSetupError =
 		OpenFileSqliteDatabase(filename)
@@ -79,7 +79,7 @@ func shutdown() {
 	if err := sdb.DropTables(); err != nil {
 		panic(fmt.Sprintf("Couldn't drop tables  '%s'", err))
 	}
-	sdb.Db.Close()
+	_ = sdb.Db.Close()
 }
 
 // ... just to know that everything is sane.
@@ -106,7 +106,7 @@ func injectTestBatch() *model.Batch {
 
 	batch, _ := sdb.GetBatchByName(theBatch.Name)
 	if batch != nil {
-		panic(fmt.Errorf("Duplicate batch detected '%s'", theBatch.Name))
+		panic(fmt.Errorf("duplicate batch detected '%s'", theBatch.Name))
 	}
 
 	err := sdb.CreateBatch(&theBatch)
@@ -164,6 +164,7 @@ func TestGetAllBatches(t *testing.T) {
 	}
 }
 
+//noinspection GoUnusedParameter
 func declareTestBatch(t *testing.T) *model.Batch {
 
 	theBatch, err := sdb.DeclareBatch(
@@ -213,6 +214,7 @@ func TestDeclareBatch(t *testing.T) {
 	// TODO: Add check for content of retrieved entity
 }
 
+//noinspection GoUnusedParameter
 func injectTestprofileVendor(t *testing.T) *model.ProfileVendor {
 	v := &model.ProfileVendor{
 		Name:               "Durian",
@@ -272,7 +274,10 @@ func TestDeclareAndRetrieveSimEntries(t *testing.T) {
 		ActivationCode:       "8",
 	}
 
-	sdb.CreateSimEntry(&entry)
+	err := sdb.CreateSimEntry(&entry)
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.Assert(t, entry.Id != 0)
 
 	retrivedEntry, err := sdb.GetSimEntryById(entry.Id)
@@ -303,11 +308,15 @@ func TestSimBatchDB_UpdateSimEntryKi(t *testing.T) {
 		ActivationCode:       "8",
 	}
 
-	sdb.CreateSimEntry(&entry)
+	err := sdb.CreateSimEntry(&entry)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	assert.Assert(t, entry.Id != 0)
 
 	newKi := "12"
-	err := sdb.UpdateSimEntryKi(entry.Id, newKi)
+	err = sdb.UpdateSimEntryKi(entry.Id, newKi)
 
 	if err != nil {
 		t.Fatal(err)

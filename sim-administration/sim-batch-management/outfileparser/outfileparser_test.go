@@ -14,14 +14,14 @@ func TestKeywordValueParser(t *testing.T) {
 }
 
 func TestReadingSimpleOutputFile(t *testing.T) {
-	sample_output_file_name := "sample_out_file_for_testing.out"
-	record, err  := ParseOutputFile(sample_output_file_name)
+	sampleOutputFileName := "sample_out_file_for_testing.out"
+	record, err  := ParseOutputFile(sampleOutputFileName)
 	if err != nil {
 		t.Error(t)
 	}
 
 	// First parameter to check
-	assert.Equal(t, sample_output_file_name, record.Filename)
+	assert.Equal(t, sampleOutputFileName, record.Filename)
 
 	// Check that all the header variables are there
 	assert.Equal(t, record.HeaderDescription["Customer"], "Footel")
@@ -40,8 +40,8 @@ func TestReadingSimpleOutputFile(t *testing.T) {
 }
 
 func TestReadingComplexOutputFile(t *testing.T) {
-	sample_output_file_name := "sample-out-2.out"
-	record, err := ParseOutputFile(sample_output_file_name)
+	sampleOutputFileName := "sample-out-2.out"
+	record, err := ParseOutputFile(sampleOutputFileName)
 	if err != nil {
 		t.Error(t)
 	}

@@ -492,11 +492,11 @@ func parseCommandLine() error {
 
 		// Read all the lines into the record map.
 		for {
-			line, error := reader.Read()
-			if error == io.EOF {
+			line, err := reader.Read()
+			if err == io.EOF {
 				break
-			} else if error != nil {
-				log.Fatal(error)
+			} else if err != nil {
+				log.Fatal(err)
 			}
 
 			iccid := line[columnMap["Iccid"]]

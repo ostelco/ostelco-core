@@ -14,6 +14,7 @@ import (
 	"strings"
 )
 
+//noinspection GoSnakeCaseUsage
 const (
 	INITIAL            = "initial"
 	HEADER_DESCRIPTION = "header_description"
@@ -56,7 +57,7 @@ func parseVarOutLine(varOutLine string, result *map[string]int) error {
 		return fmt.Errorf("syntax error in var_out line, more than two colon separated fields")
 	}
 
-	varOutToken := strings.TrimSpace(string(varOutSplit[0]))
+	varOutToken := strings.TrimSpace(varOutSplit[0])
 	if strings.ToLower(varOutToken) != "var_out" {
 		return fmt.Errorf("syntax error in var_out line.  Does not start with 'var_out', was '%s'", varOutToken)
 	}

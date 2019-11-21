@@ -102,6 +102,7 @@ func OpenFileSqliteDatabase(path string) (*SimBatchDB, error) {
 
 // Get a slice containing all the batches in the database
 func (sdb SimBatchDB) GetAllBatches() ([]model.Batch, error) {
+	//noinspection GoPreferNilSlice
 	result := []model.Batch{}
 	return result, sdb.Db.Select(&result, "SELECT * from BATCH")
 }
@@ -109,6 +110,7 @@ func (sdb SimBatchDB) GetAllBatches() ([]model.Batch, error) {
 // Get a batch identified by its datbase ID number.   If nothing is found
 // a nil value is returned.
 func (sdb SimBatchDB) GetBatchByID(id int64) (*model.Batch, error) {
+	//noinspection GoPreferNilSlice
 	result := []model.Batch{}
 	if err := sdb.Db.Select(&result, "SELECT * FROM BATCH WHERE id = ?", id); err != nil {
 		return nil, err
@@ -123,6 +125,7 @@ func (sdb SimBatchDB) GetBatchByID(id int64) (*model.Batch, error) {
 // Get a batch identified by its name.   If nothing is found
 // a nil value is returned.
 func (sdb SimBatchDB) GetBatchByName(name string) (*model.Batch, error) {
+	//noinspection GoPreferNilSlice
 	result := []model.Batch{}
 	if err := sdb.Db.Select(&result, "select * from BATCH where name = ?", name); err != nil {
 		return nil, err
@@ -163,7 +166,7 @@ func (sdb SimBatchDB) CreateBatch(theBatch *model.Batch) error {
 // If they don't already exist, then generate the tables used by the
 // store package.
 func (sdb *SimBatchDB) GenerateTables() error {
-	sql := `CREATE TABLE IF NOT EXISTS BATCH (
+	s := `CREATE TABLE IF NOT EXISTS BATCH (
      id integer primary key autoincrement,
 	 name VARCHAR NOT NULL UNIQUE,
 	 profileVendor VARCHAR NOT NULL,
@@ -180,12 +183,12 @@ func (sdb *SimBatchDB) GenerateTables() error {
 	 imsiIncrement INTEGER,
 	 iccidIncrement INTEGER,
 	 url VARCHAR)`
-	_, err := sdb.Db.Exec(sql)
+	_, err := sdb.Db.Exec(s)
 	if err != nil {
 		return err
 	}
 
-	sql = `CREATE TABLE IF NOT EXISTS SIM_PROFILE (
+	s = `CREATE TABLE IF NOT EXISTS SIM_PROFILE (
          id INTEGER PRIMARY KEY AUTOINCREMENT,
          batchID INTEGER NOT NULL,
          activationCode VARCHAR NOT NULL,
@@ -196,12 +199,12 @@ func (sdb *SimBatchDB) GenerateTables() error {
          iccid VARCHAR NOT NULL,
          ki VARCHAR NOT NULL,
          msisdn VARCHAR NOT NULL)`
-	_, err = sdb.Db.Exec(sql)
+	_, err = sdb.Db.Exec(s)
 	if err != nil {
 		return err
 	}
 
-	sql = `CREATE TABLE IF NOT EXISTS PROFILE_VENDOR (
+	s = `CREATE TABLE IF NOT EXISTS PROFILE_VENDOR (
          id INTEGER PRIMARY KEY AUTOINCREMENT,
          name VARCHAR NOT NULL UNIQUE,
          es2PlusCertPath  VARCHAR,
@@ -209,7 +212,7 @@ func (sdb *SimBatchDB) GenerateTables() error {
          es2PlusHostPath VARCHAR,
          es2PlusPort VARCHAR,
          es2PlusRequesterId VARCHAR)`
-	_, err = sdb.Db.Exec(sql)
+	_, err = sdb.Db.Exec(s)
 
 	return err
 }
@@ -239,6 +242,7 @@ func (sdb SimBatchDB) CreateProfileVendor(theEntry *model.ProfileVendor) error {
 }
 
 func (sdb SimBatchDB) GetProfileVendorByID(id int64) (*model.ProfileVendor, error) {
+	//noinspection GoPreferNilSlice
 	result := []model.ProfileVendor{}
 	if err := sdb.Db.Select(&result, "select * from PROFILE_VENDOR where id = ?", id); err != nil {
 		return nil, err
@@ -252,6 +256,7 @@ func (sdb SimBatchDB) GetProfileVendorByID(id int64) (*model.ProfileVendor, erro
 }
 
 func (sdb SimBatchDB) GetProfileVendorByName(name string) (*model.ProfileVendor, error) {
+	//noinspection GoPreferNilSlice
 	result := []model.ProfileVendor{}
 	if err := sdb.Db.Select(&result, "select * from PROFILE_VENDOR where name = ?", name); err != nil {
 		return nil, err
@@ -287,6 +292,7 @@ func (sdb SimBatchDB) CreateSimEntry(theEntry *model.SimEntry) error {
 }
 
 func (sdb SimBatchDB) GetSimEntryById(simID int64) (*model.SimEntry, error) {
+	//noinspection GoPreferNilSlice
 	result := []model.SimEntry{}
 	if err := sdb.Db.Select(&result, "select * from SIM_PROFILE where id = ?", simID); err != nil {
 		return nil, err
@@ -300,6 +306,7 @@ func (sdb SimBatchDB) GetSimEntryById(simID int64) (*model.SimEntry, error) {
 }
 
 func (sdb SimBatchDB) GetAllSimEntriesForBatch(batchID int64) ([]model.SimEntry, error) {
+	//noinspection GoPreferNilSlice
 	result := []model.SimEntry{}
 	if err := sdb.Db.Select(&result, "SELECT * from SIM_PROFILE WHERE batchID = ?", batchID); err != nil {
 		return nil, err
@@ -315,6 +322,7 @@ func (sdb SimBatchDB) GetAllSimEntriesForBatch(batchID int64) ([]model.SimEntry,
 // TODO: Add unit test for this method.
 
 func (sdb SimBatchDB) GetSimProfileByIccid(iccid string) (*model.SimEntry, error) {
+	//noinspection GoPreferNilSlice
 	result := []model.SimEntry{}
 	if err := sdb.Db.Select(&result, "select * from SIM_PROFILE where iccid = ?", iccid); err != nil {
 		return nil, err
@@ -328,6 +336,7 @@ func (sdb SimBatchDB) GetSimProfileByIccid(iccid string) (*model.SimEntry, error
 }
 
 func (sdb SimBatchDB) GetSimProfileByImsi(imsi string) (*model.SimEntry, error) {
+	//noinspection GoPreferNilSlice
 	result := []model.SimEntry{}
 	if err := sdb.Db.Select(&result, "select * from SIM_PROFILE where imsi = ?", imsi); err != nil {
 		return nil, err
@@ -514,9 +523,15 @@ func (sdb SimBatchDB) DeclareBatch(
 
 	defer func() {
 		if weCool {
-			tx.Commit()
+			err := tx.Commit()
+			if err != nil {
+				panic(err)
+			}
 		} else {
-			tx.Rollback()
+			err := tx.Rollback()
+			if err != nil {
+				panic(err)
+			}
 		}
 	}()
 
