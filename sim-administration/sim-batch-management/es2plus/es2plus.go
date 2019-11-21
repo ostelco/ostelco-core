@@ -16,19 +16,19 @@ import (
 ///
 type Client interface {
 	GetStatus(iccid string) (*ProfileStatus, error)
-	RecoverProfile(iccid string, targetState string) (*ES2PlusRecoverProfileResponse, error)
-	CancelOrder(iccid string, targetState string) (*ES2PlusCancelOrderResponse, error)
-	DownloadOrder(iccid string) (*ES2PlusDownloadOrderResponse, error)
-	ConfirmOrder(iccid string) (*ES2PlusConfirmOrderResponse, error)
+	RecoverProfile(iccid string, targetState string) (*RecoverProfileResponse, error)
+	CancelOrder(iccid string, targetState string) (*CancelOrderResponse, error)
+	DownloadOrder(iccid string) (*DownloadOrderResponse, error)
+	ConfirmOrder(iccid string) (*ConfirmOrderResponse, error)
 	ActivateIccid(iccid string) (*ProfileStatus, error)
-	RequesterId() string
+	RequesterID() string
 }
 
 ///
 ///  Generic headers for invocations and responses
 ///
 type es2PlusHeader struct {
-	FunctionRequesterIdentifier string `json:"functionRequesterIdentifier"`
+	FunctionrequesterIDentifier string `json:"functionrequesterIDentifier"`
 	FunctionCallIdentifier      string `json:"functionCallIdentifier"`
 }
 
@@ -43,7 +43,7 @@ type es2PlusIccid struct {
 
 type FunctionExecutionStatus struct {
 	FunctionExecutionStatusType string                `json:"status"`
-	StatusCodeData              ES2PlusStatusCodeData `json:"statusCodeData"`
+	StatusCodeData              es2PlusStatusCodeData `json:"statusCodeData"`
 }
 
 type es2PlusResponseHeader struct {
@@ -54,7 +54,7 @@ type es2PlusResponseHeader struct {
 //  Status code invocation.
 //
 
-type ES2PlusStatusCodeData struct {
+type es2PlusStatusCodeData struct {
 	SubjectCode       string `json:"subjectCode"`
 	ReasonCode        string `json:"reasonCode"`
 	SubjectIdentifier string `json:"subjectIdentifier"`
@@ -67,6 +67,9 @@ type ES2ProfileStatusResponse struct {
 	CompletionTimestamp string                `json:"completionTimestamp"`
 }
 
+///
+/// The status of a profile as retrieved from the SM-DP+
+///
 type ProfileStatus struct {
 	StatusLastUpdateTimestamp string `json:"status_last_update_timestamp"`
 	ACToken                   string `json:"acToken"`
@@ -80,13 +83,13 @@ type ProfileStatus struct {
 //  Profile reset invocation
 //
 
-type ES2PlusRecoverProfileRequest struct {
+type es2PlusRecoverProfileRequest struct {
 	Header        es2PlusHeader `json:"header"`
 	Iccid         string        `json:"iccid"`
 	ProfileStatus string        `json:"profileStatus"`
 }
 
-type ES2PlusRecoverProfileResponse struct {
+type RecoverProfileResponse struct {
 	Header es2PlusResponseHeader `json:"header"`
 }
 
@@ -94,13 +97,13 @@ type ES2PlusRecoverProfileResponse struct {
 //  Cancel order  invocation
 //
 
-type ES2PlusCancelOrderRequest struct {
+type es2PlusCancelOrderRequest struct {
 	Header                      es2PlusHeader `json:"header"`
 	Iccid                       string        `json:"iccid"`
 	FinalProfileStatusIndicator string        `json:"finalProfileStatusIndicator"`
 }
 
-type ES2PlusCancelOrderResponse struct {
+type CancelOrderResponse struct {
 	Header es2PlusResponseHeader `json:"header"`
 }
 
@@ -108,14 +111,14 @@ type ES2PlusCancelOrderResponse struct {
 //  Download order invocation
 //
 
-type ES2PlusDownloadOrderRequest struct {
+type downloadOrderRequest struct {
 	Header      es2PlusHeader `json:"header"`
 	Iccid       string        `json:"iccid"`
 	Eid         string        `json:"eid,omitempty"`
 	Profiletype string        `json:"profiletype,omitempty"`
 }
 
-type ES2PlusDownloadOrderResponse struct {
+type DownloadOrderResponse struct {
 	Header es2PlusResponseHeader `json:"header"`
 	Iccid  string                `json:"iccid"`
 }
@@ -124,21 +127,21 @@ type ES2PlusDownloadOrderResponse struct {
 // ConfirmOrder invocation
 //
 
-type ES2PlusConfirmOrderRequest struct {
+type confirmOrderRequest struct {
 	Header           es2PlusHeader `json:"header"`
 	Iccid            string        `json:"iccid"`
 	Eid              string        `json:"eid,omitempty"`
-	MatchingId       string        `json:"matchingId,omitempty"`
+	MatchingID       string        `json:"matchingId,omitempty"`
 	ConfirmationCode string        `json:"confirmationCode,omitempty"`
 	SmdpAddress      string        `json:"smdpAddress,omitempty"`
 	ReleaseFlag      bool          `json:"releaseFlag"`
 }
 
-type ES2PlusConfirmOrderResponse struct {
+type ConfirmOrderResponse struct {
 	Header      es2PlusResponseHeader `json:"header"`
 	Iccid       string                `json:"iccid"`
 	Eid         string                `json:"eid,omitempty"`
-	MatchingId  string                `json:"matchingId,omitempty"`
+	MatchingID  string                `json:"matchingId,omitempty"`
 	SmdpAddress string                `json:"smdpAddress,omitempty"`
 }
 
@@ -149,22 +152,22 @@ type ES2PlusConfirmOrderResponse struct {
 type ClientState struct {
 	httpClient  *http.Client
 	hostport    string
-	requesterId string
+	requesterID string
 	logPayload  bool
 	logHeaders  bool
 }
 
-func NewClient(certFilePath string, keyFilePath string, hostport string, requesterId string) *ClientState {
+func NewClient(certFilePath string, keyFilePath string, hostport string, requesterID string) *ClientState {
 	return &ClientState{
-		httpClient:  newHttpClient(certFilePath, keyFilePath),
+		httpClient:  newHTTPClient(certFilePath, keyFilePath),
 		hostport:    hostport,
-		requesterId: requesterId,
+		requesterID: requesterID,
 		logPayload:  false,
 		logHeaders:  false,
 	}
 }
 
-func newHttpClient(certFilePath string, keyFilePath string) *http.Client {
+func newHTTPClient(certFilePath string, keyFilePath string) *http.Client {
 	cert, err := tls.LoadX509KeyPair(
 		certFilePath,
 		keyFilePath)
@@ -219,7 +222,7 @@ func formatRequest(r *http.Request) string {
 	return strings.Join(request, "\n")
 }
 
-func newUuid() (string, error) {
+func newUUID() (string, error) {
 	uuid, err := uuid.NewRandom()
 	if err != nil {
 		return "", err
@@ -229,12 +232,12 @@ func newUuid() (string, error) {
 
 func newEs2plusHeader(client Client) (*es2PlusHeader, error) {
 
-	functionCallIdentifier, err := newUuid()
+	functionCallIdentifier, err := newUUID()
 	if err != nil {
 		return nil, err
 	}
 
-	return &es2PlusHeader{FunctionCallIdentifier: functionCallIdentifier, FunctionRequesterIdentifier: client.RequesterId()}, nil
+	return &es2PlusHeader{FunctionCallIdentifier: functionCallIdentifier, FunctionrequesterIDentifier: client.RequesterID()}, nil
 }
 
 func (client *ClientState) execute(
@@ -281,6 +284,8 @@ func (client *ClientState) execute(
 ///  Externally visible API for Es2Plus protocol
 ///
 
+
+// Get the status of a profile with a specific ICCID.
 func (client *ClientState) GetStatus(iccid string) (*ProfileStatus, error) {
 	result := new(ES2ProfileStatusResponse)
 	es2plusCommand := "getProfileStatus"
@@ -305,14 +310,16 @@ func (client *ClientState) GetStatus(iccid string) (*ProfileStatus, error) {
 	}
 }
 
-func (client *ClientState) RecoverProfile(iccid string, targetState string) (*ES2PlusRecoverProfileResponse, error) {
-	result := new(ES2PlusRecoverProfileResponse)
+// Recover the state of the profile with a particular ICCID,
+// by setting it to the target state.
+func (client *ClientState) RecoverProfile(iccid string, targetState string) (*RecoverProfileResponse, error) {
+	result := new(RecoverProfileResponse)
 	es2plusCommand := "recoverProfile"
 	header, err := newEs2plusHeader(client)
 	if err != nil {
 		return nil, err
 	}
-	payload := &ES2PlusRecoverProfileRequest{
+	payload := &es2PlusRecoverProfileRequest{
 		Header:        *header,
 		Iccid:         iccid,
 		ProfileStatus: targetState,
@@ -320,14 +327,16 @@ func (client *ClientState) RecoverProfile(iccid string, targetState string) (*ES
 	return result,  client.execute(es2plusCommand, payload, result)
 }
 
-func (client *ClientState) CancelOrder(iccid string, targetState string) (*ES2PlusCancelOrderResponse, error) {
-	result := new(ES2PlusCancelOrderResponse)
+// Cancel an order by setting  the state of the profile with a particular ICCID,
+// the target state.
+func (client *ClientState) CancelOrder(iccid string, targetState string) (*CancelOrderResponse, error) {
+	result := new(CancelOrderResponse)
 	es2plusCommand := "cancelOrder"
 	header, err := newEs2plusHeader(client)
 	if err != nil {
 		return nil, err
 	}
-	payload := &ES2PlusCancelOrderRequest{
+	payload := &es2PlusCancelOrderRequest{
 		Header:                      *header,
 		Iccid:                       iccid,
 		FinalProfileStatusIndicator: targetState,
@@ -335,14 +344,16 @@ func (client *ClientState) CancelOrder(iccid string, targetState string) (*ES2Pl
 	return result,  client.execute(es2plusCommand, payload, result)
 }
 
-func (client *ClientState) DownloadOrder(iccid string) (*ES2PlusDownloadOrderResponse, error) {
-	result := new(ES2PlusDownloadOrderResponse)
+// Prepare the profile to be downloaded (first of two steps, the
+// ConfirmDownload is also necessary).
+func (client *ClientState) DownloadOrder(iccid string) (*DownloadOrderResponse, error) {
+	result := new(DownloadOrderResponse)
 	es2plusCommand := "downloadOrder"
 	header, err := newEs2plusHeader(client)
 	if err != nil {
 		return nil, err
 	}
-	payload := &ES2PlusDownloadOrderRequest{
+	payload := &downloadOrderRequest{
 		Header:      *header,
 		Iccid:       iccid,
 		Eid:         "",
@@ -360,19 +371,21 @@ func (client *ClientState) DownloadOrder(iccid string) (*ES2PlusDownloadOrderRes
 	}
 }
 
-func (client *ClientState) ConfirmOrder(iccid string) (*ES2PlusConfirmOrderResponse, error) {
-	result := new(ES2PlusConfirmOrderResponse)
+// Second of the two steps that are necessary to prepare a profile for
+// to be downloaded.
+func (client *ClientState) ConfirmOrder(iccid string) (*ConfirmOrderResponse, error) {
+	result := new(ConfirmOrderResponse)
 	es2plusCommand := "confirmOrder"
 	header, err := newEs2plusHeader(client)
 	if err != nil {
 		return nil, err
 	}
-	payload := &ES2PlusConfirmOrderRequest{
+	payload := &confirmOrderRequest{
 		Header:           *header,
 		Iccid:            iccid,
 		Eid:              "",
 		ConfirmationCode: "",
-		MatchingId:       "",
+		MatchingID:       "",
 		SmdpAddress:      "",
 		ReleaseFlag:      true,
 	}
@@ -384,11 +397,16 @@ func (client *ClientState) ConfirmOrder(iccid string) (*ES2PlusConfirmOrderRespo
 	executionStatus := result.Header.FunctionExecutionStatus.FunctionExecutionStatusType
 	if executionStatus != "Executed-Success" {
 		return result, fmt.Errorf("ExecutionStatus was: ''%s'", executionStatus)
-	} else {
-		return result, nil
 	}
+
+	return result, nil
 }
 
+
+// Take a profile to the state "READY" where it can be downloaded.
+// This function will if poll the current status of the profile, and if
+// necessary advance the state by executing the DownloadOrder and
+// ConfirmOrder functions.
 func (client *ClientState) ActivateIccid(iccid string) (*ProfileStatus, error) {
 
 	result, err := client.GetStatus(iccid)
@@ -418,6 +436,6 @@ func (client *ClientState) ActivateIccid(iccid string) (*ProfileStatus, error) {
 }
 
 // TODO: This shouldn't have to be public, but how can it be avoided?
-func (clientState *ClientState) RequesterId() string {
-	return clientState.requesterId
+func (clientState *ClientState) RequesterID() string {
+	return clientState.requesterID
 }
