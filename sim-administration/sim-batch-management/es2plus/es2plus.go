@@ -32,7 +32,7 @@ type es2PlusHeader struct {
 	FunctionCallIdentifier      string `json:"functionCallIdentifier"`
 }
 
-type ES2PlusGetProfileStatusRequest struct {
+type es2PlusGetProfileStatusRequest struct {
 	Header    es2PlusHeader  `json:"header"`
 	IccidList []es2PlusIccid `json:"iccidList"`
 }
@@ -41,13 +41,13 @@ type es2PlusIccid struct {
 	Iccid string `json:"iccid"`
 }
 
-type FunctionExecutionStatus struct {
-	FunctionExecutionStatusType string                `json:"status"`
+type functionExecutionStatus struct {
+	functionExecutionStatusType string                `json:"status"`
 	StatusCodeData              es2PlusStatusCodeData `json:"statusCodeData"`
 }
 
 type es2PlusResponseHeader struct {
-	FunctionExecutionStatus FunctionExecutionStatus `json:"functionExecutionStatus"`
+	functionExecutionStatus functionExecutionStatus `json:"functionExecutionStatus"`
 }
 
 //
@@ -61,7 +61,7 @@ type es2PlusStatusCodeData struct {
 	Message           string `json:"message"`
 }
 
-type ES2ProfileStatusResponse struct {
+type es2ProfileStatusResponse struct {
 	Header              es2PlusResponseHeader `json:"header"`
 	ProfileStatusList   []ProfileStatus       `json:"profileStatusList"`
 	CompletionTimestamp string                `json:"completionTimestamp"`
@@ -149,7 +149,7 @@ type ConfirmOrderResponse struct {
 //  Generating new ES2Plus clients
 //
 
-type ClientState struct {
+type clientState struct {
 	httpClient  *http.Client
 	hostport    string
 	requesterID string
@@ -157,8 +157,8 @@ type ClientState struct {
 	logHeaders  bool
 }
 
-func NewClient(certFilePath string, keyFilePath string, hostport string, requesterID string) *ClientState {
-	return &ClientState{
+func NewClient(certFilePath string, keyFilePath string, hostport string, requesterID string) *clientState {
+	return &clientState{
 		httpClient:  newHTTPClient(certFilePath, keyFilePath),
 		hostport:    hostport,
 		requesterID: requesterID,
@@ -240,7 +240,10 @@ func newEs2plusHeader(client Client) (*es2PlusHeader, error) {
 	return &es2PlusHeader{FunctionCallIdentifier: functionCallIdentifier, FunctionrequesterIDentifier: client.RequesterID()}, nil
 }
 
-func (client *ClientState) execute(
+// execute is an internal function that will package a payload
+// by json serializing it, then execute an ES2+ command
+// and unmarshal the result into the result object.
+func (client *clientState) execute(
 	es2plusCommand string,
 	payload interface{}, result interface{}) error {
 
@@ -285,15 +288,15 @@ func (client *ClientState) execute(
 ///
 
 
-// Get the status of a profile with a specific ICCID.
-func (client *ClientState) GetStatus(iccid string) (*ProfileStatus, error) {
-	result := new(ES2ProfileStatusResponse)
+// GetStatus  will return the status of a profile with a specific ICCID.
+func (client *clientState) GetStatus(iccid string) (*ProfileStatus, error) {
+	result := new(es2ProfileStatusResponse)
 	es2plusCommand := "getProfileStatus"
 	header, err := newEs2plusHeader(client)
 	if err != nil {
 		return nil, err
 	}
-	payload := &ES2PlusGetProfileStatusRequest{
+	payload := &es2PlusGetProfileStatusRequest{
 		Header:    *header,
 		IccidList: []es2PlusIccid{es2PlusIccid{Iccid: iccid}},
 	}
@@ -310,9 +313,9 @@ func (client *ClientState) GetStatus(iccid string) (*ProfileStatus, error) {
 	}
 }
 
-// Recover the state of the profile with a particular ICCID,
+// RecoverProfile will recover the state of the profile with a particular ICCID,
 // by setting it to the target state.
-func (client *ClientState) RecoverProfile(iccid string, targetState string) (*RecoverProfileResponse, error) {
+func (client *clientState) RecoverProfile(iccid string, targetState string) (*RecoverProfileResponse, error) {
 	result := new(RecoverProfileResponse)
 	es2plusCommand := "recoverProfile"
 	header, err := newEs2plusHeader(client)
@@ -327,9 +330,9 @@ func (client *ClientState) RecoverProfile(iccid string, targetState string) (*Re
 	return result,  client.execute(es2plusCommand, payload, result)
 }
 
-// Cancel an order by setting  the state of the profile with a particular ICCID,
+// CancelOrder will cancel an order by setting  the state of the profile with a particular ICCID,
 // the target state.
-func (client *ClientState) CancelOrder(iccid string, targetState string) (*CancelOrderResponse, error) {
+func (client *clientState) CancelOrder(iccid string, targetState string) (*CancelOrderResponse, error) {
 	result := new(CancelOrderResponse)
 	es2plusCommand := "cancelOrder"
 	header, err := newEs2plusHeader(client)
@@ -344,9 +347,9 @@ func (client *ClientState) CancelOrder(iccid string, targetState string) (*Cance
 	return result,  client.execute(es2plusCommand, payload, result)
 }
 
-// Prepare the profile to be downloaded (first of two steps, the
+// DownloadOrder will prepare the profile to be downloaded (first of two steps, the
 // ConfirmDownload is also necessary).
-func (client *ClientState) DownloadOrder(iccid string) (*DownloadOrderResponse, error) {
+func (client *clientState) DownloadOrder(iccid string) (*DownloadOrderResponse, error) {
 	result := new(DownloadOrderResponse)
 	es2plusCommand := "downloadOrder"
 	header, err := newEs2plusHeader(client)
@@ -363,7 +366,7 @@ func (client *ClientState) DownloadOrder(iccid string) (*DownloadOrderResponse, 
 		return nil, err
 	}
 
-	executionStatus := result.Header.FunctionExecutionStatus.FunctionExecutionStatusType
+	executionStatus := result.Header.functionExecutionStatus.functionExecutionStatusType
 	if executionStatus == "Executed-Success" {
 		return result, nil
 	} else {
@@ -371,9 +374,9 @@ func (client *ClientState) DownloadOrder(iccid string) (*DownloadOrderResponse, 
 	}
 }
 
-// Second of the two steps that are necessary to prepare a profile for
+// ConfirmOrder will execute the second of the two steps that are necessary to prepare a profile for
 // to be downloaded.
-func (client *ClientState) ConfirmOrder(iccid string) (*ConfirmOrderResponse, error) {
+func (client *clientState) ConfirmOrder(iccid string) (*ConfirmOrderResponse, error) {
 	result := new(ConfirmOrderResponse)
 	es2plusCommand := "confirmOrder"
 	header, err := newEs2plusHeader(client)
@@ -394,7 +397,7 @@ func (client *ClientState) ConfirmOrder(iccid string) (*ConfirmOrderResponse, er
 		return nil, err
 	}
 
-	executionStatus := result.Header.FunctionExecutionStatus.FunctionExecutionStatusType
+	executionStatus := result.Header.functionExecutionStatus.functionExecutionStatusType
 	if executionStatus != "Executed-Success" {
 		return result, fmt.Errorf("ExecutionStatus was: ''%s'", executionStatus)
 	}
@@ -403,11 +406,11 @@ func (client *ClientState) ConfirmOrder(iccid string) (*ConfirmOrderResponse, er
 }
 
 
-// Take a profile to the state "READY" where it can be downloaded.
+// ActivateIccid will take a profile to the state "READY" where it can be downloaded.
 // This function will if poll the current status of the profile, and if
 // necessary advance the state by executing the DownloadOrder and
 // ConfirmOrder functions.
-func (client *ClientState) ActivateIccid(iccid string) (*ProfileStatus, error) {
+func (client *clientState) ActivateIccid(iccid string) (*ProfileStatus, error) {
 
 	result, err := client.GetStatus(iccid)
 	if err != nil {
@@ -436,6 +439,6 @@ func (client *ClientState) ActivateIccid(iccid string) (*ProfileStatus, error) {
 }
 
 // TODO: This shouldn't have to be public, but how can it be avoided?
-func (clientState *ClientState) RequesterID() string {
+func (clientState *clientState) RequesterID() string {
 	return clientState.requesterID
 }

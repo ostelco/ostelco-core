@@ -217,6 +217,7 @@ func (sdb *SimBatchDB) GenerateTables() error {
 	return err
 }
 
+//
 func (sdb SimBatchDB) CreateProfileVendor(theEntry *model.ProfileVendor) error {
 	// TODO: This insert string can be made through reflection, and at some point should be.
 
@@ -241,6 +242,7 @@ func (sdb SimBatchDB) CreateProfileVendor(theEntry *model.ProfileVendor) error {
 	return nil
 }
 
+// Find a profile vendor in the database by looking it up by name.
 func (sdb SimBatchDB) GetProfileVendorByID(id int64) (*model.ProfileVendor, error) {
 	//noinspection GoPreferNilSlice
 	result := []model.ProfileVendor{}
@@ -255,6 +257,7 @@ func (sdb SimBatchDB) GetProfileVendorByID(id int64) (*model.ProfileVendor, erro
 	}
 }
 
+// Find a profile vendor in the database by looking it up by name.
 func (sdb SimBatchDB) GetProfileVendorByName(name string) (*model.ProfileVendor, error) {
 	//noinspection GoPreferNilSlice
 	result := []model.ProfileVendor{}
