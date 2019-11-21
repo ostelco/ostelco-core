@@ -132,6 +132,8 @@ import org.ostelco.prime.storage.graph.model.SubscriptionToBundle
 import org.ostelco.prime.tracing.Trace
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 import java.util.*
 import java.util.stream.Collectors
 import javax.ws.rs.core.MultivaluedMap
@@ -2840,3 +2842,5 @@ fun <K, V> Map<K, V>.copy(key: K, value: V): Map<K, V> {
     mutableMap[key] = value
     return mutableMap.toMap()
 }
+
+fun utcTimeNow() = ZonedDateTime.now(ZoneOffset.UTC).toString()
