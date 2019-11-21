@@ -105,13 +105,12 @@ class EncryptedRemoteEs2ClientOnlyTest {
     }
 
     companion object {
-        val SUPPORT = DropwizardTestSupport<DummyAppUsingSmDpPlusClientConfig>(
+        val SUPPORT: DropwizardTestSupport<DummyAppUsingSmDpPlusClientConfig> = DropwizardTestSupport<DummyAppUsingSmDpPlusClientConfig>(
                 DummyAppUsingSmDpPlusClient::class.java,
                 "src/test/resources/config-external-smdp.yml"
         )
     }
 }
-
 
 
 class DummyAppUsingSmDpPlusClient : Application<DummyAppUsingSmDpPlusClientConfig>() {
@@ -151,7 +150,6 @@ class DummyAppUsingSmDpPlusClient : Application<DummyAppUsingSmDpPlusClientConfi
 }
 
 
-
 /**
  * Configuration class for SM-DP+ emulator.
  */
@@ -165,7 +163,7 @@ class DummyAppUsingSmDpPlusClientConfig : Configuration() {
     @Valid
     @NotNull
     @JsonProperty("es2plusClient")
-    var es2plusConfig = EsTwoPlusConfig()
+    var es2plusConfig: EsTwoPlusConfig = EsTwoPlusConfig()
 
 
     /**
@@ -175,5 +173,5 @@ class DummyAppUsingSmDpPlusClientConfig : Configuration() {
     @Valid
     @NotNull
     @JsonProperty("httpClient")
-    var httpClientConfiguration = HttpClientConfiguration()
+    var httpClientConfiguration: HttpClientConfiguration = HttpClientConfiguration()
 }

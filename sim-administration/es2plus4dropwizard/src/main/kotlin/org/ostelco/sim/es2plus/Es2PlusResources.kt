@@ -88,7 +88,7 @@ class SmdpExceptionMapper : ExceptionMapper<SmDpPlusException> {
     override fun toResponse(ex: SmDpPlusException): Response {
 
         // First we log the event.
-        logger.error("SM-DP+ processing failed: {}" , ex.statusCodeData)
+        logger.error("SM-DP+ processing failed: {}", ex.statusCodeData)
 
         // Then we prepare a response that will be returned to
         // whoever invoked the resource.
@@ -113,7 +113,7 @@ class SmDpPlusServerResource(private val smDpPlus: SmDpPlusService) {
     private val logger = getLogger()
 
     companion object {
-        const val ES2PLUS_PATH_PREFIX : String = "gsma/rsp2/es2plus/"
+        const val ES2PLUS_PATH_PREFIX: String = "gsma/rsp2/es2plus/"
     }
 
     /**
@@ -136,12 +136,12 @@ class SmDpPlusServerResource(private val smDpPlus: SmDpPlusService) {
     @POST
     fun confirmOrder(order: Es2ConfirmOrder): Es2ConfirmOrderResponse {
         return smDpPlus.confirmOrder(
-                eid=order.eid,
+                eid = order.eid,
                 iccid = order.iccid,
                 confirmationCode = order.confirmationCode,
                 smdsAddress = order.smdpAddress,
                 machingId = order.matchingId,
-                releaseFlag =  order.releaseFlag
+                releaseFlag = order.releaseFlag
         )
     }
 
@@ -177,7 +177,7 @@ class SmDpPlusServerResource(private val smDpPlus: SmDpPlusService) {
     @POST
     fun getProfileStatus(order: Es2ProfileStatusCommand): Es2ProfileStatusResponse {
         logger.value.info("Logging getProfileStatusOrder with order = $order")
-        return smDpPlus.getProfileStatus(iccidList = order.iccidList.map {it.iccid}.filterNotNull())
+        return smDpPlus.getProfileStatus(iccidList = order.iccidList.mapNotNull { it.iccid })
     }
 }
 
