@@ -15,12 +15,12 @@ import (
 	"strings"
 )
 
-/// Holding database abstraction for the sim batch management system.
+// SimBatchDB Holding database abstraction for the sim batch management system.
 type SimBatchDB struct {
 	Db *sqlx.DB
 }
 
-// An interface used to abstract the CRUD operations on the
+// Store is an interface used to abstract the CRUD operations on the
 // various entities in the sim batch management database.
 type Store interface {
 	GenerateTables() error
@@ -72,8 +72,8 @@ func NewInMemoryDatabase() (*SimBatchDB, error) {
 	return &SimBatchDB{Db: db}, nil
 }
 
-// OpenFileSqliteDatabaseFromPathInEnvironmentVariable
-// Create a new  instance of an SQLIte database backed by a file whose path
+// OpenFileSqliteDatabaseFromPathInEnvironmentVariable creates
+// a new  instance of an SQLIte database backed by a file whose path
 // is found in the named environment variable. If the
 // file doesn't exist, then it is created.  If the environment variable is not
 // defined or empty, an error is returned.
@@ -86,7 +86,7 @@ func OpenFileSqliteDatabaseFromPathInEnvironmentVariable(variablename string) (*
 	return db, err
 }
 
-// Create a new  instance of an SQLIte database backed by a file. If the
+// OpenFileSqliteDatabase creates a new  instance of an SQLIte database backed by a file. If the
 // file doesn't exist, then it is created.
 func OpenFileSqliteDatabase(path string) (*SimBatchDB, error) {
 
@@ -168,7 +168,7 @@ func (sdb SimBatchDB) CreateBatch(theBatch *model.Batch) error {
 	return err
 }
 
-// If they don't already exist, then generate the tables used by the
+// GenerateTables will, if they don't already exist, then generate the tables used by the
 // store package.
 func (sdb *SimBatchDB) GenerateTables() error {
 	s := `CREATE TABLE IF NOT EXISTS BATCH (
@@ -301,9 +301,9 @@ func (sdb SimBatchDB) CreateSimEntry(theEntry *model.SimEntry) error {
 	return err
 }
 
-// GetSimEntryById retrieves a sim entryh instance stored in the database.  If no
+// GetSimEntryByID retrieves a sim entryh instance stored in the database.  If no
 // matching instance can be found, nil is returned.
-func (sdb SimBatchDB) GetSimEntryById(simID int64) (*model.SimEntry, error) {
+func (sdb SimBatchDB) GetSimEntryByID(simID int64) (*model.SimEntry, error) {
 	//noinspection GoPreferNilSlice
 	result := []model.SimEntry{}
 	if err := sdb.Db.Select(&result, "select * from SIM_PROFILE where id = ?", simID); err != nil {
@@ -350,7 +350,7 @@ func (sdb SimBatchDB) GetSimProfileByIccid(iccid string) (*model.SimEntry, error
 	}
 }
 
-// GetSimProfileByIccid gets a sim profile from the database, return nil of one
+// GetSimProfileByImsi gets a sim profile from the database, return nil of one
 // can't be found.
 func (sdb SimBatchDB) GetSimProfileByImsi(imsi string) (*model.SimEntry, error) {
 	//noinspection GoPreferNilSlice
@@ -361,9 +361,8 @@ func (sdb SimBatchDB) GetSimProfileByImsi(imsi string) (*model.SimEntry, error) 
 
 	if len(result) == 0 {
 		return nil, nil
-	} else {
-		return &result[0], nil
 	}
+	return &result[0], nil
 }
 
 // UpdateSimEntryMsisdn Sets the MSISDN field of a persisted instance of a sim entry.
