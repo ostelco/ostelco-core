@@ -99,7 +99,6 @@ import org.ostelco.prime.storage.NotCreatedError
 import org.ostelco.prime.storage.NotDeletedError
 import org.ostelco.prime.storage.NotFoundError
 import org.ostelco.prime.storage.NotUpdatedError
-import org.ostelco.prime.storage.PartiallyNotDeletedError
 import org.ostelco.prime.storage.ScanInformationStore
 import org.ostelco.prime.storage.StoreError
 import org.ostelco.prime.storage.SystemError
@@ -504,8 +503,8 @@ object Neo4jStoreSingleton : GraphStore {
                                 logger.error(NOTIFY_OPS_MARKER,
                                         "Removing corresponding payment profile when removing customer $customerId " +
                                                 "failed with error ${it.message} : ${it.description}")
-                                PartiallyNotDeletedError(type = customerEntity.name,
-                                        id = "Failed to remove corresponding payment profile when removing customer $customerId",
+                                NotDeletedError(type = "Payment profile for customer",
+                                        id = customerId,
                                         error = it).left()
                             }
                         }.bind()
