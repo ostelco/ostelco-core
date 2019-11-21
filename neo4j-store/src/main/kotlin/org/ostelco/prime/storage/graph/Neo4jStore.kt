@@ -1810,7 +1810,6 @@ object Neo4jStoreSingleton : GraphStore {
                                         customerId = customer.id,
                                         data = extendedStatus
                                 )
-                                logger.info(NOTIFY_OPS_MARKER, "Jumio verification succeeded for ${customer.contactEmail} Info: $extendedStatus")
                                 setKycStatus(
                                         customer = customer,
                                         regionCode = updatedScanInformation.countryCode.toLowerCase(),
@@ -1829,7 +1828,9 @@ object Neo4jStoreSingleton : GraphStore {
                                 data = extendedStatus
                         )
                     }
-                    logger.info(NOTIFY_OPS_MARKER, "Jumio verification failed for ${customer.contactEmail} Info: $extendedStatus")
+                    if(updatedScanInformation.scanResult?.verificationStatus != "NO_ID_UPLOADED") {
+                        logger.info(NOTIFY_OPS_MARKER, "Jumio verification failed for ${customer.contactEmail} Info: $extendedStatus")
+                    }
                     setKycStatus(
                             customer = customer,
                             regionCode = updatedScanInformation.countryCode.toLowerCase(),
