@@ -46,7 +46,7 @@ type FunctionExecutionStatus struct {
 	StatusCodeData              ES2PlusStatusCodeData `json:"statusCodeData"`
 }
 
-type ES2PlusResponseHeader struct {
+type es2PlusResponseHeader struct {
 	FunctionExecutionStatus FunctionExecutionStatus `json:"functionExecutionStatus"`
 }
 
@@ -62,7 +62,7 @@ type ES2PlusStatusCodeData struct {
 }
 
 type ES2ProfileStatusResponse struct {
-	Header              ES2PlusResponseHeader `json:"header"`
+	Header              es2PlusResponseHeader `json:"header"`
 	ProfileStatusList   []ProfileStatus       `json:"profileStatusList"`
 	CompletionTimestamp string                `json:"completionTimestamp"`
 }
@@ -87,7 +87,7 @@ type ES2PlusRecoverProfileRequest struct {
 }
 
 type ES2PlusRecoverProfileResponse struct {
-	Header ES2PlusResponseHeader `json:"header"`
+	Header es2PlusResponseHeader `json:"header"`
 }
 
 //
@@ -101,7 +101,7 @@ type ES2PlusCancelOrderRequest struct {
 }
 
 type ES2PlusCancelOrderResponse struct {
-	Header ES2PlusResponseHeader `json:"header"`
+	Header es2PlusResponseHeader `json:"header"`
 }
 
 //
@@ -116,7 +116,7 @@ type ES2PlusDownloadOrderRequest struct {
 }
 
 type ES2PlusDownloadOrderResponse struct {
-	Header ES2PlusResponseHeader `json:"header"`
+	Header es2PlusResponseHeader `json:"header"`
 	Iccid  string                `json:"iccid"`
 }
 
@@ -135,7 +135,7 @@ type ES2PlusConfirmOrderRequest struct {
 }
 
 type ES2PlusConfirmOrderResponse struct {
-	Header      ES2PlusResponseHeader `json:"header"`
+	Header      es2PlusResponseHeader `json:"header"`
 	Iccid       string                `json:"iccid"`
 	Eid         string                `json:"eid,omitempty"`
 	MatchingId  string                `json:"matchingId,omitempty"`
