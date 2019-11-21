@@ -488,6 +488,26 @@ object Neo4jStoreSingleton : GraphStore {
                             ifTrue = {},
                             ifFalse = { NotFoundError(type = identityEntity.name, id = identity.id) })
                 }.bind()
+
+                /* If removal of payment profile fails, then the customer will be deleted
+                   in neo4j but will still be present in payment backend. In that case the
+                   profile must be removed from the payment backend manually. */
+                paymentProcessor.removePaymentProfile(customerId)
+                        .map {
+                            Unit
+                        }.flatMapLeft {
+                            if (it is org.ostelco.prime.paymentprocessor.core.NotFoundError) {
+                                /* Ignore. Customer has not bought products yet. */
+                                Unit.right()
+                            } else {
+                                logger.error(NOTIFY_OPS_MARKER,
+                                        "Removing corresponding payment profile when removing customer $customerId " +
+                                                "failed with error ${it.message} : ${it.description}")
+                                NotDeletedError(type = "Payment profile for customer",
+                                        id = customerId,
+                                        error = it).left()
+                            }
+                        }.bind()
             }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
@@ -1385,7 +1405,7 @@ object Neo4jStoreSingleton : GraphStore {
 
                 val subscriptionDetailsInfo = paymentProcessor.createSubscription(
                         planId = planStripeId,
-                        stripeCustomerId = profileInfo.id,
+                        customerId = profileInfo.id,
                         trialEnd = trialEnd,
                         taxRegionId = taxRegionId)
                         .mapLeft {
@@ -2161,13 +2181,14 @@ object Neo4jStoreSingleton : GraphStore {
         }
     }
 
-    private inline fun <A, B> EitherOf<A, B>.flatMapLeft(f: (A) -> Either<A, B>): Either<A, B> =
+    private inline fun <LEFT, RIGHT, NEWLEFT> EitherOf<LEFT, RIGHT>.flatMapLeft(f: (LEFT) -> Either<NEWLEFT, RIGHT>): Either<NEWLEFT, RIGHT> =
             fix().let {
                 when (it) {
                     is Right -> it
                     is Left -> f(it.a)
                 }
             }
+
     //
     // Balance (Customer - Subscription - Bundle)
     //
