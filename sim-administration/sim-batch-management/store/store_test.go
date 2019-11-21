@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	sdb *SimBatchDB
+	sdb           *SimBatchDB
 	sdbSetupError error
 )
 
@@ -42,7 +42,7 @@ func setup() {
 		panic("Returned null database object")
 	}
 
-	if sdbSetupError = sdb.GenerateTables();  sdbSetupError != nil {
+	if sdbSetupError = sdb.GenerateTables(); sdbSetupError != nil {
 		panic(fmt.Sprintf("Couldn't generate tables  '%s'", sdbSetupError))
 	}
 
@@ -97,7 +97,7 @@ func injectTestBatch() *model.Batch {
 		ProfileType:     "banana",
 		BatchNo:         "100",
 		Quantity:        100,
-		Url:             "http://vg.no",
+		URL:             "http://vg.no",
 		FirstIccid:      "1234567890123456789",
 		FirstImsi:       "123456789012345",
 		ProfileVendor:   "Durian",
@@ -121,7 +121,7 @@ func TestGetBatchById(t *testing.T) {
 	fmt.Print("TestGetBatchById starts")
 	cleanTables()
 	batch, _ := sdb.GetBatchByName("SOME UNIQUE NAME")
-	if batch != nil  {
+	if batch != nil {
 		t.Errorf("Duplicate detected, error in test setup")
 	}
 
@@ -183,7 +183,7 @@ func declareTestBatch(t *testing.T) *model.Batch {
 		"LOL",                  // hssVendor string,
 		"localhost",            // uploadHostname string,
 		"8088",                 // uploadPortnumber string,
-		"Durian",                // profileVendor string,
+		"Durian",               // profileVendor string,
 		"ACTIVE")               // initialHlrActivationStatusOfProfiles string
 
 	if err != nil {
@@ -213,15 +213,14 @@ func TestDeclareBatch(t *testing.T) {
 	// TODO: Add check for content of retrieved entity
 }
 
-
-func injectTestprofileVendor( t *testing.T) *model.ProfileVendor {
+func injectTestprofileVendor(t *testing.T) *model.ProfileVendor {
 	v := &model.ProfileVendor{
-		Name: "Durian",
-		Es2PlusCert: "cert",
-		Es2PlusKey: "key",
-		Es2PlusHost: "host",
-		Es2PlusPort:  4711,
-		Es2PlusRequesterId:  "1.2.3",
+		Name:               "Durian",
+		Es2PlusCert:        "cert",
+		Es2PlusKey:         "key",
+		Es2PlusHost:        "host",
+		Es2PlusPort:        4711,
+		Es2PlusRequesterId: "1.2.3",
 	}
 
 	if err := sdb.CreateProfileVendor(v); err != nil {
@@ -236,8 +235,7 @@ func TestDeclareAndRetrieveProfileVendorEntry(t *testing.T) {
 
 	v := injectTestprofileVendor(t)
 
-
-	nameRetrievedVendor,err  := sdb.GetProfileVendorByName(v.Name)
+	nameRetrievedVendor, err := sdb.GetProfileVendorByName(v.Name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -246,7 +244,7 @@ func TestDeclareAndRetrieveProfileVendorEntry(t *testing.T) {
 		t.Fatalf("name retrieved and stored profile vendor entries are different, %v v.s. %v", nameRetrievedVendor, v)
 	}
 
-	idRetrievedVendor,err  := sdb.GetProfileVendorByID(v.Id)
+	idRetrievedVendor, err := sdb.GetProfileVendorByID(v.Id)
 	if err != nil {
 		t.Fatal(err)
 	}

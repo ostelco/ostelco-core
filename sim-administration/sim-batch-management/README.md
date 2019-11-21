@@ -21,16 +21,13 @@ go programmes here, both designed to be run from the command line.
 For both of these programmes, see the source code, in particular the
 comments near the top of the files for instructions on how to use them.
 
-
-To build everythning
-==
-
+##To build everythning
 
 ### Prerequisites
 
-* Go has to be installed on the system  being run.
-* Prime needs to be accessible via ssh tunnel or otherwise from the host
-  where the script is being run.
+  * Go has to be installed on the system  being run.
+  * Prime needs to be accessible via ssh tunnel or otherwise from the host
+    where the script is being run.
 
 ### Building
 
@@ -44,14 +41,11 @@ To build everythning
 ... will compile and test the program, then if you're running bash
 extend your shell with command line extensions for the sbm program.
 
-
-Some common usecases
-==
-
+## Some common usecases
 
 ### How to upload batch information to prime
 
-### Introduction
+#### Introduction
 
 Prime has  REST endpoint for uploading sim batches.   This is an 
 interface with little error checking (beyond the bare miniumums)
@@ -80,34 +74,37 @@ then the script will terminate with an error message.
 (these are reasonable things to check btw, errors have been made
 that justifies adding these checks).
 
-
-
-##A typical invocation looks like this:
+###A typical invocation looks like this:
 
   TBD
-  
 
+##TODO
 
-TODO
-==
+ 1. Create a very clean PR for future code review.
 
-
-1. Create a very clean PR for future code review.
-1. Write up a nice markdown documentation describing common usecases.
-1. Add crypto resources so that the program can talk to external parties.
-1. Add code to activate profiles in HSS (if API is known)
-1. Add config for crypto parameters  for HSSes, profile-vendors and operators (sftp in particular)
-1. Add misc. parameters about sim vendors, HSSes, Prime instances etc., so that
+ 1. Write up a nice markdown documentation describing common usecases.
+ 
+ 1. Add crypto resources so that the program can talk to external parties.
+ 
+ 1. Add code to activate profiles in HSS (if API is known)
+ 
+ 1. Add config for crypto parameters  for HSSes, profile-vendors and operators (sftp in particular)
+ 
+ 1. Add misc. parameters about sim vendors, HSSes, Prime instances etc., so that
    batches can be properly constrained, defaults set the right way and external
    components accessed from gocode.
-1. Figure out how to handle workflows. Be explicit!
-1. The interfaces to external parties will be
+ 
+ 1. Figure out how to handle workflows. Be explicit!
+ 
+ 1. The interfaces to external parties will be
     - input/output files for profile generation.
     - some kind of file (not yet determined) for msisdn lists.
     - HTTP upload commands, either indirectly via curl (as now), or
       directly from the script later.   In either case 
       it will be assumed that tunnels are set up out of band, and
       tunnel setup is not part of this program.
-1. Declare legal hss/dpv combinations, batches must use legal combos.
-1. Declare prime instances (should make sense to have both prod and dev defined
+ 
+ 1. Declare legal hss/dpv combinations, batches must use legal combos.
+ 
+ 1. Declare prime instances (should make sense to have both prod and dev defined
    with different constraints on them).

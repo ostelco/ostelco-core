@@ -424,7 +424,7 @@ func parseCommandLine() error {
 			return fmt.Errorf("no batch found with name '%s'", *describeBatchBatch)
 		} else {
 			var csvPayload = uploadtoprime.GenerateCsvPayload(db, *batch)
-			uploadtoprime.GeneratePostingCurlscript(batch.Url, csvPayload)
+			uploadtoprime.GeneratePostingCurlscript(batch.URL, csvPayload)
 		}
 
 	case "batch-generate-input-file":

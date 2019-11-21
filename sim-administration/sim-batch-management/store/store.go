@@ -15,7 +15,6 @@ import (
 	"strings"
 )
 
-
 /// Holding database abstraction for the sim batch management system.
 type SimBatchDB struct {
 	Db *sqlx.DB
@@ -53,7 +52,6 @@ func (sdb *SimBatchDB) Begin() *sql.Tx {
 	}
 	return tx
 }
-
 
 // Create a new in-memory instance of an SQLIte database
 func NewInMemoryDatabase() (*SimBatchDB, error) {
@@ -93,7 +91,7 @@ func OpenFileSqliteDatabase(path string) (*SimBatchDB, error) {
 	} else  {
 		log.Printf("No databasefile found at '%s', will create one", path)
 	}
-	 */
+	*/
 
 	db, err := sqlx.Open("sqlite3", path)
 	if err != nil {
@@ -102,11 +100,14 @@ func OpenFileSqliteDatabase(path string) (*SimBatchDB, error) {
 	return &SimBatchDB{Db: db}, nil
 }
 
+// Get a slice containing all the batches in the database
 func (sdb SimBatchDB) GetAllBatches() ([]model.Batch, error) {
 	result := []model.Batch{}
 	return result, sdb.Db.Select(&result, "SELECT * from BATCH")
 }
 
+// Get a batch identified by its datbase ID number.   If nothing is found
+// a nil value is returned.
 func (sdb SimBatchDB) GetBatchByID(id int64) (*model.Batch, error) {
 	result := []model.Batch{}
 	if err := sdb.Db.Select(&result, "SELECT * FROM BATCH WHERE id = ?", id); err != nil {
@@ -119,6 +120,8 @@ func (sdb SimBatchDB) GetBatchByID(id int64) (*model.Batch, error) {
 	}
 }
 
+// Get a batch identified by its name.   If nothing is found
+// a nil value is returned.
 func (sdb SimBatchDB) GetBatchByName(name string) (*model.Batch, error) {
 	result := []model.Batch{}
 	if err := sdb.Db.Select(&result, "select * from BATCH where name = ?", name); err != nil {
@@ -130,6 +133,10 @@ func (sdb SimBatchDB) GetBatchByName(name string) (*model.Batch, error) {
 	}
 }
 
+// Create an instance of a batch in the database. Populate it with
+// fields from the parameter "theBatch".   No error checking
+// (except uniqueness of name field) is performed on the the
+// "theBatch" parameter.
 func (sdb SimBatchDB) CreateBatch(theBatch *model.Batch) error {
 	// TODO: mutex?
 
@@ -153,6 +160,8 @@ func (sdb SimBatchDB) CreateBatch(theBatch *model.Batch) error {
 	return err
 }
 
+// If they don't already exist, then generate the tables used by the
+// store package.
 func (sdb *SimBatchDB) GenerateTables() error {
 	sql := `CREATE TABLE IF NOT EXISTS BATCH (
      id integer primary key autoincrement,
@@ -242,8 +251,6 @@ func (sdb SimBatchDB) GetProfileVendorByID(id int64) (*model.ProfileVendor, erro
 	}
 }
 
-
-
 func (sdb SimBatchDB) GetProfileVendorByName(name string) (*model.ProfileVendor, error) {
 	result := []model.ProfileVendor{}
 	if err := sdb.Db.Select(&result, "select * from PROFILE_VENDOR where name = ?", name); err != nil {
@@ -294,7 +301,7 @@ func (sdb SimBatchDB) GetSimEntryById(simID int64) (*model.SimEntry, error) {
 
 func (sdb SimBatchDB) GetAllSimEntriesForBatch(batchID int64) ([]model.SimEntry, error) {
 	result := []model.SimEntry{}
-	if err := sdb.Db.Select(&result, "SELECT * from SIM_PROFILE WHERE batchID = ?", batchID) ; err != nil {
+	if err := sdb.Db.Select(&result, "SELECT * from SIM_PROFILE WHERE batchID = ?", batchID); err != nil {
 		return nil, err
 	}
 
@@ -306,7 +313,6 @@ func (sdb SimBatchDB) GetAllSimEntriesForBatch(batchID int64) ([]model.SimEntry,
 }
 
 // TODO: Add unit test for this method.
-
 
 func (sdb SimBatchDB) GetSimProfileByIccid(iccid string) (*model.SimEntry, error) {
 	result := []model.SimEntry{}
@@ -334,7 +340,6 @@ func (sdb SimBatchDB) GetSimProfileByImsi(imsi string) (*model.SimEntry, error) 
 	}
 }
 
-
 func (sdb SimBatchDB) UpdateSimEntryMsisdn(simID int64, msisdn string) error {
 	_, err := sdb.Db.NamedExec("UPDATE SIM_PROFILE SET msisdn=:msisdn WHERE id = :simID",
 		map[string]interface{}{
@@ -344,7 +349,7 @@ func (sdb SimBatchDB) UpdateSimEntryMsisdn(simID int64, msisdn string) error {
 	return err
 }
 
-func (sdb SimBatchDB)  UpdateSimEntryKi(simID int64, ki string) error {
+func (sdb SimBatchDB) UpdateSimEntryKi(simID int64, ki string) error {
 	_, err := sdb.Db.NamedExec("UPDATE SIM_PROFILE SET ki=:ki WHERE id = :simID",
 		map[string]interface{}{
 			"simID": simID,
@@ -352,7 +357,6 @@ func (sdb SimBatchDB)  UpdateSimEntryKi(simID int64, ki string) error {
 		})
 	return err
 }
-
 
 func (sdb SimBatchDB) UpdateActivationCode(simID int64, activationCode string) error {
 	_, err := sdb.Db.NamedExec("UPDATE SIM_PROFILE SET activationCode=:activationCode WHERE id = :simID",
@@ -363,6 +367,7 @@ func (sdb SimBatchDB) UpdateActivationCode(simID int64, activationCode string) e
 	return err
 }
 
+// Drop all tables used by the store package.
 func (sdb *SimBatchDB) DropTables() error {
 	foo := `DROP  TABLE BATCH`
 	_, err := sdb.Db.Exec(foo)
@@ -397,7 +402,7 @@ func (sdb SimBatchDB) DeclareBatch(
 	profileVendor string,
 	initialHlrActivationStatusOfProfiles string) (*model.Batch, error) {
 
-		log.Println("Declaring batch ...")
+	log.Println("Declaring batch ...")
 
 	vendor, err := sdb.GetProfileVendorByName(profileVendor)
 	if err != nil {
@@ -438,10 +443,10 @@ func (sdb SimBatchDB) DeclareBatch(
 		return nil, fmt.Errorf("OutputBatch Quantity must be positive, but was '%d'", batchLength)
 	}
 
-	uploadUrl := fmt.Sprintf("http://%s:%s/ostelco/sim-inventory/%s/import-batch/profilevendor/%s?initialHssState=%s",
+	uploadURL := fmt.Sprintf("http://%s:%s/ostelco/sim-inventory/%s/import-batch/profilevendor/%s?initialHssState=%s",
 		uploadHostname, uploadPortnumber, hssVendor, profileVendor, initialHlrActivationStatusOfProfiles)
 
-	fieldsyntaxchecks.CheckURLSyntax("uploadUrl", uploadUrl)
+	fieldsyntaxchecks.CheckURLSyntax("uploadURL", uploadURL)
 	fieldsyntaxchecks.CheckProfileType("profile-type", profileType)
 
 	// Convert to integers, and get lengths
@@ -490,7 +495,7 @@ func (sdb SimBatchDB) DeclareBatch(
 		Name:            name,
 		BatchNo:         batchNo,
 		ProfileType:     profileType,
-		Url:             uploadUrl,
+		URL:             uploadURL,
 		Quantity:        loltelutils.Abs(iccidlen),
 		FirstIccid:      firstIccid,
 		IccidIncrement:  loltelutils.Sign(iccidlen),
