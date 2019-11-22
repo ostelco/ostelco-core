@@ -109,19 +109,23 @@ func main() {
 	if !*doGoPtr {
 		log.Printf("    ...  Not building/testing GO code")
 	} else {
-		log.Printf("    ...  Building of GO code not implemented yet.")
+		log.Printf("    ...  Building and testing go code.")
+		goscript.AssertSuccesfulRun("go build ./...")
+		goscript.AssertSuccesfulRun("go test ./...")
+		goscript.AssertSuccesfulRun("~/go/bin/staticcheck ./...")
 	}
 
 	if !*doJvmPtr {
 		log.Printf("    ...  Not building/testing JVM based code.")
 
 	} else {
+		log.Printf("    ... Building/testing JVM based code.")
 		//
 		// Ensure that  all preconditions for building and testing are met, if not
 		// fail and terminate execution.
 		//
 
-		goscript.AssertThatScriptCommandsAreAvailable("docker-compose", "./gradlew", "docker", "cmp")
+		goscript.AssertThatScriptCommandsAreAvailable("docker-compose", "./gradlew", "docker", "cmp", "go")
 
 		projectProfile := parseServiceAccountFile("prime-service-account.json")
 
