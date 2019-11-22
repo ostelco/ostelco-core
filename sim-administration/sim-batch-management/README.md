@@ -117,3 +117,11 @@ that justifies adding these checks).
     as appropriate.
 
 12. Refactor the main program. It's way to big now.
+
+13. Rewrite the top-evel build-all.go to also compile go-code (which it
+    paradoxically doesn't do now).
+
+14. Make goland less confused with respect to imports than it is now.
+
+15. Fix all suggestions by goland.
+
