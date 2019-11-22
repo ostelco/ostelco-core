@@ -583,7 +583,13 @@ object Neo4jStoreSingleton : GraphStore {
                                                             iccId = simProfile.iccId,
                                                             status = simEntry.status,
                                                             eSimActivationCode = simEntry.eSimActivationCode,
-                                                            alias = simProfile.alias)
+                                                            alias = simProfile.alias,
+                                                            requestedOn = simProfile.requestedOn,
+                                                            downloadedOn = simProfile.downloadedOn,
+                                                            installedOn = simProfile.installedOn,
+                                                            installedReportedByAppOn = simProfile.installedReportedByAppOn,
+                                                            deletedOn = simProfile.deletedOn
+                                                    )
                                                 }
                                                 .fold(
                                                         { error ->
@@ -792,7 +798,13 @@ object Neo4jStoreSingleton : GraphStore {
                         iccId = simEntry.iccId,
                         alias = "",
                         eSimActivationCode = simEntry.eSimActivationCode,
-                        status = simEntry.status)
+                        status = simEntry.status,
+                        requestedOn = simProfile.requestedOn,
+                        downloadedOn = simProfile.downloadedOn,
+                        installedOn = simProfile.installedOn,
+                        installedReportedByAppOn = simProfile.installedReportedByAppOn,
+                        deletedOn = simProfile.deletedOn
+                )
             }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
@@ -876,7 +888,13 @@ object Neo4jStoreSingleton : GraphStore {
                             iccId = simProfile.iccId,
                             alias = simProfile.alias,
                             eSimActivationCode = simEntry.eSimActivationCode,
-                            status = simEntry.status)
+                            status = simEntry.status,
+                            requestedOn = simProfile.requestedOn,
+                            downloadedOn = simProfile.downloadedOn,
+                            installedOn = simProfile.installedOn,
+                            installedReportedByAppOn = simProfile.installedReportedByAppOn,
+                            deletedOn = simProfile.deletedOn
+                    )
                 }
             }.fix()
         }.unsafeRunSync()
@@ -898,12 +916,18 @@ object Neo4jStoreSingleton : GraphStore {
                             ?: NotFoundError(type = simProfileEntity.name, id = iccId).left().bind<SimProfile>()
 
                     update { simProfile.copy(alias = alias) }.bind()
-                    AuditLog.info(customerId = customerId, message = "Updated alias of SIM Profile")
+                    AuditLog.info(customerId = customerId, message = "Updated alias of SIM Profile (iccId = $iccId)")
                     org.ostelco.prime.model.SimProfile(
                             iccId = simProfile.iccId,
                             alias = simProfile.alias,
                             eSimActivationCode = "",
-                            status = NOT_READY)
+                            status = NOT_READY,
+                            requestedOn = simProfile.requestedOn,
+                            downloadedOn = simProfile.downloadedOn,
+                            installedOn = simProfile.installedOn,
+                            installedReportedByAppOn = simProfile.installedReportedByAppOn,
+                            deletedOn = simProfile.deletedOn
+                    )
                 }.fix()
             }.unsafeRunSync().ifFailedThenRollback(transaction)
         }
@@ -921,7 +945,69 @@ object Neo4jStoreSingleton : GraphStore {
                         iccId = simProfile.iccId,
                         alias = simProfile.alias,
                         eSimActivationCode = simEntry.eSimActivationCode,
-                        status = simEntry.status)
+                        status = simEntry.status,
+                        requestedOn = simProfile.requestedOn,
+                        downloadedOn = simProfile.downloadedOn,
+                        installedOn = simProfile.installedOn,
+                        installedReportedByAppOn = simProfile.installedReportedByAppOn,
+                        deletedOn = simProfile.deletedOn
+                )
+            }.fix()
+        }.unsafeRunSync()
+    }
+
+    override fun markSimProfileAsInstalled(
+            identity: org.ostelco.prime.model.Identity,
+            regionCode: String,
+            iccId: String): Either<StoreError, org.ostelco.prime.model.SimProfile> {
+
+        val simProfileEither = writeTransaction {
+            IO {
+                Either.monad<StoreError>().binding {
+
+                    val customerId = getCustomerId(identity = identity).bind()
+                    val simProfile = get(SimProfile forCustomer (Customer withId customerId))
+                            .bind()
+                            .firstOrNull { simProfile -> simProfile.iccId == iccId }
+                            ?: NotFoundError(type = simProfileEntity.name, id = iccId).left().bind<SimProfile>()
+
+                    update { simProfile.copy(installedReportedByAppOn = utcTimeNow()) }.bind()
+                    AuditLog.info(customerId = customerId, message = "App reported SIM Profile (iccId = $iccId) as installed.")
+                    org.ostelco.prime.model.SimProfile(
+                            iccId = simProfile.iccId,
+                            alias = simProfile.alias,
+                            eSimActivationCode = "",
+                            status = INSTALLED,
+                            requestedOn = simProfile.requestedOn,
+                            downloadedOn = simProfile.downloadedOn,
+                            installedOn = simProfile.installedOn,
+                            installedReportedByAppOn = simProfile.installedReportedByAppOn,
+                            deletedOn = simProfile.deletedOn
+                    )
+                }.fix()
+            }.unsafeRunSync().ifFailedThenRollback(transaction)
+        }
+
+        return IO {
+            Either.monad<StoreError>().binding {
+                val simProfile = simProfileEither.bind()
+                val simEntry = simManager.getSimProfile(
+                        hlr = hssNameLookup.getHssName(regionCode),
+                        iccId = iccId)
+                        .mapLeft { NotFoundError(type = simProfileEntity.name, id = simProfile.iccId) }
+                        .bind()
+
+                org.ostelco.prime.model.SimProfile(
+                        iccId = simProfile.iccId,
+                        alias = simProfile.alias,
+                        eSimActivationCode = simEntry.eSimActivationCode,
+                        status = simEntry.status,
+                        requestedOn = simProfile.requestedOn,
+                        downloadedOn = simProfile.downloadedOn,
+                        installedOn = simProfile.installedOn,
+                        installedReportedByAppOn = simProfile.installedReportedByAppOn,
+                        deletedOn = simProfile.deletedOn
+                )
             }.fix()
         }.unsafeRunSync()
     }
@@ -970,7 +1056,13 @@ object Neo4jStoreSingleton : GraphStore {
                         iccId = simEntry.iccId,
                         eSimActivationCode = simEntry.eSimActivationCode,
                         status = simEntry.status,
-                        alias = simProfile.alias)
+                        alias = simProfile.alias,
+                        requestedOn = simProfile.requestedOn,
+                        downloadedOn = simProfile.downloadedOn,
+                        installedOn = simProfile.installedOn,
+                        installedReportedByAppOn = simProfile.installedReportedByAppOn,
+                        deletedOn = simProfile.deletedOn
+                )
             }.fix()
         }.unsafeRunSync()
     }

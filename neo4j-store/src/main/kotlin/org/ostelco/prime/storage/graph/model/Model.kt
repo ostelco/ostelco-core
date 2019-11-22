@@ -38,6 +38,7 @@ data class SimProfile(
         val requestedOn: String? = null,
         val downloadedOn: String? = null,
         val installedOn: String? = null,
+        val installedReportedByAppOn: String? = null,
         val deletedOn: String? = null) : HasId {
 
     companion object
