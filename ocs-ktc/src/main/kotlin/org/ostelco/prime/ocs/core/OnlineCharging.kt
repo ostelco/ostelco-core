@@ -170,7 +170,8 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                 AnalyticsReporter.report(
                         subscriptionAnalyticsId = consumptionResult.msisdnAnalyticsId,
                         request = request,
-                        bundleBytes = consumptionResult.balance)
+                        bundleBytes = consumptionResult.balance,
+                        mccMnc = getUserLocationMccMnc(request))
             }
         }
     }
