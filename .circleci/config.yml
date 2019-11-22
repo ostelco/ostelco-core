@@ -66,11 +66,11 @@ jobs:
             - .
 
       # generating selfsigned certs. Needed for docker compose tests
-      - run:
-          name: Generate self signed certs
-          command: |
-            scripts/generate-selfsigned-ssl-certs.sh   ocs.dev.ostelco.org 
-            cp certs/ocs.dev.ostelco.org/nginx.crt ocsgw/cert/ocs.crt
+#      - run:
+#          name: Generate self signed certs
+#          command: |
+#            scripts/generate-selfsigned-ssl-certs.sh   ocs.dev.ostelco.org 
+#            cp certs/ocs.dev.ostelco.org/nginx.crt ocsgw/cert/ocs.crt
       - run:
           name: Acceptance Tests
           command: docker-compose up --build --abort-on-container-exit
