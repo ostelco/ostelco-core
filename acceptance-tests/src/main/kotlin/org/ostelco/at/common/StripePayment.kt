@@ -83,7 +83,7 @@ object StripePayment {
      * verify that the correspondng 'setDefaultSource' API works as
      * intended.
      */
-    fun getDefaultSourceForCustomer(stripeCustomerId: String) : String {
+    fun getDefaultSourceForCustomer(customerId: String) : String {
 
         // https://stripe.com/docs/api/java#create_source
         Stripe.apiKey = System.getenv("STRIPE_API_KEY")
@@ -92,7 +92,7 @@ object StripePayment {
 
         (0..MAX_TRIES).forEach {
             try {
-                return Customer.retrieve(stripeCustomerId).defaultSource
+                return Customer.retrieve(customerId).defaultSource
             } catch (e: Exception) {
                 error = e
             }

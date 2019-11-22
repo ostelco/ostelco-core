@@ -24,7 +24,7 @@ class StripePaymentProcessorTest {
     private val testCustomer = UUID.randomUUID().toString()
     private val emailTestCustomer = "test@internet.org"
 
-    private var stripeCustomerId = ""
+    private var customerId = ""
 
     private fun createPaymentTokenId(): String {
 
@@ -64,7 +64,7 @@ class StripePaymentProcessorTest {
         val resultAdd = paymentProcessor.createPaymentProfile(customerId = testCustomer, email = emailTestCustomer)
         resultAdd.isRight()
 
-        stripeCustomerId = resultAdd.fold({ "" }, { it.id })
+        customerId = resultAdd.fold({ "" }, { it.id })
     }
 
     @Before
@@ -75,7 +75,7 @@ class StripePaymentProcessorTest {
 
     @After
     fun cleanUp() {
-        val resultDelete = paymentProcessor.deletePaymentProfile(stripeCustomerId)
+        val resultDelete = paymentProcessor.removePaymentProfile(customerId)
         assertNotFailure(resultDelete)
     }
 
@@ -118,7 +118,7 @@ class StripePaymentProcessorTest {
 
     @Test
     fun unknownCustomerGetSavedSources() {
-        val result = paymentProcessor.getSavedSources(stripeCustomerId = "unknown")
+        val result = paymentProcessor.getSavedSources(customerId = "unknown")
 
         assertFailure(result)
     }
@@ -127,7 +127,7 @@ class StripePaymentProcessorTest {
     fun getPaymentProfile() {
         val result = paymentProcessor.getPaymentProfile(testCustomer)
         assertNotFailure(result)
-        assertEquals(stripeCustomerId, result.fold({ "" }, { it.id }))
+        assertEquals(customerId, result.fold({ "" }, { it.id }))
     }
 
     @Test
@@ -140,14 +140,14 @@ class StripePaymentProcessorTest {
     fun ensureSourcesSorted() {
 
         run {
-            paymentProcessor.addSource(stripeCustomerId, createPaymentTokenId())
+            paymentProcessor.addSource(customerId, createPaymentTokenId())
             // Ensure that not all sources falls within the same second.
             Thread.sleep(1_001)
-            paymentProcessor.addSource(stripeCustomerId, createPaymentSourceId())
+            paymentProcessor.addSource(customerId, createPaymentSourceId())
         }
 
         // Should be in descending sorted order by the "created" timestamp.
-        val sources = paymentProcessor.getSavedSources(stripeCustomerId)
+        val sources = paymentProcessor.getSavedSources(customerId)
 
         val createdTimestamps = sources.getOrElse {
             fail("The 'created' field is missing from the list of sources: ${sources}")
@@ -163,12 +163,12 @@ class StripePaymentProcessorTest {
     fun addAndRemoveMultipleSources() {
 
         val sources = listOf(
-                paymentProcessor.addSource(stripeCustomerId, createPaymentTokenId()),
-                paymentProcessor.addSource(stripeCustomerId, createPaymentSourceId())
+                paymentProcessor.addSource(customerId, createPaymentTokenId()),
+                paymentProcessor.addSource(customerId, createPaymentSourceId())
         )
 
         val sourcesRemoved = sources.map {
-            paymentProcessor.removeSource(stripeCustomerId, it.getOrElse {
+            paymentProcessor.removeSource(customerId, it.getOrElse {
                 fail("Failed to remove source ${it}")
             }.id)
         }
@@ -196,28 +196,28 @@ class StripePaymentProcessorTest {
     @Test
     fun addSourceToCustomerAndRemove() {
 
-        val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentTokenId())
-        val resultStoredSources = paymentProcessor.getSavedSources(stripeCustomerId)
+        val resultAddSource = paymentProcessor.addSource(customerId, createPaymentTokenId())
+        val resultStoredSources = paymentProcessor.getSavedSources(customerId)
 
         checkthatStoredResourcesMatchAddedResources(resultAddSource, resultStoredSources)
 
-        val resultDeleteSource = paymentProcessor.removeSource(stripeCustomerId, right(resultAddSource).id)
+        val resultDeleteSource = paymentProcessor.removeSource(customerId, right(resultAddSource).id)
         assertNotFailure(resultDeleteSource)
     }
 
     @Test
     fun addSourceToCustomerTwice() {
-        val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentTokenId())
+        val resultAddSource = paymentProcessor.addSource(customerId, createPaymentTokenId())
 
-        val resultStoredSources = paymentProcessor.getSavedSources(stripeCustomerId)
+        val resultStoredSources = paymentProcessor.getSavedSources(customerId)
 
 
         checkthatStoredResourcesMatchAddedResources(resultAddSource, resultStoredSources)
 
-        val resultAddSecondSource = paymentProcessor.addSource(stripeCustomerId, right(resultStoredSources).first().id)
+        val resultAddSecondSource = paymentProcessor.addSource(customerId, right(resultStoredSources).first().id)
         assertFailure(resultAddSecondSource)
 
-        val resultDeleteSource = paymentProcessor.removeSource(stripeCustomerId, right(resultAddSource).id)
+        val resultDeleteSource = paymentProcessor.removeSource(customerId, right(resultAddSource).id)
         assertNotFailure(resultDeleteSource)
     }
 
@@ -227,55 +227,55 @@ class StripePaymentProcessorTest {
     @Test
     fun addDefaultSourceAndRemove() {
 
-        val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentTokenId())
+        val resultAddSource = paymentProcessor.addSource(customerId, createPaymentTokenId())
 
         assertNotFailure(resultAddSource)
 
-        val resultAddDefault = paymentProcessor.setDefaultSource(stripeCustomerId, right(resultAddSource).id)
+        val resultAddDefault = paymentProcessor.setDefaultSource(customerId, right(resultAddSource).id)
         assertNotFailure(resultAddDefault)
 
-        val resultGetDefault = paymentProcessor.getDefaultSource(stripeCustomerId)
+        val resultGetDefault = paymentProcessor.getDefaultSource(customerId)
         assertNotFailure(resultGetDefault)
         assertEquals(resultAddDefault.fold({ "" }, { it.id }), right(resultGetDefault).id)
 
-        val resultRemoveDefault = paymentProcessor.removeSource(stripeCustomerId, right(resultAddDefault).id)
+        val resultRemoveDefault = paymentProcessor.removeSource(customerId, right(resultAddDefault).id)
         assertNotFailure(resultRemoveDefault)
     }
 
     @Test
     fun createAuthorizeChargeAndRefund() {
-        val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentTokenId())
+        val resultAddSource = paymentProcessor.addSource(customerId, createPaymentTokenId())
         assertNotFailure(resultAddSource)
 
         val amount = 1000
         val currency = "NOK"
 
-        val resultAuthorizeCharge = paymentProcessor.authorizeCharge(stripeCustomerId, right(resultAddSource).id, amount, currency)
+        val resultAuthorizeCharge = paymentProcessor.authorizeCharge(customerId, right(resultAddSource).id, amount, currency)
         assertNotFailure(resultAuthorizeCharge)
 
         val resultRefundCharge = paymentProcessor.refundCharge(right(resultAuthorizeCharge), amount)
         assertNotFailure(resultRefundCharge)
 
-        val resultRemoveSource = paymentProcessor.removeSource(stripeCustomerId, right(resultAddSource).id)
+        val resultRemoveSource = paymentProcessor.removeSource(customerId, right(resultAddSource).id)
         assertNotFailure(resultRemoveSource)
     }
 
     @Test
     fun createAuthorizeChargeAndRefundWithZeroAmount() {
-        val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentTokenId())
+        val resultAddSource = paymentProcessor.addSource(customerId, createPaymentTokenId())
         assertNotFailure(resultAddSource)
 
         val amount = 0
         val currency = "NOK"
 
-        val resultAuthorizeCharge = paymentProcessor.authorizeCharge(stripeCustomerId, right(resultAddSource).id, amount, currency)
+        val resultAuthorizeCharge = paymentProcessor.authorizeCharge(customerId, right(resultAddSource).id, amount, currency)
         assertNotFailure(resultAuthorizeCharge)
 
         val resultRefundCharge = paymentProcessor.refundCharge(right(resultAuthorizeCharge), amount)
         assertNotFailure(resultRefundCharge)
         assertEquals(resultAuthorizeCharge.fold({ "" }, { it }), right(resultRefundCharge))
 
-        val resultRemoveSource = paymentProcessor.removeSource(stripeCustomerId, right(resultAddSource).id)
+        val resultRemoveSource = paymentProcessor.removeSource(customerId, right(resultAddSource).id)
         assertNotFailure(resultRemoveSource)
     }
 
@@ -291,7 +291,7 @@ class StripePaymentProcessorTest {
     @Test
     fun subscribeAndUnsubscribePlan() {
 
-        val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentTokenId())
+        val resultAddSource = paymentProcessor.addSource(customerId, createPaymentTokenId())
         assertNotFailure(resultAddSource)
 
         val resultCreateProduct = paymentProcessor.createProduct("TestSku")
@@ -300,7 +300,7 @@ class StripePaymentProcessorTest {
         val resultCreatePlan = paymentProcessor.createPlan(right(resultCreateProduct).id, 1000, "NOK", PaymentProcessor.Interval.MONTH)
         assertNotFailure(resultCreatePlan)
 
-        val resultSubscribePlan = paymentProcessor.createSubscription(right(resultCreatePlan).id, stripeCustomerId)
+        val resultSubscribePlan = paymentProcessor.createSubscription(right(resultCreatePlan).id, customerId)
         assertNotFailure(resultSubscribePlan)
 
         val resultUnsubscribePlan = paymentProcessor.cancelSubscription(right(resultSubscribePlan).id, false)
@@ -315,19 +315,19 @@ class StripePaymentProcessorTest {
         assertNotFailure(resultRemoveProduct)
         assertEquals(resultCreateProduct.fold({ "" }, { it.id }), right(resultRemoveProduct).id)
 
-        val resultDeleteSource = paymentProcessor.removeSource(stripeCustomerId, right(resultAddSource).id)
+        val resultDeleteSource = paymentProcessor.removeSource(customerId, right(resultAddSource).id)
         assertNotFailure(resultDeleteSource)
     }
 
     @Test
     fun createAndDeleteInvoiceItem() {
-        val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentTokenId())
+        val resultAddSource = paymentProcessor.addSource(customerId, createPaymentTokenId())
         assertNotFailure(resultAddSource)
 
         val amount = 5000
         val currency = "SGD"
 
-        val addedInvoiceItem = paymentProcessor.createInvoiceItem(stripeCustomerId, amount, currency, "SGD")
+        val addedInvoiceItem = paymentProcessor.createInvoiceItem(customerId, amount, currency, "SGD")
         assertNotFailure(addedInvoiceItem)
 
         val removedInvoiceItem = paymentProcessor.removeInvoiceItem(right(addedInvoiceItem).id)
@@ -336,13 +336,13 @@ class StripePaymentProcessorTest {
 
     @Test
     fun createAndDeleteInvoiceWithTaxes() {
-        val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentTokenId())
+        val resultAddSource = paymentProcessor.addSource(customerId, createPaymentTokenId())
         assertNotFailure(resultAddSource)
 
         val amount = 5000
         val currency = "SGD"
 
-        val addedInvoiceItem = paymentProcessor.createInvoiceItem(stripeCustomerId, amount, currency, "SGD")
+        val addedInvoiceItem = paymentProcessor.createInvoiceItem(customerId, amount, currency, "SGD")
         assertNotFailure(addedInvoiceItem)
 
         val taxRegionId = "sg"
@@ -350,7 +350,7 @@ class StripePaymentProcessorTest {
         val taxRates = paymentProcessor.getTaxRatesForTaxRegionId(taxRegionId)
         assertNotFailure(taxRates)
 
-        val addedInvoice = paymentProcessor.createInvoice(stripeCustomerId, right(taxRates))
+        val addedInvoice = paymentProcessor.createInvoice(customerId, right(taxRates))
         assertNotFailure(addedInvoice)
 
         val payedInvoice = paymentProcessor.payInvoice(right(addedInvoice).id)

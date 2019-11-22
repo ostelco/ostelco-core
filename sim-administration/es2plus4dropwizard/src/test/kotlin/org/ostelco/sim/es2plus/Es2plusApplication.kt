@@ -61,19 +61,18 @@ class Es2plusApplication : Application<Es2plusConfiguration>() {
 
 class PlaceholderSmDpPlusService : SmDpPlusService {
     override fun getProfileStatus(iccidList: List<String>): Es2ProfileStatusResponse {
-        val statuses : List<ProfileStatus> = iccidList.map {
-            iccid ->ProfileStatus(iccid = iccid, state = "ALLOCATED")}
+        val statuses: List<ProfileStatus> = iccidList.map { iccid -> ProfileStatus(iccid = iccid, state = "ALLOCATED") }
         return Es2ProfileStatusResponse(
                 profileStatusList = statuses)
     }
 
     @Throws(SmDpPlusException::class)
     override fun downloadOrder(eid: String?, iccid: String?, profileType: String?): Es2DownloadOrderResponse {
-        return Es2DownloadOrderResponse(eS2SuccessResponseHeader(), iccid="01234567890123456789")
+        return Es2DownloadOrderResponse(eS2SuccessResponseHeader(), iccid = "01234567890123456789")
     }
 
     override fun confirmOrder(eid: String?, iccid: String?, smdsAddress: String?, machingId: String?, confirmationCode: String?, releaseFlag: Boolean): Es2ConfirmOrderResponse {
-        return Es2ConfirmOrderResponse(eS2SuccessResponseHeader(), eid="1234567890123456789012", matchingId = "foo", smdsAddress = "localhost")
+        return Es2ConfirmOrderResponse(eS2SuccessResponseHeader(), eid = "1234567890123456789012", matchingId = "foo", smdsAddress = "localhost")
     }
 
     @Throws(SmDpPlusException::class)

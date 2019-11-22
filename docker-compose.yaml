@@ -117,7 +117,7 @@ services:
 
   datastore-emulator:
     container_name: datastore-emulator
-    image: google/cloud-sdk:218.0.0
+    image: google/cloud-sdk:272.0.0
     expose:
       - "8081"
     environment:
@@ -141,7 +141,7 @@ services:
     build:
       context: sim-administration/postgres
       dockerfile: Dockerfile
-    tmpfs: "//var/lib/postgresql/data"
+    tmpfs: "/var/lib/postgresql/data"
     ports:
       - "55432:5432"
 
