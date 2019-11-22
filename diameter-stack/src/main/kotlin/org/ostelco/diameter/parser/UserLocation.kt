@@ -33,7 +33,7 @@ object UserLocationParser {
 
                 ub = userLocationObject[2].toUByte()
 
-                //val mnc3 =  ub.toInt().ushr(4).toByte()
+                val mnc3 =  ub.toInt().ushr(4).toByte()
                 val mcc3 = (ub and 15u).toByte()
 
                 ub = userLocationObject[3].toUByte()
@@ -41,7 +41,14 @@ object UserLocationParser {
                 val mnc2 =  ub.toInt().ushr(4).toByte()
                 val mnc1 = (ub and 15u).toByte()
 
-                val mnc = "" + mnc1 + mnc2
+                var mnc : String = ""
+
+                if ( mnc3 > 9 ) {
+                    mnc = "" + mnc1 + mnc2
+                } else {
+                    mnc = "" + mnc1 + mnc2 + mnc3
+                }
+
                 val mcc = "" + mcc1 + mcc2 + mcc3
 
                 parsedLocation = UserLocation(geographicLocationType, mnc, mcc)
