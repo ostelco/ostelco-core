@@ -87,8 +87,11 @@ func generateDummyStripeEndpointSecretIfNotSet() {
 
 func main() {
 
-	cleanPtr := flag.Bool("clean", false, "If set, run a './gradlew clean' before building and testing.")
-	stayUpPtr := flag.Bool("stay-up", false, "If set, keep test environment up after running tests.")
+	cleanPtr := flag.Bool("clean", false, "If set, run a './gradlew clean' and 'go clean' before building and testing.")
+	stayUpPtr := flag.Bool("stay-up", false, "If set, keep test environment up in docker after running tests.")
+	doJvmPtr := flag.Bool("build-jvm-components", true, "If set, then compile and test JVM based components.")
+	doGoPtr := flag.Bool("build-golang-components", true, "If set, then compile and test GO based components.")
+
 	flag.Parse()
 
 	log.Printf("About to get started\n")
@@ -97,42 +100,56 @@ func main() {
 	}
 
 	if *stayUpPtr {
-		log.Printf("    ... will keep environment up after acceptance tests have run.")
+		log.Printf("    ... will keep environment up after acceptance tests have run (if any).")
 	}
 
-	//
-	// Ensure that  all preconditions for building and testing are met, if not
-	// fail and terminate execution.
-	//
+	log.Printf("Starting building.")
 
-	goscript.AssertThatScriptCommandsAreAvailable("docker-compose", "./gradlew", "docker", "cmp")
 
-    projectProfile := parseServiceAccountFile("prime-service-account.json")
+	if !*doGoPtr {
+		log.Printf("    ...  Not building/testing GO code")
+	} else {
+		log.Printf("    ...  Building of GO code not implemented yet.")
+	}
 
-    gcpProjectId := projectProfile.ProjectId
-    
-    os.Setenv("GCP_PROJECT_ID", gcpProjectId)
+	if !*doJvmPtr {
+		log.Printf("    ...  Not building/testing JVM based code.")
 
-	goscript.AssertThatEnvironmentVariableaAreSet("STRIPE_API_KEY", "GCP_PROJECT_ID")
-	goscript.AssertDockerIsRunning()
-	generateDummyStripeEndpointSecretIfNotSet()
-	distributeServiceAccountConfigs(
-		"prime-service-account.json",
-		"c54b903790340dd9365fa59fce3ad8e2",
-		"acceptance-tests/config",
-		"dataflow-pipelines/config",
-		"ocsgw/config",
-		"auth-server/config prime/config")
-	generateEspEndpointCertificates(
-		"certs/ocs.dev.ostelco.org/nginx.crt",
-		"ocsgw/cert/metrics.crt",
-		"ocs.dev.ostelco.org")
+	} else {
+		//
+		// Ensure that  all preconditions for building and testing are met, if not
+		// fail and terminate execution.
+		//
 
-	buildUsingGradlew(cleanPtr)
+		goscript.AssertThatScriptCommandsAreAvailable("docker-compose", "./gradlew", "docker", "cmp")
 
-	runIntegrationTestsViaDocker(stayUpPtr)
+		projectProfile := parseServiceAccountFile("prime-service-account.json")
 
-	log.Printf("Build and integration tests succeeded\n")
+		gcpProjectId := projectProfile.ProjectId
+
+		os.Setenv("GCP_PROJECT_ID", gcpProjectId)
+
+		goscript.AssertThatEnvironmentVariableaAreSet("STRIPE_API_KEY", "GCP_PROJECT_ID")
+		goscript.AssertDockerIsRunning()
+		generateDummyStripeEndpointSecretIfNotSet()
+		distributeServiceAccountConfigs(
+			"prime-service-account.json",
+			"c54b903790340dd9365fa59fce3ad8e2",
+			"acceptance-tests/config",
+			"dataflow-pipelines/config",
+			"ocsgw/config",
+			"auth-server/config prime/config")
+		generateEspEndpointCertificates(
+			"certs/ocs.dev.ostelco.org/nginx.crt",
+			"ocsgw/cert/metrics.crt",
+			"ocs.dev.ostelco.org")
+
+		buildUsingGradlew(cleanPtr)
+
+		runIntegrationTestsViaDocker(stayUpPtr)
+
+		log.Printf("Build and integration tests succeeded\n")
+	}
 }
 
 type GcpProjectProfile struct {
