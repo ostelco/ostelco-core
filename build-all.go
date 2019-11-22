@@ -194,7 +194,7 @@ func parseServiceAccountFile(filename string) (GcpProjectProfile) {
 
 func runIntegrationTestsViaDocker(stayUpPtr *bool) {
 
-	// First take down any lingering docker jobs that may interfer with
+	// First take down any lingering docker jobs that may interfere with
 	// the current run.
 	goscript.AssertSuccesfulRun("docker-compose down")
 
