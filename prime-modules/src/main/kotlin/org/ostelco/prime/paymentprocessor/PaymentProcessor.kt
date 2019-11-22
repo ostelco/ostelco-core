@@ -26,11 +26,11 @@ interface PaymentProcessor {
     }
 
     /**
-     * @param stripeCustomerId Stripe customer id
-     * @param stripeSourceId Stripe source id
+     * @param customerId Stripe customer id
+     * @param sourceId Stripe source id
      * @return Stripe sourceId if created
      */
-    fun addSource(stripeCustomerId: String, stripeSourceId: String): Either<PaymentError, SourceInfo>
+    fun addSource(customerId: String, sourceId: String): Either<PaymentError, SourceInfo>
 
     /**
      * Adds source and sets it as 'default source' if requested. If the source has
@@ -52,10 +52,10 @@ interface PaymentProcessor {
     fun createPaymentProfile(customerId: String, email: String): Either<PaymentError, ProfileInfo>
 
     /**
-     * @param stripeCustomerId Stripe customer id
-     * @return Stripe customerId if deleted
+     * @param customerId Stripe customer id
+     * @return Stripe customerId if removed
      */
-    fun deletePaymentProfile(stripeCustomerId: String): Either<PaymentError, ProfileInfo>
+    fun removePaymentProfile(customerId: String): Either<PaymentError, ProfileInfo>
 
     /**
      * @param customerId: user email (Prime unique identifier for customer)
@@ -89,12 +89,12 @@ interface PaymentProcessor {
 
     /**
      * @param Stripe Plan Id
-     * @param stripeCustomerId Stripe Customer Id
+     * @param customerId Stripe Customer Id
      * @param trielEnd Epoch timestamp for when the trial period ends
      * @param taxRegion An identifier representing the taxes to be applied to a region
      * @return Stripe SubscriptionId if subscribed
      */
-    fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long = 0L, taxRegionId: String? = null): Either<PaymentError, SubscriptionPaymentInfo>
+    fun createSubscription(planId: String, customerId: String, trialEnd: Long = 0L, taxRegionId: String? = null): Either<PaymentError, SubscriptionDetailsInfo>
 
     /**
      * @param Stripe Subscription Id
@@ -117,23 +117,23 @@ interface PaymentProcessor {
     fun removeProduct(productId: String): Either<PaymentError, ProductInfo>
 
     /**
-     * @param stripeCustomerId Stripe customer id
+     * @param customerId Stripe customer id
      * @return List of Stripe sourceId
      */
-    fun getSavedSources(stripeCustomerId: String): Either<PaymentError, List<SourceDetailsInfo>>
+    fun getSavedSources(customerId: String): Either<PaymentError, List<SourceDetailsInfo>>
 
     /**
-     * @param stripeCustomerId Stripe customer id
+     * @param customerId Stripe customer id
      * @return Stripe default sourceId
      */
-    fun getDefaultSource(stripeCustomerId: String): Either<PaymentError, SourceInfo>
+    fun getDefaultSource(customerId: String): Either<PaymentError, SourceInfo>
 
     /**
-     * @param stripeCustomerId Stripe customer id
+     * @param customerId Stripe customer id
      * @param sourceId Stripe source id
      * @return SourceInfo if created
      */
-    fun setDefaultSource(stripeCustomerId: String, sourceId: String): Either<PaymentError, SourceInfo>
+    fun setDefaultSource(customerId: String, sourceId: String): Either<PaymentError, SourceInfo>
 
     /**
      * @param customerId Customer id in the payment system
@@ -165,11 +165,11 @@ interface PaymentProcessor {
     fun refundCharge(chargeId: String, amount: Int): Either<PaymentError, String>
 
     /**
-     * @param stripeCustomerId Customer id in the payment system
+     * @param customerId Customer id in the payment system
      * @param sourceId id of the payment source
      * @return id if removed
      */
-    fun removeSource(stripeCustomerId: String, sourceId: String): Either<PaymentError, SourceInfo>
+    fun removeSource(customerId: String, sourceId: String): Either<PaymentError, SourceInfo>
 
     fun getStripeEphemeralKey(customerId: String, email: String, apiVersion: String): Either<PaymentError, String>
 

@@ -14,7 +14,10 @@ data class Identity(
 
 data class Identifies(val provider: String)
 
-data class SubscriptionToBundle(val reservedBytes: Long = 0)
+data class SubscriptionToBundle(
+        val reservedBytes: Long = 0,
+        val reservedOn: String? = null
+)
 
 data class PlanSubscription(
         val subscriptionId: String,
@@ -24,12 +27,18 @@ data class PlanSubscription(
 data class CustomerRegion(
         val status: CustomerRegionStatus,
         val kycStatusMap: Map<KycType, KycStatus> = emptyMap(),
-        val kycExpiryDateMap: Map<KycType, String> = emptyMap())
+        val kycExpiryDateMap: Map<KycType, String> = emptyMap(),
+        val initiatedOn: String? = null,
+        val approvedOn: String? = null)
 
 data class SimProfile(
         override val id: String,
         val iccId: String,
-        val alias: String = "") : HasId {
+        val alias: String = "",
+        val requestedOn: String? = null,
+        val downloadedOn: String? = null,
+        val installedOn: String? = null,
+        val deletedOn: String? = null) : HasId {
 
     companion object
 }
@@ -42,6 +51,7 @@ data class Offer(override val id: String) : HasId
 
 data class ExCustomer(
         override val id:String,
+        val createdOn: String? = null,
         val terminationDate: String) : HasId {
 
     companion object
