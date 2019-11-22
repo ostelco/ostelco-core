@@ -110,6 +110,8 @@ func main() {
 		log.Printf("    ...  Not building/testing GO code")
 	} else {
 		log.Printf("    ...  Building and testing go code.")
+		goscript.AssertThatScriptCommandsAreAvailable("go", "~/go/bin/staticcheck")
+
 		goscript.AssertSuccesfulRun("go build ./...")
 		goscript.AssertSuccesfulRun("go test ./...")
 		goscript.AssertSuccesfulRun("~/go/bin/staticcheck ./...")
@@ -125,7 +127,7 @@ func main() {
 		// fail and terminate execution.
 		//
 
-		goscript.AssertThatScriptCommandsAreAvailable("docker-compose", "./gradlew", "docker", "cmp", "go")
+		goscript.AssertThatScriptCommandsAreAvailable("docker-compose", "./gradlew", "docker", "cmp")
 
 		projectProfile := parseServiceAccountFile("prime-service-account.json")
 
