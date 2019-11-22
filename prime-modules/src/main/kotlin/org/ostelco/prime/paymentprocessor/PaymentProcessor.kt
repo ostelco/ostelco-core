@@ -94,7 +94,7 @@ interface PaymentProcessor {
      * @param taxRegion An identifier representing the taxes to be applied to a region
      * @return Stripe SubscriptionId if subscribed
      */
-    fun createSubscription(planId: String, customerId: String, trialEnd: Long = 0L, taxRegionId: String? = null): Either<PaymentError, SubscriptionDetailsInfo>
+    fun createSubscription(planId: String, customerId: String, trialEnd: Long = 0L, taxRegionId: String? = null): Either<PaymentError, SubscriptionPaymentInfo>
 
     /**
      * @param Stripe Subscription Id
