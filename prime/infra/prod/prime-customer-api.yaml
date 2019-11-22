@@ -409,7 +409,7 @@ paths:
           type: string
         - name: iccId
           in: path
-          description: "ICC ID"
+          description: "ICCID"
           required: true
           type: string
         - name: alias
@@ -438,7 +438,7 @@ paths:
           type: string
         - name: iccId
           in: path
-          description: "ICC ID"
+          description: "ICCID"
           required: true
           type: string
       responses:
