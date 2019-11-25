@@ -101,6 +101,7 @@ message PsInformation {
   string calledStationId = 1;
   string sgsnMccMnc = 2;
   string imsiMccMnc = 3;
+  bytes userLocationInfo = 4;
 }
 
 message ServiceInfo {

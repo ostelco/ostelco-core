@@ -9,6 +9,8 @@ dependencies {
   implementation(project(":prime-modules"))
   api(project(":kts-engine"))
 
+  api(project(":diameter-stack"))
+
   implementation("com.google.cloud:google-cloud-pubsub:${Version.googleCloudPubSub}")
 
   testImplementation("com.palantir.docker.compose:docker-compose-rule-junit4:${Version.dockerComposeJunitRule}")
