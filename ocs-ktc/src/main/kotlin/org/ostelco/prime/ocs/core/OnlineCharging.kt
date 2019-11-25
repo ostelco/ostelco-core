@@ -157,8 +157,8 @@ object OnlineCharging : OcsAsyncRequestConsumer {
 
     private fun getUserLocationMccMnc(request: CreditControlRequestInfo) : String {
 
-        val sgsnMccMnc: String? = request.serviceInformation.psInformation.sgsnMccMnc
-        if (!sgsnMccMnc.isNullOrBlank() && sgsnMccMnc.trim().length >= 3) {
+        val sgsnMccMnc: String? = request.serviceInformation.psInformation.sgsnMccMnc?.trim()
+        if (sgsnMccMnc != null && sgsnMccMnc.length >= 3) {
             return sgsnMccMnc
         }
 
