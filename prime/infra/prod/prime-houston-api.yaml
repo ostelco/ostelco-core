@@ -250,6 +250,38 @@ paths:
           description: "The customerId of the customer"
           required: true
           type: string
+  "/support/simprofile/{id}":
+    post:
+      description: "Provision SIM Profile for the user."
+      produces:
+        - application/json
+      operationId: "provisionSimProfile"
+      responses:
+        201:
+          description: "Provisioned SIM profile for this user."
+          schema:
+            $ref: '#/definitions/SimProfile'
+        400:
+          description: "Not allowed for this region, or missing parameters."
+        500:
+          description: "Service Unavailable"
+      security:
+        - auth0_jwt: []
+      parameters:
+        - name: id
+          in: path
+          description: "The customerId of the user"
+          required: true
+          type: string
+        - name: regionCode
+          in: query
+          description: "Region code"
+          required: true
+          type: string
+        - name: profileType
+          in: query
+          description: "Profile Type"
+          type: string
 
 definitions:
   Context:
