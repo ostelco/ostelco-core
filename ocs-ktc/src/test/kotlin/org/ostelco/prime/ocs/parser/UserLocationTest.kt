@@ -31,6 +31,18 @@ class UserLocationTest {
     }
 
     @Test
+    fun userLocationParserMalaysiaSai() {
+
+        val locationHexString = "0105F26182BF804E"
+
+        val userLocation = UserLocationParser.getParsedUserLocation(locationHexString.hexStringToByteArray())
+
+        assertEquals("1", userLocation?.geographicLocationType)
+        assertEquals("502", userLocation?.mcc)
+        assertEquals("16", userLocation?.mnc)
+    }
+
+    @Test
     fun userLocationParserBrazil() {
 
         val locationHexString = "8227f401a8b705f261006a9cd1"
