@@ -302,14 +302,16 @@ class RegionsTest {
             }
 
             assertEquals(2, regionDetailsList.size, "Customer should have 2 regions")
-            var receivedRegion = regionDetailsList.first()
+            var receivedRegion = regionDetailsList.find {
+                it.status == APPROVED
+            }!!
             assertEquals(APPROVED, receivedRegion.status, "Region status do not match")
             val regionCode = receivedRegion.region.id
 
             val simProfile  = post<SimProfile> {
                 path = "/support/simprofile/$customerId"
                 this.email = email
-                this.queryParams = mapOf("regionCode" to regionCode, "profileType" to "iphone")
+                this.queryParams = mapOf("regionCode" to regionCode, "profileType" to "iphone", "alias" to "")
             }
 
             regionDetailsList = get {
