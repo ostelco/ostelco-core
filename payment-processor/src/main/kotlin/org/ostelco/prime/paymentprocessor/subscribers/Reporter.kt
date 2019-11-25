@@ -205,7 +205,7 @@ object Reporter {
                                 event)
                 )
                 event.type == "payment_intent.payment_failed" -> logger.warn(
-                        format("Fauked to create payment ${intent.id} for ${currency(intent.amount, intent.currency)}",
+                        format("Failed to create payment ${intent.id} for ${currency(intent.amount, intent.currency)}",
                                 event)
                 )
                 event.type == "payment_intent.succeeded" -> logger.debug(
