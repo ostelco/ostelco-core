@@ -6,6 +6,7 @@ import arrow.core.Either.Right
 import arrow.core.EitherOf
 import arrow.core.fix
 import arrow.core.flatMap
+import arrow.core.getOrHandle
 import arrow.core.left
 import arrow.core.leftIfNull
 import arrow.core.right
@@ -143,7 +144,12 @@ import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.set
 import kotlin.reflect.KClass
+// Some of the model classes cannot be directly used in Graph Store as Entities.
+// See documentation in [model/Model.kt] for more details.
 import org.ostelco.prime.model.Identity as ModelIdentity
+import org.ostelco.prime.model.Offer as ModelOffer
+import org.ostelco.prime.model.Segment as ModelSegment
+import org.ostelco.prime.model.SimProfile as ModelSimProfile
 import org.ostelco.prime.paymentprocessor.core.NotFoundError as NotFoundPaymentError
 
 enum class Relation(
@@ -353,11 +359,11 @@ object Neo4jStoreSingleton : GraphStore {
     // Identity
     //
 
-    private fun ReadTransaction.getCustomerId(identity: org.ostelco.prime.model.Identity): Either<StoreError, String> =
+    private fun ReadTransaction.getCustomerId(identity: ModelIdentity): Either<StoreError, String> =
             getCustomer(identity = identity)
                     .map { it.id }
 
-    private fun ReadTransaction.getCustomerAndAnalyticsId(identity: org.ostelco.prime.model.Identity): Either<StoreError, Pair<String, String>> =
+    private fun ReadTransaction.getCustomerAndAnalyticsId(identity: ModelIdentity): Either<StoreError, Pair<String, String>> =
             getCustomer(identity = identity)
                     .map { Pair(it.id, it.analyticsId) }
 
@@ -365,7 +371,7 @@ object Neo4jStoreSingleton : GraphStore {
     // Balance (Customer - Bundle)
     //
 
-    override fun getBundles(identity: org.ostelco.prime.model.Identity): Either<StoreError, Collection<Bundle>> = readTransaction {
+    override fun getBundles(identity: ModelIdentity): Either<StoreError, Collection<Bundle>> = readTransaction {
         getCustomer(identity = identity)
                 .flatMap { customer ->
                     get(Bundle forCustomer (Customer withId customer.id))
@@ -380,11 +386,11 @@ object Neo4jStoreSingleton : GraphStore {
     // Customer
     //
 
-    override fun getCustomer(identity: org.ostelco.prime.model.Identity): Either<StoreError, Customer> = readTransaction {
+    override fun getCustomer(identity: ModelIdentity): Either<StoreError, Customer> = readTransaction {
         getCustomer(identity = identity)
     }
 
-    private fun ReadTransaction.getCustomer(identity: org.ostelco.prime.model.Identity): Either<StoreError, Customer> {
+    private fun ReadTransaction.getCustomer(identity: ModelIdentity): Either<StoreError, Customer> {
         return get(Customer identifiedBy (Identity withId identity.id))
                 .flatMap {
                     if (it.isEmpty()) {
@@ -429,7 +435,7 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     override fun updateCustomer(
-            identity: org.ostelco.prime.model.Identity,
+            identity: ModelIdentity,
             nickname: String?,
             contactEmail: String?): Either<StoreError, Unit> = writeTransaction {
 
@@ -446,7 +452,7 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
 
-    override fun removeCustomer(identity: org.ostelco.prime.model.Identity): Either<StoreError, Unit> = writeTransaction {
+    override fun removeCustomer(identity: ModelIdentity): Either<StoreError, Unit> = writeTransaction {
         IO {
             Either.monad<StoreError>().binding {
                 // get customer id
@@ -522,7 +528,7 @@ object Neo4jStoreSingleton : GraphStore {
     // Customer Region
     //
 
-    override fun getAllRegionDetails(identity: org.ostelco.prime.model.Identity): Either<StoreError, Collection<RegionDetails>> = readTransaction {
+    override fun getAllRegionDetails(identity: ModelIdentity): Either<StoreError, Collection<RegionDetails>> = readTransaction {
         getCustomer(identity = identity)
                 .flatMap { customer ->
                     allowedRegionsService.get(customer, transaction).map { allowedIds ->
@@ -537,7 +543,7 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     override fun getRegionDetails(
-            identity: org.ostelco.prime.model.Identity,
+            identity: ModelIdentity,
             regionCode: String): Either<StoreError, RegionDetails> = readTransaction {
 
         getCustomer(identity = identity)
@@ -579,21 +585,25 @@ object Neo4jStoreSingleton : GraphStore {
                                                 hlr = hssNameLookup.getHssName(regionCode = region.id),
                                                 iccId = simProfile.iccId)
                                                 .map { simEntry ->
-                                                    org.ostelco.prime.model.SimProfile(
+                                                    ModelSimProfile(
                                                             iccId = simProfile.iccId,
                                                             status = simEntry.status,
                                                             eSimActivationCode = simEntry.eSimActivationCode,
-                                                            alias = simProfile.alias)
+                                                            alias = simProfile.alias,
+                                                            requestedOn = simProfile.requestedOn,
+                                                            downloadedOn = simProfile.downloadedOn,
+                                                            installedOn = simProfile.installedOn,
+                                                            installedReportedByAppOn = simProfile.installedReportedByAppOn,
+                                                            deletedOn = simProfile.deletedOn
+                                                    )
                                                 }
-                                                .fold(
-                                                        { error ->
-                                                            logger.error("Failed to fetch SIM Profile: {} for region: {}. Reason: {}",
-                                                                    simProfile.iccId,
-                                                                    region.id,
-                                                                    error)
-                                                            null
-                                                        },
-                                                        { it })
+                                                .getOrHandle { error ->
+                                                    logger.error("Failed to fetch SIM Profile: {} for region: {}. Reason: {}",
+                                                            simProfile.iccId,
+                                                            region.id,
+                                                            error)
+                                                    null
+                                                }
                                     }
                         }
                         RegionDetails(
@@ -735,9 +745,9 @@ object Neo4jStoreSingleton : GraphStore {
             }
 
     override fun provisionSimProfile(
-            identity: org.ostelco.prime.model.Identity,
+            identity: ModelIdentity,
             regionCode: String,
-            profileType: String?): Either<StoreError, org.ostelco.prime.model.SimProfile> = writeTransaction {
+            profileType: String?): Either<StoreError, ModelSimProfile> = writeTransaction {
         IO {
             Either.monad<StoreError>().binding {
                 val customerId = getCustomerId(identity = identity).bind()
@@ -788,11 +798,17 @@ object Neo4jStoreSingleton : GraphStore {
                             }
                 }
                 AuditLog.info(customerId = customerId, message = "Provisioned SIM Profile")
-                org.ostelco.prime.model.SimProfile(
+                ModelSimProfile(
                         iccId = simEntry.iccId,
-                        alias = "",
+                        alias = simProfile.alias,
                         eSimActivationCode = simEntry.eSimActivationCode,
-                        status = simEntry.status)
+                        status = simEntry.status,
+                        requestedOn = simProfile.requestedOn,
+                        downloadedOn = simProfile.downloadedOn,
+                        installedOn = simProfile.installedOn,
+                        installedReportedByAppOn = simProfile.installedReportedByAppOn,
+                        deletedOn = simProfile.deletedOn
+                )
             }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
@@ -815,8 +831,8 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     override fun getSimProfiles(
-            identity: org.ostelco.prime.model.Identity,
-            regionCode: String?): Either<StoreError, Collection<org.ostelco.prime.model.SimProfile>> {
+            identity: ModelIdentity,
+            regionCode: String?): Either<StoreError, Collection<ModelSimProfile>> {
 
         val map = mutableMapOf<String, String>()
         val simProfiles = readTransaction {
@@ -850,8 +866,8 @@ object Neo4jStoreSingleton : GraphStore {
                     val simEntry = if (regionId != null) {
                         simManager.getSimProfile(
                                 hlr = hssNameLookup.getHssName(regionId),
-                                iccId = simProfile.iccId).fold(
-                                { error ->
+                                iccId = simProfile.iccId)
+                                .getOrHandle { error ->
                                     logger.warn("SimProfile not found in SIM Manager DB. region: {}, iccId: {}, error: {}", regionId, simProfile.iccId, error)
                                     SimEntry(
                                             iccId = simProfile.iccId,
@@ -859,9 +875,7 @@ object Neo4jStoreSingleton : GraphStore {
                                             eSimActivationCode = "Dummy eSIM",
                                             msisdnList = emptyList()
                                     )
-                                },
-                                { it }
-                        )
+                                }
                     } else {
                         logger.warn("SimProfile not linked to any region. iccId: {}", simProfile.iccId)
                         SimEntry(
@@ -872,21 +886,27 @@ object Neo4jStoreSingleton : GraphStore {
                         )
                     }
 
-                    org.ostelco.prime.model.SimProfile(
+                    ModelSimProfile(
                             iccId = simProfile.iccId,
                             alias = simProfile.alias,
                             eSimActivationCode = simEntry.eSimActivationCode,
-                            status = simEntry.status)
+                            status = simEntry.status,
+                            requestedOn = simProfile.requestedOn,
+                            downloadedOn = simProfile.downloadedOn,
+                            installedOn = simProfile.installedOn,
+                            installedReportedByAppOn = simProfile.installedReportedByAppOn,
+                            deletedOn = simProfile.deletedOn
+                    )
                 }
             }.fix()
         }.unsafeRunSync()
     }
 
     override fun updateSimProfile(
-            identity: org.ostelco.prime.model.Identity,
+            identity: ModelIdentity,
             regionCode: String,
             iccId: String,
-            alias: String): Either<StoreError, org.ostelco.prime.model.SimProfile> {
+            alias: String): Either<StoreError, ModelSimProfile> {
         val simProfileEither = writeTransaction {
             IO {
                 Either.monad<StoreError>().binding {
@@ -897,13 +917,10 @@ object Neo4jStoreSingleton : GraphStore {
                             .firstOrNull { simProfile -> simProfile.iccId == iccId }
                             ?: NotFoundError(type = simProfileEntity.name, id = iccId).left().bind<SimProfile>()
 
-                    update { simProfile.copy(alias = alias) }.bind()
-                    AuditLog.info(customerId = customerId, message = "Updated alias of SIM Profile")
-                    org.ostelco.prime.model.SimProfile(
-                            iccId = simProfile.iccId,
-                            alias = simProfile.alias,
-                            eSimActivationCode = "",
-                            status = NOT_READY)
+                    val updatedSimProfile = simProfile.copy(alias = alias)
+                    update { updatedSimProfile }.bind()
+                    AuditLog.info(customerId = customerId, message = "Updated alias of SIM Profile (iccId = $iccId)")
+                    updatedSimProfile
                 }.fix()
             }.unsafeRunSync().ifFailedThenRollback(transaction)
         }
@@ -914,22 +931,89 @@ object Neo4jStoreSingleton : GraphStore {
                 val simEntry = simManager.getSimProfile(
                         hlr = hssNameLookup.getHssName(regionCode),
                         iccId = iccId)
-                        .mapLeft { NotFoundError(type = simProfileEntity.name, id = simProfile.iccId) }
-                        .bind()
+                        .getOrHandle { error ->
+                            logger.warn("SimProfile not found in SIM Manager DB. region: {}, iccId: {}, error: {}", regionCode, simProfile.iccId, error)
+                            SimEntry(
+                                    iccId = simProfile.iccId,
+                                    status = NOT_READY,
+                                    eSimActivationCode = "Dummy eSIM",
+                                    msisdnList = emptyList()
+                            )
+                        }
 
-                org.ostelco.prime.model.SimProfile(
+                ModelSimProfile(
                         iccId = simProfile.iccId,
                         alias = simProfile.alias,
                         eSimActivationCode = simEntry.eSimActivationCode,
-                        status = simEntry.status)
+                        status = simEntry.status,
+                        requestedOn = simProfile.requestedOn,
+                        downloadedOn = simProfile.downloadedOn,
+                        installedOn = simProfile.installedOn,
+                        installedReportedByAppOn = simProfile.installedReportedByAppOn,
+                        deletedOn = simProfile.deletedOn
+                )
+            }.fix()
+        }.unsafeRunSync()
+    }
+
+    override fun markSimProfileAsInstalled(
+            identity: ModelIdentity,
+            regionCode: String,
+            iccId: String): Either<StoreError, ModelSimProfile> {
+
+        val simProfileEither = writeTransaction {
+            IO {
+                Either.monad<StoreError>().binding {
+
+                    val customerId = getCustomerId(identity = identity).bind()
+                    val simProfile = get(SimProfile forCustomer (Customer withId customerId))
+                            .bind()
+                            .firstOrNull { simProfile -> simProfile.iccId == iccId }
+                            ?: NotFoundError(type = simProfileEntity.name, id = iccId).left().bind<SimProfile>()
+
+                    val updatedSimProfile = simProfile.copy(installedReportedByAppOn = utcTimeNow())
+                    update { updatedSimProfile }.bind()
+                    AuditLog.info(customerId = customerId, message = "App reported SIM Profile (iccId = $iccId) as installed.")
+                    updatedSimProfile
+                }.fix()
+            }.unsafeRunSync().ifFailedThenRollback(transaction)
+        }
+
+        return IO {
+            Either.monad<StoreError>().binding {
+                val simProfile = simProfileEither.bind()
+                val simEntry = simManager.getSimProfile(
+                        hlr = hssNameLookup.getHssName(regionCode),
+                        iccId = iccId)
+                        .getOrHandle { error ->
+                            logger.warn("SimProfile not found in SIM Manager DB. region: {}, iccId: {}, error: {}", regionCode, simProfile.iccId, error)
+                            SimEntry(
+                                    iccId = simProfile.iccId,
+                                    status = NOT_READY,
+                                    eSimActivationCode = "Dummy eSIM",
+                                    msisdnList = emptyList()
+                            )
+                        }
+
+                ModelSimProfile(
+                        iccId = simProfile.iccId,
+                        alias = simProfile.alias,
+                        eSimActivationCode = simEntry.eSimActivationCode,
+                        status = simEntry.status,
+                        requestedOn = simProfile.requestedOn,
+                        downloadedOn = simProfile.downloadedOn,
+                        installedOn = simProfile.installedOn,
+                        installedReportedByAppOn = simProfile.installedReportedByAppOn,
+                        deletedOn = simProfile.deletedOn
+                )
             }.fix()
         }.unsafeRunSync()
     }
 
     override fun sendEmailWithActivationQrCode(
-            identity: org.ostelco.prime.model.Identity,
+            identity: ModelIdentity,
             regionCode: String,
-            iccId: String): Either<StoreError, org.ostelco.prime.model.SimProfile> {
+            iccId: String): Either<StoreError, ModelSimProfile> {
 
         val infoEither = readTransaction {
             IO {
@@ -966,11 +1050,17 @@ object Neo4jStoreSingleton : GraphStore {
                         }
                         .bind()
 
-                org.ostelco.prime.model.SimProfile(
+                ModelSimProfile(
                         iccId = simEntry.iccId,
                         eSimActivationCode = simEntry.eSimActivationCode,
                         status = simEntry.status,
-                        alias = simProfile.alias)
+                        alias = simProfile.alias,
+                        requestedOn = simProfile.requestedOn,
+                        downloadedOn = simProfile.downloadedOn,
+                        installedOn = simProfile.installedOn,
+                        installedReportedByAppOn = simProfile.installedReportedByAppOn,
+                        deletedOn = simProfile.deletedOn
+                )
             }.fix()
         }.unsafeRunSync()
     }
@@ -997,7 +1087,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     @Deprecated(message = "Use createSubscriptions instead")
     override fun addSubscription(
-            identity: org.ostelco.prime.model.Identity,
+            identity: ModelIdentity,
             regionCode: String,
             iccId: String,
             alias: String,
@@ -1029,7 +1119,7 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
 
-    override fun getSubscriptions(identity: org.ostelco.prime.model.Identity, regionCode: String?): Either<StoreError, Collection<Subscription>> = readTransaction {
+    override fun getSubscriptions(identity: ModelIdentity, regionCode: String?): Either<StoreError, Collection<Subscription>> = readTransaction {
         IO {
             Either.monad<StoreError>().binding {
                 val customerId = getCustomerId(identity = identity).bind()
@@ -1056,7 +1146,7 @@ object Neo4jStoreSingleton : GraphStore {
     // Products
     //
 
-    override fun getProducts(identity: org.ostelco.prime.model.Identity): Either<StoreError, Map<String, Product>> {
+    override fun getProducts(identity: ModelIdentity): Either<StoreError, Map<String, Product>> {
         return readTransaction {
 
             getCustomerId(identity = identity)
@@ -1078,13 +1168,13 @@ object Neo4jStoreSingleton : GraphStore {
         }
     }
 
-    override fun getProduct(identity: org.ostelco.prime.model.Identity, sku: String): Either<StoreError, Product> {
+    override fun getProduct(identity: ModelIdentity, sku: String): Either<StoreError, Product> {
         return readTransaction {
             getProduct(identity, sku)
         }
     }
 
-    private fun ReadTransaction.getProduct(identity: org.ostelco.prime.model.Identity, sku: String): Either<StoreError, Product> {
+    private fun ReadTransaction.getProduct(identity: ModelIdentity, sku: String): Either<StoreError, Product> {
         return getCustomerId(identity = identity)
                 .flatMap { customerId ->
                     read("""
@@ -1177,7 +1267,7 @@ object Neo4jStoreSingleton : GraphStore {
     private val paymentProcessor by lazy { getResource<PaymentProcessor>() }
     private val analyticsReporter by lazy { getResource<AnalyticsService>() }
 
-    override fun purchaseProduct(identity: org.ostelco.prime.model.Identity,
+    override fun purchaseProduct(identity: ModelIdentity,
                                  sku: String,
                                  sourceId: String?,
                                  saveCard: Boolean): Either<PaymentError, ProductInfo> = writeTransaction {
@@ -1584,7 +1674,7 @@ object Neo4jStoreSingleton : GraphStore {
     // Purchase Records
     //
 
-    override fun getPurchaseRecords(identity: org.ostelco.prime.model.Identity): Either<StoreError, Collection<PurchaseRecord>> =
+    override fun getPurchaseRecords(identity: ModelIdentity): Either<StoreError, Collection<PurchaseRecord>> =
             readTransaction {
                 getCustomerId(identity = identity)
                         .flatMap { customerId ->
@@ -1641,7 +1731,7 @@ object Neo4jStoreSingleton : GraphStore {
     // Referrals
     //
 
-    override fun getReferrals(identity: org.ostelco.prime.model.Identity): Either<StoreError, Collection<String>> = readTransaction {
+    override fun getReferrals(identity: ModelIdentity): Either<StoreError, Collection<String>> = readTransaction {
         getCustomerId(identity = identity)
                 .flatMap { customerId ->
                     get(Customer referredBy (Customer withId customerId))
@@ -1649,7 +1739,7 @@ object Neo4jStoreSingleton : GraphStore {
                 }
     }
 
-    override fun getReferredBy(identity: org.ostelco.prime.model.Identity): Either<StoreError, String?> = readTransaction {
+    override fun getReferredBy(identity: ModelIdentity): Either<StoreError, String?> = readTransaction {
         getCustomerId(identity = identity)
                 .flatMap { customerId ->
                     get(Customer referred (Customer withId customerId))
@@ -1720,7 +1810,7 @@ object Neo4jStoreSingleton : GraphStore {
     //
 
     override fun createNewJumioKycScanId(
-            identity: org.ostelco.prime.model.Identity,
+            identity: ModelIdentity,
             regionCode: String): Either<StoreError, ScanInformation> = writeTransaction {
 
         getCustomer(identity = identity)
@@ -1768,7 +1858,7 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     // TODO merge into a single query which will use customerId and scanId
-    override fun getScanInformation(identity: org.ostelco.prime.model.Identity, scanId: String): Either<StoreError, ScanInformation> = readTransaction {
+    override fun getScanInformation(identity: ModelIdentity, scanId: String): Either<StoreError, ScanInformation> = readTransaction {
         getCustomerId(identity = identity)
                 .flatMap { customerId ->
                     get(ScanInformation withId scanId).flatMap { scanInformation ->
@@ -1784,7 +1874,7 @@ object Neo4jStoreSingleton : GraphStore {
                 }
     }
 
-    override fun getAllScanInformation(identity: org.ostelco.prime.model.Identity): Either<StoreError, Collection<ScanInformation>> = readTransaction {
+    override fun getAllScanInformation(identity: ModelIdentity): Either<StoreError, Collection<ScanInformation>> = readTransaction {
         getCustomerId(identity = identity)
                 .flatMap { customerId ->
                     get(ScanInformation forCustomer (Customer withId customerId))
@@ -1873,7 +1963,7 @@ object Neo4jStoreSingleton : GraphStore {
     private val secureArchiveService by lazy { getResource<SecureArchiveService>() }
 
     override fun getCustomerMyInfoData(
-            identity: org.ostelco.prime.model.Identity,
+            identity: ModelIdentity,
             version: MyInfoApiVersion,
             authorisationCode: String): Either<StoreError, String> {
         return IO {
@@ -1942,7 +2032,7 @@ object Neo4jStoreSingleton : GraphStore {
     private val daveKycService by lazy { getResource<DaveKycService>() }
 
     override fun checkNricFinIdUsingDave(
-            identity: org.ostelco.prime.model.Identity,
+            identity: ModelIdentity,
             nricFinId: String): Either<StoreError, Unit> {
 
         return IO {
@@ -1986,7 +2076,7 @@ object Neo4jStoreSingleton : GraphStore {
     // eKYC - Address and Phone number
     //
     override fun saveAddress(
-            identity: org.ostelco.prime.model.Identity,
+            identity: ModelIdentity,
             address: String,
             regionCode: String): Either<StoreError, Unit> {
 
@@ -2284,7 +2374,7 @@ object Neo4jStoreSingleton : GraphStore {
         }
     }
 
-    override fun getAllIdentities(): Either<StoreError, Collection<org.ostelco.prime.model.Identity>> = readTransaction {
+    override fun getAllIdentities(): Either<StoreError, Collection<ModelIdentity>> = readTransaction {
         read("""
                 MATCH (:${customerEntity.name})<-[r:${identifiesRelation.name}]-(identity:${identityEntity.name})
                 RETURN identity, r.provider as provider
@@ -2340,7 +2430,7 @@ object Neo4jStoreSingleton : GraphStore {
         get(Plan withId planId)
     }
 
-    override fun getPlans(identity: org.ostelco.prime.model.Identity): Either<StoreError, List<Plan>> = readTransaction {
+    override fun getPlans(identity: ModelIdentity): Either<StoreError, List<Plan>> = readTransaction {
         getCustomerId(identity = identity)
                 .flatMap { customerId ->
                     get(Plan forCustomer (Customer withId customerId))
@@ -2449,7 +2539,7 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     override fun subscribeToPlan(
-            identity: org.ostelco.prime.model.Identity,
+            identity: ModelIdentity,
             planId: String,
             trialEnd: Long): Either<StoreError, Unit> = writeTransaction {
 
@@ -2474,7 +2564,7 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
 
-    override fun unsubscribeFromPlan(identity: org.ostelco.prime.model.Identity, planId: String, invoiceNow: Boolean): Either<StoreError, Plan> = readTransaction {
+    override fun unsubscribeFromPlan(identity: ModelIdentity, planId: String, invoiceNow: Boolean): Either<StoreError, Plan> = readTransaction {
         getCustomerId(identity = identity)
                 .flatMap {
                     removeSubscription(it, planId, invoiceNow)
@@ -2663,7 +2753,7 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     override fun refundPurchase(
-            identity: org.ostelco.prime.model.Identity,
+            identity: ModelIdentity,
             purchaseRecordId: String,
             reason: String): Either<PaymentError, ProductInfo> = writeTransaction {
         IO {
@@ -2731,24 +2821,24 @@ object Neo4jStoreSingleton : GraphStore {
     //
     // Segment
     //
-    override fun createSegment(segment: org.ostelco.prime.model.Segment): Either<StoreError, Unit> = writeTransaction {
+    override fun createSegment(segment: ModelSegment): Either<StoreError, Unit> = writeTransaction {
         createSegment(segment)
                 .ifFailedThenRollback(transaction)
     }
 
-    private fun WriteTransaction.createSegment(segment: org.ostelco.prime.model.Segment): Either<StoreError, Unit> =
+    private fun WriteTransaction.createSegment(segment: ModelSegment): Either<StoreError, Unit> =
             create {
                 Segment(id = segment.id)
             }.flatMap {
                 customerToSegmentStore.create(segment.subscribers, segment.id, transaction)
             }
 
-    override fun updateSegment(segment: org.ostelco.prime.model.Segment): Either<StoreError, Unit> = writeTransaction {
+    override fun updateSegment(segment: ModelSegment): Either<StoreError, Unit> = writeTransaction {
         updateSegment(segment, transaction)
                 .ifFailedThenRollback(transaction)
     }
 
-    private fun updateSegment(segment: org.ostelco.prime.model.Segment, transaction: Transaction): Either<StoreError, Unit> {
+    private fun updateSegment(segment: ModelSegment, transaction: Transaction): Either<StoreError, Unit> {
         return customerToSegmentStore.removeAll(toId = segment.id, transaction = transaction)
                 .flatMap { customerToSegmentStore.create(segment.subscribers, segment.id, transaction) }
     }
@@ -2756,12 +2846,12 @@ object Neo4jStoreSingleton : GraphStore {
     //
     // Offer
     //
-    override fun createOffer(offer: org.ostelco.prime.model.Offer): Either<StoreError, Unit> = writeTransaction {
+    override fun createOffer(offer: ModelOffer): Either<StoreError, Unit> = writeTransaction {
         createOffer(offer)
                 .ifFailedThenRollback(transaction)
     }
 
-    private fun WriteTransaction.createOffer(offer: org.ostelco.prime.model.Offer): Either<StoreError, Unit> {
+    private fun WriteTransaction.createOffer(offer: ModelOffer): Either<StoreError, Unit> {
         return create { Offer(id = offer.id) }
                 .flatMap { offerToSegmentStore.create(offer.id, offer.segments, transaction) }
                 .flatMap { offerToProductStore.create(offer.id, offer.products, transaction) }
@@ -2775,8 +2865,8 @@ object Neo4jStoreSingleton : GraphStore {
      * Create of Offer + Product + Segment
      */
     override fun atomicCreateOffer(
-            offer: org.ostelco.prime.model.Offer,
-            segments: Collection<org.ostelco.prime.model.Segment>,
+            offer: ModelOffer,
+            segments: Collection<ModelSegment>,
             products: Collection<Product>): Either<StoreError, Unit> = writeTransaction {
 
         // validation
@@ -2798,7 +2888,7 @@ object Neo4jStoreSingleton : GraphStore {
         }
         // end of validation
 
-        val actualOffer = org.ostelco.prime.model.Offer(
+        val actualOffer = ModelOffer(
                 id = offer.id,
                 products = productIds,
                 segments = segmentIds)
@@ -2818,7 +2908,7 @@ object Neo4jStoreSingleton : GraphStore {
     /**
      * Create Segments
      */
-    override fun atomicCreateSegments(createSegments: Collection<org.ostelco.prime.model.Segment>): Either<StoreError, Unit> = writeTransaction {
+    override fun atomicCreateSegments(createSegments: Collection<ModelSegment>): Either<StoreError, Unit> = writeTransaction {
 
         IO {
             Either.monad<StoreError>().binding {
@@ -2831,7 +2921,7 @@ object Neo4jStoreSingleton : GraphStore {
     /**
      * Update segments
      */
-    override fun atomicUpdateSegments(updateSegments: Collection<org.ostelco.prime.model.Segment>): Either<StoreError, Unit> = writeTransaction {
+    override fun atomicUpdateSegments(updateSegments: Collection<ModelSegment>): Either<StoreError, Unit> = writeTransaction {
 
         IO {
             Either.monad<StoreError>().binding {
@@ -2841,11 +2931,11 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
 
-    override fun atomicAddToSegments(addToSegments: Collection<org.ostelco.prime.model.Segment>): Either<StoreError, Unit> {
+    override fun atomicAddToSegments(addToSegments: Collection<ModelSegment>): Either<StoreError, Unit> {
         TODO()
     }
 
-    override fun atomicRemoveFromSegments(removeFromSegments: Collection<org.ostelco.prime.model.Segment>): Either<StoreError, Unit> {
+    override fun atomicRemoveFromSegments(removeFromSegments: Collection<ModelSegment>): Either<StoreError, Unit> {
         TODO()
     }
 
