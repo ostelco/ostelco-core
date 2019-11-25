@@ -3,7 +3,6 @@ package org.ostelco.prime.ocs.core
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.ostelco.diameter.parser.UserLocationParser
 import org.ostelco.ocs.api.CreditControlAnswerInfo
 import org.ostelco.ocs.api.CreditControlRequestInfo
 import org.ostelco.ocs.api.MultipleServiceCreditControl
@@ -17,12 +16,13 @@ import org.ostelco.prime.ocs.ConfigRegistry
 import org.ostelco.prime.ocs.analytics.AnalyticsReporter
 import org.ostelco.prime.ocs.consumption.OcsAsyncRequestConsumer
 import org.ostelco.prime.ocs.notifications.Notifications
+import org.ostelco.prime.ocs.parser.UserLocationParser
 import org.ostelco.prime.storage.AdminDataSource
 import org.ostelco.prime.storage.ConsumptionResult
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
-
+@ExperimentalUnsignedTypes
 object OnlineCharging : OcsAsyncRequestConsumer {
 
     var loadUnitTest = false
@@ -156,12 +156,18 @@ object OnlineCharging : OcsAsyncRequestConsumer {
     }
 
     private fun getUserLocationMccMnc(request: CreditControlRequestInfo) : String {
-        var sgsnMccMnc = request.serviceInformation.psInformation.sgsnMccMnc
-        if (sgsnMccMnc.isEmpty() || (sgsnMccMnc.length < 3)) {
-            val userLocationInfo = UserLocationParser.getParsedUserLocation(request.serviceInformation.psInformation.userLocationInfo.toByteArray())
-            sgsnMccMnc = userLocationInfo?.mcc + userLocationInfo?.mnc
+
+        val sgsnMccMnc = request.serviceInformation.psInformation.sgsnMccMnc
+        if (sgsnMccMnc.isNotBlank() || sgsnMccMnc.trim().length >= 3) {
+            return sgsnMccMnc
         }
-        return sgsnMccMnc
+
+        val userLocationInfo = UserLocationParser.getParsedUserLocation(request.serviceInformation.psInformation.userLocationInfo.toByteArray())
+        if (userLocationInfo != null) {
+            return userLocationInfo.mcc + userLocationInfo.mnc
+        }
+
+        return ""
     }
 
     private fun reportAnalytics(consumptionResult: ConsumptionResult, request: CreditControlRequestInfo) {

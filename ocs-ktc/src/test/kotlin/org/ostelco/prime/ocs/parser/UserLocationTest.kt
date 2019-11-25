@@ -1,17 +1,17 @@
-package org.ostelco.diameter.parser
+package org.ostelco.prime.ocs.parser
 
 import org.junit.Test
-import org.ostelco.diameter.util.DiameterUtilities
 import kotlin.test.assertEquals
 
+@ExperimentalUnsignedTypes
 class UserLocationTest {
 
     @Test
-    fun UserLocationParserNorway() {
+    fun userLocationParserNorway() {
 
         val locationHexString = "8242f21078bf42f210013c0403"
 
-        val userLocation = UserLocationParser.getParsedUserLocation(DiameterUtilities().hexStringToByteArray(locationHexString))
+        val userLocation = UserLocationParser.getParsedUserLocation(locationHexString.hexStringToByteArray())
 
         assertEquals("130", userLocation?.geographicLocationType)
         assertEquals("242", userLocation?.mcc)
@@ -19,11 +19,11 @@ class UserLocationTest {
     }
 
     @Test
-    fun UserLocationParserMalaysia() {
+    fun userLocationParserMalaysia() {
 
         val locationHexString = "8205f261a8b705f261006a9cd1"
 
-        val userLocation = UserLocationParser.getParsedUserLocation(DiameterUtilities().hexStringToByteArray(locationHexString))
+        val userLocation = UserLocationParser.getParsedUserLocation(locationHexString.hexStringToByteArray())
 
         assertEquals("130", userLocation?.geographicLocationType)
         assertEquals("502", userLocation?.mcc)
@@ -31,11 +31,11 @@ class UserLocationTest {
     }
 
     @Test
-    fun UserLocationParserBrazil() {
+    fun userLocationParserBrazil() {
 
         val locationHexString = "8227f401a8b705f261006a9cd1"
 
-        val userLocation = UserLocationParser.getParsedUserLocation(DiameterUtilities().hexStringToByteArray(locationHexString))
+        val userLocation = UserLocationParser.getParsedUserLocation(locationHexString.hexStringToByteArray())
 
         assertEquals("130", userLocation?.geographicLocationType)
         assertEquals("724", userLocation?.mcc)
@@ -43,14 +43,26 @@ class UserLocationTest {
     }
 
     @Test
-    fun UserLocationParserCanada() {
+    fun userLocationParserCanada() {
 
         val locationHexString = "8203225628b705f261006a9cd1"
 
-        val userLocation = UserLocationParser.getParsedUserLocation(DiameterUtilities().hexStringToByteArray(locationHexString))
+        val userLocation = UserLocationParser.getParsedUserLocation(locationHexString.hexStringToByteArray())
 
         assertEquals("130", userLocation?.geographicLocationType)
         assertEquals("302", userLocation?.mcc)
         assertEquals("652", userLocation?.mnc)
     }
+}
+
+private fun String.hexStringToByteArray(): ByteArray {
+    val len = this.length
+    val data = ByteArray(len / 2)
+    var i = 0
+    while (i < len) {
+        data[i / 2] = ((Character.digit(this[i], 16) shl 4)
+                + Character.digit(this[i + 1], 16)).toByte()
+        i += 2
+    }
+    return data
 }
