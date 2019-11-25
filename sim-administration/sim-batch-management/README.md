@@ -112,7 +112,7 @@ that justifies adding these checks).
 10. Declare prime instances (should make sense to have both prod and dev defined
    with different constraints on them).
 
-11. Read througn https://github.com/alecthomas/kingpin/blob/master/parsers.go and
+11. Read through (https://github.com/alecthomas/kingpin/blob/master/parsers.go)[parser options in kingpin] and
     amend the command line reader to read existing files, proper DNS etc.
     as appropriate.
 
@@ -124,4 +124,3 @@ that justifies adding these checks).
 14. Make goland less confused with respect to imports than it is now.
 
 15. Fix all suggestions by goland.
-
