@@ -68,6 +68,24 @@ class SimProfilesResource(private val regionCode: String, private val dao: Subsc
                         .responseBuilder()
             }.build()
 
+    @PUT
+    @Path("/{iccId}/installed")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun updateSimProfile(@NotNull
+                         @PathParam("iccId")
+                         iccId: String,
+                         @Auth
+                         token: AccessTokenPrincipal?): Response =
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                dao.markSimProfileAsInstalled(
+                        identity = token.identity,
+                        regionCode = regionCode,
+                        iccId = iccId)
+                        .responseBuilder()
+            }.build()
+
     @EnableTracing
     @GET
     @Path("/{iccId}/resendEmail")
