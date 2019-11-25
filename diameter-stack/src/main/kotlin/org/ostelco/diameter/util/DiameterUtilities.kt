@@ -6,23 +6,7 @@ import org.jdiameter.api.AvpSet
 import org.jdiameter.api.validation.AvpRepresentation
 import org.jdiameter.common.impl.validation.DictionaryImpl
 import org.ostelco.diameter.getLogger
-import org.ostelco.diameter.util.AvpType.ADDRESS
-import org.ostelco.diameter.util.AvpType.APP_ID
-import org.ostelco.diameter.util.AvpType.FLOAT32
-import org.ostelco.diameter.util.AvpType.FLOAT64
-import org.ostelco.diameter.util.AvpType.GROUPED
-import org.ostelco.diameter.util.AvpType.IDENTITY
-import org.ostelco.diameter.util.AvpType.INTEGER32
-import org.ostelco.diameter.util.AvpType.INTEGER64
-import org.ostelco.diameter.util.AvpType.OCTET_STRING
-import org.ostelco.diameter.util.AvpType.RAW
-import org.ostelco.diameter.util.AvpType.RAW_DATA
-import org.ostelco.diameter.util.AvpType.TIME
-import org.ostelco.diameter.util.AvpType.UNSIGNED32
-import org.ostelco.diameter.util.AvpType.UNSIGNED64
-import org.ostelco.diameter.util.AvpType.URI
-import org.ostelco.diameter.util.AvpType.UTF8STRING
-import org.ostelco.diameter.util.AvpType.VENDOR_ID
+import org.ostelco.diameter.util.AvpType.*
 
 class DiameterUtilities {
 
@@ -70,7 +54,7 @@ class DiameterUtilities {
             GROUPED -> "<Grouped>"
             INTEGER32, APP_ID -> avp.integer32
             INTEGER64 -> avp.integer64
-            OCTET_STRING -> String(avp.octetString)
+            OCTET_STRING -> ByteArrayToHexString(avp.octetString)
             RAW -> avp.raw
             RAW_DATA -> avp.rawData
             TIME -> avp.time
@@ -79,6 +63,30 @@ class DiameterUtilities {
             UTF8STRING -> avp.utF8String
             null -> "<null>"
         }
+    }
+
+    private fun ByteArrayToHexString(bytes: ByteArray): String {
+        val hexArray = charArrayOf('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F')
+        val hexChars = CharArray(bytes.size * 2)
+        var v: Int
+        for (j in bytes.indices) {
+            v = bytes[j].toInt() and 0xFF
+            hexChars[j * 2] = hexArray[v ushr 4]
+            hexChars[j * 2 + 1] = hexArray[v and 0x0F]
+        }
+        return String(hexChars)
+    }
+
+    fun hexStringToByteArray(hexString: String): ByteArray {
+        val len = hexString.length
+        val data = ByteArray(len / 2)
+        var i = 0
+        while (i < len) {
+            data[i / 2] = ((Character.digit(hexString[i], 16) shl 4)
+                    + Character.digit(hexString[i + 1], 16)).toByte()
+            i += 2
+        }
+        return data
     }
 
     // TODO martin: for missing Avp, is code and vendorId as 0 okay?

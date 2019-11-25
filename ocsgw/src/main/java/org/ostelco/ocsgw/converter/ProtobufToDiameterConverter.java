@@ -1,5 +1,6 @@
 package org.ostelco.ocsgw.converter;
 
+import com.google.protobuf.ByteString;
 import org.ostelco.diameter.CreditControlContext;
 import org.ostelco.diameter.model.*;
 import org.ostelco.ocs.api.CreditControlRequestInfo;
@@ -157,6 +158,9 @@ public class ProtobufToDiameterConverter {
                 }
                 if (psInformation.getImsiMccMnc() != null) {
                     psInformationBuilder.setImsiMccMnc(psInformation.getImsiMccMnc());
+                }
+                if (psInformation.getUserLocationInfo() != null) {
+                    psInformationBuilder.setUserLocationInfo(ByteString.copyFrom(psInformation.getUserLocationInfo()));
                 }
                 builder.setServiceInformation(ServiceInfo.newBuilder().setPsInformation(psInformationBuilder));
             }

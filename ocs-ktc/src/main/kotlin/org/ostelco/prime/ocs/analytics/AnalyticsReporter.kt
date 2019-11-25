@@ -14,14 +14,15 @@ object AnalyticsReporter {
 
     private val analyticsReporter by lazy { getResource<AnalyticsService>() }
 
-    fun report(subscriptionAnalyticsId: String, request: CreditControlRequestInfo, bundleBytes: Long) {
+    fun report(subscriptionAnalyticsId: String, request: CreditControlRequestInfo, bundleBytes: Long, mccMnc: String) {
         logger.info("Sent Data Consumption info event to analytics")
+
         analyticsReporter.reportDataConsumption(
                 subscriptionAnalyticsId = subscriptionAnalyticsId,
                 usedBucketBytes = request.msccList?.firstOrNull()?.used?.totalOctets ?: 0L,
                 bundleBytes = bundleBytes,
                 apn = request.serviceInformation?.psInformation?.calledStationId,
-                mccMnc = request.serviceInformation?.psInformation?.sgsnMccMnc
+                mccMnc = mccMnc
         )
     }
 }
