@@ -283,6 +283,57 @@ class RegionsTest {
             StripePayment.deleteCustomer(customerId = customerId)
         }
     }
+    @Test
+    fun `jersey test - POST support simprofile - Sim profile from houston`() {
+
+        val email = "regions-${randomInt()}@test.com"
+        var customerId = ""
+        try {
+            customerId = createCustomer(name = "Test Single Region User", email = email).id
+            enableRegion(email = email)
+
+            val dataMap = MultivaluedHashMap<String, String>()
+            dataMap["regionCode"] = listOf("no")
+            dataMap["profileType"] = listOf("iPhone")
+
+            var regionDetailsList: Collection<RegionDetails> = get {
+                path = "/regions"
+                this.email = email
+            }
+
+            assertEquals(2, regionDetailsList.size, "Customer should have 2 regions")
+            var receivedRegion = regionDetailsList.first()
+            assertEquals(APPROVED, receivedRegion.status, "Region status do not match")
+            val regionCode = receivedRegion.region.id
+
+            val simProfile  = post<SimProfile> {
+                path = "/support/simprofile/$customerId"
+                this.email = email
+                this.queryParams = mapOf("regionCode" to regionCode, "profileType" to "iphone")
+            }
+
+            regionDetailsList = get {
+                path = "/regions"
+                this.email = email
+            }
+            // Find the same Region
+            receivedRegion = regionDetailsList.find {
+                it.region.id == regionCode
+            }!!
+
+            assertEquals(
+                    1,
+                    receivedRegion.simProfiles.size,
+                    "Should have only one sim profile")
+
+            assertNotNull(receivedRegion.simProfiles.single().iccId)
+            assertEquals("", receivedRegion.simProfiles.single().alias)
+            assertNotNull(receivedRegion.simProfiles.single().eSimActivationCode)
+            assertEquals(simProfile.iccId, receivedRegion.simProfiles.single().iccId)
+        } finally {
+            StripePayment.deleteCustomer(customerId = customerId)
+        }
+    }
 }
 
 class SubscriptionsTest {

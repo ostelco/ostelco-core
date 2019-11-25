@@ -498,7 +498,7 @@ class SimProfilesResource {
                         customerId =id,
                         regionCode = regionCode,
                         profileType = profileType)
-                        .responseBuilder()
+                        .responseBuilder(success = Response.Status.CREATED)
             }.build()
 
     private fun provisionSimProfile(customerId: String, regionCode: String, profileType: String?): Either<ApiError, SimProfile> {
