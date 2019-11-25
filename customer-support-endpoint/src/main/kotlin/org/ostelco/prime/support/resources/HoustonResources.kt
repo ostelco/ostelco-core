@@ -489,7 +489,9 @@ class SimProfilesResource {
                             @QueryParam("regionCode")
                             regionCode: String,
                             @QueryParam("profileType")
-                            profileType: String?): Response =
+                            profileType: String,
+                            @QueryParam("alias")
+                            alias: String): Response =
             if (token == null) {
                 Response.status(Response.Status.UNAUTHORIZED)
             } else {
@@ -497,14 +499,15 @@ class SimProfilesResource {
                 provisionSimProfile(
                         customerId =id,
                         regionCode = regionCode,
-                        profileType = profileType)
+                        profileType = profileType,
+                        alias = alias)
                         .responseBuilder(success = Response.Status.CREATED)
             }.build()
 
-    private fun provisionSimProfile(customerId: String, regionCode: String, profileType: String?): Either<ApiError, SimProfile> {
+    private fun provisionSimProfile(customerId: String, regionCode: String, profileType: String, alias: String): Either<ApiError, SimProfile> {
         return try {
             storage.getAnyIdentityForCustomerId(id = customerId).flatMap { identity: Identity ->
-                storage.provisionSimProfile(identity, regionCode, profileType).mapLeft {
+                storage.provisionSimProfile(identity, regionCode, profileType, alias).mapLeft {
                     AuditLog.error(identity, message = "Failed to provision SIM profile.")
                     it
                 }.map {

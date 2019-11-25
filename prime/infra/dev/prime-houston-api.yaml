@@ -282,6 +282,10 @@ paths:
           in: query
           description: "Profile Type"
           type: string
+        - name: alias
+          in: query
+          description: "Name for the SIM"
+          type: string
 
 definitions:
   Context:
