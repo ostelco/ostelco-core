@@ -19,7 +19,7 @@ class UserLocationTest {
     }
 
     @Test
-    fun userLocationParserMalaysia() {
+    fun userLocationParserMalaysiaTaiEcgi() {
 
         val locationHexString = "8205f261a8b705f261006a9cd1"
 
@@ -43,7 +43,7 @@ class UserLocationTest {
     }
 
     @Test
-    fun userLocationParserBrazil() {
+    fun userLocationParserBrazilTaiEcgi() {
 
         val locationHexString = "8227f401a8b705f261006a9cd1"
 
@@ -55,7 +55,7 @@ class UserLocationTest {
     }
 
     @Test
-    fun userLocationParserCanada() {
+    fun userLocationParserCanadaTaiEcgi() {
 
         val locationHexString = "8203225628b705f261006a9cd1"
 
