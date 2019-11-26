@@ -48,6 +48,7 @@ import kotlin.test.assertFails
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.test.fail
 
 
 class CustomerTest {
@@ -292,23 +293,16 @@ class RegionsTest {
             customerId = createCustomer(name = "Test Single Region User", email = email).id
             enableRegion(email = email)
 
-            val dataMap = MultivaluedHashMap<String, String>()
-            dataMap["regionCode"] = listOf("no")
-            dataMap["profileType"] = listOf("iPhone")
-
             var regionDetailsList: Collection<RegionDetails> = get {
                 path = "/regions"
                 this.email = email
             }
 
             assertEquals(2, regionDetailsList.size, "Customer should have 2 regions")
-            var receivedRegion = regionDetailsList.find {
-                it.status == APPROVED
-            }!!
-            assertEquals(APPROVED, receivedRegion.status, "Region status do not match")
+            var receivedRegion = regionDetailsList.find { it.status == APPROVED }
+                    ?: fail("Failed to find an approved region.")
             val regionCode = receivedRegion.region.id
-
-            val simProfile  = post<SimProfile> {
+            val simProfile = post<SimProfile> {
                 path = "/support/simprofile/$customerId"
                 this.email = email
                 this.queryParams = mapOf("regionCode" to regionCode, "profileType" to "iphone", "alias" to "")
@@ -319,9 +313,8 @@ class RegionsTest {
                 this.email = email
             }
             // Find the same Region
-            receivedRegion = regionDetailsList.find {
-                it.region.id == regionCode
-            }!!
+            receivedRegion = regionDetailsList.find { it.region.id == regionCode }
+                    ?: fail("Failed to find the region used to create sim profile.")
 
             assertEquals(
                     1,
