@@ -108,7 +108,7 @@ interface ClientGraphStore {
     /**
      * Provision new SIM Profile for Customer
      */
-    fun provisionSimProfile(identity: Identity, regionCode: String, profileType: String?): Either<StoreError, SimProfile>
+    fun provisionSimProfile(identity: Identity, regionCode: String, profileType: String?, alias: String): Either<StoreError, SimProfile>
 
     /**
      * Update SIM Profile for Customer

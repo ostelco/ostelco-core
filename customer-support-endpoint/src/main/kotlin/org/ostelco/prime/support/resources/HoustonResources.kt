@@ -12,6 +12,7 @@ import org.ostelco.prime.apierror.InternalServerError
 import org.ostelco.prime.apierror.NotFoundError
 import org.ostelco.prime.apierror.responseBuilder
 import org.ostelco.prime.appnotifier.AppNotifier
+import org.ostelco.prime.auditlog.AuditLog
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.Bundle
@@ -20,6 +21,7 @@ import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.ScanInformation
+import org.ostelco.prime.model.SimProfile
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
@@ -27,11 +29,13 @@ import org.ostelco.prime.paymentprocessor.core.ForbiddenError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.storage.AdminDataSource
 import org.ostelco.prime.storage.AuditLogStore
+import org.ostelco.prime.tracing.EnableTracing
 import java.util.regex.Pattern
 import javax.validation.constraints.NotNull
 import javax.ws.rs.DELETE
 import javax.ws.rs.GET
 import javax.ws.rs.PUT
+import javax.ws.rs.POST
 import javax.ws.rs.Path
 import javax.ws.rs.PathParam
 import javax.ws.rs.Produces
@@ -463,4 +467,63 @@ class CustomerResource {
             Either.left(NotFoundError("Failed to remove customer", ApiErrorCode.FAILED_TO_REMOVE_CUSTOMER))
         }
     }
+}
+
+/**
+ * Resource used to provision new sim profiles.
+ */
+@Path("/support/simprofile")
+
+class SimProfilesResource {
+    private val logger by getLogger()
+    private val storage by lazy { getResource<AdminDataSource>() }
+
+    /**
+     * Provision a new SIM card.
+     */
+    @EnableTracing
+    @POST
+    @Path("{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun provisionSimProfile(@Auth token: AccessTokenPrincipal?,
+                            @NotNull
+                            @PathParam("id")
+                            id: String,
+                            @QueryParam("regionCode")
+                            regionCode: String,
+                            @QueryParam("profileType")
+                            profileType: String,
+                            @QueryParam("alias")
+                            alias: String): Response =
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                logger.info("${token.name} Creating new SIM profile in region $regionCode & profileType $profileType for customerId: $id")
+                provisionSimProfile(
+                        customerId =id,
+                        regionCode = regionCode,
+                        profileType = profileType,
+                        alias = alias)
+                        .responseBuilder(success = Response.Status.CREATED)
+            }.build()
+
+    private fun provisionSimProfile(customerId: String, regionCode: String, profileType: String, alias: String): Either<ApiError, SimProfile> {
+        return try {
+            storage.getAnyIdentityForCustomerId(id = customerId).flatMap { identity: Identity ->
+                storage.provisionSimProfile(identity, regionCode, profileType, alias).mapLeft {
+                    AuditLog.error(identity, message = "Failed to provision SIM profile.")
+                    it
+                }.map {
+                    AuditLog.info(identity, message = "Provisioned new SIM with ICCID ${it.iccId} by support.")
+                    it
+                }
+            }.mapLeft {
+                NotFoundError("Failed to provision SIM profile.", ApiErrorCode.FAILED_TO_PROVISION_SIM_PROFILE, it)
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to provision SIM profile for customer with id - $customerId", e)
+            Either.left(NotFoundError("Failed to provision SIM profile", ApiErrorCode.FAILED_TO_PROVISION_SIM_PROFILE))
+        }
+    }
+
 }

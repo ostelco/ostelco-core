@@ -18,5 +18,6 @@ class SupportModule : PrimeModule {
         jerseySever.register(ContextResource())
         jerseySever.register(AuditLogResource())
         jerseySever.register(CustomerResource())
+        jerseySever.register(SimProfilesResource())
     }
 }
