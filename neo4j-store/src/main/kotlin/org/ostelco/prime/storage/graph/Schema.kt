@@ -163,6 +163,24 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
         }
     }
 
+    fun update(id: String, properties: Map<String, Any?>, transaction: Transaction): Either<StoreError, Unit> {
+
+        val props = properties
+                .filterValues { it != null }
+                .mapValues { it.value.toString() }
+        val parameters: Map<String, Any> = mapOf("props" to props)
+        return exists(id, transaction).flatMap {
+            write(query = """MATCH (node:${entityType.name} { id: '$id' }) SET node += ${'$'}props ;""",
+                    parameters = parameters,
+                    transaction = transaction) { statementResult ->
+                Either.cond(
+                        test = statementResult.summary().counters().containsUpdates(), // TODO vihang: this is not perfect way to check if updates are applied
+                        ifTrue = {},
+                        ifFalse = { NotUpdatedError(type = entityType.name, id = id) })
+            }
+        }
+    }
+
     fun delete(id: String, transaction: Transaction): Either<StoreError, Unit> =
             exists(id, transaction).flatMap {
                 write("""MATCH (node:${entityType.name} {id: '$id'} ) DETACH DELETE node;""",
@@ -268,6 +286,7 @@ class RelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType
         }
     }
 
+    // TODO vihang: use parameters
     fun create(fromId: String, toIds: Collection<String>, transaction: Transaction): Either<StoreError, Unit> = write("""
                 MATCH (to:${relationType.to.name})
                 WHERE to.id in [${toIds.joinToString(",") { "'$it'" }}]
@@ -289,6 +308,7 @@ class RelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType
                 })
     }
 
+    // TODO vihang: use parameters
     fun create(fromIds: Collection<String>, toId: String, transaction: Transaction): Either<StoreError, Unit> = write("""
                 MATCH (from:${relationType.from.name})
                 WHERE from.id in [${fromIds.joinToString(",") { "'$it'" }}]
@@ -331,10 +351,6 @@ class RelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType
                 ifFalse = { NotDeletedError(relationType.name, "$fromId -> $toId") })
     }
 }
-
-// Removes double apostrophes from key values in a JSON string.
-// Usage: output = re.replace(input, "$1$2$3")
-val re = Regex("""([,{])\s*"([^"]+)"\s*(:)""")
 
 class UniqueRelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType: RelationType<FROM, RELATION, TO>) : BaseRelationStore() {
 
@@ -383,6 +399,7 @@ class UniqueRelationStore<FROM : HasId, RELATION, TO : HasId>(private val relati
                             { Unit.right() },
                             {
                                 val properties = getProperties(relation as Any)
+                                // TODO vihang: set props using parameter
                                 val strProps: String = properties.entries.joinToString(",") { """`${it.key}`: "${it.value}"""" }
 
                                 write("""
@@ -412,7 +429,7 @@ class UniqueRelationStore<FROM : HasId, RELATION, TO : HasId>(private val relati
                     val properties = getProperties(relation as Any)
                     doNotExist(fromId, toId, transaction).fold(
                             {
-                                // TODO vihang: replace setClause with map based settings written by Kjell
+                                // TODO vihang: set props using parameter
                                 val setClause: String = properties.entries.fold("") { acc, entry -> """$acc SET r.`${entry.key}` = '${entry.value}' """ }
                                 write(
                                     """MATCH (fromId:${relationType.from.name} {id: '$fromId'})-[r:${relationType.name}]->(toId:${relationType.to.name} {id: '$toId'})
@@ -425,6 +442,7 @@ class UniqueRelationStore<FROM : HasId, RELATION, TO : HasId>(private val relati
                                 }
                             },
                             {
+                                // TODO vihang: set props using parameter
                                 val strProps: String = properties.entries.joinToString(",") { """`${it.key}`: "${it.value}"""" }
 
                                 write("""
@@ -463,6 +481,7 @@ class UniqueRelationStore<FROM : HasId, RELATION, TO : HasId>(private val relati
 
         return doNotExist(fromId, toId, transaction).flatMap {
             val properties = getProperties(relation as Any)
+            // TODO vihang: set props using parameter
             val strProps: String = properties.entries.joinToString(",") { """`${it.key}`: "${it.value}"""" }
 
             write("""
