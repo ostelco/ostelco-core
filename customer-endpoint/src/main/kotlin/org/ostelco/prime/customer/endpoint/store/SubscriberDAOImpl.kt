@@ -218,6 +218,19 @@ class SubscriberDAOImpl : SubscriberDAO {
         }
     }
 
+    override fun markSimProfileAsInstalled(identity: Identity, regionCode: String, iccId: String): Either<ApiError, SimProfile> {
+        return try {
+            storage.markSimProfileAsInstalled(identity, regionCode, iccId).mapLeft {
+                AuditLog.warn(identity, message = "Failed to mark SIM profile as installed.")
+                NotFoundError("Failed to mark SIM profile as installed.", ApiErrorCode.FAILED_TO_UPDATE_SIM_PROFILE, it)
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to update SIM profile for customer with identity - $identity", e)
+            AuditLog.error(identity, message = "Failed to provision SIM profile.")
+            Either.left(InternalServerError("Failed to update SIM profile", ApiErrorCode.FAILED_TO_UPDATE_SIM_PROFILE))
+        }
+    }
+
     override fun sendEmailWithEsimActivationQrCode(identity: Identity, regionCode: String, iccId: String): Either<ApiError, SimProfile> {
         return try {
             storage.sendEmailWithActivationQrCode(identity, regionCode, iccId).mapLeft {

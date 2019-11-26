@@ -758,9 +758,13 @@ class Neo4jStoreTest {
                                     expected = SimProfile(
                                             iccId = "iccId",
                                             eSimActivationCode = "eSimActivationCode",
-                                            status = AVAILABLE_FOR_DOWNLOAD),
-                                    actual = it)
-                        })
+                                            status = AVAILABLE_FOR_DOWNLOAD,
+                                            requestedOn = it.requestedOn
+                                    ),
+                                    actual = it
+                            )
+                        }
+                )
 
         Neo4jStoreSingleton.getSimProfiles(
                 identity = IDENTITY,
@@ -769,12 +773,18 @@ class Neo4jStoreTest {
                         { fail(it.message) },
                         {
                             assertEquals(
-                                    expected = listOf(SimProfile(
-                                            iccId = "iccId",
-                                            eSimActivationCode = "eSimActivationCode",
-                                            status = AVAILABLE_FOR_DOWNLOAD)),
-                                    actual = it)
-                        })
+                                    expected = listOf(
+                                            SimProfile(
+                                                    iccId = "iccId",
+                                                    eSimActivationCode = "eSimActivationCode",
+                                                    status = AVAILABLE_FOR_DOWNLOAD,
+                                                    requestedOn = it.single().requestedOn
+                                            )
+                                    ),
+                                    actual = it
+                            )
+                        }
+                )
     }
 
     @Test
@@ -955,6 +965,7 @@ class Neo4jStoreTest {
                 .bimap(
                         { fail("Failed to fetch regions list") },
                         {
+                            val simProfileForNo = it.single { it.region.id == "no" }.simProfiles.single()
                             assertEquals(
                                     expected = setOf(
                                             RegionDetails(
@@ -965,15 +976,22 @@ class Neo4jStoreTest {
                                                             SimProfile(
                                                                     iccId = "iccId",
                                                                     eSimActivationCode = "eSimActivationCode",
-                                                                    status = AVAILABLE_FOR_DOWNLOAD))),
+                                                                    status = AVAILABLE_FOR_DOWNLOAD,
+                                                                    requestedOn = simProfileForNo.requestedOn
+                                                            )
+                                                    )
+                                            ),
                                             RegionDetails(
                                                     region = Region("sg", "Singapore"),
                                                     kycStatusMap = mapOf(
                                                             JUMIO to KycStatus.PENDING,
                                                             MY_INFO to KycStatus.PENDING,
                                                             ADDRESS to KycStatus.PENDING,
-                                                            NRIC_FIN to KycStatus.PENDING),
-                                                    status = PENDING)),
+                                                            NRIC_FIN to KycStatus.PENDING
+                                                    ),
+                                                    status = PENDING
+                                            )
+                                    ),
                                     actual = it.toSet())
                         })
     }
@@ -1032,7 +1050,11 @@ class Neo4jStoreTest {
                                                     SimProfile(
                                                             iccId = "iccId",
                                                             eSimActivationCode = "eSimActivationCode",
-                                                            status = AVAILABLE_FOR_DOWNLOAD))),
+                                                            status = AVAILABLE_FOR_DOWNLOAD,
+                                                            requestedOn = it.simProfiles.single().requestedOn
+                                                    )
+                                            )
+                                    ),
                                     actual = it)
                         })
     }

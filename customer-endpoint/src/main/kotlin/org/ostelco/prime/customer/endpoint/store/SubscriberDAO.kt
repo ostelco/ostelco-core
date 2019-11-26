@@ -65,6 +65,8 @@ interface SubscriberDAO {
 
     fun updateSimProfile(identity: Identity, regionCode: String, iccId: String, alias: String): Either<ApiError, SimProfile>
 
+    fun markSimProfileAsInstalled(identity: Identity, regionCode: String, iccId: String): Either<ApiError, SimProfile>
+
     fun sendEmailWithEsimActivationQrCode(identity: Identity, regionCode: String, iccId: String): Either<ApiError, SimProfile>
 
     //

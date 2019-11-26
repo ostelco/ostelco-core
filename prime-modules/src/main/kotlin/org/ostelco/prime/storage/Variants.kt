@@ -117,6 +117,11 @@ interface ClientGraphStore {
     fun updateSimProfile(identity: Identity, regionCode: String, iccId: String, alias: String): Either<StoreError, SimProfile>
 
     /**
+     * Mark SIM Profile as Installed by the App
+     */
+    fun markSimProfileAsInstalled(identity: Identity, regionCode: String, iccId: String): Either<StoreError, SimProfile>
+
+    /**
      * Provision new SIM Profile for Customer
      */
     fun sendEmailWithActivationQrCode(identity: Identity, regionCode: String, iccId: String): Either<StoreError, SimProfile>
