@@ -478,6 +478,9 @@ class SimProfilesResource {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
 
+    /**
+     * Provision a new SIM card.
+     */
     @EnableTracing
     @POST
     @Path("{id}")
