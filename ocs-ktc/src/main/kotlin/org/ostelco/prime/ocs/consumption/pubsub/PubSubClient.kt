@@ -107,7 +107,7 @@ class PubSubClient(
                             "Status code: ${throwable.statusCode.code}\n" +
                             "Retrying: ${throwable.isRetryable}")
                 } else {
-                    logger.error("Error sending CCR Request to PubSub. messageId: $messageId")
+                    logger.error("Error sending CCR Request to PubSub topic ${publisher.topicName}. messageId: $messageId")
                 }
             }
 

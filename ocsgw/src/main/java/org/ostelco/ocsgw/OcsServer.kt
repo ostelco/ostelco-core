@@ -16,12 +16,15 @@ import org.ostelco.diameter.getLogger
 import org.ostelco.diameter.model.ReAuthRequestType
 import org.ostelco.diameter.model.SessionContext
 import org.ostelco.ocsgw.datasource.DataSource
+import org.ostelco.ocsgw.datasource.DataSourceOperations
+import org.ostelco.ocsgw.datasource.DataSourceType
 import org.ostelco.ocsgw.datasource.DataSourceType.Local
 import org.ostelco.ocsgw.datasource.DataSourceType.Proxy
 import org.ostelco.ocsgw.datasource.DataSourceType.PubSub
 import org.ostelco.ocsgw.datasource.DataSourceType.gRPC
-import org.ostelco.ocsgw.datasource.SecondaryDataSourceType
+import org.ostelco.ocsgw.datasource.DataSourceType.Multi
 import org.ostelco.ocsgw.datasource.local.LocalDataSource
+import org.ostelco.ocsgw.datasource.multi.MultiDataSource
 import org.ostelco.ocsgw.datasource.protobuf.GrpcDataSource
 import org.ostelco.ocsgw.datasource.protobuf.ProtobufDataSource
 import org.ostelco.ocsgw.datasource.protobuf.PubSubDataSource
@@ -126,18 +129,16 @@ object OcsServer {
 
         this.defaultRequestedServiceUnit = appConfig.defaultRequestedServiceUnit
 
-        val protobufDataSource = ProtobufDataSource()
+        source = setupDataSource(appConfig.dataStoreType, appConfig)
+        source?.init(DataSourceOperations.creditControlAndActivate)
+    }
 
-        source = when (appConfig.dataStoreType) {
+    private fun setupDataSource(dataSourceType: DataSourceType, appConfig: AppConfig) : DataSource {
+        val protobufDataSource = ProtobufDataSource()
+        return when (dataSourceType) {
             Proxy -> {
                 logger.info("Using ProxyDataSource")
-                val secondary = when (appConfig.secondaryDataStoreType) {
-                    SecondaryDataSourceType.PubSub -> getPubSubDataSource(protobufDataSource, appConfig)
-                    SecondaryDataSourceType.gRPC -> getGrpcDataSource(protobufDataSource, appConfig)
-                    else -> getPubSubDataSource(protobufDataSource, appConfig)
-                }
-                secondary.init()
-                ProxyDataSource(secondary)
+                setupProxyDataSource(protobufDataSource, appConfig)
             }
             Local -> {
                 logger.info("Using LocalDataSource")
@@ -151,12 +152,72 @@ object OcsServer {
                 logger.info("Using GrpcDataSource")
                 getGrpcDataSource(protobufDataSource, appConfig)
             }
-            else -> {
-                logger.warn("Unknown DataStoreType {}", appConfig.dataStoreType)
-                LocalDataSource()
+            Multi -> {
+                logger.info("Using MultiDataSource")
+                setupMultiDataSource(appConfig)
             }
         }
-        source?.init()
+    }
+
+    private fun setupProxyDataSource(protobufDataSource: ProtobufDataSource, appConfig: AppConfig) : DataSource {
+        val secondary = when (appConfig.secondaryDataSourceType) {
+            PubSub -> {
+                logger.info("SecondaryDataStore set to PubSub")
+                getPubSubDataSource(protobufDataSource, appConfig)
+            }
+            gRPC -> {
+                logger.info("SecondaryDataStore set to gRPC")
+                getGrpcDataSource(protobufDataSource, appConfig)
+            }
+            else -> {
+                logger.info("Default SecondaryDataSource PubSub")
+                getPubSubDataSource(protobufDataSource, appConfig)
+            }
+        }
+        secondary.init(DataSourceOperations.creditControlAndActivate)
+        return ProxyDataSource(secondary)
+    }
+
+    private fun setupMultiDataSource(appConfig: AppConfig) : DataSource {
+        logger.info("Setting up InitDataSource")
+        val initDataSource = setupDataSource(appConfig.multiInitDataSourceType, appConfig)
+        logger.info("Setting up UpdateDataSource")
+        val updateDataSource = setupUpdateDataSource(appConfig, initDataSource)
+        logger.info("Setting up TerminateDataSource")
+        val terminateDataSource : DataSource
+        terminateDataSource = setupTerminateDataSource(appConfig, initDataSource, updateDataSource)
+        logger.info("Setting up ActivateDataSource")
+        val activateDataSouce = setupActivateDataSource(appConfig, initDataSource, updateDataSource, terminateDataSource)
+        return MultiDataSource(initDataSource, updateDataSource, terminateDataSource, activateDataSouce)
+    }
+
+    private fun setupUpdateDataSource(appConfig: AppConfig, initDataSource: DataSource) : DataSource {
+        return when {
+            appConfig.multiInitDataSourceType == appConfig.multiUpdateDataSourceType -> initDataSource
+            else -> setupDataSource(appConfig.multiUpdateDataSourceType, appConfig)
+        }
+    }
+
+    private fun setupTerminateDataSource(appConfig: AppConfig,
+                                         initDataSource: DataSource,
+                                         updateDataSource: DataSource): DataSource {
+        return when {
+            appConfig.multiInitDataSourceType == appConfig.multiTerminateDataSourceType -> initDataSource
+            appConfig.multiUpdateDataSourceType == appConfig.multiTerminateDataSourceType -> updateDataSource
+            else -> setupDataSource(appConfig.multiTerminateDataSourceType, appConfig)
+        }
+    }
+
+    private fun setupActivateDataSource(appConfig: AppConfig,
+                                        initDataSource: DataSource,
+                                        updateDataSource: DataSource,
+                                        terminateDataSource: DataSource): DataSource {
+        return when {
+            appConfig.multiInitDataSourceType == appConfig.multiActivateDataSourceType -> initDataSource
+            appConfig.multiUpdateDataSourceType == appConfig.multiActivateDataSourceType -> updateDataSource
+            appConfig.multiTerminateDataSourceType == appConfig.multiActivateDataSourceType -> terminateDataSource
+            else -> setupDataSource(appConfig.multiActivateDataSourceType, appConfig)
+        }
     }
 
     private fun getGrpcDataSource(

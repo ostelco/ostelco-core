@@ -12,7 +12,7 @@ public interface DataSource {
     /**
      *  Initiates the datasource
      */
-    void init();
+    void init(DataSourceOperations operations);
 
     /**
      * Forward a new initial/update/terminate request.

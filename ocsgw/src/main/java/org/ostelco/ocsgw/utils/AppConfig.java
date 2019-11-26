@@ -1,7 +1,6 @@
 package org.ostelco.ocsgw.utils;
 
 import org.ostelco.ocsgw.datasource.DataSourceType;
-import org.ostelco.ocsgw.datasource.SecondaryDataSourceType;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,20 +18,7 @@ public class AppConfig {
     }
 
     public DataSourceType getDataStoreType () {
-        // OCS_DATASOURCE_TYPE env has higher preference over config.properties
-        final String dataSource = System.getenv("OCS_DATASOURCE_TYPE");
-        if (dataSource == null || dataSource.isEmpty()) {
-            try {
-                return DataSourceType.valueOf(prop.getProperty("DataStoreType", "Local"));
-            } catch (IllegalArgumentException e) {
-                return DataSourceType.Local;
-            }
-        }
-        try {
-            return DataSourceType.valueOf(dataSource);
-        } catch (IllegalArgumentException e) {
-            return DataSourceType.Local;
-        }
+        return getDataSourceType("OCS_DATASOURCE_TYPE", "DataSourceType", "Local");
     }
 
     public Long getDefaultRequestedServiceUnit () {
@@ -44,20 +30,40 @@ public class AppConfig {
           }
     }
 
-    public SecondaryDataSourceType getSecondaryDataStoreType () {
-        // OCS_SECONDARY_DATASOURCE_TYPE env has higher preference over config.properties
-        final String secondaryDataSource = System.getenv("OCS_SECONDARY_DATASOURCE_TYPE");
-        if (secondaryDataSource == null || secondaryDataSource.isEmpty()) {
+    public DataSourceType getSecondaryDataSourceType () {
+        return getDataSourceType("OCS_SECONDARY_DATASOURCE_TYPE", "SecondaryDataSourceType", "PubSub");
+    }
+
+    public DataSourceType getMultiInitDataSourceType () {
+        return getDataSourceType("OCS_MULTI_INIT_DATASOURCE_TYPE", "MultiInitDataSourceType", "PubSub");
+    }
+
+    public DataSourceType getMultiUpdateDataSourceType () {
+        return getDataSourceType("OCS_MULTI_UPDATE_DATASOURCE_TYPE", "MultiUpdateDataSourceType", "PubSub");
+    }
+
+    public DataSourceType getMultiTerminateDataSourceType () {
+        return getDataSourceType("OCS_MULTI_TERMINATE_DATASOURCE_TYPE", "MultiTerminateDataSourceType", "PubSub");
+    }
+
+    public DataSourceType getMultiActivateDataSourceType () {
+        return getDataSourceType("OCS_MULTI_ACTIVATE_DATASOURCE_TYPE", "MultiActivateDataSourceType", "PubSub");
+    }
+
+    private DataSourceType getDataSourceType(final String envName, final String propertyName, final String defaultSourceType) {
+        // env has higher preference over config.properties
+        final String dataSource = System.getenv(envName);
+        if (dataSource == null || dataSource.isEmpty()) {
             try {
-                return SecondaryDataSourceType.valueOf(prop.getProperty("SecondaryDataStoreType", "PubSub"));
+                return DataSourceType.valueOf(prop.getProperty(propertyName, defaultSourceType));
             } catch (IllegalArgumentException e) {
-                return SecondaryDataSourceType.PubSub;
+                return DataSourceType.PubSub;
             }
         }
         try {
-            return SecondaryDataSourceType.valueOf(secondaryDataSource);
+            return DataSourceType.valueOf(dataSource);
         } catch (IllegalArgumentException e) {
-            return SecondaryDataSourceType.PubSub;
+            return DataSourceType.PubSub;
         }
     }
 

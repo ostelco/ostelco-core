@@ -21,6 +21,7 @@ import org.ostelco.diameter.CreditControlContext
 import org.ostelco.diameter.getLogger
 import org.ostelco.ocs.api.*
 import org.ostelco.ocsgw.datasource.DataSource
+import org.ostelco.ocsgw.datasource.DataSourceOperations
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -29,18 +30,16 @@ import java.util.concurrent.TimeUnit
 
 class PubSubDataSource(
         private val protobufDataSource: ProtobufDataSource,
-        projectId: String,
-        ccrTopicId: String,
+        private val  projectId: String,
+        private val ccrTopicId: String,
         private val ccaTopicId: String,
-        ccaSubscriptionId: String,
-        activateSubscriptionId: String) : DataSource {
+        private val ccaSubscriptionId: String,
+        private val activateSubscriptionId: String) : DataSource {
 
     private val logger by getLogger()
-
     private var singleThreadScheduledExecutor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
-
     private var pubSubChannelProvider: TransportChannelProvider? = null
-    private var publisher: Publisher
+    private lateinit var publisher: Publisher
 
     init {
 
@@ -50,16 +49,27 @@ class PubSubDataSource(
             // Create a publisher instance with default settings bound to the topic
             pubSubChannelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel))
         }
+    }
 
+    override fun init(operations: DataSourceOperations) {
+        when (operations) {
+            DataSourceOperations.activate -> initActivate()
+            DataSourceOperations.creditControl -> initCreditControl()
+            DataSourceOperations.creditControlAndActivate -> {
+                initActivate()
+                initCreditControl()
+            }
+        }
+    }
+
+    private fun initCreditControl() {
         publisher = setupPublisherToTopic(projectId, ccrTopicId)
         setupCcaReceiver(projectId, ccaSubscriptionId)
         initCcrKeepAlive()
-
-        setupActivateReceiver(projectId, activateSubscriptionId)
     }
 
-    override fun init() {
-
+    private fun initActivate() {
+        setupActivateReceiver(projectId, activateSubscriptionId)
     }
 
     override fun handleRequest(context: CreditControlContext) {

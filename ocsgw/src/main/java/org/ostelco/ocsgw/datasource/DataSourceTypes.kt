@@ -4,10 +4,12 @@ enum class DataSourceType {
     Local,
     gRPC,
     PubSub,
-    Proxy
+    Proxy,
+    Multi
 }
 
-enum class SecondaryDataSourceType {
-    gRPC,
-    PubSub
+enum class DataSourceOperations {
+    activate,
+    creditControl,
+    creditControlAndActivate
 }
