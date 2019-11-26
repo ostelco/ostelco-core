@@ -77,10 +77,17 @@ object : ConsumptionPolicy {
         ).left()
     }
 
+    fun isAllowedForTest(sgsnMccMnc : String) : Boolean {
+        if ( sgsnMccMnc.length > 3) {
+            val sgsnMcc = sgsnMccMnc.substring(range = 0..2)
+            return testAllowedMcc.contains(sgsnMcc)
+        }
+        return false
+    }
+
     fun isMccMncAllowed(sgsnMccMnc: String, imsiMccMnc: String) : Boolean {
-        val sgsnMcc = sgsnMccMnc.substring(range = 0..2)
         return when (imsiMccMnc) {
-            MccMnc.LOLTEL.value -> testAllowedMcc.contains(sgsnMcc)
+            MccMnc.LOLTEL.value -> isAllowedForTest(sgsnMccMnc)
             else -> false
         }
     }

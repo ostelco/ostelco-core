@@ -16,12 +16,13 @@ import org.ostelco.prime.ocs.ConfigRegistry
 import org.ostelco.prime.ocs.analytics.AnalyticsReporter
 import org.ostelco.prime.ocs.consumption.OcsAsyncRequestConsumer
 import org.ostelco.prime.ocs.notifications.Notifications
+import org.ostelco.prime.ocs.parser.UserLocationParser
 import org.ostelco.prime.storage.AdminDataSource
 import org.ostelco.prime.storage.ConsumptionResult
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
-
+@ExperimentalUnsignedTypes
 object OnlineCharging : OcsAsyncRequestConsumer {
 
     var loadUnitTest = false
@@ -135,7 +136,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                 consumptionPolicy.checkConsumption(
                         msisdn = msisdn,
                         multipleServiceCreditControl = mscc,
-                        sgsnMccMnc = request.serviceInformation.psInformation.sgsnMccMnc,
+                        sgsnMccMnc = getUserLocationMccMnc(request),
                         apn = request.serviceInformation.psInformation.calledStationId,
                         imsiMccMnc = request.serviceInformation.psInformation.imsiMccMnc)
                         .bimap(
@@ -154,13 +155,29 @@ object OnlineCharging : OcsAsyncRequestConsumer {
         }
     }
 
+    private fun getUserLocationMccMnc(request: CreditControlRequestInfo) : String {
+
+        val sgsnMccMnc: String? = request.serviceInformation.psInformation.sgsnMccMnc?.trim()
+        if (sgsnMccMnc != null && sgsnMccMnc.length >= 3) {
+            return sgsnMccMnc
+        }
+
+        val userLocationInfo = UserLocationParser.getParsedUserLocation(request.serviceInformation.psInformation.userLocationInfo.toByteArray())
+        if (userLocationInfo != null) {
+            return userLocationInfo.mcc + userLocationInfo.mnc
+        }
+
+        return ""
+    }
+
     private fun reportAnalytics(consumptionResult: ConsumptionResult, request: CreditControlRequestInfo) {
         if (!loadUnitTest && !loadAcceptanceTest) {
             CoroutineScope(Dispatchers.Default).launch {
                 AnalyticsReporter.report(
                         subscriptionAnalyticsId = consumptionResult.msisdnAnalyticsId,
                         request = request,
-                        bundleBytes = consumptionResult.balance)
+                        bundleBytes = consumptionResult.balance,
+                        mccMnc = getUserLocationMccMnc(request))
             }
         }
     }
