@@ -48,6 +48,7 @@ import kotlin.test.assertFails
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.test.fail
 
 
 class CustomerTest {
@@ -279,6 +280,51 @@ class RegionsTest {
             assertEquals("", receivedRegion.simProfiles.single().alias)
             assertNotNull(receivedRegion.simProfiles.single().eSimActivationCode)
             assertEquals(SimProfile.StatusEnum.AVAILABLE_FOR_DOWNLOAD, receivedRegion.simProfiles.single().status)
+        } finally {
+            StripePayment.deleteCustomer(customerId = customerId)
+        }
+    }
+    @Test
+    fun `jersey test - POST support simprofile - Sim profile from houston`() {
+
+        val email = "regions-${randomInt()}@test.com"
+        var customerId = ""
+        try {
+            customerId = createCustomer(name = "Test Single Region User", email = email).id
+            enableRegion(email = email)
+
+            var regionDetailsList: Collection<RegionDetails> = get {
+                path = "/regions"
+                this.email = email
+            }
+
+            assertEquals(2, regionDetailsList.size, "Customer should have 2 regions")
+            var receivedRegion = regionDetailsList.find { it.status == APPROVED }
+                    ?: fail("Failed to find an approved region.")
+            val regionCode = receivedRegion.region.id
+            val simProfile = post<SimProfile> {
+                path = "/support/simprofile/$customerId"
+                this.email = email
+                this.queryParams = mapOf("regionCode" to regionCode, "profileType" to "iphone", "alias" to "")
+            }
+
+            regionDetailsList = get {
+                path = "/regions"
+                this.email = email
+            }
+            // Find the same Region
+            receivedRegion = regionDetailsList.find { it.region.id == regionCode }
+                    ?: fail("Failed to find the region used to create sim profile.")
+
+            assertEquals(
+                    1,
+                    receivedRegion.simProfiles.size,
+                    "Should have only one sim profile")
+
+            assertNotNull(receivedRegion.simProfiles.single().iccId)
+            assertEquals("", receivedRegion.simProfiles.single().alias)
+            assertNotNull(receivedRegion.simProfiles.single().eSimActivationCode)
+            assertEquals(simProfile.iccId, receivedRegion.simProfiles.single().iccId)
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
         }
