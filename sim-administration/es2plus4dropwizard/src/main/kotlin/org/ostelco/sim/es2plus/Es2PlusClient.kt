@@ -81,9 +81,44 @@ class ES2PlusClient(
                 ?: throw ES2PlusClientException("null return value")
     }
 
+
+    // Sometimes the ES2+ SSL connection is slow, so we want to retry
+    // This method will try three times with one second between attempts
+    // (only after a timeout failure, which in itself could have taken some time).
+    private fun executeRequestWithRetries(req: HttpPost): HttpResponse {
+
+        if (httpClient == null) {
+            throw ES2PlusClientException("Attempt to use http client, even though it is not present in the ES2+ client.")
+        }
+
+        val maxRetries = 3
+        var retryIntervalInMilliseconds = 1000L
+
+        var returnedResponse: HttpResponse? = null
+        for (i in 0..maxRetries) {
+            try {
+                returnedResponse = httpClient.execute(req)
+                        ?: throw ES2PlusClientException("Null response from http httpClient")
+                break
+            } catch (e: java.net.SocketTimeoutException) {
+                try {
+                    Thread.sleep(retryIntervalInMilliseconds)
+                } catch (e2: InterruptedException) {
+                    // Move along
+                }
+            }
+        }
+
+        if (returnedResponse == null) {
+            throw ES2PlusClientException("Timeout after trying $maxRetries attempts with $retryIntervalInMilliseconds milliseconds between them")
+        }
+        return returnedResponse
+    }
+
+
     private fun <T> getEs2PlusHttpPostResponse(path: String, es2ProtocolPayload: T, expectedStatusCode: Int): HttpResponse {
         if (httpClient == null) {
-            throw ES2PlusClientException("Attempt to use http client, even though it is not present in the client.")
+            throw ES2PlusClientException("Attempt to use http client, even though it is not present in the ES2+ client.")
         }
 
         val url = constructUrl(path)
@@ -98,8 +133,7 @@ class ES2PlusClient(
         req.setHeader("Accept", MediaType.APPLICATION_JSON)
         req.entity = StringEntity(payload)
 
-        val response: HttpResponse = httpClient.execute(req)
-                ?: throw ES2PlusClientException("Null response from http httpClient")
+        val response = executeRequestWithRetries(req)
 
         // Validate returned response
         val statusCode = response.statusLine.statusCode
@@ -231,7 +265,6 @@ class ES2PlusClient(
     }
 
 
-
     fun confirmOrder(eid: String? = null,
                      iccid: String,
                      matchingId: String? = null,
@@ -309,6 +342,7 @@ class ES2PlusClient(
  * Thrown when something goes wrong with the ES2+ protocol.
  */
 class ES2PlusClientException(msg: String) : Exception(msg)
+
 
 /**
  * Configuration class to be used in application's config
