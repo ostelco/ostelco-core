@@ -356,7 +356,13 @@ data class SimProfile(
         val iccId: String,
         @JvmField val eSimActivationCode: String,
         val status: SimProfileStatus,
-        val alias: String = "")
+        val alias: String = "",
+        val requestedOn: String? = null,
+        val downloadedOn: String? = null,
+        val installedOn: String? = null,
+        val installedReportedByAppOn: String? = null,
+        val deletedOn: String? = null
+)
 
 enum class SimProfileStatus {
     NOT_READY,

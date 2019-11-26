@@ -409,7 +409,7 @@ paths:
           type: string
         - name: iccId
           in: path
-          description: "ICC ID"
+          description: "ICCID"
           required: true
           type: string
         - name: alias
@@ -422,8 +422,32 @@ paths:
           description: "Updated SIM profile for this user."
           schema:
             $ref: '#/definitions/SimProfile'
+        404:
+          description: "Sim Profile not found, or missing parameter."
+  "/regions/{regionCode}/simProfiles/{iccId}/installed":
+    put:
+      description: "Mark SIM Profile as installed by the app."
+      produces:
+        - application/json
+      operationId: "markSimProfileAsInstalled"
+      parameters:
+        - name: regionCode
+          in: path
+          description: "Region code"
+          required: true
+          type: string
+        - name: iccId
+          in: path
+          description: "ICCID"
+          required: true
+          type: string
+      responses:
+        201:
+          description: "Mark SIM Profile as installed by the app."
+          schema:
+            $ref: '#/definitions/SimProfile'
         400:
-          description: "Not allowed for this region, or missing parameters."
+          description: "Sim Profile not found, or missing parameter."
   "/regions/{regionCode}/simProfiles/{iccId}/resendEmail":
     get:
       description: "Resend email with eSIM Activation QR code for this SIM profile for the user (identified by bearer token)."
@@ -1074,6 +1098,21 @@ definitions:
         enum: [ NOT_READY, AVAILABLE_FOR_DOWNLOAD, DOWNLOADED, INSTALLED, ENABLED ]
       alias:
         description: "Human readable optional alias for this subscription"
+        type: string
+      requestedOn:
+        description: "UTC timestamp of when SIM profile was requested on."
+        type: string
+      downloadedOn:
+        description: "UTC timestamp of when SIM profile was downloaded on."
+        type: string
+      installedOn:
+        description: "UTC timestamp of when SIM profile was installed on."
+        type: string
+      installedReportedByAppOn:
+        description: "UTC timestamp of when SIM profile was installed on as reported by the app."
+        type: string
+      deletedOn:
+        description: "UTC timestamp of when SIM profile was deleted on."
         type: string
     required:
       - iccId
