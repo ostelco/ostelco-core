@@ -35,27 +35,39 @@ class ES2PlusClient(
     //       wrapped in the appropriate protocol logic.   This will get rid of the silly ==null tests
     //       that riddle this class.
 
-
-    val logger = getLogger()
+    /**
+     * The logger, to which we log.
+     */
+    val log = getLogger()
 
     companion object {
 
-        // Protocol header value used to identify http request as ES2+
+        /**
+         * Protocol header value used to identify http request as ES2+
+         */
         const val X_ADMIN_PROTOCOL_HEADER_VALUE = "gsma/rsp/v2.0.0"
 
-        // The name the ES2+ client will announce it self as.
+        /**
+         *  The name the ES2+ client will announce it self as.
+         */
         const val CLIENT_USER_AGENT = "gsma-rsp-lpad"
 
-        // Format zoned time as..
-        //  ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[T,D,Z]{1}$
+        /**
+         * Format zoned time as..
+         *    ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[T,D,Z]{1}$
+         */
         fun getDatetime(time: ZonedDateTime) =
                 DateTimeFormatter.ofPattern("YYYY-MM-dd'T'hh:mm:ss'Z'").format(time)
 
-        // Get current time as a string that can be used as  a timestamp in
-        // ES2+ protocol entities.
+        /**
+         *  Get current time as a string that can be used as  a timestamp in
+         *   ES2+ protocol entities.
+         */
         fun getNowAsDatetime(): String = getDatetime(ZonedDateTime.now())
 
-        // Function call identifiers are used to uniquely ientify ES2+ method invocations.
+        /**
+         *  Function call identifiers are used to uniquely ientify ES2+ method invocations.
+         */
         fun newRandomFunctionCallIdentifier() = UUID.randomUUID().toString()
     }
 
@@ -69,18 +81,29 @@ class ES2PlusClient(
             es2ProtocolPayload: T,
             returnValueClass: Class<S>,
             expectedStatusCode: Int = 200): S {
+
+        // Execute the POST
         val response: HttpResponse = getEs2PlusHttpPostResponse(path, es2ProtocolPayload, expectedStatusCode)
 
+        // Validate the content type
         val returnedContentType = response.getFirstHeader("Content-Type")
         val expectedContentType = MediaType.APPLICATION_JSON
 
         if (returnedContentType.value != expectedContentType) {
             throw ES2PlusClientException("Expected header Content-Type to be '$expectedContentType' but was '$returnedContentType'")
         }
+
+        // Looks legit, deserialize into return value class using Jackson object mapper
         return ObjectMapper().readValue(response.entity.content, returnValueClass)
                 ?: throw ES2PlusClientException("null return value")
     }
 
+    private fun <T> getEs2PlusHttpPostResponse(path: String, es2ProtocolPayload: T, expectedStatusCode: Int): HttpResponse {
+        val req = constructEs2PlusPostRequest(path, es2ProtocolPayload)
+        val response = executeRequestWithRetries(req)
+        validateEs2plusResponse(response, expectedStatusCode)
+        return response
+    }
 
     // Sometimes the ES2+ SSL connection is slow, so we want to retry
     // This method will try three times with one second between attempts
@@ -92,7 +115,7 @@ class ES2PlusClient(
         }
 
         val maxRetries = 3
-        var retryIntervalInMilliseconds = 1000L
+        val retryIntervalInMilliseconds = 1000L
 
         var returnedResponse: HttpResponse? = null
         for (i in 0..maxRetries) {
@@ -101,6 +124,7 @@ class ES2PlusClient(
                         ?: throw ES2PlusClientException("Null response from http httpClient")
                 break
             } catch (e: java.net.SocketTimeoutException) {
+                log.value.info("Timeout while attempting ES2+ request $req.   Retrying")
                 try {
                     Thread.sleep(retryIntervalInMilliseconds)
                 } catch (e2: InterruptedException) {
@@ -115,26 +139,7 @@ class ES2PlusClient(
         return returnedResponse
     }
 
-
-    private fun <T> getEs2PlusHttpPostResponse(path: String, es2ProtocolPayload: T, expectedStatusCode: Int): HttpResponse {
-        if (httpClient == null) {
-            throw ES2PlusClientException("Attempt to use http client, even though it is not present in the ES2+ client.")
-        }
-
-        val url = constructUrl(path)
-        val req = HttpPost(url)
-
-        val objectMapper = ObjectMapper()
-        val payload = objectMapper.writeValueAsString(es2ProtocolPayload)
-
-        req.setHeader("User-Agent", CLIENT_USER_AGENT)
-        req.setHeader("X-Admin-Protocol", X_ADMIN_PROTOCOL_HEADER_VALUE)
-        req.setHeader("Content-Type", MediaType.APPLICATION_JSON)
-        req.setHeader("Accept", MediaType.APPLICATION_JSON)
-        req.entity = StringEntity(payload)
-
-        val response = executeRequestWithRetries(req)
-
+    private fun validateEs2plusResponse(response: HttpResponse, expectedStatusCode: Int) {
         // Validate returned response
         val statusCode = response.statusLine.statusCode
         if (expectedStatusCode != statusCode) {
@@ -150,7 +155,21 @@ class ES2PlusClient(
         if (protocolVersion != X_ADMIN_PROTOCOL_HEADER_VALUE) {
             throw ES2PlusClientException("Expected header X-Admin-Protocol to be '$X_ADMIN_PROTOCOL_HEADER_VALUE' but it was '$xAdminProtocolHeader'")
         }
-        return response
+    }
+
+    private fun <T> constructEs2PlusPostRequest(path: String, es2ProtocolPayload: T): HttpPost {
+        val url = constructUrl(path)
+        val req = HttpPost(url)
+
+        val objectMapper = ObjectMapper()
+        val payload = objectMapper.writeValueAsString(es2ProtocolPayload)
+
+        req.setHeader("User-Agent", CLIENT_USER_AGENT)
+        req.setHeader("X-Admin-Protocol", X_ADMIN_PROTOCOL_HEADER_VALUE)
+        req.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+        req.setHeader("Accept", MediaType.APPLICATION_JSON)
+        req.entity = StringEntity(payload)
+        return req
     }
 
     /* For test cases where content should be returned. */
@@ -228,6 +247,10 @@ class ES2PlusClient(
         }
     }
 
+    /**
+     * Given a list of ICCID values, will package it as an ES2+ ProfileStatus message,
+     * send it along to the service in the other end, and parse the result.
+     */
     fun profileStatus(
             iccidList: List<String>): Es2ProfileStatusResponse {
 
@@ -245,6 +268,11 @@ class ES2PlusClient(
                 expectedStatusCode = 200)
     }
 
+    /**
+     * Given  ICCID value (and an optional and seldom used eid value),
+     * will package it as an ES2+ downloadOrder message,
+     * send it along to the service in the other end, and parse the result.
+     */
     fun downloadOrder(
             eid: String? = null,
             iccid: String,
@@ -265,6 +293,9 @@ class ES2PlusClient(
     }
 
 
+    /**
+     * Exceute an ES2+ confirmOrder.
+     */
     fun confirmOrder(eid: String? = null,
                      iccid: String,
                      matchingId: String? = null,
@@ -288,6 +319,9 @@ class ES2PlusClient(
                 returnValueClass = Es2ConfirmOrderResponse::class.java)
     }
 
+    /**
+     * Excecute an ES2+ cancelOrder.
+     */
     fun cancelOrder(iccid: String, finalProfileStatusIndicator: String, eid: String? = null, matchingId: String? = null): HeaderOnlyResponse {
         return postEs2ProtocolCmd("/gsma/rsp2/es2plus/cancelOrder",
                 es2ProtocolPayload = Es2CancelOrder(
@@ -301,6 +335,9 @@ class ES2PlusClient(
                 expectedStatusCode = 200)
     }
 
+    /**
+     * Excecute an ES2+ releaseProfile.
+     */
     fun releaseProfile(iccid: String): HeaderOnlyResponse {
         return postEs2ProtocolCmd("/gsma/rsp2/es2plus/releaseProfile",
                 Es2ReleaseProfile(
@@ -312,6 +349,9 @@ class ES2PlusClient(
     }
 
 
+    /**
+     * Excecute an ES2+ handleDownloadProgressInfo towards the service in the other end.
+     */
     fun handleDownloadProgressInfo(
             eid: String? = null,
             iccid: String,
@@ -349,16 +389,27 @@ class ES2PlusClientException(msg: String) : Exception(msg)
  * when a client is necessary.
  */
 class EsTwoPlusConfig {
+
+    /**
+     * A string sent over the wire to identify the requester.
+     */
     @Valid
     @NotNull
     @JsonProperty("requesterId")
     var requesterId: String = ""
 
+    /**
+     * IP host of the ES2+ server
+     */
     @Valid
     @NotNull
     @JsonProperty("host")
     var host: String = ""
 
+    /**
+     * Port of the ES2+ server.  Default is 4711 which is almost
+     * certainly wrong for any real server.
+     */
     @Valid
     @NotNull
     @JsonProperty("port")
