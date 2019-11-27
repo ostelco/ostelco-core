@@ -80,15 +80,24 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                 responseBuilder.validityTime = 86400
                 storage.consume(msisdn, 0L, 0L) { storeResult ->
                     storeResult.fold(
-                            { responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN },
-                            { responseBuilder.resultCode = ResultCode.DIAMETER_SUCCESS })
+                            {
+                                responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN
+                                synchronized(OnlineCharging) {
+                                    returnCreditControlAnswer(responseBuilder.build())
+                                }
+                            },
+                            {
+                                responseBuilder.resultCode = ResultCode.DIAMETER_SUCCESS
+                                synchronized(OnlineCharging) {
+                                    returnCreditControlAnswer(responseBuilder.build())
+                                }
+                            })
                 }
             } else {
                 chargeMSCCs(request, msisdn, responseBuilder)
-            }
-
-            synchronized(OnlineCharging) {
-                returnCreditControlAnswer(responseBuilder.build())
+                synchronized(OnlineCharging) {
+                    returnCreditControlAnswer(responseBuilder.build())
+                }
             }
         }
     }
