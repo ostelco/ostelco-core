@@ -14,6 +14,10 @@ Docker build file for acceptance tests involving the SIM manager DB.
 Referenced from the main [Docker compose](../../docker-compose.yaml) file and will be built
 automatically as part of running the acceptance tests.
 
+Initial test data for the acceptance test are located in the
+[setup-for-acceptance-test.sql](./setup-for-acceptance-test.sql) and will be added and set
+up as part of the building of the Docker image for the tests.
+
 ## Integration test
 
 The [DB schema](../simmanager/src/integration-test/resources/init.sql) used in SIM manager
