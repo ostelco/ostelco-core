@@ -79,7 +79,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
             if (request.msccCount == 0) {
                 responseBuilder.validityTime = 86400
                 storage.consume(msisdn, 0L, 0L) { storeResult ->
-                    responseBuilder.resultCode ==storeResult.fold(
+                    responseBuilder.resultCode = storeResult.fold(
                             { ResultCode.DIAMETER_USER_UNKNOWN },
                             { ResultCode.DIAMETER_SUCCESS })
                     sendCreditControlAnswer(returnCreditControlAnswer, responseBuilder)
