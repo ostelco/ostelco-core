@@ -119,7 +119,9 @@ class ES2PlusClient(
         return response
     }
 
-    /* For test cases where content should be returned. */
+    /**
+     * For test cases where content should be returned.
+     */
     @Throws(ES2PlusClientException::class)
     private fun <T, S> postEs2ProtocolCmd(
             path: String,
