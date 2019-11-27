@@ -42,7 +42,8 @@ class SimProfilesResource(private val regionCode: String, private val dao: Subsc
                 dao.provisionSimProfile(
                         identity = token.identity,
                         regionCode = regionCode,
-                        profileType = profileType)
+                        profileType = profileType,
+                        alias = "")
                         .responseBuilder()
             }.build()
 
