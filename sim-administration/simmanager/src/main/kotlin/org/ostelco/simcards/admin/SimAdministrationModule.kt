@@ -114,6 +114,10 @@ class SimAdministrationModule : PrimeModule {
                 hssAdapterProxy = hssAdapters,
                 profileVendors = config.profileVendors))
 
+        env.admin().addTask(PollOutstandingProfilesTask(
+                simInventoryDAO = this.DAO,
+                httpClient = httpClient,
+                profileVendors = config.profileVendors))
 
         env.healthChecks().register("smdp",
                 SmdpPlusHealthceck(getDAO(), httpClient, config.profileVendors))
