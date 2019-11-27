@@ -192,9 +192,9 @@ class SubscriberDAOImpl : SubscriberDAO {
         }
     }
 
-    override fun provisionSimProfile(identity: Identity, regionCode: String, profileType: String?): Either<ApiError, SimProfile> {
+    override fun provisionSimProfile(identity: Identity, regionCode: String, profileType: String?, alias: String): Either<ApiError, SimProfile> {
         return try {
-            storage.provisionSimProfile(identity, regionCode, profileType).mapLeft {
+            storage.provisionSimProfile(identity, regionCode, profileType, alias).mapLeft {
                 AuditLog.error(identity, message = "Failed to provision SIM profile.")
                 NotFoundError("Failed to provision SIM profile.", ApiErrorCode.FAILED_TO_PROVISION_SIM_PROFILE, it)
             }

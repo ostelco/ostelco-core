@@ -750,7 +750,8 @@ class Neo4jStoreTest {
         Neo4jStoreSingleton.provisionSimProfile(
                 identity = IDENTITY,
                 regionCode = REGION_CODE,
-                profileType = "default")
+                profileType = "default",
+                alias = "")
                 .bimap(
                         { fail(it.message) },
                         {
@@ -957,7 +958,8 @@ class Neo4jStoreTest {
         Neo4jStoreSingleton.provisionSimProfile(
                 identity = IDENTITY,
                 regionCode = REGION_CODE,
-                profileType = "default")
+                profileType = "default",
+                alias = "")
                 .mapLeft { fail(it.message) }
 
         // test
@@ -1033,7 +1035,8 @@ class Neo4jStoreTest {
         Neo4jStoreSingleton.provisionSimProfile(
                 identity = IDENTITY,
                 regionCode = REGION_CODE,
-                profileType = "default")
+                profileType = "default",
+                alias = "")
                 .mapLeft { fail(it.message) }
 
         // test

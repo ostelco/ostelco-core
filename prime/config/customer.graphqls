@@ -63,6 +63,11 @@ type SimProfile {
   eSimActivationCode: String!
   status: SimProfileStatus!
   alias: String!
+  requestedOn: String
+  downloadedOn: String
+  installedOn: String
+  installedReportedByAppOn: String
+  deletedOn: String
 }
 
 enum SimProfileStatus {
