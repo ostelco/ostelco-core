@@ -31,6 +31,7 @@ import org.ostelco.simcards.hss.SimManagerToHssDispatcherAdapter
 import org.ostelco.simcards.inventory.HssState
 import org.ostelco.simcards.inventory.ProvisionState
 import org.ostelco.simcards.inventory.SimEntry
+import org.ostelco.simcards.inventory.SimInventoryApi
 import org.ostelco.simcards.inventory.SimProfileKeyStatistics
 import org.ostelco.simcards.profilevendors.ProfileVendorAdapterFactory
 import org.ostelco.simcards.smdpplus.SmDpPlusApplication
@@ -351,11 +352,26 @@ class SimAdministrationTest {
                 hssAdapterProxy = hssAdapterCache,
                 pvaf = pvaf)
 
-
         preallocationTask.preAllocateSimProfiles()  // TODO: Should be rewritten, only assume "execute" available.
 
         val pollingTask = PollOutstandingProfilesTask(simInventoryDAO = simDao, pvaf = pvaf)
 
+        // Wrap in a method that executes the task and returns the result-string, use that
+        // for the preallocation task also.
+
+        val hssName = ConfigRegistry?.config.profileVendors[0]?.name
+        assertNotNull(hssName)
+
+        // Allocate the next available simcard
+        val config = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
+        val simApi: SimInventoryApi = SimInventoryApi(httpClient, SIM_MANAGER_RULE.configuration, simDao)
+
+        val simEntry = simApi.allocateNextEsimProfile(hssName, "LOLTEL_IPHONE_1")
+                .fold({null}, {it})
+
+        assertNotNull(simEntry)
+
+        // Then run the polling task and see what happens.
         val out = StringWriter();
         val writer = PrintWriter(out);
         val parameters = ImmutableMultimap.builder<String, String>().build()
@@ -365,7 +381,6 @@ class SimAdministrationTest {
 
         // TODO: If we can get to this point without failure, we will then add
         //       some assertions that should be true after the task execution.
-
     }
 
     @Test
