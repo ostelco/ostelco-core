@@ -276,7 +276,7 @@ object Reporter {
                         format("${email(subscription.customer)} subscription to ${subscription.plan.id} got updated",
                                 event)
                 )
-                event.type == "customer.subscription.deleted" -> logger.info(
+                event.type == "customer.subscription.deleted" -> logger.info(NOTIFY_OPS_MARKER,
                         format("${email(subscription.customer)} subscription to ${subscription.plan.id} got deleted",
                                 event)
                 )
@@ -288,6 +288,8 @@ object Reporter {
 
     private fun url(eventId: String): String = "https://dashboard.stripe.com/events/${eventId}"
 
+    /* TODO (kmm) Update to use the java.text.NumberFormat API or the new
+            JSR-354 Currency and Money API. */
     private fun currency(amount: Long, currency: String): String =
             when (currency.toUpperCase()) {
                 "SGD", "USD" -> "\$"
