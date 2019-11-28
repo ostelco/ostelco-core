@@ -2,6 +2,7 @@ package org.ostelco.simcards.admin
 
 import arrow.core.Either
 import com.codahale.metrics.health.HealthCheck
+import com.google.common.collect.ImmutableMultimap
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
@@ -38,6 +39,8 @@ import org.testcontainers.containers.FixedHostPortGenericContainer
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import java.io.FileInputStream
+import java.io.PrintWriter
+import java.io.StringWriter
 import java.time.Duration
 import java.time.temporal.ChronoUnit
 import javax.ws.rs.client.Client
@@ -302,6 +305,36 @@ class SimAdministrationTest {
             // But there are no released entries.
             assertEquals(0L, it.noOfReleasedEntries)
         }
+    }
+
+
+    @Test
+    fun testPollingOfOutstandingProfilesTask() {
+        loadSimData()
+        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
+                .getDAO()
+
+        val profileVendors = SIM_MANAGER_RULE.configuration.profileVendors
+        val hssConfigs = SIM_MANAGER_RULE.configuration.hssVendors
+        val httpClient = HttpClientBuilder(SIM_MANAGER_RULE.environment)
+                .build("poll_outstanding_profiles")
+
+        val pvaf = ProfileVendorAdapterFactory(
+                simInventoryDAO = simDao,
+                httpClient = httpClient,
+                profileVendors = ConfigRegistry.config.profileVendors)
+
+        val task = PollOutstandingProfilesTask(simInventoryDAO = simDao, pvaf = pvaf)
+
+
+        val out = StringWriter();
+        val writer = PrintWriter(out);
+        val parameters = ImmutableMultimap.builder<String, String>().build()
+        task.execute(parameters, writer)
+
+        // TODO: If we can get to this point without failure, we will then add
+        //       some assertions that should be true after the task execution.
+        
     }
 
     @Test
