@@ -79,17 +79,22 @@ object OnlineCharging : OcsAsyncRequestConsumer {
             if (request.msccCount == 0) {
                 responseBuilder.validityTime = 86400
                 storage.consume(msisdn, 0L, 0L) { storeResult ->
-                    storeResult.fold(
-                            { responseBuilder.resultCode = ResultCode.DIAMETER_USER_UNKNOWN },
-                            { responseBuilder.resultCode = ResultCode.DIAMETER_SUCCESS })
+                    responseBuilder.resultCode = storeResult.fold(
+                            { ResultCode.DIAMETER_USER_UNKNOWN },
+                            { ResultCode.DIAMETER_SUCCESS })
+                    sendCreditControlAnswer(returnCreditControlAnswer, responseBuilder)
                 }
             } else {
                 chargeMSCCs(request, msisdn, responseBuilder)
+                sendCreditControlAnswer(returnCreditControlAnswer, responseBuilder)
             }
+        }
+    }
 
-            synchronized(OnlineCharging) {
-                returnCreditControlAnswer(responseBuilder.build())
-            }
+    private fun sendCreditControlAnswer(returnCreditControlAnswer: (CreditControlAnswerInfo) -> kotlin.Unit,
+                                        responseBuilder: CreditControlAnswerInfo.Builder) {
+        synchronized(OnlineCharging) {
+            returnCreditControlAnswer(responseBuilder.build())
         }
     }
 
