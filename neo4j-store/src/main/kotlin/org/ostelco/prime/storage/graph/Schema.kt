@@ -193,7 +193,9 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
             }
 }
 
-sealed class BaseRelationStore
+sealed class BaseRelationStore {
+    abstract fun delete(fromId: String, toId: String, transaction: Transaction): Either<StoreError, Unit>
+}
 
 // TODO vihang: check if relation already exists, with allow duplicate boolean flag param
 class RelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType: RelationType<FROM, RELATION, TO>) : BaseRelationStore() {
@@ -316,6 +318,17 @@ class RelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType
             transaction) {
         // TODO vihang: validate if 'to' node exists
         Unit.right()
+    }
+
+    override fun delete(fromId: String, toId: String, transaction: Transaction): Either<StoreError, Unit> = write("""
+                MATCH (:${relationType.from.name} { id: '$fromId'})-[r:${relationType.name}]->(:${relationType.to.name} {id: '$toId'})
+                DELETE r
+                """.trimMargin(),
+            transaction) { statementResult ->
+
+        Either.cond(statementResult.summary().counters().relationshipsDeleted() > 0,
+                ifTrue = { Unit },
+                ifFalse = { NotDeletedError(relationType.name, "$fromId -> $toId") })
     }
 }
 
@@ -465,7 +478,7 @@ class UniqueRelationStore<FROM : HasId, RELATION, TO : HasId>(private val relati
         }
     }
 
-    fun delete(fromId: String, toId: String, transaction: Transaction): Either<StoreError, Unit> = write("""
+    override fun delete(fromId: String, toId: String, transaction: Transaction): Either<StoreError, Unit> = write("""
                 MATCH (:${relationType.from.name} { id: '$fromId'})-[r:${relationType.name}]->(:${relationType.to.name} {id: '$toId'})
                 DELETE r
                 """.trimMargin(),

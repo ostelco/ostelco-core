@@ -15,8 +15,6 @@ import org.ostelco.prime.storage.graph.EntityRegistry
 import org.ostelco.prime.storage.graph.EntityStore
 import org.ostelco.prime.storage.graph.Neo4jClient
 import org.ostelco.prime.storage.graph.PrimeTransaction
-import org.ostelco.prime.storage.graph.Relation
-import org.ostelco.prime.storage.graph.RelationRegistry
 import org.ostelco.prime.storage.graph.RelationStore
 import org.ostelco.prime.storage.graph.UniqueRelationStore
 import kotlin.reflect.KClass
@@ -162,6 +160,20 @@ class WriteTransaction(override val transaction: PrimeTransaction) : ReadTransac
             }
         }
     }
+
+    fun <FROM : HasId, RELATION, TO : HasId> unlink(expression: () -> RelationExpression<FROM, RELATION, TO>): Either<StoreError, Unit> {
+        val relationExpression = expression()
+        val relationStore = relationExpression.relationType.relationStore
+        return relationStore?.delete(
+                fromId = relationExpression.fromId,
+                toId = relationExpression.toId,
+                transaction = transaction
+        ) ?: SystemError(
+                type = "relationStore",
+                id = relationExpression.relationType.name,
+                message = "Missing relation store"
+        ).left()
+    }
 }
 
 class JobContext(private val transaction: PrimeTransaction) {
@@ -170,17 +182,13 @@ class JobContext(private val transaction: PrimeTransaction) {
 
     fun <E : HasId> create(obj: () -> E) {
         result = result.flatMap {
-            val entity: E = obj()
-            val entityStore: EntityStore<E> = EntityRegistry.getEntityStore(entity::class) as EntityStore<E>
-            entityStore.create(entity = entity, transaction = transaction)
+            WriteTransaction(transaction).create(obj)
         }
     }
 
     fun <E : HasId> update(obj: () -> E) {
         result = result.flatMap {
-            val entity: E = obj()
-            val entityStore: EntityStore<E> = EntityRegistry.getEntityStore(entity::class) as EntityStore<E>
-            entityStore.update(entity = entity, transaction = transaction)
+            WriteTransaction(transaction).update(obj)
         }
     }
 
@@ -191,33 +199,15 @@ class JobContext(private val transaction: PrimeTransaction) {
         }
     }
 
-    fun fact(fact: () -> RelationContext) {
-        val relationContext = fact()
-        val relationType = RelationRegistry.getRelationType(relationContext.relation)
-        when (val baseRelationStore = relationType?.relationStore) {
-            null -> {
-            }
-            is RelationStore<*, *, *> -> {
-                result = result.flatMap {
-                    baseRelationStore.create(
-                            fromId = relationContext.fromId,
-                            toId = relationContext.toId,
-                            transaction = transaction)
-                }
-            }
-            is UniqueRelationStore<*, *, *> -> {
-                result = result.flatMap {
-                    baseRelationStore.create(
-                            fromId = relationContext.fromId,
-                            toId = relationContext.toId,
-                            transaction = transaction)
-                }
-            }
+    fun <FROM : HasId, RELATION, TO : HasId> fact(expression: () -> RelationExpression<FROM, RELATION, TO>) {
+        result = result.flatMap {
+            WriteTransaction(transaction).fact(expression)
+        }
+    }
+
+    fun <FROM : HasId, RELATION, TO : HasId> unlink(expression: () -> RelationExpression<FROM, RELATION, TO>) {
+        result = result.flatMap {
+            WriteTransaction(transaction).unlink(expression)
         }
     }
 }
-
-data class RelationContext(
-        val fromId: String,
-        val relation: Relation,
-        val toId: String)
