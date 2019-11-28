@@ -366,7 +366,9 @@ class SimAdministrationTest {
         val config = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
         val simApi: SimInventoryApi = SimInventoryApi(httpClient, SIM_MANAGER_RULE.configuration, simDao)
 
-        val simEntry = simApi.allocateNextEsimProfile(hssName, "LOLTEL_IPHONE_1")
+        // TODO: Rig this so that callback can be disabled, so that we can test
+        //       the polling usecase.
+        val simEntry = simApi.allocateNextEsimProfile(hssName, "IPHONE_PROFILE_2")
                 .fold({null}, {it})
 
         assertNotNull(simEntry)
