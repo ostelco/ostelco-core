@@ -366,8 +366,8 @@ class SimAdministrationTest {
         val config = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
         val simApi: SimInventoryApi = SimInventoryApi(httpClient, SIM_MANAGER_RULE.configuration, simDao)
 
-        // TODO: Rig this so that callback can be disabled, so that we can test
-        //       the polling usecase.
+        // TODO: Run the polling, and observe that nothing happens.
+
         val simEntry = simApi.allocateNextEsimProfile(hssName = hssName, phoneType = "nokia")
                 .fold({null}, {it})
 
@@ -379,10 +379,14 @@ class SimAdministrationTest {
         val parameters = ImmutableMultimap.builder<String, String>().build()
         pollingTask.execute(parameters, writer)
 
-        println("==> '${out.toString()}'")
+        // First real verification.  Check that nothing has changed so far, neither in the
+        // SMDP or in the database.
+        val outString = out.toString()
+        assertTrue(outString.contains("State for iccid=8901000000000000977 still set to RELEASED"))
 
-        // TODO: If we can get to this point without failure, we will then add
-        //       some assertions that should be true after the task execution.
+        // TODO: Simulate that ICCID 8901000000000000977 is downloaded, but no callback is sent!
+        // TODO: Again check the value of the value by polling, and possibly updating the value.
+        // TODO: Again, check that the test ran, but nothing happened.
     }
 
     @Test
