@@ -24,6 +24,7 @@ update_event_list() {
          -d enabled_events[]="customer.deleted" \
          -d enabled_events[]="customer.subscription.created" \
          -d enabled_events[]="customer.subscription.deleted" \
+         -d enabled_events[]="customer.subscription.updated" \
          -d enabled_events[]="invoice.created" \
          -d enabled_events[]="invoice.deleted" \
          -d enabled_events[]="invoice.finalized" \
