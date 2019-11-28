@@ -359,7 +359,7 @@ class SimAdministrationTest {
         // Wrap in a method that executes the task and returns the result-string, use that
         // for the preallocation task also.
 
-        val hssName = ConfigRegistry?.config.profileVendors[0]?.name
+        val hssName = ConfigRegistry?.config.hssVendors[0].name
         assertNotNull(hssName)
 
         // Allocate the next available simcard
@@ -368,7 +368,7 @@ class SimAdministrationTest {
 
         // TODO: Rig this so that callback can be disabled, so that we can test
         //       the polling usecase.
-        val simEntry = simApi.allocateNextEsimProfile(hssName, "IPHONE_PROFILE_2")
+        val simEntry = simApi.allocateNextEsimProfile(hssName = hssName, phoneType = "nokia")
                 .fold({null}, {it})
 
         assertNotNull(simEntry)

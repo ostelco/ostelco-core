@@ -126,8 +126,7 @@ class PollOutstandingProfilesTask(
             pvaf.getAdapterByVendorId(vendorId).mapRight { profileVendorAdapter ->
                 val statuses = profileVendorAdapter.getProfileStatusList(iccidList)
                 statuses.mapRight{
-                    it.forEach {
-                        updateProfileInDb(it)}}
+                    it.forEach { updateProfileInDb(it) } }
             }  // TODO: Am I missing the error situation here?
         }
     }

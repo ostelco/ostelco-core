@@ -15,10 +15,10 @@ object SimManagerSingleton : SimManager {
 
     private val logger by getLogger()
 
-    override fun allocateNextEsimProfile(hlr: String, phoneType: String?): Either<String, SimEntry> =
-            simInventoryApi.allocateNextEsimProfile(hlrName = hlr, phoneType = "$hlr.${phoneType ?: "generic"}").bimap(
+    override fun allocateNextEsimProfile(hssName: String, phoneType: String?): Either<String, SimEntry> =
+            simInventoryApi.allocateNextEsimProfile(hssName = hssName, phoneType = "$hssName.${phoneType ?: "generic"}").bimap(
                     {
-                        "Failed to allocate eSIM for HLR - $hlr for phoneType - $phoneType"
+                        "Failed to allocate eSIM for HLR - $hssName for phoneType - $phoneType"
                     },
                     { simEntry -> mapToModelSimEntry(simEntry) })
 
