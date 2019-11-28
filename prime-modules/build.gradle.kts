@@ -17,7 +17,6 @@ dependencies {
   api("com.fasterxml.jackson.module:jackson-module-kotlin:${Version.jackson}")
 
   api(project(":ocs-grpc-api"))
-  api(project(":analytics-grpc-api"))
   api(project(":model"))
 
   api("io.dropwizard:dropwizard-core:${Version.dropwizard}")

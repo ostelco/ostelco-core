@@ -65,10 +65,6 @@ public class AppConfig {
         return getEnvProperty("OCS_GRPC_SERVER");
     }
 
-    public String getMetricsServer() {
-        return getEnvProperty("METRICS_GRPC_SERVER");
-    }
-
     public String getPubSubProjectId() {
         return getEnvProperty("PUBSUB_PROJECT_ID");
     }
