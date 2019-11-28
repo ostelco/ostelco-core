@@ -3,17 +3,15 @@ package org.ostelco.simcards.admin
 import arrow.core.Either
 import com.google.common.collect.ImmutableMultimap
 import io.dropwizard.servlets.tasks.Task
-import kotlinx.coroutines.newFixedThreadPoolContext
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
-import org.ostelco.prime.model.SimProfile
 import org.ostelco.prime.simmanager.SimManagerError
-import org.ostelco.sim.es2plus.ES2PlusClient
 import org.ostelco.sim.es2plus.ProfileStatus
+import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SmDpPlusState
+import org.ostelco.simcards.profilevendors.ProfileVendorAdapterFactory
 import java.io.PrintWriter
-
 
 /**
  * A dropwizard "task" that is intended to be invoked as an administrative step
@@ -31,14 +29,11 @@ import java.io.PrintWriter
  * preferable mechanism.
  */
 
-class PollOutstandingProfiles(
+class PollOutstandingProfilesTask(
         val simInventoryDAO: SimInventoryDAO,
-        val client: ES2PlusClient,
-        val profileVendors: List<ProfileVendorConfig>) : Task("poll_outstanding_profiles") {
-
+        val pvaf: ProfileVendorAdapterFactory) : Task("poll_outstanding_profiles") {
 
     private val logger by getLogger()
-
 
     @Throws(Exception::class)
     override fun execute(parameters: ImmutableMultimap<String, String>, output: PrintWriter) {
@@ -50,26 +45,29 @@ class PollOutstandingProfiles(
                 }
     }
 
+    private fun pollAllocatedButNotDownloadedProfiles(output: PrintWriter): Either<SimManagerError, Unit> {
+        return simInventoryDAO.findAllocatedButNotDownloadedProfiles().map { profilesToPoll ->
+            pollForSmdpStatus(output, profilesToPoll)
+        }
+    }
 
-    private fun pollAllocatedButNotDownloadedProfiles(output: PrintWriter): Either<SimManagerError, Unit> =
-            simInventoryDAO.getAllocatedButNotDownloadedProfiles().flatMap { profilesToPoll ->
-                pollForSmdpStatus(output, profilesToPoll)
-            }.right()
-
-    private fun pollForSmdpStatus(output: PrintWriter, profilesToPoll: List<SimProfile>) {
+    private fun pollForSmdpStatus(output: PrintWriter, profilesToPoll: List<SimEntry>) {
 
         val result = StringBuffer()
 
         @Synchronized
-        fun reportln(s: String) {
+        fun reportln(s: String, e: Exception? = null) {
             output.println(s)
+            if (e != null) {
+                output.println("   Caused exception: $e")
+            }
         }
 
         fun sendReport() {
             output.print(result.toString())
         }
 
-        fun pollProfile(p: ProfileStatus) {
+        fun updateProfileInDb(p: ProfileStatus) {
             try {
 
                 // Get state and iccid non null strings
@@ -94,41 +92,44 @@ class PollOutstandingProfiles(
                         // This probably represents an error situation in the SM-DP+, and _should_ perhaps
                         // be reported as an error by the sim manager. Please think about this and
                         // either change it to logger.error yourself, or ask me in review comments to do it for you.
-                        logger.info("Updated  state for iccid=$iccid still set to ${state.name}")
-                        reportln("Updated  state for iccid=$iccid still set to ${state.name}")
+                        val report = "Updated  state for iccid=$iccid still set to ${state.name}"
+                        logger.info(report)
+                        reportln(report)
                     }
                 } else {
-                    reportln("Just state for iccid=$iccid still set to ${state.name}")
+                    reportln("State for iccid=$iccid still set to ${state.name}")
                 }
-
             } catch (e: Exception) {
-                reportln("Couldn't fetch status for iccid ${p.iccid}", e)
+                reportln("Couldn't update status for iccid ${p.iccid}", e)
             }
         }
 
-        fun pollProfiles(statusList: List<ProfileStatus>) {
-            // TODO: Rewrite this so that it runs up to 100 queries in parallell
-            // ES2+ is slow, so som paralellism is useful.  Shouldn't be too much, since we
-            // might otherwise run out of file descriptors.
-            for (p in statusList) {
-                pollProfile(p)
+        fun asVendorIdToIccdList(profiles: List<SimEntry>): Map<Long, List<String>> {
+            val iccidsByProfileVendorIdMap : MutableMap<Long, MutableList<String>>
+                    = mutableMapOf<Long, MutableList<String>>()
+            profiles.forEach {
+                simEntry: SimEntry ->
+                val vendorId = simEntry.profileVendorId
+                if (!iccidsByProfileVendorIdMap.containsKey(vendorId)) {
+                    iccidsByProfileVendorIdMap[vendorId] = mutableListOf<String>()
+                }
+                iccidsByProfileVendorIdMap[vendorId]?.add(simEntry.iccid)
             }
+            return iccidsByProfileVendorIdMap
         }
 
-        // First get the profile statuses
-        val statuses = client.profileStatus(profilesToPoll.map { it.iccId })
-        val statusList = statuses.profileStatusList
+        // Then poll them individually via the profile vendor adapter associated with the
+        // profile (there is not much to be gained here by doing it in paralellel, but perhaps
+        // one day it will be).
 
-        // Handle the error situation that we got a null response by reporting it both to
-        // the logger and the caller.
-        if (statusList == null) {
-            logger.error("Could not get statuses from SMDP+ for ")
-            reportln("Got null status list for iccid list $iccids")
-            return // TODO: Log som error situation first, also write to the response thingy
+        for ((vendorId, iccidList) in asVendorIdToIccdList(profilesToPoll)) {
+            pvaf.getAdapterByVendorId(vendorId).mapRight { profileVendorAdapter ->
+                val statuses = profileVendorAdapter.getProfileStatusList(iccidList)
+                statuses.mapRight{
+                    it.forEach {
+                        updateProfileInDb(it)}}
+            }  // TODO: Am I missing the error situation here?
         }
-
-        // Happy day scenario.  Update statuses, report results.
-        pollProfiles(statusList)
     }
 }
 

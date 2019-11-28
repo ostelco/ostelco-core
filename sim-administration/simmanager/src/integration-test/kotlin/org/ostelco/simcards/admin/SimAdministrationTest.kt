@@ -31,6 +31,7 @@ import org.ostelco.simcards.inventory.HssState
 import org.ostelco.simcards.inventory.ProvisionState
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimProfileKeyStatistics
+import org.ostelco.simcards.profilevendors.ProfileVendorAdapterFactory
 import org.ostelco.simcards.smdpplus.SmDpPlusApplication
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.FixedHostPortGenericContainer
@@ -340,12 +341,14 @@ class SimAdministrationTest {
                 noOfReleasedEntries = 0L,
                 noOfUnallocatedEntries = 0L,
                 noOfReservedEntries = 0L)
-        val task = PreallocateProfilesTask(
-                profileVendors = profileVendors,
+        val pvaf = ProfileVendorAdapterFactory(
                 simInventoryDAO = simDao,
-                maxNoOfProfileToAllocate = maxNoOfProfilesToAllocate,
+                httpClient = httpClient,
+                profileVendors = ConfigRegistry.config.profileVendors)
+        val task = PreallocateProfilesTask(
+                simInventoryDAO = simDao,
                 hssAdapterProxy = hssAdapterCache,
-                httpClient = httpClient)
+                pvaf = pvaf)
         task.preAllocateSimProfiles()
 
         val postAllocationStats =

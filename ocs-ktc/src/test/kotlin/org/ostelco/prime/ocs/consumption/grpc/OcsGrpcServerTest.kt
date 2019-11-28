@@ -27,6 +27,7 @@ class OcsGrpcServerTest {
     fun `load test OCS using gRPC`() = runBlocking {
 
         // Add delay to DB call and skip analytics and low balance notification
+        @ExperimentalUnsignedTypes
         OnlineCharging.loadUnitTest = true
 
         server = OcsGrpcServer(8082, OcsGrpcService(OnlineCharging))

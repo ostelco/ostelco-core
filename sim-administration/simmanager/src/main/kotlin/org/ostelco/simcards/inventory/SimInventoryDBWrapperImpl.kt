@@ -60,6 +60,11 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
                 db.findNextReadyToUseSimProfileForHlr(hssId, profile)
             }
 
+    override fun findAllocatedButNotDownloadedProfiles(): Either<SimManagerError, List<SimEntry>> =
+            either(NotFoundError("Failure while getting allocated but nt downloaded profiles")) {
+                db.findAllocatedButNotDownloadedProfiles()
+            }
+
     @Transaction
     override fun setEidOfSimProfileByIccid(iccid: String, eid: String): Either<SimManagerError, SimEntry> =
             either(NotFoundError("Found no SIM profile with ICCID $iccid update of EID failed")) {
