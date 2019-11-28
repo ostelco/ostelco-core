@@ -50,21 +50,6 @@ if [[ ! -f "ocsgw/cert/ocs.crt" ]] ; then
      cp nginx.crt ../../ocsgw/cert/ocs.crt)
 fi
 
-
-#
-#  If necessary, Create self-signed certificate for nginx with domain
-#  as `metrics.dev.ostelco.org` and place them at following location:
-#       * In `certs/metrics.dev.ostelco.org`, keep `nginx.key` and  `nginx.cert`.
-#        In `ocsgw/cert`, keep `metrics.cert`.
-#
-
-if [[ ! -f "ocsgw/cert/metrics.crt" ]] ; then 
-    (cd certs/metrics.dev.ostelco.org;
-     openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./nginx.key -out ./nginx.crt -subj '/CN=metrics.dev.ostelco.org' ;
-     cp nginx.crt ../../ocsgw/cert/metrics.crt)
-fi
-
-
 #
 # Then build (or not, we're using gradle) the whole system
 #

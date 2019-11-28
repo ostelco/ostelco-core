@@ -19,16 +19,7 @@ grep -i prime-service-account $(find . -name '.gitignore') | awk -F: '{print $1}
 cd certs/ocs.dev.ostelco.org
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./nginx.key -out ./nginx.crt -subj '/CN=ocs.dev.ostelco.org'
 cp nginx.crt ../../ocsgw/cert/ocs.crt
-```
- * Create self-signed certificate for nginx with domain as `metrics.dev.ostelco.org` and place them at following location:
-    * In `certs/metrics.dev.ostelco.org`, keep `nginx.key` and `nginx.cert`.
-    * In `ocsgw/cert`, keep `metrics.cert`.
-
-```bash
-cd certs/metrics.dev.ostelco.org
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./nginx.key -out ./nginx.crt -subj '/CN=metrics.dev.ostelco.org'
-cp nginx.crt ../../ocsgw/cert/metrics.crt
-```
+``
 
  * Set Stripe API key as env variable - `STRIPE_API_KEY`.   Note: It is the key denoted as "Secret key" that shuld
    be set in this env variable.
