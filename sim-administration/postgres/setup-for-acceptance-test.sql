@@ -1,5 +1,5 @@
 --
--- Setup for acceptance tests.
+-- Initial data set for acceptance tests.
 --
 
 -- dao.addProfileVendorAdapter("Bar")

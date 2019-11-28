@@ -1,5 +1,5 @@
 /**
- * Script for adding timestamp to existing DB.
+ * Script for adding timestamps to existing DB.
  *
  * For new DB, use the 'init.sql' script.
  */
