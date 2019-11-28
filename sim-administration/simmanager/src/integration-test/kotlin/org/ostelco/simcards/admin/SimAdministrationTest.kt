@@ -346,6 +346,7 @@ class SimAdministrationTest {
                 httpClient = httpClient,
                 profileVendors = ConfigRegistry.config.profileVendors)
         val task = PreallocateProfilesTask(
+                maxNoOfProfileToAllocate = maxNoOfProfilesToAllocate,
                 simInventoryDAO = simDao,
                 hssAdapterProxy = hssAdapterCache,
                 pvaf = pvaf)
