@@ -55,7 +55,6 @@ class SimAdministrationTest {
     private val phoneType = "rababara"
     private val expectedProfile = "IPHONE_PROFILE_2"
 
-
     companion object {
         private lateinit var jdbi: Jdbi
         private lateinit var client: Client
@@ -172,7 +171,6 @@ class SimAdministrationTest {
         dao.clearTables()
     }
 
-
     private fun presetTables() {
         val dao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().getDAO()
 
@@ -190,9 +188,7 @@ class SimAdministrationTest {
         }
 
         val response =
-                target
-                        .request()
-                        .put(Entity.entity(entries, MediaType.TEXT_PLAIN))
+                target.request().put(Entity.entity(entries, MediaType.TEXT_PLAIN))
         assertThat(response.status).isEqualTo(expectedReturnCode)
     }
 
@@ -317,24 +313,59 @@ class SimAdministrationTest {
         val profileVendors = SIM_MANAGER_RULE.configuration.profileVendors
         val hssConfigs = SIM_MANAGER_RULE.configuration.hssVendors
         val httpClient = HttpClientBuilder(SIM_MANAGER_RULE.environment)
-                .build("poll_outstanding_profiles")
+                .build("periodicProvisioningTaskClient")
+        val maxNoOfProfilesToAllocate = 10
 
+        val hlrs = simDao.getHssEntries()
+        assertThat(hlrs.isRight()).isTrue()
+
+        var hssId: Long = 0
+        hlrs.map {
+            hssId = it[0].id
+        }
+
+        val dispatcher = DirectHssDispatcher(
+                hssConfigs = hssConfigs,
+                httpClient = httpClient,
+                healthCheckRegistrar = object : HealthCheckRegistrar {
+                    override fun registerHealthCheck(name: String, healthCheck: HealthCheck) {
+                        SIM_MANAGER_RULE.environment.healthChecks().register(name, healthCheck)
+                    }
+                })
+        val hssAdapterCache = SimManagerToHssDispatcherAdapter(
+                dispatcher = dispatcher,
+                simInventoryDAO = simDao)
+        val preStats = SimProfileKeyStatistics(
+                noOfEntries = 0L,
+                noOfEntriesAvailableForImmediateUse = 0L,
+                noOfReleasedEntries = 0L,
+                noOfUnallocatedEntries = 0L,
+                noOfReservedEntries = 0L)
         val pvaf = ProfileVendorAdapterFactory(
                 simInventoryDAO = simDao,
                 httpClient = httpClient,
                 profileVendors = ConfigRegistry.config.profileVendors)
+        val preallocationTask = PreallocateProfilesTask(
+                maxNoOfProfileToAllocate = maxNoOfProfilesToAllocate,
+                simInventoryDAO = simDao,
+                hssAdapterProxy = hssAdapterCache,
+                pvaf = pvaf)
 
-        val task = PollOutstandingProfilesTask(simInventoryDAO = simDao, pvaf = pvaf)
 
+        preallocationTask.preAllocateSimProfiles()  // TODO: Should be rewritten, only assume "execute" available.
+
+        val pollingTask = PollOutstandingProfilesTask(simInventoryDAO = simDao, pvaf = pvaf)
 
         val out = StringWriter();
         val writer = PrintWriter(out);
         val parameters = ImmutableMultimap.builder<String, String>().build()
-        task.execute(parameters, writer)
+        pollingTask.execute(parameters, writer)
+
+        println("==> '${out.toString()}'")
 
         // TODO: If we can get to this point without failure, we will then add
         //       some assertions that should be true after the task execution.
-        
+
     }
 
     @Test
