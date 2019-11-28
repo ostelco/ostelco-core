@@ -1,5 +1,7 @@
 package org.ostelco.prime.storage.graph
 
+// Some of the model classes cannot be directly used in Graph Store as Entities.
+// See documentation in [model/Model.kt] for more details.
 import arrow.core.Either
 import arrow.core.Either.Left
 import arrow.core.Either.Right
@@ -144,8 +146,6 @@ import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.set
 import kotlin.reflect.KClass
-// Some of the model classes cannot be directly used in Graph Store as Entities.
-// See documentation in [model/Model.kt] for more details.
 import org.ostelco.prime.model.Identity as ModelIdentity
 import org.ostelco.prime.model.Offer as ModelOffer
 import org.ostelco.prime.model.Segment as ModelSegment
@@ -441,11 +441,9 @@ object Neo4jStoreSingleton : GraphStore {
 
         getCustomer(identity = identity)
                 .flatMap { existingCustomer ->
-                    update {
-                        existingCustomer.copy(
-                                nickname = nickname ?: existingCustomer.nickname,
-                                contactEmail = contactEmail ?: existingCustomer.contactEmail)
-                    }.map {
+                    update(Customer withId existingCustomer.id,
+                            set = *arrayOf(Customer::nickname to nickname, Customer::contactEmail to contactEmail)
+                    ).map {
                         AuditLog.info(customerId = existingCustomer.id, message = "Updated nickname/contactEmail")
                     }
                 }
@@ -708,11 +706,17 @@ object Neo4jStoreSingleton : GraphStore {
                             customers.forEach { customer ->
                                 AuditLog.info(customerId = customer.id, message = "Sim Profile (iccId = $iccId) is $status")
                             }
-                            when(status) {
-                                DOWNLOADED -> update { simProfile.copy(downloadedOn = utcTimeNow()) }.bind()
-                                INSTALLED -> update { simProfile.copy(installedOn = utcTimeNow()) }.bind()
-                                DELETED -> update { simProfile.copy(deletedOn = utcTimeNow()) }.bind()
-                                else -> logger.warn("Not storing timestamp for simProfile: {} for status: {}", iccId, status)
+                            val timestampField = when(status) {
+                                DOWNLOADED -> SimProfile::downloadedOn
+                                INSTALLED -> SimProfile::installedOn
+                                DELETED -> SimProfile::deletedOn
+                                else -> {
+                                    logger.warn("Not storing timestamp for simProfile: {} for status: {}", iccId, status)
+                                    null
+                                }
+                            }
+                            if (timestampField != null) {
+                                update(SimProfile withId simProfile.id, set = timestampField to utcTimeNow()).bind()
                             }
                             val subscriptions = get(Subscription under (SimProfile withId simProfile.id)).bind()
                             subscriptions.forEach { subscription ->
@@ -918,10 +922,9 @@ object Neo4jStoreSingleton : GraphStore {
                             .firstOrNull { simProfile -> simProfile.iccId == iccId }
                             ?: NotFoundError(type = simProfileEntity.name, id = iccId).left().bind<SimProfile>()
 
-                    val updatedSimProfile = simProfile.copy(alias = alias)
-                    update { updatedSimProfile }.bind()
+                    update(SimProfile withId simProfile.id, set = SimProfile::alias to alias).bind()
                     AuditLog.info(customerId = customerId, message = "Updated alias of SIM Profile (iccId = $iccId)")
-                    updatedSimProfile
+                    simProfile.copy(alias = alias)
                 }.fix()
             }.unsafeRunSync().ifFailedThenRollback(transaction)
         }
@@ -972,10 +975,10 @@ object Neo4jStoreSingleton : GraphStore {
                             .firstOrNull { simProfile -> simProfile.iccId == iccId }
                             ?: NotFoundError(type = simProfileEntity.name, id = iccId).left().bind<SimProfile>()
 
-                    val updatedSimProfile = simProfile.copy(installedReportedByAppOn = utcTimeNow())
-                    update { updatedSimProfile }.bind()
+                    val utcTimeNow = utcTimeNow()
+                    update(SimProfile withId simProfile.id, set = SimProfile::installedReportedByAppOn to utcTimeNow).bind()
                     AuditLog.info(customerId = customerId, message = "App reported SIM Profile (iccId = $iccId) as installed.")
-                    updatedSimProfile
+                    simProfile.copy(installedReportedByAppOn = utcTimeNow)
                 }.fix()
             }.unsafeRunSync().ifFailedThenRollback(transaction)
         }
@@ -2810,11 +2813,20 @@ object Neo4jStoreSingleton : GraphStore {
 
     private val segmentEntity = Segment::class.entityType
 
-    private val offerToSegmentRelation = RelationType(OFFERED_TO_SEGMENT, offerEntity, segmentEntity, None::class.java)
-    private val offerToSegmentStore = RelationStore(offerToSegmentRelation)
+    val offerToSegmentRelation = RelationType(
+            relation = OFFERED_TO_SEGMENT,
+            from = offerEntity,
+            to = segmentEntity,
+            dataClass = None::class.java)
+            .also { UniqueRelationStore(it) }
 
-    private val offerToProductRelation = RelationType(OFFER_HAS_PRODUCT, offerEntity, productEntity, None::class.java)
-    private val offerToProductStore = RelationStore(offerToProductRelation)
+    val offerToProductRelation = RelationType(
+                    relation = OFFER_HAS_PRODUCT,
+                    from = offerEntity,
+                    to = productEntity,
+                    dataClass = None::class.java
+            )
+            .also { UniqueRelationStore(it) }
 
     val customerToSegmentRelation = RelationType(BELONG_TO_SEGMENT, customerEntity, segmentEntity, None::class.java)
     private val customerToSegmentStore = RelationStore(customerToSegmentRelation)
@@ -2853,9 +2865,18 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     private fun WriteTransaction.createOffer(offer: ModelOffer): Either<StoreError, Unit> {
-        return create { Offer(id = offer.id) }
-                .flatMap { offerToSegmentStore.create(offer.id, offer.segments, transaction) }
-                .flatMap { offerToProductStore.create(offer.id, offer.products, transaction) }
+        return IO {
+            Either.monad<StoreError>().binding {
+                create { Offer(id = offer.id) }.bind()
+                for (segmentId in offer.segments) {
+                    fact { (Offer withId offer.id) isOfferedTo (Segment withId segmentId) }.bind()
+                }
+                for (sku in offer.products) {
+                    fact { (Offer withId offer.id) containsProduct (Product withSku sku) }.bind()
+                }
+            }.fix()
+        }.unsafeRunSync()
+                .ifFailedThenRollback(transaction)
     }
 
     //

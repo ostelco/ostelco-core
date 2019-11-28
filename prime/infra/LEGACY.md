@@ -80,7 +80,7 @@ Reference:
 
 ## Endpoint
 
-Generate self-contained protobuf descriptor file - `ocs_descriptor.pb` & `metrics_descriptor.pb`
+Generate self-contained protobuf descriptor file - `ocs_descriptor.pb`
 
 ```bash
 pyenv versions
@@ -94,19 +94,12 @@ python -m grpc_tools.protoc \
   --descriptor_set_out=ocs_descriptor.pb \
   ocs.proto
 
-python -m grpc_tools.protoc \
-  --include_imports \
-  --include_source_info \
-  --proto_path=analytics-grpc-api/src/main/proto \
-  --descriptor_set_out=metrics_descriptor.pb \
-  prime_metrics.proto
 ```
 
 Deploy endpoints
 
 ```bash
 gcloud endpoints services deploy ocs_descriptor.pb prime/infra/prod/ocs-api.yaml
-gcloud endpoints services deploy metrics_descriptor.pb prime/infra/prod/metrics-api.yaml
 ```
 
 ## Deployment & Service
@@ -152,7 +145,7 @@ kubectl describe service prime-service
 gcloud endpoints services deploy prime/infra/prod/prime-customer-api.yaml
 ```
 
-## SSL secrets for api.ostelco.org, ocs.ostelco.org & metrics.ostelco.org
+## SSL secrets for api.ostelco.org, ocs.ostelco.org
 The endpoints runtime expects the SSL configuration to be named
 as `nginx.crt` and `nginx.key`. Sample command to create the secret:
 ```bash
@@ -163,7 +156,6 @@ kubectl create secret generic api-ostelco-ssl \
 The secret for ...
  * `api.ostelco.org` is in `api-ostelco-ssl`
  * `ocs.ostelco.org` is in `ocs-ostelco-ssl`
- * `metrics.ostelco.org` is in `metrics-ostelco-ssl`
 
 # For Dev cluster
 
@@ -210,20 +202,12 @@ python -m grpc_tools.protoc \
   --proto_path=ocs-grpc-api/src/main/proto \
   --descriptor_set_out=ocs_descriptor.pb \
   ocs.proto
-
-python -m grpc_tools.protoc \
-  --include_imports \
-  --include_source_info \
-  --proto_path=analytics-grpc-api/src/main/proto \
-  --descriptor_set_out=metrics_descriptor.pb \
-  prime_metrics.proto
 ```
 
 Deploy endpoints
 
 ```bash
 gcloud endpoints services deploy ocs_descriptor.pb prime/infra/dev/ocs-api.yaml
-gcloud endpoints services deploy metrics_descriptor.pb prime/infra/dev/metrics-api.yaml
 ```
 
  * Client API HTTP endpoint
