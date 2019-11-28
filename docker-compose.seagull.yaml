@@ -51,7 +51,6 @@ services:
     environment:
       - DISABLE_TLS=true
       - OCS_GRPC_SERVER=prime:8082
-      - METRICS_GRPC_SERVER=prime:8083
       - SERVICE_FILE=prime-service-account.json
       - GOOGLE_CLOUD_PROJECT=${GCP_PROJECT_ID}
       - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
