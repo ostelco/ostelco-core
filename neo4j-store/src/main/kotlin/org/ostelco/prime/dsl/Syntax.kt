@@ -19,6 +19,8 @@ import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.exSubscriptionRelatio
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.forPurchaseByRelation
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.forPurchaseOfRelation
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.identifiesRelation
+import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.offerToProductRelation
+import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.offerToSegmentRelation
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.referredRelation
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.scanInformationRelation
 import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.simProfileRegionRelation
@@ -29,6 +31,7 @@ import org.ostelco.prime.storage.graph.Neo4jStoreSingleton.subscriptionToBundleR
 import org.ostelco.prime.storage.graph.RelationType
 import org.ostelco.prime.storage.graph.model.ExCustomer
 import org.ostelco.prime.storage.graph.model.Identity
+import org.ostelco.prime.storage.graph.model.Offer
 import org.ostelco.prime.storage.graph.model.Segment
 import org.ostelco.prime.storage.graph.model.SimProfile
 import kotlin.reflect.KClass
@@ -173,6 +176,19 @@ data class ScanInfoContext(override val id: String) : EntityContext<ScanInformat
 data class PlanContext(override val id: String) : EntityContext<Plan>(Plan::class, id)
 data class ProductContext(override val id: String) : EntityContext<Product>(Product::class, id)
 data class SegmentContext(override val id: String) : EntityContext<Segment>(Segment::class, id)
+
+data class OfferContext(override val id: String) : EntityContext<Offer>(Offer::class, id) {
+
+    infix fun isOfferedTo(segment: SegmentContext) = RelationExpression(
+            relationType = offerToSegmentRelation,
+            fromId = id,
+            toId = segment.id)
+
+    infix fun containsProduct(product: ProductContext) = RelationExpression(
+            relationType = offerToProductRelation,
+            fromId = id,
+            toId = product.id)
+}
 
 data class PurchaseRecordContext(override val id: String) : EntityContext<PurchaseRecord>(PurchaseRecord::class, id) {
 
@@ -376,3 +392,8 @@ infix fun PurchaseRecord.Companion.forPurchaseOf(product: ProductContext) =
 // Segment
 //
 infix fun Segment.Companion.withId(id: String): SegmentContext = SegmentContext(id)
+
+//
+// Offer
+//
+infix fun Offer.Companion.withId(id: String): OfferContext = OfferContext(id)

@@ -20,12 +20,7 @@ class AnalyticsModule : PrimeModule {
 
         CustomMetricsRegistry.init(env.metrics())
 
-        val server = AnalyticsGrpcServer(8083, AnalyticsGrpcService())
-
-        env.lifecycle().manage(server)
-
         // dropwizard starts Analytics events publisher
-        env.lifecycle().manage(ActiveUsersPublisher)
         env.lifecycle().manage(DataConsumptionInfoPublisher)
         env.lifecycle().manage(PurchasePublisher)
         env.lifecycle().manage(RefundPublisher)
@@ -46,10 +41,6 @@ data class AnalyticsConfig(
     @NotBlank
     @JsonProperty("purchaseInfoTopicId")
     val purchaseInfoTopicId: String,
-
-    @NotBlank
-    @JsonProperty("activeUsersTopicId")
-    val activeUsersTopicId: String,
 
     @NotBlank
     @JsonProperty("simProvisioningTopicId")

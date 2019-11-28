@@ -2810,11 +2810,20 @@ object Neo4jStoreSingleton : GraphStore {
 
     private val segmentEntity = Segment::class.entityType
 
-    private val offerToSegmentRelation = RelationType(OFFERED_TO_SEGMENT, offerEntity, segmentEntity, None::class.java)
-    private val offerToSegmentStore = RelationStore(offerToSegmentRelation)
+    val offerToSegmentRelation = RelationType(
+            relation = OFFERED_TO_SEGMENT,
+            from = offerEntity,
+            to = segmentEntity,
+            dataClass = None::class.java)
+            .also { UniqueRelationStore(it) }
 
-    private val offerToProductRelation = RelationType(OFFER_HAS_PRODUCT, offerEntity, productEntity, None::class.java)
-    private val offerToProductStore = RelationStore(offerToProductRelation)
+    val offerToProductRelation = RelationType(
+                    relation = OFFER_HAS_PRODUCT,
+                    from = offerEntity,
+                    to = productEntity,
+                    dataClass = None::class.java
+            )
+            .also { UniqueRelationStore(it) }
 
     val customerToSegmentRelation = RelationType(BELONG_TO_SEGMENT, customerEntity, segmentEntity, None::class.java)
     private val customerToSegmentStore = RelationStore(customerToSegmentRelation)
@@ -2853,9 +2862,18 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     private fun WriteTransaction.createOffer(offer: ModelOffer): Either<StoreError, Unit> {
-        return create { Offer(id = offer.id) }
-                .flatMap { offerToSegmentStore.create(offer.id, offer.segments, transaction) }
-                .flatMap { offerToProductStore.create(offer.id, offer.products, transaction) }
+        return IO {
+            Either.monad<StoreError>().binding {
+                create { Offer(id = offer.id) }.bind()
+                for (segmentId in offer.segments) {
+                    fact { (Offer withId offer.id) isOfferedTo (Segment withId segmentId) }.bind()
+                }
+                for (sku in offer.products) {
+                    fact { (Offer withId offer.id) containsProduct (Product withSku sku) }.bind()
+                }
+            }.fix()
+        }.unsafeRunSync()
+                .ifFailedThenRollback(transaction)
     }
 
     //
