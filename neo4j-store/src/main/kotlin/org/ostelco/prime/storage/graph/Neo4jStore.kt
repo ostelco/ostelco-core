@@ -1337,6 +1337,10 @@ object Neo4jStoreSingleton : GraphStore {
                                         internalError = it)
                             }.bind()
 
+                    /* Adds purchase to customer history. */
+                    AuditLog.info(customerId = customer.id,
+                            message = "Purchased product $sku for ${product.price.amount} ${product.price.currency} (invoice: $invoiceId, charge-id: $chargeId)")
+
                     /* TODO: While aborting transactions, send a record with "reverted" status. */
                     analyticsReporter.reportPurchase(
                             customerAnalyticsId = customer.analyticsId,
@@ -1623,6 +1627,10 @@ object Neo4jStoreSingleton : GraphStore {
             val invoicePaymentInfo = paymentProcessor.payInvoice(invoice.id)
                     .mapLeft {
                         logger.warn("Payment of invoice ${invoice.id} failed for customer ${customer.id}.")
+                        /* Adds failed purchase to customer history. */
+                        AuditLog.warn(customerId = customer.id,
+                                message = "Failed to complete purchase of product $sku for $price.amount} ${price.currency} " +
+                                        "status: ${it.code} decline reason: ${it.declineCode}")
                         it
                     }.linkReversalActionToTransaction(transaction) {
                         paymentProcessor.refundCharge(it.chargeId)
