@@ -154,9 +154,10 @@ import org.ostelco.prime.paymentprocessor.core.NotFoundError as NotFoundPaymentE
 
 enum class Relation(
         val from: KClass<out HasId>,
-        val to: KClass<out HasId>) {
+        val to: KClass<out HasId>,
+        val isUnique: Boolean = true) {
 
-    IDENTIFIES(from = Identity::class, to = Customer::class),                           // (Identity) -[IDENTIFIES]-> (Customer)
+    IDENTIFIES(from = Identity::class, to = Customer::class, isUnique = false),         // (Identity) -[IDENTIFIES]-> (Customer)
 
     HAS_SUBSCRIPTION(from = Customer::class, to = Subscription::class),                 // (Customer) -[HAS_SUBSCRIPTION]-> (Subscription)
 
@@ -170,7 +171,7 @@ enum class Relation(
 
     SUBSCRIBES_TO_PLAN(from = Customer::class, to = Plan::class),                       // (Customer) -[SUBSCRIBES_TO_PLAN]-> (Plan)
 
-    LINKED_TO_BUNDLE(from = Subscription::class, to = Bundle::class),                   // (Subscription) -[LINKED_TO_BUNDLE]-> (Bundle)
+    LINKED_TO_BUNDLE(from = Subscription::class, to = Bundle::class, isUnique = false), // (Subscription) -[LINKED_TO_BUNDLE]-> (Bundle)
 
     FOR_PURCHASE_BY(from = PurchaseRecord::class, to = Customer::class),                // (PurchaseRecord) -[FOR_PURCHASE_BY]-> (Customer)
 
@@ -184,7 +185,7 @@ enum class Relation(
 
     BELONG_TO_SEGMENT(from = Customer::class, to = Segment::class),                     // (Customer) -[BELONG_TO_SEGMENT]-> (Segment)
 
-    EKYC_SCAN(from = Customer::class, to = ScanInformation::class),                     // (Customer) -[EKYC_SCAN]-> (ScanInformation)
+    EKYC_SCAN(from = Customer::class, to = ScanInformation::class, isUnique = false),   // (Customer) -[EKYC_SCAN]-> (ScanInformation)
 
     BELONG_TO_REGION(from = Customer::class, to = Region::class),                       // (Customer) -[BELONG_TO_REGION]-> (Region)
 
@@ -238,77 +239,66 @@ object Neo4jStoreSingleton : GraphStore {
             from = identityEntity,
             to = customerEntity,
             dataClass = Identifies::class.java)
-            .also { RelationStore(it) }
 
     val subscriptionRelation = RelationType(
             relation = HAS_SUBSCRIPTION,
             from = customerEntity,
             to = subscriptionEntity,
             dataClass = None::class.java)
-            .also { UniqueRelationStore(it) }
 
     val exSubscriptionRelation = RelationType(
             relation = HAD_SUBSCRIPTION,
             from = exCustomerEntity,
             to = subscriptionEntity,
             dataClass = None::class.java)
-            .also { UniqueRelationStore(it) }
 
     val customerToBundleRelation = RelationType(
             relation = HAS_BUNDLE,
             from = customerEntity,
             to = bundleEntity,
             dataClass = None::class.java)
-            .also { UniqueRelationStore(it) }
 
     val subscriptionToBundleRelation = RelationType(
             relation = LINKED_TO_BUNDLE,
             from = subscriptionEntity,
             to = bundleEntity,
             dataClass = SubscriptionToBundle::class.java)
-            .also { RelationStore(it) }
 
     val customerToSimProfileRelation = RelationType(
             relation = HAS_SIM_PROFILE,
             from = customerEntity,
             to = simProfileEntity,
             dataClass = None::class.java)
-            .also { UniqueRelationStore(it) }
 
     val exCustomerToSimProfileRelation = RelationType(
             relation = HAD_SIM_PROFILE,
             from = exCustomerEntity,
             to = simProfileEntity,
             dataClass = None::class.java)
-            .also { UniqueRelationStore(it) }
 
     val forPurchaseByRelation = RelationType(
             relation = FOR_PURCHASE_BY,
             from = purchaseRecordEntity,
             to = customerEntity,
             dataClass = None::class.java)
-            .also { UniqueRelationStore(it) }
 
     val forPurchaseOfRelation = RelationType(
             relation = FOR_PURCHASE_OF,
             from = purchaseRecordEntity,
             to = productEntity,
             dataClass = None::class.java)
-            .also { UniqueRelationStore(it) }
 
     val referredRelation = RelationType(
             relation = REFERRED,
             from = customerEntity,
             to = customerEntity,
             dataClass = None::class.java)
-            .also { UniqueRelationStore(it) }
 
     val subscribesToPlanRelation = RelationType(
             relation = Relation.SUBSCRIBES_TO_PLAN,
             from = customerEntity,
             to = planEntity,
             dataClass = PlanSubscription::class.java)
-    private val subscribesToPlanRelationStore = UniqueRelationStore(subscribesToPlanRelation)
 
     val customerRegionRelation = RelationType(
             relation = Relation.BELONG_TO_REGION,
@@ -322,7 +312,6 @@ object Neo4jStoreSingleton : GraphStore {
             from = exCustomerEntity,
             to = regionEntity,
             dataClass = None::class.java)
-            .also { UniqueRelationStore(it) }
 
     val scanInformationRelation = RelationType(
             relation = Relation.EKYC_SCAN,
@@ -336,14 +325,12 @@ object Neo4jStoreSingleton : GraphStore {
             from = simProfileEntity,
             to = regionEntity,
             dataClass = None::class.java)
-            .also { UniqueRelationStore(it) }
 
     val subscriptionSimProfileRelation = RelationType(
             relation = Relation.SUBSCRIPTION_UNDER_SIM_PROFILE,
             from = subscriptionEntity,
             to = simProfileEntity,
             dataClass = None::class.java)
-            .also { UniqueRelationStore(it) }
 
     private val onNewCustomerAction: OnNewCustomerAction = config.onNewCustomerAction.getKtsService()
     private val allowedRegionsService: AllowedRegionsService = config.allowedRegionsService.getKtsService()
@@ -759,8 +746,10 @@ object Neo4jStoreSingleton : GraphStore {
                 val bundles = get(Bundle forCustomer (Customer withId customerId)).bind()
                 validateBundleList(bundles, customerId).bind()
                 val customer = get(Customer withId customerId).bind()
-                val status = customerRegionRelationStore
-                        .get(fromId = customerId, toId = regionCode.toLowerCase(), transaction = transaction)
+                val status = customerRegionRelationStore.get(
+                        fromId = customerId,
+                        toId = regionCode.toLowerCase(),
+                        transaction = transaction)
                         .bind()
                         .status
                 isApproved(
@@ -2580,8 +2569,10 @@ object Neo4jStoreSingleton : GraphStore {
             Either.monad<StoreError>().binding {
                 val plan = get(Plan withId planId)
                         .bind()
-                val planSubscription = subscribesToPlanRelationStore.get(customerId, planId, transaction)
+
+                val planSubscription = get((Customer withId customerId) subscribesTo (Plan withId planId))
                         .bind()
+                        .single()
                 paymentProcessor.cancelSubscription(planSubscription.subscriptionId, invoiceNow)
                         .mapLeft {
                             NotDeletedError(type = planEntity.name, id = "$customerId -> ${plan.id}",
@@ -2590,7 +2581,7 @@ object Neo4jStoreSingleton : GraphStore {
                             Unit.right()
                         }.bind()
 
-                subscribesToPlanRelationStore.delete(customerId, planId, transaction)
+                unlink((Customer withId customerId) subscribesTo (Plan withId planId))
                         .flatMap {
                             Either.right(plan)
                         }.bind()
@@ -2818,15 +2809,12 @@ object Neo4jStoreSingleton : GraphStore {
             from = offerEntity,
             to = segmentEntity,
             dataClass = None::class.java)
-            .also { UniqueRelationStore(it) }
 
     val offerToProductRelation = RelationType(
-                    relation = OFFER_HAS_PRODUCT,
-                    from = offerEntity,
-                    to = productEntity,
-                    dataClass = None::class.java
-            )
-            .also { UniqueRelationStore(it) }
+            relation = OFFER_HAS_PRODUCT,
+            from = offerEntity,
+            to = productEntity,
+            dataClass = None::class.java)
 
     val customerToSegmentRelation = RelationType(BELONG_TO_SEGMENT, customerEntity, segmentEntity, None::class.java)
     private val customerToSegmentStore = RelationStore(customerToSegmentRelation)

@@ -2,15 +2,12 @@ package org.ostelco.prime.dsl
 
 import arrow.core.Either
 import arrow.core.flatMap
-import arrow.core.left
 import arrow.core.right
 import org.neo4j.driver.v1.AccessMode.READ
 import org.neo4j.driver.v1.AccessMode.WRITE
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.HasId
-import org.ostelco.prime.storage.DatabaseError
 import org.ostelco.prime.storage.StoreError
-import org.ostelco.prime.storage.SystemError
 import org.ostelco.prime.storage.graph.EntityRegistry
 import org.ostelco.prime.storage.graph.EntityStore
 import org.ostelco.prime.storage.graph.Neo4jClient
@@ -72,7 +69,6 @@ open class ReadTransaction(open val transaction: PrimeTransaction) {
 
     fun <FROM : HasId, TO : HasId> get(relatedToClause: RelatedToClause<FROM, TO>): Either<StoreError, List<FROM>> {
         val entityStore: EntityStore<TO> = relatedToClause.relationType.to.entityStore
-                ?: return DatabaseError(type = "entityStore", id = relatedToClause.relationType.to.name, message = "Missing entity store").left()
         return entityStore.getRelatedFrom(
                 id = relatedToClause.toId,
                 relationType = relatedToClause.relationType,
@@ -81,21 +77,34 @@ open class ReadTransaction(open val transaction: PrimeTransaction) {
 
     fun <FROM : HasId, TO : HasId> get(relatedFromClause: RelatedFromClause<FROM, TO>): Either<StoreError, List<TO>> {
         val entityStore: EntityStore<FROM> = relatedFromClause.relationType.from.entityStore
-                ?: return DatabaseError(type = "entityStore", id = relatedFromClause.relationType.from.name, message = "Missing entity store").left()
         return entityStore.getRelated(
                 id = relatedFromClause.fromId,
                 relationType = relatedFromClause.relationType,
                 transaction = transaction)
     }
 
-    fun <FROM : HasId, RELATION : Any> get(relationFromClause: RelationFromClause<FROM, RELATION, *>): Either<StoreError, List<RELATION>> {
-        val entityStore: EntityStore<FROM> = relationFromClause.relationType.from.entityStore
-                ?: return DatabaseError(type = "entityStore", id = relationFromClause.relationType.from.name, message = "Missing entity store").left()
-        return entityStore.getRelations(
-                id = relationFromClause.fromId,
-                relationType = relationFromClause.relationType,
-                transaction = transaction)
+    fun <FROM : HasId, RELATION : Any, TO : HasId> get(relationExpression: RelationExpression<FROM, RELATION, TO>): Either<StoreError, List<RELATION>> {
+        return when (val relationStore = relationExpression.relationType.relationStore) {
+            is UniqueRelationStore<*, *, *> -> (relationStore as UniqueRelationStore<FROM, RELATION, TO>).get(
+                    fromId = relationExpression.fromId,
+                    toId = relationExpression.toId,
+                    transaction = transaction
+            ).map(::listOf)
+            is RelationStore<*, *, *> -> (relationStore as RelationStore<FROM, RELATION, TO>).get(
+                    fromId = relationExpression.fromId,
+                    toId = relationExpression.toId,
+                    transaction = transaction
+            )
+        }
     }
+
+    fun <FROM : HasId, RELATION : Any, TO : HasId> get(partialRelationExpression: PartialRelationExpression<FROM, RELATION, TO>): Either<StoreError, List<RELATION>> = get(
+            RelationExpression(
+                    relationType = partialRelationExpression.relationType,
+                    fromId = partialRelationExpression.fromId,
+                    toId = partialRelationExpression.toId
+            )
+    )
 }
 
 class WriteTransaction(override val transaction: PrimeTransaction) : ReadTransaction(transaction = transaction) {
@@ -173,24 +182,30 @@ class WriteTransaction(override val transaction: PrimeTransaction) : ReadTransac
                     )
                 }
             }
-            null -> {
-                SystemError(type = "relationStore", id = relationExpression.relationType.name, message = "Missing relation store").left()
-            }
         }
     }
 
     fun <FROM : HasId, RELATION, TO : HasId> unlink(expression: () -> RelationExpression<FROM, RELATION, TO>): Either<StoreError, Unit> {
         val relationExpression = expression()
-        val relationStore = relationExpression.relationType.relationStore
-        return relationStore?.delete(
+        val relationStore = relationExpression
+                .relationType
+                .relationStore
+        return relationStore.delete(
                 fromId = relationExpression.fromId,
                 toId = relationExpression.toId,
                 transaction = transaction
-        ) ?: SystemError(
-                type = "relationStore",
-                id = relationExpression.relationType.name,
-                message = "Missing relation store"
-        ).left()
+        )
+    }
+
+    fun <FROM : HasId, RELATION, TO : HasId> unlink(partialRelationExpression: PartialRelationExpression<FROM, RELATION, TO>): Either<StoreError, Unit> {
+        val relationStore = partialRelationExpression
+                .relationType
+                .relationStore
+        return relationStore.delete(
+                fromId = partialRelationExpression.fromId,
+                toId = partialRelationExpression.toId,
+                transaction = transaction
+        )
     }
 }
 
