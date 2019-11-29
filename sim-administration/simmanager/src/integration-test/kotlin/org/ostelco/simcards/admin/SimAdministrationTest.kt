@@ -393,6 +393,14 @@ class SimAdministrationTest {
             assertNotNull(simEntry)
             return simEntry!!
         }
+
+        fun disableEs2CallbacksFromSmdpPlus() {
+            SM_DP_PLUS_RULE.getApplication<SmDpPlusApplication>().disableCallbacks()
+        }
+
+        fun emulateDownloadOfIccid(iccid: String) {
+            SM_DP_PLUS_RULE.getApplication<SmDpPlusApplication>().emulateInstallOfIccid(iccid)
+        }
     }
 
 
@@ -401,7 +409,6 @@ class SimAdministrationTest {
         val tif = TaskInvocationFixture(this)
 
         tif.executePreallocateSimProfilesTask()
-
 
         // Run the polling, and observe that nothing happens.
         // Then run the polling task and see what happens.
@@ -415,10 +422,11 @@ class SimAdministrationTest {
         outString = tif.executePollOutstandingSimrofilesTask()
         assertTrue(outString.contains("State for iccid=${simEntry.iccid} still set to RELEASED"))
 
-        // TODO: Simulate that ICCID 8901000000000000977 is downloaded, but no callback is sent!
-        // TODO: Again check the value of the value by polling, and possibly updating the value.
-        // TODO: Again, check that the test ran, but nothing happened.
-        // TODO: Perhaps, make the verifications a bit less brittle than grepping in a string?
+        tif.disableEs2CallbacksFromSmdpPlus()
+        tif.emulateDownloadOfIccid(simEntry.iccid)
+
+        outString = tif.executePollOutstandingSimrofilesTask()
+        assertTrue(outString.contains("Updated  state for iccid=${simEntry.iccid} to INSTALLED"))
     }
 
 
@@ -612,7 +620,6 @@ class SimAdministrationTest {
         assertGaugeValue(98, "sims.noOfUnallocatedEntries.IPHONE_PROFILE_2")
         assertGaugeValue(2, "sims.noOfReservedEntries.IPHONE_PROFILE_2")
     }
-
 
     // XXX MISSING TEST:  SHould test periodic updater also in cases where
     //      either HSS or SM-DP+ entries are pre-allocated.

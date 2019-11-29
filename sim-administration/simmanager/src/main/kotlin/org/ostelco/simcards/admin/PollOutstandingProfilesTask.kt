@@ -92,7 +92,7 @@ class PollOutstandingProfilesTask(
                         // This probably represents an error situation in the SM-DP+, and _should_ perhaps
                         // be reported as an error by the sim manager. Please think about this and
                         // either change it to logger.error yourself, or ask me in review comments to do it for you.
-                        val report = "Updated  state for iccid=$iccid still set to ${state.name}"
+                        val report = "Updated  state for iccid=$iccid to ${state.name}"
                         logger.info(report)
                         reportln(report)
                     }

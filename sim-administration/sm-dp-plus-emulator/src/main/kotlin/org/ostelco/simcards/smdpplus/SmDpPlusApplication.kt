@@ -158,6 +158,7 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 
     fun reset() {
         this.smdpPlusService.reset();
+        enableCallbacks()
     }
 
     fun setCurrentState(iccid: String, newState: String) {
@@ -168,6 +169,10 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 
     fun reportDownload(iccid: String) {
         setCurrentState(iccid, "DOWNLOAD")
+    }
+
+    fun emulateInstallOfIccid(iccid: String) {
+        smdpPlusService.emulateInstallOfIccid(iccid)
     }
 }
 
@@ -279,6 +284,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>, val app: SmDpPlu
 
 
     fun reset() {
+        app.enableCallbacks()
         entries.clear()
         entriesByIccid.clear()
         entriesByProfile.clear()
@@ -310,6 +316,11 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>, val app: SmDpPlu
         app.setCurrentState(entry.iccid, newState)
     }
 
+    fun setEntryStateByIccid(iccid: String, state: String) {
+        val entry: SmDpSimEntry = getEntryByIccid(iccid)
+                ?: throw SmDpPlusException("Could not find download order matching criteria")
+        setEntryState(entry, state)
+    }
 
     // TODO; What about the reservation flag?
     override fun downloadOrder(eid: String?, iccid: String?, profileType: String?): Es2DownloadOrderResponse {
@@ -457,6 +468,10 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>, val app: SmDpPlu
 
     override fun releaseProfile(iccid: String) {
         TODO("not implemented")
+    }
+
+    fun emulateInstallOfIccid(iccid: String) {
+        setEntryStateByIccid(iccid, "INSTALLED")
     }
 }
 
