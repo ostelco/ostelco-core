@@ -29,6 +29,8 @@ import org.ostelco.simcards.inventory.SimInventoryCallbackService
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SimInventoryDB
 import org.ostelco.simcards.inventory.SimInventoryDBWrapperImpl
+import org.ostelco.simcards.resources.HssResource
+import org.ostelco.simcards.resources.ProfileVendorResource
 import org.ostelco.simcards.resources.SimInventoryResource
 
 /**
@@ -84,8 +86,9 @@ class SimAdministrationModule : PrimeModule {
         simInventoryApi = SimInventoryApi(httpClient, config, DAO)
 
         // Add REST frontend.
-        simInventoryResource = SimInventoryResource(simInventoryApi)
-        jerseyEnv.register(simInventoryResource)
+        jerseyEnv.register(SimInventoryResource(simInventoryApi))
+        jerseyEnv.register(HssResource(simInventoryApi))
+        jerseyEnv.register(ProfileVendorResource(simInventoryApi))
         jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
 
         // Register Sim Inventory metrics as a lifecycle object
