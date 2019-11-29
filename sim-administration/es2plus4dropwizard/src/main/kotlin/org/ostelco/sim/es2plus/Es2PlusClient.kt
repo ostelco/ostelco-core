@@ -119,9 +119,9 @@ class ES2PlusClient(
         return response
     }
 
-    /**
-     * For test cases where content should be returned.
-     */
+    //
+    // For test cases where content should be returned.
+    //
     @Throws(ES2PlusClientException::class)
     private fun <T, S> postEs2ProtocolCmd(
             path: String,
@@ -233,7 +233,6 @@ class ES2PlusClient(
     }
 
 
-
     fun confirmOrder(eid: String? = null,
                      iccid: String,
                      matchingId: String? = null,
@@ -257,6 +256,9 @@ class ES2PlusClient(
                 returnValueClass = Es2ConfirmOrderResponse::class.java)
     }
 
+    /**
+     * Transmit a cancelOrder request for a particular ICCID.
+     */
     fun cancelOrder(iccid: String,
                     finalProfileStatusIndicator: String,
                     eid: String? = null,

@@ -308,6 +308,10 @@ class SimAdministrationTest {
         }
     }
 
+    /**
+     * Helper class that is used to wrap invocations of the
+     * preallocation and polling of outstandng profiles tasks.
+     */
     class TaskInvocationFixture(val testClass: SimAdministrationTest) {
         var simDao: SimInventoryDAO
         var profileVendors: List<ProfileVendorConfig>
@@ -376,7 +380,8 @@ class SimAdministrationTest {
         }
 
 
-        fun executeTask(task: Task): String {
+
+        private fun executeTask(task: Task): String {
             val out = StringWriter();
             val writer = PrintWriter(out);
             val parameters = ImmutableMultimap.builder<String, String>().build()
@@ -384,14 +389,25 @@ class SimAdministrationTest {
             return out.toString()
         }
 
+        /**
+         * Execute the preallocation task, returning the report it makes as a string.
+         */
         fun executePreallocateSimProfilesTask(): String {
             return executeTask(preallocationTask)
         }
 
+        /**
+         * Execute the polling of outstanding sim roles task, returning the report it makes as a string.
+         */
         fun executePollOutstandingSimrofilesTask() : String {
             return executeTask(pollingTask)
         }
 
+        /**
+         * Allocate the next sim profile for a generic ("nokia") phone.  This method
+         * doesn't actually use the tasks, but it is used as a convenience methods when
+         * testing the tasks.
+         */
         fun allocateNextEsimProfile ():SimEntry {
             val simEntry = simApi.allocateNextEsimProfile(hssName = testClass.hssName, phoneType = "nokia")
                     .fold({ null }, { it })
@@ -400,15 +416,25 @@ class SimAdministrationTest {
             return simEntry!!
         }
 
+        /**
+         * Switch off callbacks from the SM-DP+ emulator to the Prime emulator.
+         */
         fun disableEs2CallbacksFromSmdpPlus() {
             SM_DP_PLUS_RULE.getApplication<SmDpPlusApplication>().disableCallbacks()
         }
 
+        /**
+         * Instruct the SM-DP+ emulator to simulate an installation of a simcard.
+         */
         fun emulateDownloadOfIccid(iccid: String) {
             SM_DP_PLUS_RULE.getApplication<SmDpPlusApplication>().emulateInstallOfIccid(iccid)
         }
 
 
+        /**
+         * Get statistics for a specific type of sim profile. Used to test
+         * if the preallocation task is doing the right thing.
+         */
         fun getStatsForProfile(profile:String): SimProfileKeyStatistics {
             val postAllocationStats =
                     simDao.getProfileStats(hssId, profile)
