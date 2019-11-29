@@ -1,10 +1,12 @@
-package org.ostelco.simcards.inventory
+package org.ostelco.simcards.resources
 
 import org.hibernate.validator.constraints.NotEmpty
 import org.ostelco.prime.apierror.ApiErrorCode
 import org.ostelco.prime.apierror.ApiErrorMapper.mapSimManagerErrorToApiError
 import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.simmanager.SimManagerError
+import org.ostelco.simcards.inventory.HssState
+import org.ostelco.simcards.inventory.SimInventoryApi
 import java.io.IOException
 import java.io.InputStream
 import javax.ws.rs.Consumes

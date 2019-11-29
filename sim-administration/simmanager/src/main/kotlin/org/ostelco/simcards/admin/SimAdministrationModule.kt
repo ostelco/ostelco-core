@@ -29,7 +29,7 @@ import org.ostelco.simcards.inventory.SimInventoryCallbackService
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SimInventoryDB
 import org.ostelco.simcards.inventory.SimInventoryDBWrapperImpl
-import org.ostelco.simcards.inventory.SimInventoryResource
+import org.ostelco.simcards.resources.SimInventoryResource
 
 /**
  * The SIM manager

@@ -21,6 +21,7 @@ import org.ostelco.simcards.admin.SimAdministrationConfiguration
 import org.ostelco.simcards.admin.SwtHssConfig
 import org.ostelco.simcards.hss.HssEntry
 import org.ostelco.simcards.profilevendors.ProfileVendorAdapterDatum
+import org.ostelco.simcards.resources.SimInventoryResource
 import java.io.InputStream
 import java.util.*
 import javax.ws.rs.client.Entity
