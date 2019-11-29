@@ -320,6 +320,8 @@ class SimAdministrationTest {
 
         val simApi: SimInventoryApi
 
+        val pollingTask : PollOutstandingProfilesTask
+
         init {
             testClass.loadSimData()
 
@@ -367,88 +369,51 @@ class SimAdministrationTest {
                     hssAdapterProxy = hssAdapterCache,
                     pvaf = pvaf)
             simApi = SimInventoryApi(httpClient, SIM_MANAGER_RULE.configuration, simDao)
+
+            pollingTask = PollOutstandingProfilesTask(simInventoryDAO = simDao, pvaf = pvaf)
+        }
+
+        fun executePreallocateSimProfilesTask() {
+            preallocationTask.preAllocateSimProfiles()  // TODO: Should be rewritten, only assume "execute" available.
+        }
+
+        fun executePollOutstandingSimrofilesTask() : String {
+            // Then run the polling task and see what happens.
+            val out = StringWriter();
+            val writer = PrintWriter(out);
+            val parameters = ImmutableMultimap.builder<String, String>().build()
+            pollingTask.execute(parameters, writer)
+            return out.toString()
+        }
+
+        fun allocateNextEsimProfile ():SimEntry {
+            val simEntry = simApi.allocateNextEsimProfile(hssName = testClass.hssName, phoneType = "nokia")
+                    .fold({ null }, { it })
+
+            assertNotNull(simEntry)
+            return simEntry!!
         }
     }
 
 
     @Test
     fun testPollingOfOutstandingProfilesTask() {
-        loadSimData()
-        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
-                .getDAO()
+        val tif = TaskInvocationFixture(this)
 
-        val profileVendors = SIM_MANAGER_RULE.configuration.profileVendors
-        val hssConfigs = SIM_MANAGER_RULE.configuration.hssVendors
-        val httpClient = HttpClientBuilder(SIM_MANAGER_RULE.environment)
-                .build("periodicProvisioningTaskClient")
-        val maxNoOfProfilesToAllocate = 10
+        tif.executePreallocateSimProfilesTask()
 
-        val hlrs = simDao.getHssEntries()
-        assertThat(hlrs.isRight()).isTrue()
 
-        var hssId: Long = 0
-        hlrs.map {
-            hssId = it[0].id
-        }
+        // Run the polling, and observe that nothing happens.
+        // Then run the polling task and see what happens.
+        var outString = tif.executePollOutstandingSimrofilesTask()
+        assertTrue(true)  // TODO: Replace with something more useful
 
-        val dispatcher = DirectHssDispatcher(
-                hssConfigs = hssConfigs,
-                httpClient = httpClient,
-                healthCheckRegistrar = object : HealthCheckRegistrar {
-                    override fun registerHealthCheck(name: String, healthCheck: HealthCheck) {
-                        SIM_MANAGER_RULE.environment.healthChecks().register(name, healthCheck)
-                    }
-                })
-        val hssAdapterCache = SimManagerToHssDispatcherAdapter(
-                dispatcher = dispatcher,
-                simInventoryDAO = simDao)
-        val preStats = SimProfileKeyStatistics(
-                noOfEntries = 0L,
-                noOfEntriesAvailableForImmediateUse = 0L,
-                noOfReleasedEntries = 0L,
-                noOfUnallocatedEntries = 0L,
-                noOfReservedEntries = 0L)
-        val pvaf = ProfileVendorAdapterFactory(
-                simInventoryDAO = simDao,
-                httpClient = httpClient,
-                profileVendors = ConfigRegistry.config.profileVendors)
-        val preallocationTask = PreallocateProfilesTask(
-                maxNoOfProfileToAllocate = maxNoOfProfilesToAllocate,
-                simInventoryDAO = simDao,
-                hssAdapterProxy = hssAdapterCache,
-                pvaf = pvaf)
-
-        preallocationTask.preAllocateSimProfiles()  // TODO: Should be rewritten, only assume "execute" available.
-
-        val pollingTask = PollOutstandingProfilesTask(simInventoryDAO = simDao, pvaf = pvaf)
-
-        // Wrap in a method that executes the task and returns the result-string, use that
-        // for the preallocation task also.
-
-        val hssName = ConfigRegistry?.config.hssVendors[0].name
-        assertNotNull(hssName)
-
-        // Allocate the next available simcard
-        // val config = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
-        val simApi: SimInventoryApi = SimInventoryApi(httpClient, SIM_MANAGER_RULE.configuration, simDao)
-
-        // TODO: Run the polling, and observe that nothing happens.
-
-        val simEntry = simApi.allocateNextEsimProfile(hssName = hssName, phoneType = "nokia")
-                .fold({ null }, { it })
-
-        assertNotNull(simEntry)
+        // Then allocate the next profile
+        val simEntry = tif.allocateNextEsimProfile()
 
         // Then run the polling task and see what happens.
-        val out = StringWriter();
-        val writer = PrintWriter(out);
-        val parameters = ImmutableMultimap.builder<String, String>().build()
-        pollingTask.execute(parameters, writer)
-
-        // First real verification.  Check that nothing has changed so far, neither in the
-        // SMDP or in the database.
-        val outString = out.toString()
-        assertTrue(outString.contains("State for iccid=8901000000000000977 still set to RELEASED"))
+        outString = tif.executePollOutstandingSimrofilesTask()
+        assertTrue(outString.contains("State for iccid=${simEntry.iccid} still set to RELEASED"))
 
         // TODO: Simulate that ICCID 8901000000000000977 is downloaded, but no callback is sent!
         // TODO: Again check the value of the value by polling, and possibly updating the value.
