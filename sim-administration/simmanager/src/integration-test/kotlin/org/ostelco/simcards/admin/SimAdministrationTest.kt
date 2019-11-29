@@ -422,6 +422,8 @@ class SimAdministrationTest {
         outString = tif.executePollOutstandingSimrofilesTask()
         assertTrue(outString.contains("State for iccid=${simEntry.iccid} still set to RELEASED"))
 
+        // Disable callbacks and emulate dowload (emulation of failing callbacks from SMDP+, which
+        // is the situation we want the callbacks to help us with)
         tif.disableEs2CallbacksFromSmdpPlus()
         tif.emulateDownloadOfIccid(simEntry.iccid)
 
