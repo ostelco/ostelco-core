@@ -374,17 +374,22 @@ class SimAdministrationTest {
             pollingTask = PollOutstandingProfilesTask(simInventoryDAO = simDao, pvaf = pvaf)
         }
 
-        fun executePreallocateSimProfilesTask() {
-            preallocationTask.preAllocateSimProfiles()  // TODO: Should be rewritten, only assume "execute" available.
-        }
+         // typealias TaskExecutionFunction =   (ImmutableMultimap<String, String>,  PrintWriter) -> Unit
 
-        fun executePollOutstandingSimrofilesTask() : String {
-            // Then run the polling task and see what happens.
+        fun executeTask(xf: (ImmutableMultimap<String, String>,  PrintWriter) -> Unit): String {
             val out = StringWriter();
             val writer = PrintWriter(out);
             val parameters = ImmutableMultimap.builder<String, String>().build()
-            pollingTask.execute(parameters, writer)
+            xf(parameters, writer)
             return out.toString()
+        }
+
+        fun executePreallocateSimProfilesTask(): String {
+            return executeTask(preallocationTask::execute)
+        }
+
+        fun executePollOutstandingSimrofilesTask() : String {
+            return executeTask(pollingTask::execute)
         }
 
         fun allocateNextEsimProfile ():SimEntry {
@@ -448,7 +453,6 @@ class SimAdministrationTest {
         outString = tif.executePollOutstandingSimrofilesTask()
         assertTrue(outString.contains("Updated  state for iccid=${simEntry.iccid} to INSTALLED"))
     }
-
 
     @Test
     fun testPeriodicProvisioningTask() {
