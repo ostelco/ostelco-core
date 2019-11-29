@@ -46,6 +46,7 @@ import java.io.PrintWriter
 import java.io.StringWriter
 import java.time.Duration
 import java.time.temporal.ChronoUnit
+import java.util.*
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
@@ -322,6 +323,8 @@ class SimAdministrationTest {
 
         val pollingTask : PollOutstandingProfilesTask
 
+        var hssId: Long = -1L
+
         init {
             testClass.loadSimData()
 
@@ -331,13 +334,11 @@ class SimAdministrationTest {
             profileVendors = SIM_MANAGER_RULE.configuration.profileVendors
             hssConfigs = SIM_MANAGER_RULE.configuration.hssVendors
             httpClient = HttpClientBuilder(SIM_MANAGER_RULE.environment)
-                    .build("taskInvocationFixtureClient")
-            maxNoOfProfilesToAllocate = 10
+                    .build("taskInvocationFixtureClient-${UUID.randomUUID()}")
 
             val hlrs = simDao.getHssEntries()
             assertThat(hlrs.isRight()).isTrue()
 
-            var hssId: Long = 0
             hlrs.map {
                 hssId = it[0].id
             }
@@ -401,6 +402,23 @@ class SimAdministrationTest {
         fun emulateDownloadOfIccid(iccid: String) {
             SM_DP_PLUS_RULE.getApplication<SmDpPlusApplication>().emulateInstallOfIccid(iccid)
         }
+
+
+        fun getStatsForProfile(profile:String): SimProfileKeyStatistics {
+            val postAllocationStats =
+                    simDao.getProfileStats(hssId, profile)
+            assertThat(postAllocationStats.isRight()).isTrue()
+
+            var stats : SimProfileKeyStatistics? = null
+            postAllocationStats.map {
+                stats = it
+            }
+            if (stats == null) {
+                fail("Failed to get stats for profile $profile")
+            }
+
+            return stats!!
+        }
     }
 
 
@@ -434,65 +452,17 @@ class SimAdministrationTest {
 
     @Test
     fun testPeriodicProvisioningTask() {
-        loadSimData()
-        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
-                .getDAO()
+        val  tif = TaskInvocationFixture(this)
 
-        val profileVendors = SIM_MANAGER_RULE.configuration.profileVendors
-        val hssConfigs = SIM_MANAGER_RULE.configuration.hssVendors
-        val httpClient = HttpClientBuilder(SIM_MANAGER_RULE.environment)
-                .build("periodicProvisioningTaskClient")
-        val maxNoOfProfilesToAllocate = 10
+        val preStats = tif.getStatsForProfile(expectedProfile)
+        tif.executePreallocateSimProfilesTask()
 
-        val hlrs = simDao.getHssEntries()
-        assertThat(hlrs.isRight()).isTrue()
-
-        var hssId: Long = 0
-        hlrs.map {
-            hssId = it[0].id
-        }
-
-        val dispatcher = DirectHssDispatcher(
-                hssConfigs = hssConfigs,
-                httpClient = httpClient,
-                healthCheckRegistrar = object : HealthCheckRegistrar {
-                    override fun registerHealthCheck(name: String, healthCheck: HealthCheck) {
-                        SIM_MANAGER_RULE.environment.healthChecks().register(name, healthCheck)
-                    }
-                })
-        val hssAdapterCache = SimManagerToHssDispatcherAdapter(
-                dispatcher = dispatcher,
-                simInventoryDAO = simDao)
-        val preStats = SimProfileKeyStatistics(
-                noOfEntries = 0L,
-                noOfEntriesAvailableForImmediateUse = 0L,
-                noOfReleasedEntries = 0L,
-                noOfUnallocatedEntries = 0L,
-                noOfReservedEntries = 0L)
-        val pvaf = ProfileVendorAdapterFactory(
-                simInventoryDAO = simDao,
-                httpClient = httpClient,
-                profileVendors = ConfigRegistry.config.profileVendors)
-        val task = PreallocateProfilesTask(
-                maxNoOfProfileToAllocate = maxNoOfProfilesToAllocate,
-                simInventoryDAO = simDao,
-                hssAdapterProxy = hssAdapterCache,
-                pvaf = pvaf)
-        task.preAllocateSimProfiles()
-
-        val postAllocationStats =
-                simDao.getProfileStats(hssId, expectedProfile)
-        assertThat(postAllocationStats.isRight()).isTrue()
-
-        var postStats = SimProfileKeyStatistics(0L, 0L, 0L, 0L, 0L)
-        postAllocationStats.map {
-            postStats = it
-        }
+        val postStats = tif.getStatsForProfile(expectedProfile)
 
         val noOfAllocatedProfiles =
                 postStats.noOfEntriesAvailableForImmediateUse - preStats.noOfEntriesAvailableForImmediateUse
         assertEquals(
-                maxNoOfProfilesToAllocate.toLong(),
+                tif.maxNoOfProfilesToAllocate.toLong(),
                 noOfAllocatedProfiles)
     }
 
