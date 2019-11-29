@@ -85,8 +85,7 @@ import org.ostelco.prime.module.getResource
 import org.ostelco.prime.notifications.EmailNotifier
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
-import org.ostelco.prime.paymentprocessor.core.BadGatewayError
-import org.ostelco.prime.paymentprocessor.core.ForbiddenError
+import org.ostelco.prime.paymentprocessor.core.InvalidRequestError
 import org.ostelco.prime.paymentprocessor.core.InvoicePaymentInfo
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.PaymentStatus
@@ -94,7 +93,10 @@ import org.ostelco.prime.paymentprocessor.core.PaymentTransactionInfo
 import org.ostelco.prime.paymentprocessor.core.PlanAlredyPurchasedError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import org.ostelco.prime.paymentprocessor.core.StorePurchaseError
 import org.ostelco.prime.paymentprocessor.core.SubscriptionDetailsInfo
+import org.ostelco.prime.paymentprocessor.core.SubscriptionError
+import org.ostelco.prime.paymentprocessor.core.UpdatePurchaseError
 import org.ostelco.prime.securearchive.SecureArchiveService
 import org.ostelco.prime.sim.SimManager
 import org.ostelco.prime.storage.AlreadyExistsError
@@ -1271,13 +1273,13 @@ object Neo4jStoreSingleton : GraphStore {
                         .mapLeft {
                             org.ostelco.prime.paymentprocessor.core.NotFoundError(
                                     "Failed to get customer data for customer with identity - $identity",
-                                    error = it)
+                                    internalError = it)
                         }.bind()
 
                 val product = getProduct(identity, sku)
                         .mapLeft {
                             org.ostelco.prime.paymentprocessor.core.NotFoundError("Product $sku is unavailable",
-                                    error = it)
+                                    internalError = it)
                         }
                         .bind()
 
@@ -1317,11 +1319,16 @@ object Neo4jStoreSingleton : GraphStore {
                     will ensure that the invoice will be voided. */
                     createPurchaseRecord(customer.id, purchaseRecord)
                             .mapLeft {
-                                logger.error("Failed to save purchase record for customer ${customer.id}, invoice-id $invoiceId, invoice will be voided in Stripe")
-                                AuditLog.error(customerId = customer.id, message = "Failed to save purchase record - invoice-id $invoiceId, invoice will be voided in Stripe")
-                                BadGatewayError("Failed to save purchase record",
-                                        error = it)
+                                logger.error("Failed to save purchase record for customer ${customer.id}, invoice: $invoiceId, invoice will be voided in Stripe")
+                                AuditLog.error(customerId = customer.id,
+                                        message = "Failed to save purchase record - invoice: $invoiceId, invoice will be voided in Stripe")
+                                StorePurchaseError("Failed to save purchase record",
+                                        internalError = it)
                             }.bind()
+
+                    /* Adds purchase to customer history. */
+                    AuditLog.info(customerId = customer.id,
+                            message = "Purchased product $sku for ${formatMoney(product.price)} (invoice: $invoiceId, charge-id: $chargeId)")
 
                     /* TODO: While aborting transactions, send a record with "reverted" status. */
                     analyticsReporter.reportPurchase(
@@ -1336,7 +1343,9 @@ object Neo4jStoreSingleton : GraphStore {
                         customerId = customer.id,
                         product = product
                 ).mapLeft {
-                    BadGatewayError(description = it.message, error = it.error).left().bind()
+                    StorePurchaseError(description = it.message, internalError = it.error)
+                            .left()
+                            .bind()
                 }.bind()
 
                 ProductInfo(product.sku)
@@ -1436,8 +1445,8 @@ object Neo4jStoreSingleton : GraphStore {
                 if (sourceId != null) {
                     val sourceDetails = paymentProcessor.getSavedSources(customer.id)
                             .mapLeft {
-                                BadGatewayError("Failed to fetch sources for customer: ${customer.id}",
-                                        error = it)
+                                org.ostelco.prime.paymentprocessor.core.NotFoundError("Failed to fetch sources for customer: ${customer.id}",
+                                        internalError = it)
                             }.bind()
                     if (!sourceDetails.any { sourceDetailsInfo -> sourceDetailsInfo.id == sourceId }) {
                         paymentProcessor.addSource(customer.id, sourceId)
@@ -1451,8 +1460,8 @@ object Neo4jStoreSingleton : GraphStore {
                         taxRegionId = taxRegionId)
                         .mapLeft {
                             AuditLog.error(customerId = customer.id, message = "Failed to subscribe to plan $sku")
-                            BadGatewayError("Failed to subscribe ${customer.id} to plan $sku",
-                                    error = it)
+                            SubscriptionError("Failed to subscribe ${customer.id} to plan $sku",
+                                    internalError = it)
                         }
                         .bind()
             }.fix()
@@ -1519,9 +1528,10 @@ object Neo4jStoreSingleton : GraphStore {
                     PaymentStatus.PAYMENT_SUCCEEDED -> {
                     }
                     PaymentStatus.REQUIRES_PAYMENT_METHOD -> {
-                        NotCreatedError(type = planEntity.name, id = "Failed to subscribe $customerId to ${plan.id}",
-                                error = ForbiddenError("Payment method failed"))
-                                .left().bind()
+                        NotCreatedError(type = "Customer subscription to Plan",
+                                id = "$customerId -> ${plan.id}",
+                                error = InvalidRequestError("Payment method failed")
+                        ).left().bind()
                     }
                     PaymentStatus.REQUIRES_ACTION,
                     PaymentStatus.TRIAL_START -> {
@@ -1569,7 +1579,8 @@ object Neo4jStoreSingleton : GraphStore {
             if (sourceId != null) {
                 val sourceDetails = paymentProcessor.getSavedSources(customer.id)
                         .mapLeft {
-                            BadGatewayError("Failed to fetch sources for user", error = it)
+                            org.ostelco.prime.paymentprocessor.core.NotFoundError("Failed to fetch sources for user",
+                                    internalError = it)
                         }.bind()
                 addedSourceId = sourceId
 
@@ -1596,23 +1607,27 @@ object Neo4jStoreSingleton : GraphStore {
                         it
                     }.linkReversalActionToTransaction(transaction) {
                         paymentProcessor.removeInvoice(it.id)
-                        logger.error(NOTIFY_OPS_MARKER,
-                                """Failed to create or pay invoice for customer ${customer.id}, invoice-id: ${it.id}.
-                                   Verify that the invoice has been deleted or voided in Stripe dashboard.
-                                """.trimIndent())
+                        logger.warn(NOTIFY_OPS_MARKER, """
+                            Failed to pay invoice for customer ${customer.id}, invoice-id: ${it.id}.
+                            Verify that the invoice has been deleted or voided in Stripe dashboard.
+                            """.trimIndent())
                     }.bind()
 
             /* Force immediate payment of the invoice. */
             val invoicePaymentInfo = paymentProcessor.payInvoice(invoice.id)
                     .mapLeft {
-                        logger.error("Payment of invoice ${invoice.id} failed for customer ${customer.id}.")
+                        logger.warn("Payment of invoice ${invoice.id} failed for customer ${customer.id}.")
+                        /* Adds failed purchase to customer history. */
+                        AuditLog.warn(customerId = customer.id,
+                                message = "Failed to complete purchase of product $sku for ${formatMoney(price)} " +
+                                        "status: ${it.code} decline reason: ${it.declineCode}")
                         it
                     }.linkReversalActionToTransaction(transaction) {
                         paymentProcessor.refundCharge(it.chargeId)
-                        logger.error(NOTIFY_OPS_MARKER,
-                                """Refunded customer ${customer.id} for invoice: ${it.id}.
-                                   Verify that the invoice has been refunded in Stripe dashboard.
-                                """.trimIndent())
+                        logger.warn(NOTIFY_OPS_MARKER, """
+                            Refunded customer ${customer.id} for invoice: ${it.id}.
+                            Verify that the invoice has been refunded in Stripe dashboard.
+                            """.trimIndent())
                     }.bind()
 
             invoicePaymentInfo
@@ -2668,8 +2683,8 @@ object Neo4jStoreSingleton : GraphStore {
 
                 val purchaseRecords = getPurchaseTransactions(startPadded, endPadded)
                         .mapLeft {
-                            BadGatewayError("Error when fetching purchase records",
-                                    error = it)
+                            org.ostelco.prime.paymentprocessor.core.NotFoundError("Error when fetching purchase records",
+                                    internalError = it)
                         }.bind()
                 val paymentRecords = getPaymentTransactions(startPadded, endPadded)
                         .bind()
@@ -2736,16 +2751,19 @@ object Neo4jStoreSingleton : GraphStore {
     // For refunds
     //
 
-    private fun checkPurchaseRecordForRefund(purchaseRecord: PurchaseRecord): Either<PaymentError, Unit> {
-        if (purchaseRecord.refund != null) {
-            logger.error("Trying to refund again, ${purchaseRecord.id}, refund ${purchaseRecord.refund?.id}")
-            return Either.left(ForbiddenError("Trying to refund again"))
-        } else if (purchaseRecord.product.price.amount == 0) {
-            logger.error("Trying to refund a free product, ${purchaseRecord.id}")
-            return Either.left(ForbiddenError("Trying to refund a free purchase"))
-        }
-        return Unit.right()
-    }
+    private fun checkPurchaseRecordForRefund(purchaseRecord: PurchaseRecord): Either<PaymentError, Unit> =
+            if (purchaseRecord.refund != null) {
+                logger.error("Trying to refund again, ${purchaseRecord.id}, refund ${purchaseRecord.refund?.id}")
+                InvalidRequestError("Attempt at refunding again the purchase ${purchaseRecord.id} " +
+                        "of product ${purchaseRecord.product.sku}, refund ${purchaseRecord.refund?.id}")
+                        .left()
+            } else if (purchaseRecord.product.price.amount == 0) {
+                logger.error("Trying to refund a free product, ${purchaseRecord.id}")
+                InvalidRequestError("Trying to refund a free purchase of product ${purchaseRecord.product.sku}")
+                        .left()
+            } else {
+                Unit.right()
+            }
 
     override fun refundPurchase(
             identity: ModelIdentity,
@@ -2757,13 +2775,13 @@ object Neo4jStoreSingleton : GraphStore {
                         .mapLeft {
                             logger.error("Failed to find customer with identity - $identity")
                             NotFoundPaymentError("Failed to find customer with identity - $identity",
-                                    error = it)
+                                    internalError = it)
                         }.bind()
                 val purchaseRecord = get(PurchaseRecord withId purchaseRecordId)
                         // If we can't find the record, return not-found
                         .mapLeft {
                             org.ostelco.prime.paymentprocessor.core.NotFoundError("Purchase Record unavailable",
-                                    error = it)
+                                    internalError = it)
                         }.bind()
                 checkPurchaseRecordForRefund(purchaseRecord)
                         .bind()
@@ -2779,9 +2797,9 @@ object Neo4jStoreSingleton : GraphStore {
                 )
                 update { changedPurchaseRecord }
                         .mapLeft {
-                            logger.error("failed to update purchase record, for refund $refund.id, chargeId $purchaseRecordId, payment has been refunded in Stripe")
-                            BadGatewayError("Failed to update purchase record for refund ${refund.id}",
-                                    error = it)
+                            logger.error("Failed to update purchase record, for refund $refund.id, chargeId $purchaseRecordId, payment has been refunded in Stripe")
+                            UpdatePurchaseError("Failed to update purchase record for refund ${refund.id}",
+                                    internalError = it)
                         }.bind()
 
                 analyticsReporter.reportRefund(
