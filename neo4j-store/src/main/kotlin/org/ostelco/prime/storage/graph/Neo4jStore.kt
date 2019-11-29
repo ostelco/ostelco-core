@@ -1328,7 +1328,7 @@ object Neo4jStoreSingleton : GraphStore {
 
                     /* Adds purchase to customer history. */
                     AuditLog.info(customerId = customer.id,
-                            message = "Purchased product $sku for ${product.price.amount} ${product.price.currency} (invoice: $invoiceId, charge-id: $chargeId)")
+                            message = "Purchased product $sku for ${formatMoney(product.price)} (invoice: $invoiceId, charge-id: $chargeId)")
 
                     /* TODO: While aborting transactions, send a record with "reverted" status. */
                     analyticsReporter.reportPurchase(
@@ -1528,9 +1528,10 @@ object Neo4jStoreSingleton : GraphStore {
                     PaymentStatus.PAYMENT_SUCCEEDED -> {
                     }
                     PaymentStatus.REQUIRES_PAYMENT_METHOD -> {
-                        NotCreatedError(type = planEntity.name, id = "Failed to subscribe $customerId to ${plan.id}",
-                                error = InvalidRequestError("Payment method failed"))
-                                .left().bind()
+                        NotCreatedError(type = "Customer subscription to Plan",
+                                id = "$customerId -> ${plan.id}",
+                                error = InvalidRequestError("Payment method failed")
+                        ).left().bind()
                     }
                     PaymentStatus.REQUIRES_ACTION,
                     PaymentStatus.TRIAL_START -> {
@@ -1606,10 +1607,10 @@ object Neo4jStoreSingleton : GraphStore {
                         it
                     }.linkReversalActionToTransaction(transaction) {
                         paymentProcessor.removeInvoice(it.id)
-                        logger.warn(NOTIFY_OPS_MARKER,
-                                """Failed to pay invoice for customer ${customer.id}, invoice-id: ${it.id}.
-                                   Verify that the invoice has been deleted or voided in Stripe dashboard.
-                                """.trimIndent())
+                        logger.warn(NOTIFY_OPS_MARKER, """
+                            Failed to pay invoice for customer ${customer.id}, invoice-id: ${it.id}.
+                            Verify that the invoice has been deleted or voided in Stripe dashboard.
+                            """.trimIndent())
                     }.bind()
 
             /* Force immediate payment of the invoice. */
@@ -1618,15 +1619,15 @@ object Neo4jStoreSingleton : GraphStore {
                         logger.warn("Payment of invoice ${invoice.id} failed for customer ${customer.id}.")
                         /* Adds failed purchase to customer history. */
                         AuditLog.warn(customerId = customer.id,
-                                message = "Failed to complete purchase of product $sku for $price.amount} ${price.currency} " +
+                                message = "Failed to complete purchase of product $sku for ${formatMoney(price)} " +
                                         "status: ${it.code} decline reason: ${it.declineCode}")
                         it
                     }.linkReversalActionToTransaction(transaction) {
                         paymentProcessor.refundCharge(it.chargeId)
-                        logger.warn(NOTIFY_OPS_MARKER,
-                                """Refunded customer ${customer.id} for invoice: ${it.id}.
-                                   Verify that the invoice has been refunded in Stripe dashboard.
-                                """.trimIndent())
+                        logger.warn(NOTIFY_OPS_MARKER, """
+                            Refunded customer ${customer.id} for invoice: ${it.id}.
+                            Verify that the invoice has been refunded in Stripe dashboard.
+                            """.trimIndent())
                     }.bind()
 
             invoicePaymentInfo
