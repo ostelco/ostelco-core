@@ -331,7 +331,7 @@ class SimAdministrationTest {
             profileVendors = SIM_MANAGER_RULE.configuration.profileVendors
             hssConfigs = SIM_MANAGER_RULE.configuration.hssVendors
             httpClient = HttpClientBuilder(SIM_MANAGER_RULE.environment)
-                    .build("periodicProvisioningTaskClient")
+                    .build("taskInvocationFixtureClient")
             maxNoOfProfilesToAllocate = 10
 
             val hlrs = simDao.getHssEntries()
