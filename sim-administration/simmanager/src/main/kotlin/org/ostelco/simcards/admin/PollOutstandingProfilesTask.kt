@@ -105,10 +105,8 @@ class PollOutstandingProfilesTask(
         }
 
         fun asVendorIdToIccdList(profiles: List<SimEntry>): Map<Long, List<String>> {
-            val iccidsByProfileVendorIdMap : MutableMap<Long, MutableList<String>>
-                    = mutableMapOf<Long, MutableList<String>>()
-            profiles.forEach {
-                simEntry: SimEntry ->
+            val iccidsByProfileVendorIdMap: MutableMap<Long, MutableList<String>> = mutableMapOf<Long, MutableList<String>>()
+            profiles.forEach { simEntry: SimEntry ->
                 val vendorId = simEntry.profileVendorId
                 if (!iccidsByProfileVendorIdMap.containsKey(vendorId)) {
                     iccidsByProfileVendorIdMap[vendorId] = mutableListOf<String>()
@@ -125,8 +123,9 @@ class PollOutstandingProfilesTask(
         for ((vendorId, iccidList) in asVendorIdToIccdList(profilesToPoll)) {
             pvaf.getAdapterByVendorId(vendorId).mapRight { profileVendorAdapter ->
                 val statuses = profileVendorAdapter.getProfileStatusList(iccidList)
-                statuses.mapRight{
-                    it.forEach { updateProfileInDb(it) } }
+                statuses.mapRight {
+                    it.forEach { updateProfileInDb(it) }
+                }
             }  // TODO: Am I missing the error situation here?
         }
     }
