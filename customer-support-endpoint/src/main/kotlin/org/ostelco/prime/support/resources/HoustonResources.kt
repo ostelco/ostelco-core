@@ -25,7 +25,7 @@ import org.ostelco.prime.model.SimProfile
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
-import org.ostelco.prime.paymentprocessor.core.ForbiddenError
+import org.ostelco.prime.paymentprocessor.core.InvalidRequestError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.storage.AdminDataSource
 import org.ostelco.prime.storage.AuditLogStore
@@ -308,7 +308,7 @@ class RefundResource {
                 storage.refundPurchase(identity, purchaseRecordId, reason)
             }.mapLeft {
                 when (it) {
-                    is ForbiddenError -> org.ostelco.prime.apierror.ForbiddenError("Failed to refund purchase. ${it.description}", ApiErrorCode.FAILED_TO_REFUND_PURCHASE)
+                    is InvalidRequestError -> org.ostelco.prime.apierror.ForbiddenError("Failed to refund purchase. ${it.description}", ApiErrorCode.FAILED_TO_REFUND_PURCHASE)
                     else -> NotFoundError("Failed to refund purchase. ${it.toString()}", ApiErrorCode.FAILED_TO_REFUND_PURCHASE)
                 }
             }
