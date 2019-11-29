@@ -9,6 +9,7 @@ import com.google.gson.JsonParser
 import io.dropwizard.client.HttpClientBuilder
 import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.jdbi3.JdbiFactory
+import io.dropwizard.servlets.tasks.Task
 import io.dropwizard.testing.ConfigOverride
 import io.dropwizard.testing.ResourceHelpers
 import io.dropwizard.testing.junit.DropwizardAppRule
@@ -374,22 +375,21 @@ class SimAdministrationTest {
             pollingTask = PollOutstandingProfilesTask(simInventoryDAO = simDao, pvaf = pvaf)
         }
 
-         // typealias TaskExecutionFunction =   (ImmutableMultimap<String, String>,  PrintWriter) -> Unit
 
-        fun executeTask(xf: (ImmutableMultimap<String, String>,  PrintWriter) -> Unit): String {
+        fun executeTask(task: Task): String {
             val out = StringWriter();
             val writer = PrintWriter(out);
             val parameters = ImmutableMultimap.builder<String, String>().build()
-            xf(parameters, writer)
+            task.execute(parameters, writer)
             return out.toString()
         }
 
         fun executePreallocateSimProfilesTask(): String {
-            return executeTask(preallocationTask::execute)
+            return executeTask(preallocationTask)
         }
 
         fun executePollOutstandingSimrofilesTask() : String {
-            return executeTask(pollingTask::execute)
+            return executeTask(pollingTask)
         }
 
         fun allocateNextEsimProfile ():SimEntry {
