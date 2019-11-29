@@ -82,7 +82,6 @@ modules:
       projectId: ${GCP_PROJECT_ID}
       dataTrafficTopicId: data-traffic
       purchaseInfoTopicId: purchase-info
-      activeUsersTopicId: active-users
       simProvisioningTopicId: sim-provisioning
       subscriptionStatusUpdateTopicId: subscription-status-update
       refundsTopicId: analytics-refunds
@@ -168,6 +167,7 @@ modules:
         validationQuery: "/* Prime Health Check */ SELECT 1"
       httpClient:
         timeout: 10000ms
+        connectionTimeout: 10000ms
         tls:
           # Default is 500 milliseconds, we need more when debugging.
           # protocol: TLSv1.2

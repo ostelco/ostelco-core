@@ -15,8 +15,6 @@ import org.ostelco.diameter.model.SessionContext
 import org.ostelco.ocs.api.*
 import org.ostelco.ocsgw.OcsServer
 import org.ostelco.ocsgw.converter.ProtobufToDiameterConverter
-import org.ostelco.prime.metrics.api.OcsgwAnalyticsReport
-import org.ostelco.prime.metrics.api.User
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
@@ -107,13 +105,6 @@ class ProtobufDataSource {
             sessionIdMap.remove(creditControlContext.creditControlRequest.msisdn)
             logger.debug("Number of active sessions : ${sessionIdMap.size}")
         }
-    }
-
-    fun getAnalyticsReport(): OcsgwAnalyticsReport {
-        val builder = OcsgwAnalyticsReport.newBuilder().setActiveSessions(sessionIdMap.size)
-        builder.keepAlive = false
-        sessionIdMap.forEach { msisdn, (_, _, _, apn, mccMnc) -> builder.addUsers(User.newBuilder().setApn(apn).setMccMnc(mccMnc).setMsisdn(msisdn).build()) }
-        return builder.build()
     }
 
     /**
