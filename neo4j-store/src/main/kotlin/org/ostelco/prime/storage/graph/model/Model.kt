@@ -61,7 +61,10 @@ data class Segment(override val id: String) : HasId {
     companion object
 }
 
-data class Offer(override val id: String) : HasId
+data class Offer(override val id: String) : HasId {
+
+    companion object
+}
 
 data class ExCustomer(
         override val id:String,
