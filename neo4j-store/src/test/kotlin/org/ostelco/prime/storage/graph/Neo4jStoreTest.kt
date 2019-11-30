@@ -4,7 +4,7 @@ import arrow.core.Either
 import arrow.core.fix
 import arrow.core.right
 import arrow.effects.IO
-import arrow.instances.either.monad.monad
+import arrow.core.extensions.either.monad.monad
 import com.palantir.docker.compose.DockerComposeRule
 import com.palantir.docker.compose.connection.waiting.HealthChecks
 import kotlinx.coroutines.runBlocking

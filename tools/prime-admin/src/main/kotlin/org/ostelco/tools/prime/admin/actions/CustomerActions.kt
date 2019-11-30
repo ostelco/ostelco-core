@@ -6,7 +6,7 @@ import arrow.core.flatMap
 import arrow.core.left
 import arrow.core.right
 import arrow.effects.IO
-import arrow.instances.either.monad.monad
+import arrow.core.extensions.either.monad.monad
 import org.apache.commons.codec.digest.DigestUtils
 import org.ostelco.prime.dsl.withId
 import org.ostelco.prime.dsl.writeTransaction

@@ -1,7 +1,7 @@
 import arrow.core.Either
 import arrow.core.fix
 import arrow.effects.IO
-import arrow.instances.either.monad.monad
+import arrow.core.extensions.either.monad.monad
 import org.ostelco.prime.dsl.WriteTransaction
 import org.ostelco.prime.dsl.withSku
 import org.ostelco.prime.model.Customer

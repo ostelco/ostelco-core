@@ -6,7 +6,7 @@ import arrow.core.flatMap
 import arrow.core.left
 import arrow.core.right
 import arrow.effects.IO
-import arrow.instances.either.monad.monad
+import arrow.core.extensions.either.monad.monad
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.simmanager.DatabaseError

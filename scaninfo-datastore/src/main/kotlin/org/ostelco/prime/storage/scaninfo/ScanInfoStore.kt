@@ -5,7 +5,7 @@ import arrow.core.fix
 import arrow.core.left
 import arrow.core.right
 import arrow.effects.IO
-import arrow.instances.either.monad.monad
+import arrow.core.extensions.either.monad.monad
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.cloud.datastore.Blob

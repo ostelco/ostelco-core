@@ -2,7 +2,7 @@ import arrow.core.Either
 import arrow.core.fix
 import arrow.core.getOrElse
 import arrow.effects.IO
-import arrow.instances.either.monad.monad
+import arrow.core.extensions.either.monad.monad
 import org.ostelco.prime.auditlog.AuditLog
 import org.ostelco.prime.dsl.WriteTransaction
 import org.ostelco.prime.dsl.withId

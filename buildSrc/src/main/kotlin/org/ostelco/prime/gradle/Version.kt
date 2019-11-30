@@ -3,7 +3,7 @@ package org.ostelco.prime.gradle
 object Version {
   const val assertJ = "3.14.0"
 
-  const val arrow = "0.8.2"
+  const val arrow = "0.9.0"
 
   const val byteBuddy = "1.10.3"
   const val csv = "1.7"

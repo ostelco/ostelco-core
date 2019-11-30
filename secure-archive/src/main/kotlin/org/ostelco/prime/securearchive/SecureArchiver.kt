@@ -3,7 +3,7 @@ package org.ostelco.prime.securearchive
 import arrow.core.Either
 import arrow.core.fix
 import arrow.effects.IO
-import arrow.instances.either.monad.monad
+import arrow.core.extensions.either.monad.monad
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.securearchive.ConfigRegistry.config
 import org.ostelco.prime.securearchive.util.Encrypter.Companion.getEncrypter
