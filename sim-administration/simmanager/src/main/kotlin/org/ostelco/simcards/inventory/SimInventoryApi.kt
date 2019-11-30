@@ -1,12 +1,10 @@
 package org.ostelco.simcards.inventory
 
 import arrow.core.Either
-import arrow.core.fix
+import arrow.core.extensions.fx
 import arrow.core.flatMap
 import arrow.core.left
 import arrow.core.right
-import arrow.effects.IO
-import arrow.instances.either.monad.monad
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.simmanager.DatabaseError
@@ -25,22 +23,18 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
 
     private val logger by getLogger()
 
-    fun findSimProfileByIccid(hlrName: String, iccid: String): Either<SimManagerError, SimEntry> =
-            IO {
-                Either.monad<SimManagerError>().binding {
+    fun findSimProfileByIccid(hlrName: String, iccid: String): Either<SimManagerError, SimEntry> = Either.fx {
 
-                    val simEntry = dao.getSimProfileByIccid(iccid).bind()
-                    checkForValidHlr(hlrName, simEntry)
+        val simEntry = dao.getSimProfileByIccid(iccid).bind()
+        checkForValidHlr(hlrName, simEntry)
 
-                    val config = getProfileVendorConfig(simEntry).bind()
+        val config = getProfileVendorConfig(simEntry).bind()
 
-                    // Return the entry found in the database, extended with a
-                    // code represernting the string that will be used by the LPA in the
-                    // UA to talk to the sim vendor's SM-DP+ over the ES9+ protocol.
-                    simEntry.copy(code = "LPA:1\$${config.es9plusEndpoint}\$${simEntry.matchingId}")
-
-                }.fix()
-            }.unsafeRunSync()
+        // Return the entry found in the database, extended with a
+        // code represernting the string that will be used by the LPA in the
+        // UA to talk to the sim vendor's SM-DP+ over the ES9+ protocol.
+        simEntry.copy(code = "LPA:1\$${config.es9plusEndpoint}\$${simEntry.matchingId}")
+    }
 
     fun findSimProfileByImsi(hlrName: String, imsi: String): Either<SimManagerError, SimEntry> =
             dao.getSimProfileByImsi(imsi)
@@ -65,56 +59,51 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                                 }
                     }
 
-    fun allocateNextEsimProfile(hlrName: String, phoneType: String): Either<SimManagerError, SimEntry> =
-            IO {
-                Either.monad<SimManagerError>().binding {
-                    logger.info("Allocating new SIM for hlr ${hlrName} and phone-type ${phoneType}")
+    fun allocateNextEsimProfile(hlrName: String, phoneType: String): Either<SimManagerError, SimEntry> = Either.fx {
 
-                    val hlrAdapter = dao.getHssEntryByName(hlrName)
-                            .bind()
-                    val profile = getProfileType(hlrName, phoneType)
-                            .bind()
-                    val simEntry = dao.findNextReadyToUseSimProfileForHss(hlrAdapter.id, profile)
-                            .bind()
-                    val config = getProfileVendorConfig(simEntry)
-                            .bind()
+        logger.info("Allocating new SIM for hlr ${hlrName} and phone-type ${phoneType}")
 
-                    if (simEntry.id == null) {
-                        DatabaseError("simEntry has no id (simEntry=$simEntry)").left().bind()
-                    }
+        val hlrAdapter = dao.getHssEntryByName(hlrName)
+                .bind()
+        val profile = getProfileType(hlrName, phoneType)
+                .bind()
+        val simEntry = dao.findNextReadyToUseSimProfileForHss(hlrAdapter.id, profile)
+                .bind()
+        val config = getProfileVendorConfig(simEntry)
+                .bind()
 
-                    val updatedSimEntry = dao.setProvisionState(simEntry.id, ProvisionState.PROVISIONED)
-                            .bind()
+        if (simEntry.id == null) {
+            DatabaseError("simEntry has no id (simEntry=$simEntry)").left().bind()
+        }
 
-                    // TODO: Add 'code' field content.
-                    //   Original format: LPA:<hostname>:<matching-id>
-                    //   New format: LPA:1$<endpoint>$<matching-id> */
-                    updatedSimEntry.copy(code = "LPA:1\$${config.es9plusEndpoint}\$${updatedSimEntry.matchingId}")
-                }.fix()
-            }.unsafeRunSync()
+        val updatedSimEntry = dao.setProvisionState(simEntry.id, ProvisionState.PROVISIONED)
+                .bind()
 
+        // TODO: Add 'code' field content.
+        //   Original format: LPA:<hostname>:<matching-id>
+        //   New format: LPA:1$<endpoint>$<matching-id> */
+        updatedSimEntry.copy(code = "LPA:1\$${config.es9plusEndpoint}\$${updatedSimEntry.matchingId}")
+    }
 
     fun importBatch(hlrName: String,
                     simVendor: String,
                     csvInputStream: InputStream,
-                    initialHssState: HssState): Either<SimManagerError, SimImportBatch> =
-            IO {
-                Either.monad<SimManagerError>().binding {
-                    val profileVendorAdapter = dao.getProfileVendorAdapterDatumByName(simVendor)
-                            .bind()
-                    val hlrAdapter = dao.getHssEntryByName(hlrName)
-                            .bind()
+                    initialHssState: HssState): Either<SimManagerError, SimImportBatch> = Either.fx {
 
-                    /* Exits if not true. */
-                    dao.simVendorIsPermittedForHlr(profileVendorAdapter.id, hlrAdapter.id)
-                            .bind()
-                    dao.importSims(importer = "importer", // TODO: This is a very strange metricName for an importer .-)
-                            hlrId = hlrAdapter.id,
-                            profileVendorId = profileVendorAdapter.id,
-                            csvInputStream = csvInputStream,
-                            initialHssState = initialHssState).bind()
-                }.fix()
-            }.unsafeRunSync()
+        val profileVendorAdapter = dao.getProfileVendorAdapterDatumByName(simVendor)
+                .bind()
+        val hlrAdapter = dao.getHssEntryByName(hlrName)
+                .bind()
+
+        /* Exits if not true. */
+        dao.simVendorIsPermittedForHlr(profileVendorAdapter.id, hlrAdapter.id)
+                .bind()
+        dao.importSims(importer = "importer", // TODO: This is a very strange metricName for an importer .-)
+                hlrId = hlrAdapter.id,
+                profileVendorId = profileVendorAdapter.id,
+                csvInputStream = csvInputStream,
+                initialHssState = initialHssState).bind()
+    }
 
     /* Helper functions. */
 
