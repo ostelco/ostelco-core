@@ -25,16 +25,13 @@ dependencies {
 
   api("io.arrow-kt:arrow-core-data:${Version.arrow}")
   api("io.arrow-kt:arrow-core-extensions:${Version.arrow}")
-  api("io.arrow-kt:arrow-syntax:${Version.arrow}")
   api("io.arrow-kt:arrow-typeclasses:${Version.arrow}")
   api("io.arrow-kt:arrow-extras-data:${Version.arrow}")
   api("io.arrow-kt:arrow-extras-extensions:${Version.arrow}")
   api("io.arrow-kt:arrow-effects-data:${Version.arrow}")
   api("io.arrow-kt:arrow-effects-extensions:${Version.arrow}")
   api("io.arrow-kt:arrow-effects-io-extensions:${Version.arrow}")
-  api("io.arrow-kt:arrow-meta:${Version.arrow}")
-  api("io.arrow-kt:arrow-generic:${Version.arrow}")
-  
+
   runtimeOnly("io.dropwizard:dropwizard-json-logging:${Version.dropwizard}")
 
   testImplementation("io.dropwizard:dropwizard-testing:${Version.dropwizard}")
