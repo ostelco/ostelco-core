@@ -1,19 +1,21 @@
 package org.ostelco.prime.storage.graph
 
-// Some of the model classes cannot be directly used in Graph Store as Entities.
-// See documentation in [model/Model.kt] for more details.
 import arrow.core.Either
 import arrow.core.Either.Left
 import arrow.core.Either.Right
 import arrow.core.EitherOf
+import arrow.core.extensions.either.monad.monad
+import arrow.core.extensions.fx
 import arrow.core.fix
 import arrow.core.flatMap
 import arrow.core.getOrHandle
 import arrow.core.left
 import arrow.core.leftIfNull
 import arrow.core.right
-import arrow.effects.IO
-import arrow.instances.either.monad.monad
+import arrow.fx.IO
+import arrow.fx.extensions.fx
+import arrow.fx.extensions.io.monad.monad
+import arrow.fx.fix
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.appnotifier.AppNotifier
@@ -148,6 +150,9 @@ import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.set
 import kotlin.reflect.KClass
+
+// Some of the model classes cannot be directly used in Graph Store as Entities.
+// See documentation in [model/Model.kt] for more details.
 import org.ostelco.prime.model.Identity as ModelIdentity
 import org.ostelco.prime.model.Offer as ModelOffer
 import org.ostelco.prime.model.Segment as ModelSegment
@@ -404,23 +409,20 @@ object Neo4jStoreSingleton : GraphStore {
         // Here it runs IO synchronously and returning its result blocking the current thread.
         // https://arrow-kt.io/docs/patterns/monad_comprehensions/#comprehensions-over-coroutines
         // https://arrow-kt.io/docs/effects/io/#unsaferunsync
-        IO {
-            Either.monad<StoreError>().binding {
-                validateCreateCustomerParams(customer, referredBy).bind()
-                val bundleId = UUID.randomUUID().toString()
-                create { Identity(id = identity.id, type = identity.type) }.bind()
-                create { customer.copy(createdOn = utcTimeNow()) }.bind()
-                fact { (Identity withId identity.id) identifies (Customer withId customer.id) using Identifies(provider = identity.provider) }.bind()
-                create { Bundle(id = bundleId, balance = 0L) }.bind()
-                fact { (Customer withId customer.id) hasBundle (Bundle withId bundleId) }.bind()
-                if (referredBy != null) {
-                    fact { (Customer withId referredBy) referred (Customer withId customer.id) }.bind()
-                }
-                onNewCustomerAction.apply(identity = identity, customer = customer, transaction = transaction).bind()
-                AuditLog.info(customerId = customer.id, message = "Customer is created")
-            }.fix()
-        }.unsafeRunSync()
-                .ifFailedThenRollback(transaction)
+        Either.fx<StoreError, Unit> {
+            validateCreateCustomerParams(customer, referredBy).bind()
+            val bundleId = UUID.randomUUID().toString()
+            create { Identity(id = identity.id, type = identity.type) }.bind()
+            create { customer.copy(createdOn = utcTimeNow()) }.bind()
+            fact { (Identity withId identity.id) identifies (Customer withId customer.id) using Identifies(provider = identity.provider) }//.bind()
+            create { Bundle(id = bundleId, balance = 0L) }.bind()
+            fact { (Customer withId customer.id) hasBundle (Bundle withId bundleId) }.bind()
+            if (referredBy != null) {
+                fact { (Customer withId referredBy) referred (Customer withId customer.id) }.bind()
+            }
+            onNewCustomerAction.apply(identity = identity, customer = customer, transaction = transaction).bind()
+            AuditLog.info(customerId = customer.id, message = "Customer is created")
+        }.ifFailedThenRollback(transaction)
     }
 
     override fun updateCustomer(
@@ -440,75 +442,72 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     override fun removeCustomer(identity: ModelIdentity): Either<StoreError, Unit> = writeTransaction {
-        IO {
-            Either.monad<StoreError>().binding {
-                // get customer id
-                val customer = getCustomer(identity).bind()
-                val customerId = customer.id
-                // create ex-customer with same id
-                create { ExCustomer(id = customerId, terminationDate = LocalDate.now().toString(), createdOn = customer.createdOn) }.bind()
-                // get all subscriptions and link them to ex-customer
-                val subscriptions = get(Subscription subscribedBy (Customer withId customerId)).bind()
-                for (subscription in subscriptions) {
-                    fact { (ExCustomer withId customerId) subscribedTo (Subscription withMsisdn subscription.msisdn) }.bind()
-                }
-                // get all SIM profiles and link them to ex-customer.
-                val simProfiles = get(SimProfile forCustomer (Customer withId customerId)).bind()
-                val simProfileRegions = mutableSetOf<Region>()
-                for (simProfile in simProfiles) {
-                    fact { (ExCustomer withId customerId) had (SimProfile withId simProfile.id) }.bind()
-                    // also get regions linked to those SimProfiles.
-                    simProfileRegions.addAll(get(Region linkedToSimProfile (SimProfile withId simProfile.id)).bind())
-                }
-                // get Regions linked to Customer
-                val regions = get(Region linkedToCustomer (Customer withId customerId)).bind()
-                // TODO vihang: clear eKYC data for Regions without any SimProfile
-//                val regionsWithoutSimProfile = regions - simProfileRegions
-//                // Link regions with SIM profiles to ExCustomer
-//                for (region in simProfileRegions) {
-//                    fact { (ExCustomer withId customerId) belongedTo (Region withCode region.id) }.bind()
-//                }
-                // (For now) Link regions to ExCustomer
-                for (region in regions) {
-                    fact { (ExCustomer withId customerId) belongedTo (Region withCode region.id) }.bind()
-                }
+        Either.fx<StoreError, Unit> {
+            // get customer id
+            val customer = getCustomer(identity).bind()
+            val customerId = customer.id
+            // create ex-customer with same id
+            create { ExCustomer(id = customerId, terminationDate = LocalDate.now().toString(), createdOn = customer.createdOn) }.bind()
+            // get all subscriptions and link them to ex-customer
+            val subscriptions = get(Subscription subscribedBy (Customer withId customerId)).bind()
+            for (subscription in subscriptions) {
+                fact { (ExCustomer withId customerId) subscribedTo (Subscription withMsisdn subscription.msisdn) }.bind()
+            }
+            // get all SIM profiles and link them to ex-customer.
+            val simProfiles = get(SimProfile forCustomer (Customer withId customerId)).bind()
+            val simProfileRegions = mutableSetOf<Region>()
+            for (simProfile in simProfiles) {
+                fact { (ExCustomer withId customerId) had (SimProfile withId simProfile.id) }.bind()
+                // also get regions linked to those SimProfiles.
+                simProfileRegions.addAll(get(Region linkedToSimProfile (SimProfile withId simProfile.id)).bind())
+            }
+            // get Regions linked to Customer
+            val regions = get(Region linkedToCustomer (Customer withId customerId)).bind()
+            // TODO vihang: clear eKYC data for Regions without any SimProfile
+//            val regionsWithoutSimProfile = regions - simProfileRegions
+//            // Link regions with SIM profiles to ExCustomer
+//            for (region in simProfileRegions) {
+//                fact { (ExCustomer withId customerId) belongedTo (Region withCode region.id) }.bind()
+//            }
+            // (For now) Link regions to ExCustomer
+            for (region in regions) {
+                fact { (ExCustomer withId customerId) belongedTo (Region withCode region.id) }.bind()
+            }
 
-                // TODO vihang: When we read and then delete, it fails when deserialization does not work.
-                write(query = """
-                    MATCH (i:${identityEntity.name} {id:'${identity.id}'})-[:${identifiesRelation.name}]->(c:${customerEntity.name})
-                    OPTIONAL MATCH (c)-[:${customerToBundleRelation.name}]->(b:${bundleEntity.name})
-                    OPTIONAL MATCH (c)<-[:${forPurchaseByRelation.name}]-(pr:${purchaseRecordEntity.name})
-                    OPTIONAL MATCH (c)-[:${scanInformationRelation.name}]->(s:${scanInformationEntity.name})
-                    DETACH DELETE i, c, b, pr, s;
-                """.trimIndent(), transaction = transaction) { statementResult ->
-                    Either.cond(
-                            test = statementResult.summary().counters().nodesDeleted() > 0,
-                            ifTrue = {},
-                            ifFalse = { NotFoundError(type = identityEntity.name, id = identity.id) })
-                }.bind()
+            // TODO vihang: When we read and then delete, it fails when deserialization does not work.
+            write(query = """
+                MATCH (i:${identityEntity.name} {id:'${identity.id}'})-[:${identifiesRelation.name}]->(c:${customerEntity.name})
+                OPTIONAL MATCH (c)-[:${customerToBundleRelation.name}]->(b:${bundleEntity.name})
+                OPTIONAL MATCH (c)<-[:${forPurchaseByRelation.name}]-(pr:${purchaseRecordEntity.name})
+                OPTIONAL MATCH (c)-[:${scanInformationRelation.name}]->(s:${scanInformationEntity.name})
+                DETACH DELETE i, c, b, pr, s;
+            """.trimIndent(), transaction = transaction) { statementResult ->
+                Either.cond(
+                        test = statementResult.summary().counters().nodesDeleted() > 0,
+                        ifTrue = {},
+                        ifFalse = { NotFoundError(type = identityEntity.name, id = identity.id) })
+            }.bind()
 
-                /* If removal of payment profile fails, then the customer will be deleted
-                   in neo4j but will still be present in payment backend. In that case the
-                   profile must be removed from the payment backend manually. */
-                paymentProcessor.removePaymentProfile(customerId)
-                        .map {
-                            Unit
-                        }.flatMapLeft {
-                            if (it is org.ostelco.prime.paymentprocessor.core.NotFoundError) {
-                                /* Ignore. Customer has not bought products yet. */
-                                Unit.right()
-                            } else {
-                                logger.error(NOTIFY_OPS_MARKER,
-                                        "Removing corresponding payment profile when removing customer $customerId " +
-                                                "failed with error ${it.message} : ${it.description}")
-                                NotDeletedError(type = "Payment profile for customer",
-                                        id = customerId,
-                                        error = it).left()
-                            }
-                        }.bind()
-            }.fix()
-        }.unsafeRunSync()
-                .ifFailedThenRollback(transaction)
+            /* If removal of payment profile fails, then the customer will be deleted
+               in neo4j but will still be present in payment backend. In that case the
+               profile must be removed from the payment backend manually. */
+            paymentProcessor.removePaymentProfile(customerId)
+                    .map {
+                        Unit
+                    }.flatMapLeft {
+                        if (it is org.ostelco.prime.paymentprocessor.core.NotFoundError) {
+                            /* Ignore. Customer has not bought products yet. */
+                            Unit.right()
+                        } else {
+                            logger.error(NOTIFY_OPS_MARKER,
+                                    "Removing corresponding payment profile when removing customer $customerId " +
+                                            "failed with error ${it.message} : ${it.description}")
+                            NotDeletedError(type = "Payment profile for customer",
+                                    id = customerId,
+                                    error = it).left()
+                        }
+                    }.bind()
+        }.ifFailedThenRollback(transaction)
     }
 
     //
@@ -683,38 +682,36 @@ object Neo4jStoreSingleton : GraphStore {
     fun subscribeToSimProfileStatusUpdates() {
         simManager.addSimProfileStatusUpdateListener { iccId, status ->
             writeTransaction {
-                IO {
-                    Either.monad<StoreError>().binding {
-                        logger.info("Received status {} for iccId {}", status, iccId)
-                        val simProfiles = getSimProfilesUsingIccId(iccId = iccId, transaction = transaction)
-                        if (simProfiles.size != 1) {
-                            logger.warn("Found {} SIM Profiles with iccId {}", simProfiles.size, iccId)
+                Either.fx<StoreError,Unit> {
+                    logger.info("Received status {} for iccId {}", status, iccId)
+                    val simProfiles = getSimProfilesUsingIccId(iccId = iccId, transaction = transaction)
+                    if (simProfiles.size != 1) {
+                        logger.warn("Found {} SIM Profiles with iccId {}", simProfiles.size, iccId)
+                    }
+                    simProfiles.forEach { simProfile ->
+                        val customers = get(Customer withSimProfile (SimProfile withId simProfile.id)).bind()
+                        customers.forEach { customer ->
+                            AuditLog.info(customerId = customer.id, message = "Sim Profile (iccId = $iccId) is $status")
                         }
-                        simProfiles.forEach { simProfile ->
-                            val customers = get(Customer withSimProfile (SimProfile withId simProfile.id)).bind()
-                            customers.forEach { customer ->
-                                AuditLog.info(customerId = customer.id, message = "Sim Profile (iccId = $iccId) is $status")
-                            }
-                            val timestampField = when(status) {
-                                DOWNLOADED -> SimProfile::downloadedOn
-                                INSTALLED -> SimProfile::installedOn
-                                DELETED -> SimProfile::deletedOn
-                                else -> {
-                                    logger.warn("Not storing timestamp for simProfile: {} for status: {}", iccId, status)
-                                    null
-                                }
-                            }
-                            if (timestampField != null) {
-                                update(SimProfile withId simProfile.id, set = timestampField to utcTimeNow()).bind()
-                            }
-                            val subscriptions = get(Subscription under (SimProfile withId simProfile.id)).bind()
-                            subscriptions.forEach { subscription ->
-                                logger.info("Notify status {} for subscription.analyticsId {}", status, subscription.analyticsId)
-                                analyticsReporter.reportSubscriptionStatusUpdate(subscription.analyticsId, status)
+                        val timestampField = when(status) {
+                            DOWNLOADED -> SimProfile::downloadedOn
+                            INSTALLED -> SimProfile::installedOn
+                            DELETED -> SimProfile::deletedOn
+                            else -> {
+                                logger.warn("Not storing timestamp for simProfile: {} for status: {}", iccId, status)
+                                null
                             }
                         }
-                    }.fix()
-                }.unsafeRunSync()
+                        if (timestampField != null) {
+                            update(SimProfile withId simProfile.id, set = timestampField to utcTimeNow()).bind()
+                        }
+                        val subscriptions = get(Subscription under (SimProfile withId simProfile.id)).bind()
+                        subscriptions.forEach { subscription ->
+                            logger.info("Notify status {} for subscription.analyticsId {}", status, subscription.analyticsId)
+                            analyticsReporter.reportSubscriptionStatusUpdate(subscription.analyticsId, status)
+                        }
+                    }
+                }
                 // Skipping transaction rollback since it is just updating timestamps
             }
         }
@@ -742,72 +739,69 @@ object Neo4jStoreSingleton : GraphStore {
             regionCode: String,
             profileType: String?,
             alias: String): Either<StoreError, ModelSimProfile> = writeTransaction {
-        IO {
-            Either.monad<StoreError>().binding {
-                val customerId = getCustomerId(identity = identity).bind()
-                val bundles = get(Bundle forCustomer (Customer withId customerId)).bind()
-                validateBundleList(bundles, customerId).bind()
-                val customer = get(Customer withId customerId).bind()
-                val status = customerRegionRelationStore.get(
-                        fromId = customerId,
-                        toId = regionCode.toLowerCase(),
-                        transaction = transaction)
-                        .bind()
-                        .status
-                isApproved(
-                        status = status,
-                        customerId = customerId,
-                        regionCode = regionCode.toLowerCase()).bind()
-                val region = get(Region withCode regionCode.toLowerCase()).bind()
-                val simEntry = simManager.allocateNextEsimProfile(hlr = hssNameLookup.getHssName(region.id.toLowerCase()), phoneType = profileType)
-                        .mapLeft { NotFoundError("eSIM profile", id = "Loltel") }
-                        .bind()
-                val simProfile = SimProfile(id = UUID.randomUUID().toString(), iccId = simEntry.iccId, alias = alias, requestedOn = utcTimeNow())
-                create { simProfile }.bind()
-                fact { (Customer withId customerId) has (SimProfile withId simProfile.id) }.bind()
-                fact { (SimProfile withId simProfile.id) isFor (Region withCode regionCode.toLowerCase()) }.bind()
-                simEntry.msisdnList.forEach { msisdn ->
-                    create { Subscription(msisdn = msisdn) }.bind()
-                    val subscription = get(Subscription withMsisdn msisdn).bind()
+        Either.fx<StoreError, ModelSimProfile> {
+            val customerId = getCustomerId(identity = identity).bind()
+            val bundles = get(Bundle forCustomer (Customer withId customerId)).bind()
+            validateBundleList(bundles, customerId).bind()
+            val customer = get(Customer withId customerId).bind()
+            val status = customerRegionRelationStore.get(
+                    fromId = customerId,
+                    toId = regionCode.toLowerCase(),
+                    transaction = transaction)
+                    .bind()
+                    .status
+            isApproved(
+                    status = status,
+                    customerId = customerId,
+                    regionCode = regionCode.toLowerCase()).bind()
+            val region = get(Region withCode regionCode.toLowerCase()).bind()
+            val simEntry = simManager.allocateNextEsimProfile(hlr = hssNameLookup.getHssName(region.id.toLowerCase()), phoneType = profileType)
+                    .mapLeft { NotFoundError("eSIM profile", id = "Loltel") }
+                    .bind()
+            val simProfile = SimProfile(id = UUID.randomUUID().toString(), iccId = simEntry.iccId, alias = alias, requestedOn = utcTimeNow())
+            create { simProfile }.bind()
+            fact { (Customer withId customerId) has (SimProfile withId simProfile.id) }.bind()
+            fact { (SimProfile withId simProfile.id) isFor (Region withCode regionCode.toLowerCase()) }.bind()
+            simEntry.msisdnList.forEach { msisdn ->
+                create { Subscription(msisdn = msisdn) }.bind()
+                val subscription = get(Subscription withMsisdn msisdn).bind()
 
-                    // Report the new provisioning to analytics
-                    analyticsReporter.reportSimProvisioning(
-                            subscriptionAnalyticsId = subscription.analyticsId,
-                            customerAnalyticsId = customer.analyticsId,
-                            regionCode = regionCode
-                    )
-
-                    bundles.forEach { bundle ->
-                        fact { (Subscription withMsisdn msisdn) consumesFrom (Bundle withId bundle.id) using SubscriptionToBundle() }.bind()
-                    }
-                    fact { (Customer withId customerId) subscribesTo (Subscription withMsisdn msisdn) }.bind()
-                    fact { (Subscription withMsisdn msisdn) isUnder (SimProfile withId simProfile.id) }.bind()
-                }
-                if (!setOf("android", "iphone", "test").contains(profileType)) {
-                    emailNotifier.sendESimQrCodeEmail(
-                            email = customer.contactEmail,
-                            name = customer.nickname,
-                            qrCode = simEntry.eSimActivationCode)
-                            .mapLeft {
-                                logger.error(NOTIFY_OPS_MARKER, "Failed to send email to {}", customer.contactEmail)
-                                AuditLog.warn(customerId = customerId, message = "Failed to send email with QR code of provisioned SIM Profile")
-                            }
-                }
-                AuditLog.info(customerId = customerId, message = "Provisioned SIM Profile")
-                ModelSimProfile(
-                        iccId = simEntry.iccId,
-                        alias = simProfile.alias,
-                        eSimActivationCode = simEntry.eSimActivationCode,
-                        status = simEntry.status,
-                        requestedOn = simProfile.requestedOn,
-                        downloadedOn = simProfile.downloadedOn,
-                        installedOn = simProfile.installedOn,
-                        installedReportedByAppOn = simProfile.installedReportedByAppOn,
-                        deletedOn = simProfile.deletedOn
+                // Report the new provisioning to analytics
+                analyticsReporter.reportSimProvisioning(
+                        subscriptionAnalyticsId = subscription.analyticsId,
+                        customerAnalyticsId = customer.analyticsId,
+                        regionCode = regionCode
                 )
-            }.fix()
-        }.unsafeRunSync()
-                .ifFailedThenRollback(transaction)
+
+                bundles.forEach { bundle ->
+                    fact { (Subscription withMsisdn msisdn) consumesFrom (Bundle withId bundle.id) using SubscriptionToBundle() }.bind()
+                }
+                fact { (Customer withId customerId) subscribesTo (Subscription withMsisdn msisdn) }.bind()
+                fact { (Subscription withMsisdn msisdn) isUnder (SimProfile withId simProfile.id) }.bind()
+            }
+            if (!setOf("android", "iphone", "test").contains(profileType)) {
+                emailNotifier.sendESimQrCodeEmail(
+                        email = customer.contactEmail,
+                        name = customer.nickname,
+                        qrCode = simEntry.eSimActivationCode)
+                        .mapLeft {
+                            logger.error(NOTIFY_OPS_MARKER, "Failed to send email to {}", customer.contactEmail)
+                            AuditLog.warn(customerId = customerId, message = "Failed to send email with QR code of provisioned SIM Profile")
+                        }
+            }
+            AuditLog.info(customerId = customerId, message = "Provisioned SIM Profile")
+            ModelSimProfile(
+                    iccId = simEntry.iccId,
+                    alias = simProfile.alias,
+                    eSimActivationCode = simEntry.eSimActivationCode,
+                    status = simEntry.status,
+                    requestedOn = simProfile.requestedOn,
+                    downloadedOn = simProfile.downloadedOn,
+                    installedOn = simProfile.installedOn,
+                    installedReportedByAppOn = simProfile.installedReportedByAppOn,
+                    deletedOn = simProfile.deletedOn
+            )
+        }.ifFailedThenRollback(transaction)
     }
 
     private fun isApproved(
@@ -832,48 +826,96 @@ object Neo4jStoreSingleton : GraphStore {
 
         val map = mutableMapOf<String, String>()
         val simProfiles = readTransaction {
-            IO {
-                Either.monad<StoreError>().binding {
+            Either.fx<StoreError, Collection<SimProfile>> {
 
-                    val customerId = getCustomerId(identity = identity).bind()
-                    val simProfiles = get(SimProfile forCustomer (Customer withId customerId))
-                            .bind()
-                    if (regionCode == null) {
-                        simProfiles.forEach { simProfile ->
-                            val region = get(Region linkedToSimProfile (SimProfile withId simProfile.id))
-                                    .bind()
-                                    .firstOrNull()
-                            if (region != null) {
-                                map[simProfile.id] = region.id
-                            }
+                val customerId = getCustomerId(identity = identity).bind()
+                val simProfiles = get(SimProfile forCustomer (Customer withId customerId))
+                        .bind()
+                if (regionCode == null) {
+                    simProfiles.forEach { simProfile ->
+                        val region = get(Region linkedToSimProfile (SimProfile withId simProfile.id))
+                                .bind()
+                                .firstOrNull()
+                        if (region != null) {
+                            map[simProfile.id] = region.id
                         }
                     }
-                    simProfiles
-                }.fix()
-            }.unsafeRunSync()
+                }
+                simProfiles
+            }
         }
 
-        return IO {
-            Either.monad<StoreError>().binding {
-                simProfiles.bind().map { simProfile ->
+        return Either.fx {
+            simProfiles.bind().map { simProfile ->
 
-                    val regionId = (regionCode ?: map[simProfile.id])
+                val regionId = (regionCode ?: map[simProfile.id])
 
-                    val simEntry = if (regionId != null) {
-                        simManager.getSimProfile(
-                                hlr = hssNameLookup.getHssName(regionId),
-                                iccId = simProfile.iccId)
-                                .getOrHandle { error ->
-                                    logger.warn("SimProfile not found in SIM Manager DB. region: {}, iccId: {}, error: {}", regionId, simProfile.iccId, error)
-                                    SimEntry(
-                                            iccId = simProfile.iccId,
-                                            status = NOT_READY,
-                                            eSimActivationCode = "Dummy eSIM",
-                                            msisdnList = emptyList()
-                                    )
-                                }
-                    } else {
-                        logger.warn("SimProfile not linked to any region. iccId: {}", simProfile.iccId)
+                val simEntry = if (regionId != null) {
+                    simManager.getSimProfile(
+                            hlr = hssNameLookup.getHssName(regionId),
+                            iccId = simProfile.iccId)
+                            .getOrHandle { error ->
+                                logger.warn("SimProfile not found in SIM Manager DB. region: {}, iccId: {}, error: {}", regionId, simProfile.iccId, error)
+                                SimEntry(
+                                        iccId = simProfile.iccId,
+                                        status = NOT_READY,
+                                        eSimActivationCode = "Dummy eSIM",
+                                        msisdnList = emptyList()
+                                )
+                            }
+                } else {
+                    logger.warn("SimProfile not linked to any region. iccId: {}", simProfile.iccId)
+                    SimEntry(
+                            iccId = simProfile.iccId,
+                            status = NOT_READY,
+                            eSimActivationCode = "Dummy eSIM",
+                            msisdnList = emptyList()
+                    )
+                }
+
+                ModelSimProfile(
+                        iccId = simProfile.iccId,
+                        alias = simProfile.alias,
+                        eSimActivationCode = simEntry.eSimActivationCode,
+                        status = simEntry.status,
+                        requestedOn = simProfile.requestedOn,
+                        downloadedOn = simProfile.downloadedOn,
+                        installedOn = simProfile.installedOn,
+                        installedReportedByAppOn = simProfile.installedReportedByAppOn,
+                        deletedOn = simProfile.deletedOn
+                )
+            }
+        }
+    }
+
+    override fun updateSimProfile(
+            identity: ModelIdentity,
+            regionCode: String,
+            iccId: String,
+            alias: String): Either<StoreError, ModelSimProfile> {
+
+        val simProfileEither = writeTransaction {
+            Either.fx<StoreError, SimProfile> {
+
+                val customerId = getCustomerId(identity = identity).bind()
+                val simProfile = get(SimProfile forCustomer (Customer withId customerId))
+                        .bind()
+                        .firstOrNull { simProfile -> simProfile.iccId == iccId }
+                        ?: NotFoundError(type = simProfileEntity.name, id = iccId).left().bind<SimProfile>()
+
+                update(SimProfile withId simProfile.id, set = SimProfile::alias to alias).bind()
+                AuditLog.info(customerId = customerId, message = "Updated alias of SIM Profile (iccId = $iccId)")
+                simProfile.copy(alias = alias)
+            }.ifFailedThenRollback(transaction)
+        }
+
+        return Either.fx {
+            val simProfile = simProfileEither.bind()
+            val simEntry = simManager.getSimProfile(
+                    hlr = hssNameLookup.getHssName(regionCode),
+                    iccId = iccId)
+                    .getOrHandle { error ->
+                        logger.warn("SimProfile not found in SIM Manager DB. region: {}, iccId: {}, error: {}", regionCode, simProfile.iccId, error)
                         SimEntry(
                                 iccId = simProfile.iccId,
                                 status = NOT_READY,
@@ -882,73 +924,18 @@ object Neo4jStoreSingleton : GraphStore {
                         )
                     }
 
-                    ModelSimProfile(
-                            iccId = simProfile.iccId,
-                            alias = simProfile.alias,
-                            eSimActivationCode = simEntry.eSimActivationCode,
-                            status = simEntry.status,
-                            requestedOn = simProfile.requestedOn,
-                            downloadedOn = simProfile.downloadedOn,
-                            installedOn = simProfile.installedOn,
-                            installedReportedByAppOn = simProfile.installedReportedByAppOn,
-                            deletedOn = simProfile.deletedOn
-                    )
-                }
-            }.fix()
-        }.unsafeRunSync()
-    }
-
-    override fun updateSimProfile(
-            identity: ModelIdentity,
-            regionCode: String,
-            iccId: String,
-            alias: String): Either<StoreError, ModelSimProfile> {
-        val simProfileEither = writeTransaction {
-            IO {
-                Either.monad<StoreError>().binding {
-
-                    val customerId = getCustomerId(identity = identity).bind()
-                    val simProfile = get(SimProfile forCustomer (Customer withId customerId))
-                            .bind()
-                            .firstOrNull { simProfile -> simProfile.iccId == iccId }
-                            ?: NotFoundError(type = simProfileEntity.name, id = iccId).left().bind<SimProfile>()
-
-                    update(SimProfile withId simProfile.id, set = SimProfile::alias to alias).bind()
-                    AuditLog.info(customerId = customerId, message = "Updated alias of SIM Profile (iccId = $iccId)")
-                    simProfile.copy(alias = alias)
-                }.fix()
-            }.unsafeRunSync().ifFailedThenRollback(transaction)
+            ModelSimProfile(
+                    iccId = simProfile.iccId,
+                    alias = simProfile.alias,
+                    eSimActivationCode = simEntry.eSimActivationCode,
+                    status = simEntry.status,
+                    requestedOn = simProfile.requestedOn,
+                    downloadedOn = simProfile.downloadedOn,
+                    installedOn = simProfile.installedOn,
+                    installedReportedByAppOn = simProfile.installedReportedByAppOn,
+                    deletedOn = simProfile.deletedOn
+            )
         }
-
-        return IO {
-            Either.monad<StoreError>().binding {
-                val simProfile = simProfileEither.bind()
-                val simEntry = simManager.getSimProfile(
-                        hlr = hssNameLookup.getHssName(regionCode),
-                        iccId = iccId)
-                        .getOrHandle { error ->
-                            logger.warn("SimProfile not found in SIM Manager DB. region: {}, iccId: {}, error: {}", regionCode, simProfile.iccId, error)
-                            SimEntry(
-                                    iccId = simProfile.iccId,
-                                    status = NOT_READY,
-                                    eSimActivationCode = "Dummy eSIM",
-                                    msisdnList = emptyList()
-                            )
-                        }
-
-                ModelSimProfile(
-                        iccId = simProfile.iccId,
-                        alias = simProfile.alias,
-                        eSimActivationCode = simEntry.eSimActivationCode,
-                        status = simEntry.status,
-                        requestedOn = simProfile.requestedOn,
-                        downloadedOn = simProfile.downloadedOn,
-                        installedOn = simProfile.installedOn,
-                        installedReportedByAppOn = simProfile.installedReportedByAppOn,
-                        deletedOn = simProfile.deletedOn
-                )
-            }.fix()
-        }.unsafeRunSync()
     }
 
     override fun markSimProfileAsInstalled(
@@ -957,52 +944,49 @@ object Neo4jStoreSingleton : GraphStore {
             iccId: String): Either<StoreError, ModelSimProfile> {
 
         val simProfileEither = writeTransaction {
-            IO {
-                Either.monad<StoreError>().binding {
+            Either.fx<StoreError, SimProfile> {
 
-                    val customerId = getCustomerId(identity = identity).bind()
-                    val simProfile = get(SimProfile forCustomer (Customer withId customerId))
-                            .bind()
-                            .firstOrNull { simProfile -> simProfile.iccId == iccId }
-                            ?: NotFoundError(type = simProfileEntity.name, id = iccId).left().bind<SimProfile>()
+                val customerId = getCustomerId(identity = identity).bind()
+                val simProfile = get(SimProfile forCustomer (Customer withId customerId))
+                        .bind()
+                        .firstOrNull { simProfile -> simProfile.iccId == iccId }
+                        ?: NotFoundError(type = simProfileEntity.name, id = iccId).left().bind<SimProfile>()
 
-                    val utcTimeNow = utcTimeNow()
-                    update(SimProfile withId simProfile.id, set = SimProfile::installedReportedByAppOn to utcTimeNow).bind()
-                    AuditLog.info(customerId = customerId, message = "App reported SIM Profile (iccId = $iccId) as installed.")
-                    simProfile.copy(installedReportedByAppOn = utcTimeNow)
-                }.fix()
-            }.unsafeRunSync().ifFailedThenRollback(transaction)
+                val utcTimeNow = utcTimeNow()
+                update(SimProfile withId simProfile.id, set = SimProfile::installedReportedByAppOn to utcTimeNow).bind()
+                AuditLog.info(customerId = customerId, message = "App reported SIM Profile (iccId = $iccId) as installed.")
+                simProfile.copy(installedReportedByAppOn = utcTimeNow)
+
+            }.ifFailedThenRollback(transaction)
         }
 
-        return IO {
-            Either.monad<StoreError>().binding {
-                val simProfile = simProfileEither.bind()
-                val simEntry = simManager.getSimProfile(
-                        hlr = hssNameLookup.getHssName(regionCode),
-                        iccId = iccId)
-                        .getOrHandle { error ->
-                            logger.warn("SimProfile not found in SIM Manager DB. region: {}, iccId: {}, error: {}", regionCode, simProfile.iccId, error)
-                            SimEntry(
-                                    iccId = simProfile.iccId,
-                                    status = NOT_READY,
-                                    eSimActivationCode = "Dummy eSIM",
-                                    msisdnList = emptyList()
-                            )
-                        }
+        return Either.fx {
+            val simProfile = simProfileEither.bind()
+            val simEntry = simManager.getSimProfile(
+                    hlr = hssNameLookup.getHssName(regionCode),
+                    iccId = iccId)
+                    .getOrHandle { error ->
+                        logger.warn("SimProfile not found in SIM Manager DB. region: {}, iccId: {}, error: {}", regionCode, simProfile.iccId, error)
+                        SimEntry(
+                                iccId = simProfile.iccId,
+                                status = NOT_READY,
+                                eSimActivationCode = "Dummy eSIM",
+                                msisdnList = emptyList()
+                        )
+                    }
 
-                ModelSimProfile(
-                        iccId = simProfile.iccId,
-                        alias = simProfile.alias,
-                        eSimActivationCode = simEntry.eSimActivationCode,
-                        status = simEntry.status,
-                        requestedOn = simProfile.requestedOn,
-                        downloadedOn = simProfile.downloadedOn,
-                        installedOn = simProfile.installedOn,
-                        installedReportedByAppOn = simProfile.installedReportedByAppOn,
-                        deletedOn = simProfile.deletedOn
-                )
-            }.fix()
-        }.unsafeRunSync()
+            ModelSimProfile(
+                    iccId = simProfile.iccId,
+                    alias = simProfile.alias,
+                    eSimActivationCode = simEntry.eSimActivationCode,
+                    status = simEntry.status,
+                    requestedOn = simProfile.requestedOn,
+                    downloadedOn = simProfile.downloadedOn,
+                    installedOn = simProfile.installedOn,
+                    installedReportedByAppOn = simProfile.installedReportedByAppOn,
+                    deletedOn = simProfile.deletedOn
+            )
+        }
     }
 
     override fun sendEmailWithActivationQrCode(
@@ -1011,58 +995,53 @@ object Neo4jStoreSingleton : GraphStore {
             iccId: String): Either<StoreError, ModelSimProfile> {
 
         val infoEither = readTransaction {
-            IO {
-                Either.monad<StoreError>().binding {
+            Either.fx<StoreError, Pair<Customer, SimProfile>> {
 
-                    val customer = getCustomer(identity = identity).bind()
-                    val simProfile = get(SimProfile forCustomer (Customer withId customer.id))
-                            .bind()
-                            .firstOrNull { simProfile -> simProfile.iccId == iccId }
-                            ?: NotFoundError(type = simProfileEntity.name, id = iccId).left().bind()
+                val customer = getCustomer(identity = identity).bind()
+                val simProfile = get(SimProfile forCustomer (Customer withId customer.id))
+                        .bind()
+                        .firstOrNull { simProfile -> simProfile.iccId == iccId }
+                        ?: NotFoundError(type = simProfileEntity.name, id = iccId).left().bind()
 
-                    Pair(customer, simProfile)
-                }.fix()
-            }.unsafeRunSync()
+                Pair(customer, simProfile)
+            }
         }
 
-        return IO {
-            Either.monad<StoreError>().binding {
-                val (customer, simProfile) = infoEither.bind()
-                val simEntry = simManager.getSimProfile(
-                        hlr = hssNameLookup.getHssName(regionCode),
-                        iccId = iccId)
-                        .mapLeft {
-                            NotFoundError(type = simProfileEntity.name, id = simProfile.iccId)
-                        }
-                        .bind()
+        return Either.fx {
+            val (customer, simProfile) = infoEither.bind()
+            val simEntry = simManager.getSimProfile(
+                    hlr = hssNameLookup.getHssName(regionCode),
+                    iccId = iccId)
+                    .mapLeft {
+                        NotFoundError(type = simProfileEntity.name, id = simProfile.iccId)
+                    }
+                    .bind()
 
-                emailNotifier.sendESimQrCodeEmail(
-                        email = customer.contactEmail,
-                        name = customer.nickname,
-                        qrCode = simEntry.eSimActivationCode)
-                        .mapLeft {
-                            SystemError(type = "EMAIL", id = customer.contactEmail, message = "Failed to send email")
-                        }
-                        .bind()
+            emailNotifier.sendESimQrCodeEmail(
+                    email = customer.contactEmail,
+                    name = customer.nickname,
+                    qrCode = simEntry.eSimActivationCode)
+                    .mapLeft {
+                        SystemError(type = "EMAIL", id = customer.contactEmail, message = "Failed to send email")
+                    }
+                    .bind()
 
-                ModelSimProfile(
-                        iccId = simEntry.iccId,
-                        eSimActivationCode = simEntry.eSimActivationCode,
-                        status = simEntry.status,
-                        alias = simProfile.alias,
-                        requestedOn = simProfile.requestedOn,
-                        downloadedOn = simProfile.downloadedOn,
-                        installedOn = simProfile.installedOn,
-                        installedReportedByAppOn = simProfile.installedReportedByAppOn,
-                        deletedOn = simProfile.deletedOn
-                )
-            }.fix()
-        }.unsafeRunSync()
+            ModelSimProfile(
+                    iccId = simEntry.iccId,
+                    eSimActivationCode = simEntry.eSimActivationCode,
+                    status = simEntry.status,
+                    alias = simProfile.alias,
+                    requestedOn = simProfile.requestedOn,
+                    downloadedOn = simProfile.downloadedOn,
+                    installedOn = simProfile.installedOn,
+                    installedReportedByAppOn = simProfile.installedReportedByAppOn,
+                    deletedOn = simProfile.deletedOn
+            )
+        }
     }
 
     override fun deleteSimProfileWithSubscription(regionCode: String, iccId: String): Either<StoreError, Unit> = writeTransaction {
-        IO {
-            Either.monad<StoreError>().binding {
+        Either.fx<StoreError, Unit> {
                 val simProfiles = get(SimProfile linkedToRegion (Region withCode regionCode)).bind()
                 simProfiles.forEach { simProfile ->
                     val subscriptions = get(Subscription under (SimProfile withId simProfile.id)).bind()
@@ -1071,9 +1050,7 @@ object Neo4jStoreSingleton : GraphStore {
                     }
                     delete(SimProfile withId simProfile.id).bind()
                 }
-            }.fix()
-        }.unsafeRunSync()
-                .ifFailedThenRollback(transaction)
+        }.ifFailedThenRollback(transaction)
     }
 
     //
@@ -1087,54 +1064,51 @@ object Neo4jStoreSingleton : GraphStore {
             iccId: String,
             alias: String,
             msisdn: String): Either<StoreError, Unit> = writeTransaction {
-        IO {
-            Either.monad<StoreError>().binding {
-                val customerId = getCustomerId(identity = identity).bind()
 
-                val simProfile = SimProfile(
-                        id = UUID.randomUUID().toString(),
-                        iccId = iccId,
-                        alias = alias)
-                create { simProfile }.bind()
-                fact { (SimProfile withId simProfile.id) isFor (Region withCode regionCode.toLowerCase()) }.bind()
-                fact { (Customer withId customerId) has (SimProfile withId simProfile.id) }.bind()
+        Either.fx<StoreError, Unit> {
+            val customerId = getCustomerId(identity = identity).bind()
 
-                create { Subscription(msisdn) }.bind()
-                fact { (Subscription withMsisdn msisdn) isUnder (SimProfile withId simProfile.id) }.bind()
-                fact { (Customer withId customerId) subscribesTo (Subscription withMsisdn msisdn) }.bind()
+            val simProfile = SimProfile(
+                    id = UUID.randomUUID().toString(),
+                    iccId = iccId,
+                    alias = alias)
+            create { simProfile }.bind()
+            fact { (SimProfile withId simProfile.id) isFor (Region withCode regionCode.toLowerCase()) }.bind()
+            fact { (Customer withId customerId) has (SimProfile withId simProfile.id) }.bind()
 
-                val bundles = get(Bundle forCustomer (Customer withId customerId)).bind()
-                validateBundleList(bundles, customerId).bind()
-                bundles.forEach { bundle ->
-                    fact { (Subscription withMsisdn msisdn) consumesFrom (Bundle withId bundle.id) using SubscriptionToBundle() }.bind()
-                }
-                AuditLog.info(customerId = customerId, message = "Added SIM Profile and Subscription by Admin")
-            }.fix()
-        }.unsafeRunSync()
-                .ifFailedThenRollback(transaction)
+            create { Subscription(msisdn) }.bind()
+            fact { (Subscription withMsisdn msisdn) isUnder (SimProfile withId simProfile.id) }.bind()
+            fact { (Customer withId customerId) subscribesTo (Subscription withMsisdn msisdn) }.bind()
+
+            val bundles = get(Bundle forCustomer (Customer withId customerId)).bind()
+            validateBundleList(bundles, customerId).bind()
+            bundles.forEach { bundle ->
+                fact { (Subscription withMsisdn msisdn) consumesFrom (Bundle withId bundle.id) using SubscriptionToBundle() }.bind()
+            }
+            AuditLog.info(customerId = customerId, message = "Added SIM Profile and Subscription by Admin")
+        }.ifFailedThenRollback(transaction)
     }
 
     override fun getSubscriptions(identity: ModelIdentity, regionCode: String?): Either<StoreError, Collection<Subscription>> = readTransaction {
-        IO {
-            Either.monad<StoreError>().binding {
-                val customerId = getCustomerId(identity = identity).bind()
-                if (regionCode == null) {
-                    get(Subscription subscribedBy (Customer withId customerId)).bind()
-                } else {
-                    read<Either<StoreError, Collection<Subscription>>>("""
-                        MATCH (:${customerEntity.name} {id: '$customerId'})
-                        -[:${subscriptionRelation.name}]->(sn:${subscriptionEntity.name})
-                        -[:${subscriptionSimProfileRelation.name}]->(:${simProfileEntity.name})
-                        -[:${simProfileRegionRelation.name}]->(:${regionEntity.name} {id: '${regionCode.toLowerCase()}'})
-                        RETURN sn;
-                        """.trimIndent(),
-                            transaction) { statementResult ->
-                        Either.right(statementResult
-                                .list { subscriptionEntity.createEntity(it["sn"].asMap()) })
-                    }.bind()
-                }
-            }.fix()
-        }.unsafeRunSync()
+
+        Either.fx<StoreError, Collection<Subscription>> {
+            val customerId = getCustomerId(identity = identity).bind()
+            if (regionCode == null) {
+                get(Subscription subscribedBy (Customer withId customerId)).bind()
+            } else {
+                read<Either<StoreError, Collection<Subscription>>>("""
+                    MATCH (:${customerEntity.name} {id: '$customerId'})
+                    -[:${subscriptionRelation.name}]->(sn:${subscriptionEntity.name})
+                    -[:${subscriptionSimProfileRelation.name}]->(:${simProfileEntity.name})
+                    -[:${simProfileRegionRelation.name}]->(:${regionEntity.name} {id: '${regionCode.toLowerCase()}'})
+                    RETURN sn;
+                    """.trimIndent(),
+                        transaction) { statementResult ->
+                    Either.right(statementResult
+                            .list { subscriptionEntity.createEntity(it["sn"].asMap()) })
+                }.bind()
+            }
+        }
     }
 
     //
