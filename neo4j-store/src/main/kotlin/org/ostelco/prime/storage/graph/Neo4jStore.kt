@@ -4,7 +4,6 @@ import arrow.core.Either
 import arrow.core.Either.Left
 import arrow.core.Either.Right
 import arrow.core.EitherOf
-import arrow.core.extensions.either.monad.monad
 import arrow.core.extensions.fx
 import arrow.core.fix
 import arrow.core.flatMap
@@ -12,10 +11,6 @@ import arrow.core.getOrHandle
 import arrow.core.left
 import arrow.core.leftIfNull
 import arrow.core.right
-import arrow.fx.IO
-import arrow.fx.extensions.fx
-import arrow.fx.extensions.io.monad.monad
-import arrow.fx.fix
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.appnotifier.AppNotifier
@@ -1240,138 +1235,132 @@ object Neo4jStoreSingleton : GraphStore {
                                  sku: String,
                                  sourceId: String?,
                                  saveCard: Boolean): Either<PaymentError, ProductInfo> = writeTransaction {
-        IO {
-            Either.monad<PaymentError>().binding {
 
-                val customer = getCustomer(identity = identity)
+        Either.fx<PaymentError, ProductInfo> {
+
+            val customer = getCustomer(identity = identity)
+                    .mapLeft {
+                        org.ostelco.prime.paymentprocessor.core.NotFoundError(
+                                "Failed to get customer data for customer with identity - $identity",
+                                internalError = it)
+                    }.bind()
+
+            val product = getProduct(identity, sku)
+                    .mapLeft {
+                        org.ostelco.prime.paymentprocessor.core.NotFoundError("Product $sku is unavailable",
+                                internalError = it)
+                    }
+                    .bind()
+
+            if (product.price.amount > 0) {
+                val (chargeId, invoiceId) = when (product.paymentType) {
+                    SUBSCRIPTION -> {
+                        val subscriptionDetailsInfo = purchasePlan(
+                                customer = customer,
+                                sku = product.sku,
+                                sourceId = sourceId,
+                                saveCard = saveCard,
+                                taxRegionId = product.paymentTaxRegionId)
+                                .bind()
+                        Pair(subscriptionDetailsInfo.chargeId, subscriptionDetailsInfo.invoiceId)
+                    }
+                    else -> {
+                        val invoicePaymentInfo = oneTimePurchase(
+                                customer = customer,
+                                sourceId = sourceId,
+                                saveCard = saveCard,
+                                sku = product.sku,
+                                price = product.price,
+                                taxRegionId = product.paymentTaxRegionId,
+                                productLabel = product.paymentLabel,
+                                transaction = transaction)
+                                .bind()
+                        Pair(invoicePaymentInfo.chargeId, invoicePaymentInfo.id)
+                    }
+                }
+                val purchaseRecord = PurchaseRecord(
+                        id = chargeId,
+                        product = product,
+                        timestamp = Instant.now().toEpochMilli(),
+                        properties = mapOf("invoiceId" to invoiceId))
+
+                /* If this step fails, the previously added 'removeInvoice' call added to the transaction
+                will ensure that the invoice will be voided. */
+                createPurchaseRecord(customer.id, purchaseRecord)
                         .mapLeft {
-                            org.ostelco.prime.paymentprocessor.core.NotFoundError(
-                                    "Failed to get customer data for customer with identity - $identity",
+                            logger.error("Failed to save purchase record for customer ${customer.id}, invoice: $invoiceId, invoice will be voided in Stripe")
+                            AuditLog.error(customerId = customer.id,
+                                    message = "Failed to save purchase record - invoice: $invoiceId, invoice will be voided in Stripe")
+                            StorePurchaseError("Failed to save purchase record",
                                     internalError = it)
                         }.bind()
 
-                val product = getProduct(identity, sku)
-                        .mapLeft {
-                            org.ostelco.prime.paymentprocessor.core.NotFoundError("Product $sku is unavailable",
-                                    internalError = it)
-                        }
-                        .bind()
+                /* Adds purchase to customer history. */
+                AuditLog.info(customerId = customer.id,
+                        message = "Purchased product $sku for ${formatMoney(product.price)} (invoice: $invoiceId, charge-id: $chargeId)")
 
-                if (product.price.amount > 0) {
-                    val (chargeId, invoiceId) = when (product.paymentType) {
-                        SUBSCRIPTION -> {
-                            val subscriptionDetailsInfo = purchasePlan(
-                                    customer = customer,
-                                    sku = product.sku,
-                                    sourceId = sourceId,
-                                    saveCard = saveCard,
-                                    taxRegionId = product.paymentTaxRegionId)
-                                    .bind()
-                            Pair(subscriptionDetailsInfo.chargeId, subscriptionDetailsInfo.invoiceId)
-                        }
-                        else -> {
-                            val invoicePaymentInfo = oneTimePurchase(
-                                    customer = customer,
-                                    sourceId = sourceId,
-                                    saveCard = saveCard,
-                                    sku = product.sku,
-                                    price = product.price,
-                                    taxRegionId = product.paymentTaxRegionId,
-                                    productLabel = product.paymentLabel,
-                                    transaction = transaction)
-                                    .bind()
-                            Pair(invoicePaymentInfo.chargeId, invoicePaymentInfo.id)
-                        }
-                    }
-                    val purchaseRecord = PurchaseRecord(
-                            id = chargeId,
-                            product = product,
-                            timestamp = Instant.now().toEpochMilli(),
-                            properties = mapOf("invoiceId" to invoiceId))
+                /* TODO: While aborting transactions, send a record with "reverted" status. */
+                analyticsReporter.reportPurchase(
+                        customerAnalyticsId = customer.analyticsId,
+                        purchaseId = purchaseRecord.id,
+                        sku = product.sku,
+                        priceAmountCents = product.price.amount,
+                        priceCurrency = product.price.currency)
+            }
 
-                    /* If this step fails, the previously added 'removeInvoice' call added to the transaction
-                    will ensure that the invoice will be voided. */
-                    createPurchaseRecord(customer.id, purchaseRecord)
-                            .mapLeft {
-                                logger.error("Failed to save purchase record for customer ${customer.id}, invoice: $invoiceId, invoice will be voided in Stripe")
-                                AuditLog.error(customerId = customer.id,
-                                        message = "Failed to save purchase record - invoice: $invoiceId, invoice will be voided in Stripe")
-                                StorePurchaseError("Failed to save purchase record",
-                                        internalError = it)
-                            }.bind()
+            applyProduct(
+                    customerId = customer.id,
+                    product = product
+            ).mapLeft {
+                StorePurchaseError(description = it.message, internalError = it.error)
+            }.bind()
 
-                    /* Adds purchase to customer history. */
-                    AuditLog.info(customerId = customer.id,
-                            message = "Purchased product $sku for ${formatMoney(product.price)} (invoice: $invoiceId, charge-id: $chargeId)")
-
-                    /* TODO: While aborting transactions, send a record with "reverted" status. */
-                    analyticsReporter.reportPurchase(
-                            customerAnalyticsId = customer.analyticsId,
-                            purchaseId = purchaseRecord.id,
-                            sku = product.sku,
-                            priceAmountCents = product.price.amount,
-                            priceCurrency = product.price.currency)
-                }
-
-                applyProduct(
-                        customerId = customer.id,
-                        product = product
-                ).mapLeft {
-                    StorePurchaseError(description = it.message, internalError = it.error)
-                            .left()
-                            .bind()
-                }.bind()
-
-                ProductInfo(product.sku)
-            }.fix()
-        }.unsafeRunSync()
-                .ifFailedThenRollback(transaction)
+            ProductInfo(product.sku)
+        }.ifFailedThenRollback(transaction)
     }
     // << END
 
-    fun WriteTransaction.applyProduct(customerId: String, product: Product) = IO {
-        Either.monad<StoreError>().binding {
-            when (product.productClass) {
-                MEMBERSHIP -> {
-                    product.segmentIds.forEach { segmentId ->
-                        assignCustomerToSegment(customerId = customerId,
-                                segmentId = segmentId,
-                                transaction = transaction)
-                                .mapLeft {
-                                    SystemError(
-                                            type = "Customer -> Segment",
-                                            id = "$customerId -> $segmentId",
-                                            message = "Failed to assign Membership",
-                                            error = it)
-                                }
-                                .bind()
-                    }
-                }
-                SIMPLE_DATA -> {
-                    /* Topup. */
-                    simpleDataProduct(
-                            customerId = customerId,
-                            sku = product.sku,
-                            bytes = product.noOfBytes,
+    fun WriteTransaction.applyProduct(customerId: String, product: Product): Either<StoreError, Unit> =  Either.fx {
+        when (product.productClass) {
+            MEMBERSHIP -> {
+                product.segmentIds.forEach { segmentId ->
+                    assignCustomerToSegment(customerId = customerId,
+                            segmentId = segmentId,
                             transaction = transaction)
                             .mapLeft {
                                 SystemError(
-                                        type = "Customer",
-                                        id = product.sku,
-                                        message = "Failed to update balance for customer: $customerId",
+                                        type = "Customer -> Segment",
+                                        id = "$customerId -> $segmentId",
+                                        message = "Failed to assign Membership",
                                         error = it)
                             }
                             .bind()
                 }
-                else -> {
-                    SystemError(
-                            type = "Product",
-                            id = product.sku,
-                            message = "Missing product class in properties of product: ${product.sku}").left().bind()
-                }
             }
-        }.fix()
-    }.unsafeRunSync()
+            SIMPLE_DATA -> {
+                /* Topup. */
+                simpleDataProduct(
+                        customerId = customerId,
+                        sku = product.sku,
+                        bytes = product.noOfBytes,
+                        transaction = transaction)
+                        .mapLeft {
+                            SystemError(
+                                    type = "Customer",
+                                    id = product.sku,
+                                    message = "Failed to update balance for customer: $customerId",
+                                    error = it)
+                        }
+                        .bind()
+            }
+            else -> {
+                SystemError(
+                        type = "Product",
+                        id = product.sku,
+                        message = "Missing product class in properties of product: ${product.sku}").left().bind()
+            }
+        }
+    }
 
     private fun fetchOrCreatePaymentProfile(customer: Customer): Either<PaymentError, ProfileInfo> =
             // Fetch/Create stripe payment profile for the customer.
@@ -1391,55 +1380,61 @@ object Neo4jStoreSingleton : GraphStore {
                                               taxRegionId: String?,
                                               sourceId: String?,
                                               saveCard: Boolean): Either<PaymentError, SubscriptionDetailsInfo> {
-        return IO {
-            Either.monad<PaymentError>().binding {
+        return Either.fx {
 
-                /* Bail out if subscriber tries to buy an already bought plan.
-                   Note: Already verified above that 'customer' (subscriber) exists. */
-                get(PurchaseRecord forPurchaseBy (Customer withId customer.id))
-                        .map { purchaseRecords ->
-                            if (purchaseRecords.any { x:PurchaseRecord -> x.product.sku == sku }) {
-                                PlanAlredyPurchasedError("A subscription to plan $sku already exists")
-                                        .left().bind()
-                            }
-                        }
-
-                /* A source must be associated with a payment profile with the payment vendor.
-                   Create the profile if it don't exists. */
-                fetchOrCreatePaymentProfile(customer)
-                        .bind()
-
-                /* With recurring payments, the payment card (source) must be stored. The
-                   'saveCard' parameter is therefore ignored. */
-                if (!saveCard) {
-                    logger.warn("Ignoring request for deleting payment source after buying plan $sku for " +
-                            "customer ${customer.id} as stored payment source is required when purchasing a plan")
-                }
-
-                if (sourceId != null) {
-                    val sourceDetails = paymentProcessor.getSavedSources(customer.id)
-                            .mapLeft {
-                                org.ostelco.prime.paymentprocessor.core.NotFoundError("Failed to fetch sources for customer: ${customer.id}",
-                                        internalError = it)
-                            }.bind()
-                    if (!sourceDetails.any { sourceDetailsInfo -> sourceDetailsInfo.id == sourceId }) {
-                        paymentProcessor.addSource(customer.id, sourceId)
-                                .bind().id
+            /* Bail out if subscriber tries to buy an already bought plan.
+               Note: Already verified above that 'customer' (subscriber) exists. */
+            get(PurchaseRecord forPurchaseBy (Customer withId customer.id))
+                    .mapLeft {
+                        StorePurchaseError(
+                                description = "Failed to fetch Purchase Records for Customer",
+                                message = it.message,
+                                internalError = it)
                     }
-                }
-
-                subscribeToPlan(
-                        customerId = customer.id,
-                        planId = sku,
-                        taxRegionId = taxRegionId)
-                        .mapLeft {
-                            AuditLog.error(customerId = customer.id, message = "Failed to subscribe to plan $sku")
-                            SubscriptionError("Failed to subscribe ${customer.id} to plan $sku",
-                                    internalError = it)
+                    .flatMap { purchaseRecords ->
+                        if (purchaseRecords.any { x:PurchaseRecord -> x.product.sku == sku }) {
+                            PlanAlredyPurchasedError("A subscription to plan $sku already exists")
+                                    .left()
+                        } else {
+                            Unit.right()
                         }
-                        .bind()
-            }.fix()
-        }.unsafeRunSync()
+                    }.bind()
+
+            /* A source must be associated with a payment profile with the payment vendor.
+               Create the profile if it don't exists. */
+            fetchOrCreatePaymentProfile(customer)
+                    .bind()
+
+            /* With recurring payments, the payment card (source) must be stored. The
+               'saveCard' parameter is therefore ignored. */
+            if (!saveCard) {
+                logger.warn("Ignoring request for deleting payment source after buying plan $sku for " +
+                        "customer ${customer.id} as stored payment source is required when purchasing a plan")
+            }
+
+            if (sourceId != null) {
+                val sourceDetails = paymentProcessor.getSavedSources(customer.id)
+                        .mapLeft {
+                            org.ostelco.prime.paymentprocessor.core.NotFoundError("Failed to fetch sources for customer: ${customer.id}",
+                                    internalError = it)
+                        }.bind()
+                if (!sourceDetails.any { sourceDetailsInfo -> sourceDetailsInfo.id == sourceId }) {
+                    paymentProcessor.addSource(customer.id, sourceId)
+                            .bind().id
+                }
+            }
+
+            subscribeToPlan(
+                    customerId = customer.id,
+                    planId = sku,
+                    taxRegionId = taxRegionId)
+                    .mapLeft {
+                        AuditLog.error(customerId = customer.id, message = "Failed to subscribe to plan $sku")
+                        SubscriptionError("Failed to subscribe ${customer.id} to plan $sku",
+                                internalError = it)
+                    }
+                    .bind()
+        }
     }
 
     private fun WriteTransaction.subscribeToPlan(
@@ -1448,86 +1443,84 @@ object Neo4jStoreSingleton : GraphStore {
             taxRegionId: String?,
             trialEnd: Long = 0L): Either<StoreError, SubscriptionDetailsInfo> {
 
-        return IO {
-            Either.monad<StoreError>().binding {
-                val plan = get(Plan withId planId)
-                        .bind()
-                val profileInfo = paymentProcessor.getPaymentProfile(customerId)
-                        .mapLeft {
-                            NotFoundError(type = planEntity.name, id = "Failed to subscribe $customerId to ${plan.id}",
-                                    error = it)
-                        }.bind()
+        return Either.fx {
+            val plan = get(Plan withId planId)
+                    .bind()
+            val profileInfo = paymentProcessor.getPaymentProfile(customerId)
+                    .mapLeft {
+                        NotFoundError(type = planEntity.name, id = "Failed to subscribe $customerId to ${plan.id}",
+                                error = it)
+                    }.bind()
 
-                /* At this point, we have either:
-                     1) A new subscription to a plan is being created.
-                     2) An attempt at buying a previously subscribed to plan but which has not been
-                        paid for.
-                   Both are OK. But in order to handle the second case correctly, the previous incomplete
-                   subscription must be removed before we can proceed with creating the new subscription.
+            /* At this point, we have either:
+                 1) A new subscription to a plan is being created.
+                 2) An attempt at buying a previously subscribed to plan but which has not been
+                    paid for.
+               Both are OK. But in order to handle the second case correctly, the previous incomplete
+               subscription must be removed before we can proceed with creating the new subscription.
 
-                   (In the second case there will be a "SUBSCRIBES_TO_PLAN" link between the customer
-                   object and the plan object, but no "PURCHASED" link to the plans "product" object.)
+               (In the second case there will be a "SUBSCRIBES_TO_PLAN" link between the customer
+               object and the plan object, but no "PURCHASED" link to the plans "product" object.)
 
-                   The motivation for supporting the second case, is that it allows the subscriber to
-                   reattempt to buy a plan using a different payment source.
+               The motivation for supporting the second case, is that it allows the subscriber to
+               reattempt to buy a plan using a different payment source.
 
-                   Remove existing incomplete subscription if any. */
-                get(Plan forCustomer (Customer withId customerId))
-                        .map {
-                            if (it.any { x -> x.id == planId }) {
-                                removeSubscription(customerId, planId, invoiceNow = true)
-                            }
+               Remove existing incomplete subscription if any. */
+            get(Plan forCustomer (Customer withId customerId))
+                    .map {
+                        if (it.any { x -> x.id == planId }) {
+                            removeSubscription(customerId, planId, invoiceNow = true)
                         }
-
-                /* Lookup in payment backend will fail if no value found for 'stripePlanId'. */
-                val planStripeId = plan.stripePlanId ?: SystemError(type = planEntity.name, id = plan.id,
-                        message = "No reference to Stripe plan found in ${plan.id}")
-                        .left()
-                        .bind()
-
-                val subscriptionDetailsInfo = paymentProcessor.createSubscription(
-                        planId = planStripeId,
-                        customerId = profileInfo.id,
-                        trialEnd = trialEnd,
-                        taxRegionId = taxRegionId)
-                        .mapLeft {
-                            NotCreatedError(type = planEntity.name, id = "Failed to subscribe $customerId to ${plan.id}",
-                                    error = it)
-                        }.linkReversalActionToTransaction(transaction) {
-                            paymentProcessor.cancelSubscription(it.id)
-                        }.bind()
-
-                /* Dispatch according to the charge result. */
-                when (subscriptionDetailsInfo.status) {
-                    PaymentStatus.PAYMENT_SUCCEEDED -> {
                     }
-                    PaymentStatus.REQUIRES_PAYMENT_METHOD -> {
-                        NotCreatedError(type = "Customer subscription to Plan",
-                                id = "$customerId -> ${plan.id}",
-                                error = InvalidRequestError("Payment method failed")
-                        ).left().bind()
-                    }
-                    PaymentStatus.REQUIRES_ACTION,
-                    PaymentStatus.TRIAL_START -> {
-                        /* No action required. Charge for the subscription will eventually
-                           be reported as a Stripe event. */
-                        logger.info(
-                                "Pending payment for subscription $planId for customer $customerId (${subscriptionDetailsInfo.status.name})")
-                    }
+
+            /* Lookup in payment backend will fail if no value found for 'stripePlanId'. */
+            val planStripeId = plan.stripePlanId ?: SystemError(type = planEntity.name, id = plan.id,
+                    message = "No reference to Stripe plan found in ${plan.id}")
+                    .left()
+                    .bind()
+
+            val subscriptionDetailsInfo = paymentProcessor.createSubscription(
+                    planId = planStripeId,
+                    customerId = profileInfo.id,
+                    trialEnd = trialEnd,
+                    taxRegionId = taxRegionId)
+                    .mapLeft {
+                        NotCreatedError(type = planEntity.name, id = "Failed to subscribe $customerId to ${plan.id}",
+                                error = it)
+                    }.linkReversalActionToTransaction(transaction) {
+                        paymentProcessor.cancelSubscription(it.id)
+                    }.bind()
+
+            /* Dispatch according to the charge result. */
+            when (subscriptionDetailsInfo.status) {
+                PaymentStatus.PAYMENT_SUCCEEDED -> {
                 }
+                PaymentStatus.REQUIRES_PAYMENT_METHOD -> {
+                    NotCreatedError(type = "Customer subscription to Plan",
+                            id = "$customerId -> ${plan.id}",
+                            error = InvalidRequestError("Payment method failed")
+                    ).left().bind()
+                }
+                PaymentStatus.REQUIRES_ACTION,
+                PaymentStatus.TRIAL_START -> {
+                    /* No action required. Charge for the subscription will eventually
+                       be reported as a Stripe event. */
+                    logger.info(
+                            "Pending payment for subscription $planId for customer $customerId (${subscriptionDetailsInfo.status.name})")
+                }
+            }
 
-                /* Store information from payment backend for later use. */
-                fact {
-                    (Customer withId customerId) subscribesTo (Plan withId planId) using
-                            PlanSubscription(
-                                    subscriptionId = subscriptionDetailsInfo.id,
-                                    created = subscriptionDetailsInfo.created,
-                                    trialEnd = subscriptionDetailsInfo.trialEnd)
-                }.bind()
+            /* Store information from payment backend for later use. */
+            fact {
+                (Customer withId customerId) subscribesTo (Plan withId planId) using
+                        PlanSubscription(
+                                subscriptionId = subscriptionDetailsInfo.id,
+                                created = subscriptionDetailsInfo.created,
+                                trialEnd = subscriptionDetailsInfo.trialEnd)
+            }.bind()
 
-                subscriptionDetailsInfo
-            }.fix()
-        }.unsafeRunSync()
+            subscriptionDetailsInfo
+        }
     }
 
     private fun oneTimePurchase(
@@ -1538,75 +1531,72 @@ object Neo4jStoreSingleton : GraphStore {
             price: Price,
             productLabel: String,
             taxRegionId: String?,
-            transaction: PrimeTransaction): Either<PaymentError, InvoicePaymentInfo> = IO {
+            transaction: PrimeTransaction): Either<PaymentError, InvoicePaymentInfo> = Either.fx {
 
-        Either.monad<PaymentError>().binding {
+        /* A source must be associated with a payment profile with the payment vendor.
+           Create the profile if it don't exists. */
+        fetchOrCreatePaymentProfile(customer)
+                .bind()
 
-            /* A source must be associated with a payment profile with the payment vendor.
-               Create the profile if it don't exists. */
-            fetchOrCreatePaymentProfile(customer)
-                    .bind()
+        var addedSourceId: String? = null
 
-            var addedSourceId: String? = null
+        /* Add source if set and if it has not already been added to the payment profile. */
+        if (sourceId != null) {
+            val sourceDetails = paymentProcessor.getSavedSources(customer.id)
+                    .mapLeft {
+                        org.ostelco.prime.paymentprocessor.core.NotFoundError("Failed to fetch sources for user",
+                                internalError = it)
+                    }.bind()
+            addedSourceId = sourceId
 
-            /* Add source if set and if it has not already been added to the payment profile. */
-            if (sourceId != null) {
-                val sourceDetails = paymentProcessor.getSavedSources(customer.id)
-                        .mapLeft {
-                            org.ostelco.prime.paymentprocessor.core.NotFoundError("Failed to fetch sources for user",
-                                    internalError = it)
-                        }.bind()
-                addedSourceId = sourceId
-
-                if (!sourceDetails.any { sourceDetailsInfo -> sourceDetailsInfo.id == sourceId }) {
-                    addedSourceId = paymentProcessor.addSource(customer.id, sourceId)
-                            /* For the success case, saved source is removed after the invoice has been
-                               paid if 'saveCard == false'. Make sure same happens even for failure
-                               case by linking reversal action to transaction */
-                            .finallyDo(transaction) {
-                                removePaymentSource(saveCard, customer.id, it.id)
-                            }.bind().id
-                }
+            if (!sourceDetails.any { sourceDetailsInfo -> sourceDetailsInfo.id == sourceId }) {
+                addedSourceId = paymentProcessor.addSource(customer.id, sourceId)
+                        /* For the success case, saved source is removed after the invoice has been
+                           paid if 'saveCard == false'. Make sure same happens even for failure
+                           case by linking reversal action to transaction */
+                        .finallyDo(transaction) {
+                            removePaymentSource(saveCard, customer.id, it.id)
+                        }.bind().id
             }
+        }
 
-            val invoice = paymentProcessor.createInvoice(
-                    customerId = customer.id,
-                    amount = price.amount,
-                    currency = price.currency,
-                    description = productLabel,
-                    taxRegionId = taxRegionId,
-                    sourceId = addedSourceId)
-                    .mapLeft {
-                        logger.error("Failed to create invoice for customer ${customer.id}, source $addedSourceId, sku $sku")
-                        it
-                    }.linkReversalActionToTransaction(transaction) {
-                        paymentProcessor.removeInvoice(it.id)
-                        logger.warn(NOTIFY_OPS_MARKER, """
-                            Failed to pay invoice for customer ${customer.id}, invoice-id: ${it.id}.
-                            Verify that the invoice has been deleted or voided in Stripe dashboard.
-                            """.trimIndent())
-                    }.bind()
+        val invoice = paymentProcessor.createInvoice(
+                customerId = customer.id,
+                amount = price.amount,
+                currency = price.currency,
+                description = productLabel,
+                taxRegionId = taxRegionId,
+                sourceId = addedSourceId)
+                .mapLeft {
+                    logger.error("Failed to create invoice for customer ${customer.id}, source $addedSourceId, sku $sku")
+                    it
+                }.linkReversalActionToTransaction(transaction) {
+                    paymentProcessor.removeInvoice(it.id)
+                    logger.warn(NOTIFY_OPS_MARKER, """
+                        Failed to pay invoice for customer ${customer.id}, invoice-id: ${it.id}.
+                        Verify that the invoice has been deleted or voided in Stripe dashboard.
+                        """.trimIndent())
+                }.bind()
 
-            /* Force immediate payment of the invoice. */
-            val invoicePaymentInfo = paymentProcessor.payInvoice(invoice.id)
-                    .mapLeft {
-                        logger.warn("Payment of invoice ${invoice.id} failed for customer ${customer.id}.")
-                        /* Adds failed purchase to customer history. */
-                        AuditLog.warn(customerId = customer.id,
-                                message = "Failed to complete purchase of product $sku for ${formatMoney(price)} " +
-                                        "status: ${it.code} decline reason: ${it.declineCode}")
-                        it
-                    }.linkReversalActionToTransaction(transaction) {
-                        paymentProcessor.refundCharge(it.chargeId)
-                        logger.warn(NOTIFY_OPS_MARKER, """
-                            Refunded customer ${customer.id} for invoice: ${it.id}.
-                            Verify that the invoice has been refunded in Stripe dashboard.
-                            """.trimIndent())
-                    }.bind()
+        /* Force immediate payment of the invoice. */
+        val invoicePaymentInfo = paymentProcessor.payInvoice(invoice.id)
+                .mapLeft {
+                    logger.warn("Payment of invoice ${invoice.id} failed for customer ${customer.id}.")
+                    /* Adds failed purchase to customer history. */
+                    AuditLog.warn(customerId = customer.id,
+                            message = "Failed to complete purchase of product $sku for ${formatMoney(price)} " +
+                                    "status: ${it.code} decline reason: ${it.declineCode}")
+                    it
+                }.linkReversalActionToTransaction(transaction) {
+                    paymentProcessor.refundCharge(it.chargeId)
+                    logger.warn(NOTIFY_OPS_MARKER, """
+                        Refunded customer ${customer.id} for invoice: ${it.id}.
+                        Verify that the invoice has been refunded in Stripe dashboard.
+                        """.trimIndent())
+                }.bind()
 
-            invoicePaymentInfo
-        }.fix()
-    }.unsafeRunSync()
+        invoicePaymentInfo
+    }
 
     private fun removePaymentSource(saveCard: Boolean, paymentCustomerId: String, sourceId: String) {
         // In case we fail to remove saved source, we log it at error level.
@@ -1624,33 +1614,30 @@ object Neo4jStoreSingleton : GraphStore {
             customerId: String,
             sku: String,
             bytes: Long,
-            transaction: PrimeTransaction): Either<StoreError, Unit> = IO {
+            transaction: PrimeTransaction): Either<StoreError, Unit> = Either.fx {
 
-        Either.monad<StoreError>().binding {
-
-            if (bytes == 0L) {
-                logger.error("Product with 0 bytes: sku = {}", sku)
-            } else {
-                /* Update balance with bought data. */
-                /* TODO: Add rollback in case of errors later on. */
-                write("""MATCH (cr:${customerEntity.name} { id:'$customerId' })-[:${customerToBundleRelation.name}]->(bundle:${bundleEntity.name})
-                     SET bundle.balance = toString(toInteger(bundle.balance) + $bytes)
-                  """.trimIndent(), transaction) {
-                    Either.cond(
-                            test = it.summary().counters().containsUpdates(),
-                            ifTrue = {},
-                            ifFalse = {
-                                logger.error("Failed to update balance for customer: {}", customerId)
-                                NotUpdatedError(
-                                        type = "Balance of Customer",
-                                        id = customerId)
-                            })
-                }.bind()
-                AuditLog.info(customerId = customerId, message = "Added $bytes bytes to data bundle")
-            }
-            Unit
-        }.fix()
-    }.unsafeRunSync()
+        if (bytes == 0L) {
+            logger.error("Product with 0 bytes: sku = {}", sku)
+        } else {
+            /* Update balance with bought data. */
+            /* TODO: Add rollback in case of errors later on. */
+            write("""MATCH (cr:${customerEntity.name} { id:'$customerId' })-[:${customerToBundleRelation.name}]->(bundle:${bundleEntity.name})
+                 SET bundle.balance = toString(toInteger(bundle.balance) + $bytes)
+              """.trimIndent(), transaction) {
+                Either.cond(
+                        test = it.summary().counters().containsUpdates(),
+                        ifTrue = {},
+                        ifFalse = {
+                            logger.error("Failed to update balance for customer: {}", customerId)
+                            NotUpdatedError(
+                                    type = "Balance of Customer",
+                                    id = customerId)
+                        })
+            }.bind()
+            AuditLog.info(customerId = customerId, message = "Added $bytes bytes to data bundle")
+        }
+        Unit
+    }
 
     //
     // Purchase Records
@@ -1675,25 +1662,23 @@ object Neo4jStoreSingleton : GraphStore {
 
         val invoiceId = purchaseRecord.properties["invoiceId"]
 
-        return IO {
-            Either.monad<StoreError>().binding {
+        return Either.fx {
 
-                if (invoiceId != null
-                        && getPurchaseRecordUsingInvoiceId(customerId, invoiceId).isRight()) {
-                    /* Avoid charging for the same invoice twice if invoice information is present. */
+            if (invoiceId != null
+                    && getPurchaseRecordUsingInvoiceId(customerId, invoiceId).isRight()) {
+                /* Avoid charging for the same invoice twice if invoice information is present. */
 
-                    ValidationError(type = purchaseRecordEntity.name,
-                            id = purchaseRecord.id,
-                            message = "A purchase record for ${purchaseRecord.product} for customer $customerId already exists")
-                            .left()
-                            .bind()
-                }
-                create { purchaseRecord }.bind()
-                fact { (PurchaseRecord withId purchaseRecord.id) forPurchaseBy (Customer withId customerId) }.bind()
-                fact { (PurchaseRecord withId purchaseRecord.id) forPurchaseOf (Product withSku purchaseRecord.product.sku) }.bind()
-                purchaseRecord.id
-            }.fix()
-        }.unsafeRunSync()
+                ValidationError(type = purchaseRecordEntity.name,
+                        id = purchaseRecord.id,
+                        message = "A purchase record for ${purchaseRecord.product} for customer $customerId already exists")
+                        .left()
+                        .bind()
+            }
+            create { purchaseRecord }.bind()
+            fact { (PurchaseRecord withId purchaseRecord.id) forPurchaseBy (Customer withId customerId) }.bind()
+            fact { (PurchaseRecord withId purchaseRecord.id) forPurchaseOf (Product withSku purchaseRecord.product.sku) }.bind()
+            purchaseRecord.id
+        }
     }
 
     /* As Stripes invoice-id is used as the 'id' of a purchase record, this method
@@ -1948,63 +1933,61 @@ object Neo4jStoreSingleton : GraphStore {
             identity: ModelIdentity,
             version: MyInfoApiVersion,
             authorisationCode: String): Either<StoreError, String> {
-        return IO {
-            Either.monad<StoreError>().binding {
+        return Either.fx {
 
-                val customer = getCustomer(identity = identity).bind()
+            val customer = getCustomer(identity = identity).bind()
 
-                // set MY_INFO KYC Status to Pending
-                setKycStatus(
-                        customer = customer,
-                        regionCode = "sg",
-                        kycType = MY_INFO,
-                        kycStatus = KycStatus.PENDING).bind()
+            // set MY_INFO KYC Status to Pending
+            setKycStatus(
+                    customer = customer,
+                    regionCode = "sg",
+                    kycType = MY_INFO,
+                    kycStatus = KycStatus.PENDING).bind()
 
-                val myInfoData = try {
-                    when (version) {
-                        V3 -> myInfoKycV3Service
-                    }.getPersonData(authorisationCode)
-                } catch (e: Exception) {
-                    logger.error("Failed to fetched MyInfo $version using authCode = $authorisationCode", e)
-                    null
-                } ?: SystemError(
-                        type = "MyInfo Auth Code",
-                        id = authorisationCode,
-                        message = "Failed to fetched MyInfo $version").left().bind()
+            val myInfoData = try {
+                when (version) {
+                    V3 -> myInfoKycV3Service
+                }.getPersonData(authorisationCode)
+            } catch (e: Exception) {
+                logger.error("Failed to fetched MyInfo $version using authCode = $authorisationCode", e)
+                null
+            } ?: SystemError(
+                    type = "MyInfo Auth Code",
+                    id = authorisationCode,
+                    message = "Failed to fetched MyInfo $version").left().bind()
 
-                val personData = myInfoData.personData ?: SystemError(
-                        type = "MyInfo Auth Code",
-                        id = authorisationCode,
-                        message = "Failed to fetched MyInfo $version").left().bind()
+            val personData = myInfoData.personData ?: SystemError(
+                    type = "MyInfo Auth Code",
+                    id = authorisationCode,
+                    message = "Failed to fetched MyInfo $version").left().bind()
 
-                val kycStatus = if(myInfoData.birthDate.isLessThan18yrsAgo()) {
-                    AuditLog.warn(customerId = customer.id, message = "Customer age is less than 18yrs.")
-                    REJECTED
-                } else {
-                    // store data only if approved
-                    secureArchiveService.archiveEncrypted(
-                            customerId = customer.id,
-                            fileName = "myInfoData",
-                            regionCodes = listOf("sg"),
-                            dataMap = mapOf(
-                                    "uinFin" to myInfoData.uinFin.toByteArray(),
-                                    "personData" to personData.toByteArray()
-                            )
-                    ).bind()
-                    KycStatus.APPROVED
-                }
+            val kycStatus = if(myInfoData.birthDate.isLessThan18yrsAgo()) {
+                AuditLog.warn(customerId = customer.id, message = "Customer age is less than 18yrs.")
+                REJECTED
+            } else {
+                // store data only if approved
+                secureArchiveService.archiveEncrypted(
+                        customerId = customer.id,
+                        fileName = "myInfoData",
+                        regionCodes = listOf("sg"),
+                        dataMap = mapOf(
+                                "uinFin" to myInfoData.uinFin.toByteArray(),
+                                "personData" to personData.toByteArray()
+                        )
+                ).bind()
+                KycStatus.APPROVED
+            }
 
-                // set MY_INFO KYC Status to Approved
-                setKycStatus(
-                        customer = customer,
-                        regionCode = "sg",
-                        kycType = MY_INFO,
-                        kycStatus = kycStatus,
-                        kycExpiryDate = myInfoData.passExpiryDate?.toString()).bind()
+            // set MY_INFO KYC Status to Approved
+            setKycStatus(
+                    customer = customer,
+                    regionCode = "sg",
+                    kycType = MY_INFO,
+                    kycStatus = kycStatus,
+                    kycExpiryDate = myInfoData.passExpiryDate?.toString()).bind()
 
-                personData
-            }.fix()
-        }.unsafeRunSync()
+            personData
+        }
     }
 
     //
@@ -2017,41 +2000,39 @@ object Neo4jStoreSingleton : GraphStore {
             identity: ModelIdentity,
             nricFinId: String): Either<StoreError, Unit> {
 
-        return IO {
-            Either.monad<StoreError>().binding {
+        return Either.fx {
 
-                logger.info("checkNricFinIdUsingDave for $nricFinId")
+            logger.info("checkNricFinIdUsingDave for $nricFinId")
 
-                val customer = getCustomer(identity = identity).bind()
+            val customer = getCustomer(identity = identity).bind()
 
-                // set NRIC_FIN KYC Status to Pending
-                setKycStatus(
-                        customer = customer,
-                        regionCode = "sg",
-                        kycType = NRIC_FIN,
-                        kycStatus = KycStatus.PENDING).bind()
+            // set NRIC_FIN KYC Status to Pending
+            setKycStatus(
+                    customer = customer,
+                    regionCode = "sg",
+                    kycType = NRIC_FIN,
+                    kycStatus = KycStatus.PENDING).bind()
 
-                if (daveKycService.validate(nricFinId)) {
-                    logger.info("checkNricFinIdUsingDave validated $nricFinId")
-                } else {
-                    logger.info("checkNricFinIdUsingDave failed to validate $nricFinId")
-                    ValidationError(type = "NRIC/FIN ID", id = nricFinId, message = "Invalid NRIC/FIN ID").left().bind()
-                }
+            if (daveKycService.validate(nricFinId)) {
+                logger.info("checkNricFinIdUsingDave validated $nricFinId")
+            } else {
+                logger.info("checkNricFinIdUsingDave failed to validate $nricFinId")
+                ValidationError(type = "NRIC/FIN ID", id = nricFinId, message = "Invalid NRIC/FIN ID").left().bind()
+            }
 
-                secureArchiveService.archiveEncrypted(
-                        customerId = customer.id,
-                        fileName = "nricFin",
-                        regionCodes = listOf("sg"),
-                        dataMap = mapOf("nricFinId" to nricFinId.toByteArray())
-                ).bind()
+            secureArchiveService.archiveEncrypted(
+                    customerId = customer.id,
+                    fileName = "nricFin",
+                    regionCodes = listOf("sg"),
+                    dataMap = mapOf("nricFinId" to nricFinId.toByteArray())
+            ).bind()
 
-                // set NRIC_FIN KYC Status to Approved
-                setKycStatus(
-                        customer = customer,
-                        regionCode = "sg",
-                        kycType = NRIC_FIN).bind()
-            }.fix()
-        }.unsafeRunSync()
+            // set NRIC_FIN KYC Status to Approved
+            setKycStatus(
+                    customer = customer,
+                    regionCode = "sg",
+                    kycType = NRIC_FIN).bind()
+        }
     }
 
     //
@@ -2062,33 +2043,31 @@ object Neo4jStoreSingleton : GraphStore {
             address: String,
             regionCode: String): Either<StoreError, Unit> {
 
-        return IO {
-            Either.monad<StoreError>().binding {
+        return Either.fx {
 
-                val customer = getCustomer(identity = identity).bind()
+            val customer = getCustomer(identity = identity).bind()
 
-                // set ADDRESS KYC Status to Pending
-                setKycStatus(
-                        customer = customer,
-                        regionCode = regionCode,
-                        kycType = ADDRESS,
-                        kycStatus = KycStatus.PENDING).bind()
+            // set ADDRESS KYC Status to Pending
+            setKycStatus(
+                    customer = customer,
+                    regionCode = regionCode,
+                    kycType = ADDRESS,
+                    kycStatus = KycStatus.PENDING).bind()
 
-                secureArchiveService.archiveEncrypted(
-                        customerId = customer.id,
-                        fileName = "address",
-                        regionCodes = listOf(regionCode),
-                        dataMap = mapOf(
-                                "address" to address.toByteArray())
-                ).bind()
+            secureArchiveService.archiveEncrypted(
+                    customerId = customer.id,
+                    fileName = "address",
+                    regionCodes = listOf(regionCode),
+                    dataMap = mapOf(
+                            "address" to address.toByteArray())
+            ).bind()
 
-                // set ADDRESS KYC Status to Approved
-                setKycStatus(
-                        customer = customer,
-                        regionCode = regionCode,
-                        kycType = ADDRESS).bind()
-            }.fix()
-        }.unsafeRunSync()
+            // set ADDRESS KYC Status to Approved
+            setKycStatus(
+                    customer = customer,
+                    regionCode = regionCode,
+                    kycType = ADDRESS).bind()
+        }
     }
 
     //
@@ -2123,118 +2102,116 @@ object Neo4jStoreSingleton : GraphStore {
             kycIdType: String? = null,
             transaction: Transaction): Either<StoreError, Unit> {
 
-        return IO {
-            Either.monad<StoreError>().binding {
+        return Either.fx {
 
-                // get combinations of KYC needed for this region to be Approved
-                val approvedKycTypeSetList = getApprovedKycTypeSetList(regionCode)
+            // get combinations of KYC needed for this region to be Approved
+            val approvedKycTypeSetList = getApprovedKycTypeSetList(regionCode)
 
-                // fetch existing values from DB
-                val existingCustomerRegion = customerRegionRelationStore.get(
-                        fromId = customer.id,
-                        toId = regionCode,
-                        transaction = transaction)
-                        .flatMapLeft { storeError ->
-                            if(storeError is NotFoundError && storeError.type == customerRegionRelation.name) {
-                                // default value if absent in DB
-                                CustomerRegion(
-                                        status = PENDING,
-                                        kycStatusMap = getKycStatusMapForRegion(regionCode),
-                                        initiatedOn = utcTimeNow()
-                                ).right()
-                            } else {
-                                storeError.left()
-                            }
-                        }.bind()
+            // fetch existing values from DB
+            val existingCustomerRegion = customerRegionRelationStore.get(
+                    fromId = customer.id,
+                    toId = regionCode,
+                    transaction = transaction)
+                    .flatMapLeft { storeError ->
+                        if(storeError is NotFoundError && storeError.type == customerRegionRelation.name) {
+                            // default value if absent in DB
+                            CustomerRegion(
+                                    status = PENDING,
+                                    kycStatusMap = getKycStatusMapForRegion(regionCode),
+                                    initiatedOn = utcTimeNow()
+                            ).right()
+                        } else {
+                            storeError.left()
+                        }
+                    }.bind()
 
-                // using existing and received KYC status, compute new KYC status
-                val existingKycStatusMap = existingCustomerRegion.kycStatusMap
-                val existingKycStatus = existingKycStatusMap[kycType]
-                val newKycStatus = when (existingKycStatus) {
-                    // APPROVED is end state. No more state change.
-                    KycStatus.APPROVED -> KycStatus.APPROVED
-                    // REJECTED and PENDING to 'any' is allowed
-                    else -> kycStatus
-                }
+            // using existing and received KYC status, compute new KYC status
+            val existingKycStatusMap = existingCustomerRegion.kycStatusMap
+            val existingKycStatus = existingKycStatusMap[kycType]
+            val newKycStatus = when (existingKycStatus) {
+                // APPROVED is end state. No more state change.
+                KycStatus.APPROVED -> KycStatus.APPROVED
+                // REJECTED and PENDING to 'any' is allowed
+                else -> kycStatus
+            }
 
-                // if new status is different from existing status
-                if (existingKycStatus != newKycStatus) {
-                    if (kycStatus == newKycStatus) {
-                        AuditLog.info(customerId = customer.id, message = "Setting $kycType status from $existingKycStatus to $newKycStatus")
-                    } else {
-                        AuditLog.info(customerId = customer.id, message = "Setting $kycType status from $existingKycStatus to $newKycStatus instead of $kycStatus")
-                    }
-                    if (newKycStatus == KycStatus.APPROVED) {
-                        onKycApprovedAction.apply(
-                                customer = customer,
-                                regionCode = regionCode,
-                                kycType = kycType,
-                                kycExpiryDate = kycExpiryDate,
-                                kycIdType = kycIdType,
-                                allowedRegionsService = allowedRegionsService,
-                                transaction = PrimeTransaction(transaction)
-                        ).bind()
-                    }
+            // if new status is different from existing status
+            if (existingKycStatus != newKycStatus) {
+                if (kycStatus == newKycStatus) {
+                    AuditLog.info(customerId = customer.id, message = "Setting $kycType status from $existingKycStatus to $newKycStatus")
                 } else {
-                    AuditLog.info(customerId = customer.id, message = "Ignoring setting $kycType status to $kycStatus since it is already $existingKycStatus")
+                    AuditLog.info(customerId = customer.id, message = "Setting $kycType status from $existingKycStatus to $newKycStatus instead of $kycStatus")
                 }
-
-                // update KYC status map with new value. This map will then be stored in DB.
-                val newKycStatusMap = existingKycStatusMap.copy(key = kycType, value = newKycStatus)
-
-                // check if Region is Approved.
-                val isRegionApproved = approvedKycTypeSetList.any { kycTypeSet ->
-                    // Region is approved if the set of Approved KYCs is a superset of any one of the set configured in the list - approvedKycTypeSetList.
-                    newKycStatusMap.filter { it.value == KycStatus.APPROVED }.keys.containsAll(kycTypeSet)
-                }
-
-                // if the Region status is Approved, but the existing status was not Approved, then it has been approved now.
-                val isRegionApprovedNow = existingCustomerRegion.status != APPROVED && isRegionApproved
-
-                // Save Region status as APPROVED, if it is approved. Do not change Region status otherwise.
-                val newRegionStatus = if (isRegionApproved) {
-                    APPROVED
-                } else {
-                    existingCustomerRegion.status
-                }
-
-                // timestamp for region approval
-                val regionApprovedOn = if (isRegionApprovedNow) {
-
-                    AuditLog.info(customerId = customer.id, message = "Approved for region - $regionCode")
-
-                    onRegionApprovedAction.apply(
+                if (newKycStatus == KycStatus.APPROVED) {
+                    onKycApprovedAction.apply(
                             customer = customer,
                             regionCode = regionCode,
+                            kycType = kycType,
+                            kycExpiryDate = kycExpiryDate,
+                            kycIdType = kycIdType,
+                            allowedRegionsService = allowedRegionsService,
                             transaction = PrimeTransaction(transaction)
                     ).bind()
-
-                    utcTimeNow()
-                } else {
-                    existingCustomerRegion.approvedOn
                 }
+            } else {
+                AuditLog.info(customerId = customer.id, message = "Ignoring setting $kycType status to $kycStatus since it is already $existingKycStatus")
+            }
 
-                // Save KYC expiry date if it is not null.
-                val newKycExpiryDateMap = kycExpiryDate
-                        ?.let { existingCustomerRegion.kycExpiryDateMap.copy(key = kycType, value = it) }
-                        ?: existingCustomerRegion.kycExpiryDateMap
+            // update KYC status map with new value. This map will then be stored in DB.
+            val newKycStatusMap = existingKycStatusMap.copy(key = kycType, value = newKycStatus)
 
-                customerRegionRelationStore
-                        .createOrUpdate(
-                                fromId = customer.id,
-                                relation = CustomerRegion(
-                                        status = newRegionStatus,
-                                        kycStatusMap = newKycStatusMap,
-                                        kycExpiryDateMap = newKycExpiryDateMap,
-                                        initiatedOn = existingCustomerRegion.initiatedOn,
-                                        approvedOn = regionApprovedOn
-                                ),
-                                toId = regionCode,
-                                transaction = transaction)
-                        .bind()
+            // check if Region is Approved.
+            val isRegionApproved = approvedKycTypeSetList.any { kycTypeSet ->
+                // Region is approved if the set of Approved KYCs is a superset of any one of the set configured in the list - approvedKycTypeSetList.
+                newKycStatusMap.filter { it.value == KycStatus.APPROVED }.keys.containsAll(kycTypeSet)
+            }
 
-            }.fix()
-        }.unsafeRunSync()
+            // if the Region status is Approved, but the existing status was not Approved, then it has been approved now.
+            val isRegionApprovedNow = existingCustomerRegion.status != APPROVED && isRegionApproved
+
+            // Save Region status as APPROVED, if it is approved. Do not change Region status otherwise.
+            val newRegionStatus = if (isRegionApproved) {
+                APPROVED
+            } else {
+                existingCustomerRegion.status
+            }
+
+            // timestamp for region approval
+            val regionApprovedOn = if (isRegionApprovedNow) {
+
+                AuditLog.info(customerId = customer.id, message = "Approved for region - $regionCode")
+
+                onRegionApprovedAction.apply(
+                        customer = customer,
+                        regionCode = regionCode,
+                        transaction = PrimeTransaction(transaction)
+                ).bind()
+
+                utcTimeNow()
+            } else {
+                existingCustomerRegion.approvedOn
+            }
+
+            // Save KYC expiry date if it is not null.
+            val newKycExpiryDateMap = kycExpiryDate
+                    ?.let { existingCustomerRegion.kycExpiryDateMap.copy(key = kycType, value = it) }
+                    ?: existingCustomerRegion.kycExpiryDateMap
+
+            customerRegionRelationStore
+                    .createOrUpdate(
+                            fromId = customer.id,
+                            relation = CustomerRegion(
+                                    status = newRegionStatus,
+                                    kycStatusMap = newKycStatusMap,
+                                    kycExpiryDateMap = newKycExpiryDateMap,
+                                    initiatedOn = existingCustomerRegion.initiatedOn,
+                                    approvedOn = regionApprovedOn
+                            ),
+                            toId = regionCode,
+                            transaction = transaction)
+                    .bind()
+
+        }
     }
 
     private fun getKycStatusMapForRegion(regionCode: String): Map<KycType, KycStatus> {
@@ -2423,101 +2400,93 @@ object Neo4jStoreSingleton : GraphStore {
             plan: Plan,
             stripeProductName: String,
             planProduct: Product): Either<StoreError, Plan> = writeTransaction {
-        IO {
-            Either.monad<StoreError>().binding {
+        Either.fx<StoreError, Plan> {
 
-                get(Product withSku plan.id)
-                        .map {
-                            AlreadyExistsError(type = productEntity.name, id = "Failed to find product associated with plan ${plan.id}")
-                                    .left()
-                                    .bind()
-                        }
-
-                get(Plan withId plan.id)
-                        .map {
-                            AlreadyExistsError(type = planEntity.name, id = "Failed to find plan ${plan.id}")
-                                    .left()
-                                    .bind()
-                        }
-
-                val productInfo = paymentProcessor.createProduct(stripeProductName)
-                        .mapLeft {
-                            NotCreatedError(type = planEntity.name, id = "Failed to create plan ${plan.id}",
-                                    error = it)
-                        }.linkReversalActionToTransaction(transaction) {
-                            paymentProcessor.removeProduct(it.id)
-                        }.bind()
-                val planInfo = paymentProcessor.createPlan(
-                        productInfo.id,
-                        planProduct.price.amount,
-                        planProduct.price.currency,
-                        PaymentProcessor.Interval.valueOf(plan.interval.toUpperCase()), plan.intervalCount)
-                        .mapLeft {
-                            NotCreatedError(type = planEntity.name, id = "Failed to create plan ${plan.id}",
-                                    error = it)
-                        }.linkReversalActionToTransaction(transaction) {
-                            paymentProcessor.removePlan(it.id)
-                        }.bind()
-
-                /* The associated product to the plan. Note that:
-                         sku - name of the plan
-                         property value 'productClass' is set to "plan"
-                   TODO: Update to new backend model. */
-                val product = planProduct.copy(
-                        payment = planProduct.payment + mapOf(
-                                "type" to SUBSCRIPTION.name)
-                )
-
-                /* Propagates errors from lower layer if any. */
-                create { product }.bind()
-                create {
-                    plan.copy(
-                            stripePlanId = planInfo.id,
-                            stripeProductId = productInfo.id)
-                }.bind()
-                get(Plan withId plan.id)
+            if (get(Product withSku plan.id).isRight()) {
+                AlreadyExistsError(type = productEntity.name, id = "Failed to find product associated with plan ${plan.id}")
+                        .left()
                         .bind()
-            }.fix()
-        }.unsafeRunSync()
-                .ifFailedThenRollback(transaction)
+            }
+
+            if (get(Plan withId plan.id).isRight()) {
+                AlreadyExistsError(type = planEntity.name, id = "Failed to find plan ${plan.id}")
+                        .left()
+                        .bind()
+            }
+
+            val productInfo = paymentProcessor.createProduct(stripeProductName)
+                    .mapLeft {
+                        NotCreatedError(type = planEntity.name, id = "Failed to create plan ${plan.id}",
+                                error = it)
+                    }.linkReversalActionToTransaction(transaction) {
+                        paymentProcessor.removeProduct(it.id)
+                    }.bind()
+            val planInfo = paymentProcessor.createPlan(
+                    productInfo.id,
+                    planProduct.price.amount,
+                    planProduct.price.currency,
+                    PaymentProcessor.Interval.valueOf(plan.interval.toUpperCase()), plan.intervalCount)
+                    .mapLeft {
+                        NotCreatedError(type = planEntity.name, id = "Failed to create plan ${plan.id}",
+                                error = it)
+                    }.linkReversalActionToTransaction(transaction) {
+                        paymentProcessor.removePlan(it.id)
+                    }.bind()
+
+            /* The associated product to the plan. Note that:
+                     sku - name of the plan
+                     property value 'productClass' is set to "plan"
+               TODO: Update to new backend model. */
+            val product = planProduct.copy(
+                    payment = planProduct.payment + mapOf(
+                            "type" to SUBSCRIPTION.name)
+            )
+
+            /* Propagates errors from lower layer if any. */
+            create { product }.bind()
+            create {
+                plan.copy(
+                        stripePlanId = planInfo.id,
+                        stripeProductId = productInfo.id)
+            }.bind()
+            get(Plan withId plan.id)
+                    .bind()
+        }.ifFailedThenRollback(transaction)
     }
 
     override fun deletePlan(planId: String): Either<StoreError, Plan> = writeTransaction {
-        IO {
-            Either.monad<StoreError>().binding {
-                val plan = get(Plan withId planId)
-                        .bind()
-                /* The name of the product is the same as the name of the corresponding plan. */
-                get(Product withSku planId)
-                        .bind()
+        Either.fx<StoreError, Plan> {
+            val plan = get(Plan withId planId)
+                    .bind()
+            /* The name of the product is the same as the name of the corresponding plan. */
+            get(Product withSku planId)
+                    .bind()
 
-                /* Not removing the product due to purchase references. */
+            /* Not removing the product due to purchase references. */
 
-                /* Removing the plan will remove the plan itself and all relations going to it. */
-                delete(Plan withId plan.id)
-                        .bind()
+            /* Removing the plan will remove the plan itself and all relations going to it. */
+            delete(Plan withId plan.id)
+                    .bind()
 
-                /* Lookup in payment backend will fail if no value found for 'planId'. */
-                plan.stripePlanId?.let { stripePlanId ->
-                    paymentProcessor.removePlan(stripePlanId)
-                            .mapLeft {
-                                NotDeletedError(type = planEntity.name, id = "Failed to delete ${plan.id}",
-                                        error = it)
-                            }.bind()
-                }
+            /* Lookup in payment backend will fail if no value found for 'planId'. */
+            plan.stripePlanId?.let { stripePlanId ->
+                paymentProcessor.removePlan(stripePlanId)
+                        .mapLeft {
+                            NotDeletedError(type = planEntity.name, id = "Failed to delete ${plan.id}",
+                                    error = it)
+                        }.bind()
+            }
 
-                /* Lookup in payment backend will fail if no value found for 'productId'. */
-                plan.stripeProductId?.let { stripeProductId ->
-                    paymentProcessor.removeProduct(stripeProductId)
-                            .mapLeft {
-                                NotDeletedError(type = planEntity.name, id = "Failed to delete ${plan.id}",
-                                        error = it)
-                            }.bind()
-                }
-                plan
-            }.fix()
-        }.unsafeRunSync()
-                .ifFailedThenRollback(transaction)
+            /* Lookup in payment backend will fail if no value found for 'productId'. */
+            plan.stripeProductId?.let { stripeProductId ->
+                paymentProcessor.removeProduct(stripeProductId)
+                        .mapLeft {
+                            NotDeletedError(type = planEntity.name, id = "Failed to delete ${plan.id}",
+                                    error = it)
+                        }.bind()
+            }
+            plan
+        }.ifFailedThenRollback(transaction)
     }
 
     override fun subscribeToPlan(
@@ -2525,25 +2494,22 @@ object Neo4jStoreSingleton : GraphStore {
             planId: String,
             trialEnd: Long): Either<StoreError, Unit> = writeTransaction {
 
-        IO {
-            Either.monad<StoreError>().binding {
+        Either.fx<StoreError, Unit> {
 
-                val customer = getCustomer(identity = identity)
-                        .bind()
+            val customer = getCustomer(identity = identity)
+                    .bind()
 
-                val product = getProduct(identity, planId)
-                        .bind()
+            val product = getProduct(identity, planId)
+                    .bind()
 
-                subscribeToPlan(
-                        customerId = customer.id,
-                        planId = planId,
-                        taxRegionId = product.paymentTaxRegionId)
-                        .bind()
+            subscribeToPlan(
+                    customerId = customer.id,
+                    planId = planId,
+                    taxRegionId = product.paymentTaxRegionId)
+                    .bind()
 
-                Unit
-            }.fix()
-        }.unsafeRunSync()
-                .ifFailedThenRollback(transaction)
+            Unit
+        }.ifFailedThenRollback(transaction)
     }
 
     override fun unsubscribeFromPlan(identity: ModelIdentity, planId: String, invoiceNow: Boolean): Either<StoreError, Plan> = readTransaction {
@@ -2554,29 +2520,27 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     private fun removeSubscription(customerId: String, planId: String, invoiceNow: Boolean): Either<StoreError, Plan> = writeTransaction {
-        IO {
-            Either.monad<StoreError>().binding {
-                val plan = get(Plan withId planId)
-                        .bind()
 
-                val planSubscription = get((Customer withId customerId) subscribesTo (Plan withId planId))
-                        .bind()
-                        .single()
-                paymentProcessor.cancelSubscription(planSubscription.subscriptionId, invoiceNow)
-                        .mapLeft {
-                            NotDeletedError(type = planEntity.name, id = "$customerId -> ${plan.id}",
-                                    error = it)
-                        }.flatMap {
-                            Unit.right()
-                        }.bind()
+        Either.fx<StoreError, Plan> {
+            val plan = get(Plan withId planId)
+                    .bind()
 
-                unlink((Customer withId customerId) subscribesTo (Plan withId planId))
-                        .flatMap {
-                            Either.right(plan)
-                        }.bind()
-            }.fix()
-        }.unsafeRunSync()
-                .ifFailedThenRollback(transaction)
+            val planSubscription = get((Customer withId customerId) subscribesTo (Plan withId planId))
+                    .bind()
+                    .single()
+            paymentProcessor.cancelSubscription(planSubscription.subscriptionId, invoiceNow)
+                    .mapLeft {
+                        NotDeletedError(type = planEntity.name, id = "$customerId -> ${plan.id}",
+                                error = it)
+                    }.flatMap {
+                        Unit.right()
+                    }.bind()
+
+            unlink((Customer withId customerId) subscribesTo (Plan withId planId))
+                    .flatMap {
+                        Either.right(plan)
+                    }.bind()
+        }.ifFailedThenRollback(transaction)
     }
 
     override fun purchasedSubscription(
@@ -2586,36 +2550,33 @@ object Neo4jStoreSingleton : GraphStore {
             sku: String,
             amount: Long,
             currency: String): Either<StoreError, Plan> = writeTransaction {
-        IO {
-            Either.monad<StoreError>().binding {
-                val product = get(Product withSku sku).bind()
-                val plan = get(Plan withId sku).bind()
-                val purchaseRecord = PurchaseRecord(
-                        id = chargeId,
-                        product = product,
-                        timestamp = Instant.now().toEpochMilli(),
-                        properties = mapOf("invoiceId" to invoiceId)
-                )
+        Either.fx<StoreError, Plan> {
+            val product = get(Product withSku sku).bind()
+            val plan = get(Plan withId sku).bind()
+            val purchaseRecord = PurchaseRecord(
+                    id = chargeId,
+                    product = product,
+                    timestamp = Instant.now().toEpochMilli(),
+                    properties = mapOf("invoiceId" to invoiceId)
+            )
 
-                /* Will exit if an existing purchase record matches on 'invoiceId'. */
-                createPurchaseRecord(customerId, purchaseRecord)
+            /* Will exit if an existing purchase record matches on 'invoiceId'. */
+            createPurchaseRecord(customerId, purchaseRecord)
+                    .bind()
+
+            // FIXME Moving customer to new segments should be done only based on productClass.
+            /* Offer products to the newly signed up subscriber. */
+            product.segmentIds.forEach { segmentId ->
+                assignCustomerToSegment(
+                        customerId = customerId,
+                        segmentId = segmentId,
+                        transaction = transaction)
                         .bind()
+            }
+            logger.info("Customer $customerId completed payment of invoice $invoiceId for subscription to plan ${plan.id}")
 
-                // FIXME Moving customer to new segments should be done only based on productClass.
-                /* Offer products to the newly signed up subscriber. */
-                product.segmentIds.forEach { segmentId ->
-                    assignCustomerToSegment(
-                            customerId = customerId,
-                            segmentId = segmentId,
-                            transaction = transaction)
-                            .bind()
-                }
-                logger.info("Customer $customerId completed payment of invoice $invoiceId for subscription to plan ${plan.id}")
-
-                plan
-            }.fix()
-        }.unsafeRunSync()
-                .ifFailedThenRollback(transaction)
+            plan
+        }.ifFailedThenRollback(transaction)
     }
 
     //
@@ -2638,87 +2599,86 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     override fun checkPaymentTransactions(start: Long, end: Long): Either<PaymentError, List<Map<String, Any?>>> = readTransaction {
-        IO {
-            Either.monad<PaymentError>().binding {
 
-                /* To account for time differences for when a payment transaction is stored
-                   to payment backend and to the purchase record DB, the search for
-                   corresponding payment and purchase records are done with a wider time range
-                   that what is specificed with the start and end timestamps.
+        Either.fx<PaymentError, List<Map<String, Any?>>> {
 
-                   When all common records has been removed using, the remaining records, if any,
-                   are then againg checked for records that lies excactly within the start and
-                   end timestamps. */
+            /* To account for time differences for when a payment transaction is stored
+               to payment backend and to the purchase record DB, the search for
+               corresponding payment and purchase records are done with a wider time range
+               that what is specificed with the start and end timestamps.
 
-                val padding = 600000L   /* 10 min in milliseconds. */
+               When all common records has been removed using, the remaining records, if any,
+               are then againg checked for records that lies excactly within the start and
+               end timestamps. */
 
-                val startPadded = if (start < padding) start else start - padding
-                val endPadded = end + padding
+            val padding = 600000L   /* 10 min in milliseconds. */
 
-                val purchaseRecords = getPurchaseTransactions(startPadded, endPadded)
-                        .mapLeft {
-                            org.ostelco.prime.paymentprocessor.core.NotFoundError("Error when fetching purchase records",
-                                    internalError = it)
-                        }.bind()
-                val paymentRecords = getPaymentTransactions(startPadded, endPadded)
-                        .bind()
+            val startPadded = if (start < padding) start else start - padding
+            val endPadded = end + padding
 
-                /* TODO: For handling amounts and currencies consider to use
-                         JSR-354 Currency and Money API. */
+            val purchaseRecords = getPurchaseTransactions(startPadded, endPadded)
+                    .mapLeft {
+                        org.ostelco.prime.paymentprocessor.core.NotFoundError("Error when fetching purchase records",
+                                internalError = it)
+                    }.bind()
+            val paymentRecords = getPaymentTransactions(startPadded, endPadded)
+                    .bind()
 
-                purchaseRecords.map {
-                    mapOf("type" to "purchaseRecord",
-                            "chargeId" to it.id,
-                            "amount" to it.product.price.amount,
-                            "currency" to it.product.price.currency.toLowerCase(),
-                            "refunded" to (it.refund != null),
-                            "created" to it.timestamp)
-                }.plus(
-                        paymentRecords.map {
-                            mapOf("type" to "paymentRecord",
-                                    "chargeId" to it.id,
-                                    "amount" to it.amount,
-                                    "currency" to it.currency,   /* (Stripe) Always lower case. */
-                                    "refunded" to it.refunded,
-                                    "created" to it.created)
-                        }
-                ).groupBy {
-                    it["chargeId"].hashCode() + it["amount"].hashCode() +
-                            it["currency"].hashCode() + it["refunded"].hashCode()
-                }.map {
-                    /* Report if payment backend and/or purchase record store have
-                       duplicates or more of the same transaction. */
-                    if (it.value.size > 2)
-                        logger.error(NOTIFY_OPS_MARKER,
-                                "${it.value.size} duplicates found for payment transaction/purchase record ${it.value.first()["chargeId"]}")
-                    it
-                }.filter {
-                    it.value.size == 1
-                }.map {
-                    it.value.first()
-                }.filter {
-                    /* Filter down to records that lies excactly within the start
-                       and end timestamps. */
-                    val ts = it["created"] as? Long ?: 0L
+            /* TODO: For handling amounts and currencies consider to use
+                     JSR-354 Currency and Money API. */
 
-                    if (ts == 0L) {
-                        logger.error(NOTIFY_OPS_MARKER, if (it["type"] == "purchaseRecord")
-                            "Purchase record ${it["chargeId"]} has 'created' timestamp set to 0"
-                        else
-                            "Payment transaction record ${it["chargeId"]} has 'created' timestamp set to 0")
-                        true
-                    } else {
-                        ts >= start && ts <= end
+            purchaseRecords.map {
+                mapOf("type" to "purchaseRecord",
+                        "chargeId" to it.id,
+                        "amount" to it.product.price.amount,
+                        "currency" to it.product.price.currency.toLowerCase(),
+                        "refunded" to (it.refund != null),
+                        "created" to it.timestamp)
+            }.plus(
+                    paymentRecords.map {
+                        mapOf("type" to "paymentRecord",
+                                "chargeId" to it.id,
+                                "amount" to it.amount,
+                                "currency" to it.currency,   /* (Stripe) Always lower case. */
+                                "refunded" to it.refunded,
+                                "created" to it.created)
                     }
-                }.map {
+            ).groupBy {
+                it["chargeId"].hashCode() + it["amount"].hashCode() +
+                        it["currency"].hashCode() + it["refunded"].hashCode()
+            }.map {
+                /* Report if payment backend and/or purchase record store have
+                   duplicates or more of the same transaction. */
+                if (it.value.size > 2)
+                    logger.error(NOTIFY_OPS_MARKER,
+                            "${it.value.size} duplicates found for payment transaction/purchase record ${it.value.first()["chargeId"]}")
+                it
+            }.filter {
+                it.value.size == 1
+            }.map {
+                it.value.first()
+            }.filter {
+                /* Filter down to records that lies excactly within the start
+                   and end timestamps. */
+                val ts = it["created"] as? Long ?: 0L
+
+                if (ts == 0L) {
                     logger.error(NOTIFY_OPS_MARKER, if (it["type"] == "purchaseRecord")
-                        "Found no matching payment transaction record for purchase record ${it["chargeId"]}"
+                        "Purchase record ${it["chargeId"]} has 'created' timestamp set to 0"
                     else
-                        "Found no matching purchase record for payment transaction record ${it["chargeId"]}")
-                    it
+                        "Payment transaction record ${it["chargeId"]} has 'created' timestamp set to 0")
+                    true
+                } else {
+                    ts >= start && ts <= end
                 }
-            }.fix()
-        }.unsafeRunSync()
+            }.map {
+                logger.error(NOTIFY_OPS_MARKER, if (it["type"] == "purchaseRecord")
+                    "Found no matching payment transaction record for purchase record ${it["chargeId"]}"
+                else
+                    "Found no matching purchase record for payment transaction record ${it["chargeId"]}")
+                it
+            }
+        }
     }
 
     //
@@ -2743,49 +2703,47 @@ object Neo4jStoreSingleton : GraphStore {
             identity: ModelIdentity,
             purchaseRecordId: String,
             reason: String): Either<PaymentError, ProductInfo> = writeTransaction {
-        IO {
-            Either.monad<PaymentError>().binding {
-                val (_, customerAnalyticsId) = getCustomerAndAnalyticsId(identity = identity)
-                        .mapLeft {
-                            logger.error("Failed to find customer with identity - $identity")
-                            NotFoundPaymentError("Failed to find customer with identity - $identity",
-                                    internalError = it)
-                        }.bind()
-                val purchaseRecord = get(PurchaseRecord withId purchaseRecordId)
-                        // If we can't find the record, return not-found
-                        .mapLeft {
-                            org.ostelco.prime.paymentprocessor.core.NotFoundError("Purchase Record unavailable",
-                                    internalError = it)
-                        }.bind()
-                checkPurchaseRecordForRefund(purchaseRecord)
-                        .bind()
 
-                // TODO: (kmm) Move this last.
-                val refundId = paymentProcessor.refundCharge(
-                        purchaseRecord.id,
-                        purchaseRecord.product.price.amount)
-                        .bind()
-                val refund = RefundRecord(refundId, reason, Instant.now().toEpochMilli())
-                val changedPurchaseRecord = purchaseRecord.copy(
-                        refund = refund
-                )
-                update { changedPurchaseRecord }
-                        .mapLeft {
-                            logger.error("Failed to update purchase record, for refund $refund.id, chargeId $purchaseRecordId, payment has been refunded in Stripe")
-                            UpdatePurchaseError("Failed to update purchase record for refund ${refund.id}",
-                                    internalError = it)
-                        }.bind()
+        Either.fx<PaymentError, ProductInfo> {
+            val (_, customerAnalyticsId) = getCustomerAndAnalyticsId(identity = identity)
+                    .mapLeft {
+                        logger.error("Failed to find customer with identity - $identity")
+                        NotFoundPaymentError("Failed to find customer with identity - $identity",
+                                internalError = it)
+                    }.bind()
+            val purchaseRecord = get(PurchaseRecord withId purchaseRecordId)
+                    // If we can't find the record, return not-found
+                    .mapLeft {
+                        org.ostelco.prime.paymentprocessor.core.NotFoundError("Purchase Record unavailable",
+                                internalError = it)
+                    }.bind()
+            checkPurchaseRecordForRefund(purchaseRecord)
+                    .bind()
 
-                analyticsReporter.reportRefund(
-                        customerAnalyticsId = customerAnalyticsId,
-                        purchaseId = purchaseRecord.id,
-                        reason = reason
-                )
+            // TODO: (kmm) Move this last.
+            val refundId = paymentProcessor.refundCharge(
+                    purchaseRecord.id,
+                    purchaseRecord.product.price.amount)
+                    .bind()
+            val refund = RefundRecord(refundId, reason, Instant.now().toEpochMilli())
+            val changedPurchaseRecord = purchaseRecord.copy(
+                    refund = refund
+            )
+            update { changedPurchaseRecord }
+                    .mapLeft {
+                        logger.error("Failed to update purchase record, for refund $refund.id, chargeId $purchaseRecordId, payment has been refunded in Stripe")
+                        UpdatePurchaseError("Failed to update purchase record for refund ${refund.id}",
+                                internalError = it)
+                    }.bind()
 
-                ProductInfo(purchaseRecord.product.sku)
-            }.fix()
-        }.unsafeRunSync()
-                .ifFailedThenRollback(transaction)
+            analyticsReporter.reportRefund(
+                    customerAnalyticsId = customerAnalyticsId,
+                    purchaseId = purchaseRecord.id,
+                    reason = reason
+            )
+
+            ProductInfo(purchaseRecord.product.sku)
+        }.ifFailedThenRollback(transaction)
     }
 
     //
@@ -2845,18 +2803,15 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     private fun WriteTransaction.createOffer(offer: ModelOffer): Either<StoreError, Unit> {
-        return IO {
-            Either.monad<StoreError>().binding {
-                create { Offer(id = offer.id) }.bind()
-                for (segmentId in offer.segments) {
-                    fact { (Offer withId offer.id) isOfferedTo (Segment withId segmentId) }.bind()
-                }
-                for (sku in offer.products) {
-                    fact { (Offer withId offer.id) containsProduct (Product withSku sku) }.bind()
-                }
-            }.fix()
-        }.unsafeRunSync()
-                .ifFailedThenRollback(transaction)
+        return Either.fx<StoreError, Unit> {
+            create { Offer(id = offer.id) }.bind()
+            for (segmentId in offer.segments) {
+                fact { (Offer withId offer.id) isOfferedTo (Segment withId segmentId) }.bind()
+            }
+            for (sku in offer.products) {
+                fact { (Offer withId offer.id) containsProduct (Product withSku sku) }.bind()
+            }
+        }.ifFailedThenRollback(transaction)
     }
 
     //
@@ -2895,16 +2850,13 @@ object Neo4jStoreSingleton : GraphStore {
                 products = productIds,
                 segments = segmentIds)
 
-        IO {
-            Either.monad<StoreError>().binding {
+        Either.fx<StoreError, Unit> {
 
-                products.forEach { product -> create { product }.bind() }
-                segments.forEach { segment -> create { Segment(id = segment.id) }.bind() }
-                createOffer(actualOffer).bind()
+            products.forEach { product -> create { product }.bind() }
+            segments.forEach { segment -> create { Segment(id = segment.id) }.bind() }
+            createOffer(actualOffer).bind()
 
-            }.fix()
-        }.unsafeRunSync()
-                .ifFailedThenRollback(transaction)
+        }.ifFailedThenRollback(transaction)
     }
 
     /**
@@ -2912,12 +2864,9 @@ object Neo4jStoreSingleton : GraphStore {
      */
     override fun atomicCreateSegments(createSegments: Collection<ModelSegment>): Either<StoreError, Unit> = writeTransaction {
 
-        IO {
-            Either.monad<StoreError>().binding {
-                createSegments.forEach { segment -> createSegment(segment).bind() }
-            }.fix()
-        }.unsafeRunSync()
-                .ifFailedThenRollback(transaction)
+        Either.fx<StoreError, Unit> {
+            createSegments.forEach { segment -> createSegment(segment).bind() }
+        }.ifFailedThenRollback(transaction)
     }
 
     /**
@@ -2925,12 +2874,9 @@ object Neo4jStoreSingleton : GraphStore {
      */
     override fun atomicUpdateSegments(updateSegments: Collection<ModelSegment>): Either<StoreError, Unit> = writeTransaction {
 
-        IO {
-            Either.monad<StoreError>().binding {
-                updateSegments.forEach { segment -> updateSegment(segment).bind() }
-            }.fix()
-        }.unsafeRunSync()
-                .ifFailedThenRollback(transaction)
+        Either.fx<StoreError, Unit> {
+            updateSegments.forEach { segment -> updateSegment(segment).bind() }
+        }.ifFailedThenRollback(transaction)
     }
 
     override fun atomicAddToSegments(addToSegments: Collection<ModelSegment>): Either<StoreError, Unit> {
