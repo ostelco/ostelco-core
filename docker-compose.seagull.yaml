@@ -23,13 +23,21 @@ services:
       - DATASTORE_EMULATOR_HOST=localhost:9090
       - DATASTORE_PROJECT_ID=${GCP_PROJECT_ID}
       - MANDRILL_API_KEY=
+      - LOCAL_TESTING=true
+      - DB_USER=postgres_user
+      - DB_PASSWORD=postgres_password
+      - DB_URL=postgres:5432/sim-inventory
+      - SMDPLUS_ES2PLUS_ENDPOINT=http://smdp-plus-emulator:8080
       - ACCEPTANCE_TESTING=true
     ports:
       - "9090:8080"
       - "8082:8082"
+      - "8081:8081"
     depends_on:
+      - "ext-auth-provider"
       - "datastore-emulator"
       - "pubsub-emulator"
+      - "smdp-plus-emulator"
       - "neo4j"
     command: ["/bin/bash", "./wait.sh"]
     tmpfs:
@@ -60,7 +68,8 @@ services:
       - PUBSUB_CCA_SUBSCRIPTION_ID=ocsgw-cca-sub
       - PUBSUB_ACTIVATE_SUBSCRIPTION_ID=ocsgw-activate-sub
       - DIAMETER_CONFIG_FILE=server-jdiameter-config.xml
-      - OCS_DATASOURCE_TYPE=Local
+      - OCS_DATASOURCE_TYPE=Proxy
+      - OCS_SECONDARY_DATASOURCE_TYPE=PubSub
       - CONFIG_FOLDER=/config/
       - "JAVA_OPTS=-Xms512m -Xmx1024m -server"
     volumes:
@@ -97,6 +106,25 @@ services:
       - DATASTORE_DATASET=${GCP_PROJECT_ID}
     command: ["gcloud", "beta", "emulators", "datastore", "start", "--host-port=0.0.0.0:8081"]
 
+  ext-auth-provider:
+    container_name: ext-auth-provider
+    build: ext-auth-provider
+
+  smdp-plus-emulator:
+    container_name: smdp-plus-emulator
+    build: sim-administration/sm-dp-plus-emulator
+    ports:
+      - "18080:8080"
+      - "18081:8081"
+
+  postgres:
+    container_name: postgres
+    build:
+      context: sim-administration/postgres
+      dockerfile: Dockerfile
+    tmpfs: "//var/lib/postgresql/data"
+    ports:
+      - "55432:5432"
 
 networks:
   net:
