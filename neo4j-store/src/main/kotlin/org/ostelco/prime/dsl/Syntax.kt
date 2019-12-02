@@ -44,10 +44,6 @@ data class RelatedToClause<FROM : HasId, TO : HasId>(
         val relationType: RelationType<FROM, *, TO>,
         val toId: String)
 
-data class RelationFromClause<FROM : HasId, RELATION, TO : HasId>(
-        val relationType: RelationType<FROM, RELATION, TO>,
-        val fromId: String)
-
 data class RelationExpression<FROM : HasId, RELATION, TO : HasId>(
         val relationType: RelationType<FROM, RELATION, TO>,
         val fromId: String,
@@ -128,6 +124,11 @@ data class CustomerContext(override val id: String) : EntityContext<Customer>(Cu
             relationType = customerToSegmentRelation,
             fromId = id,
             toId = segment.id)
+
+    infix fun belongsToRegion(region: RegionContext) = RelationExpression(
+            relationType = customerRegionRelation,
+            fromId = id,
+            toId = region.id)
 }
 
 data class ExCustomerContext(override val id: String) : EntityContext<ExCustomer>(ExCustomer::class, id) {

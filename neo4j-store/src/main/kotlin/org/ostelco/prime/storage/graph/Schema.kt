@@ -35,7 +35,7 @@ data class EntityType<ENTITY : HasId>(
         private val dataClass: Class<ENTITY>,
         val name: String = dataClass.simpleName) {
 
-    var entityStore: EntityStore<ENTITY>? = null
+    var entityStore: EntityStore<ENTITY> = EntityStore(this)
 
     fun createEntity(map: Map<String, Any>): ENTITY = ObjectHandler.getObject(map, dataClass)
 }
@@ -46,10 +46,11 @@ data class RelationType<FROM : HasId, RELATION, TO : HasId>(
         val to: EntityType<TO>,
         private val dataClass: Class<RELATION>) {
 
-    init {
-        RelationRegistry.register(relation, this)
+    val relationStore: BaseRelationStore = if (relation.isUnique) {
+        UniqueRelationStore(this)
+    } else {
+        RelationStore(this)
     }
-    var relationStore: BaseRelationStore? = null
 
     val name: String = relation.name
 
@@ -128,24 +129,6 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
         }
     }
 
-    fun <RELATION : Any> getRelations(
-            id: String,
-            relationType: RelationType<E, RELATION, *>,
-            transaction: Transaction): Either<StoreError, List<RELATION>> {
-
-        return exists(id, transaction).flatMap {
-
-            read("""
-                MATCH (from:${entityType.name} { id: '$id' })-[r:${relationType.name}]-()
-                return r;
-                """.trimIndent(),
-                    transaction) { statementResult ->
-                statementResult.list { record -> relationType.createRelation(record["r"].asMap()) }
-                        .right()
-            }
-        }
-    }
-
     fun update(entity: E, transaction: Transaction): Either<StoreError, Unit> {
 
         return exists(entity.id, transaction).flatMap {
@@ -159,6 +142,24 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
                         test = statementResult.summary().counters().containsUpdates(), // TODO vihang: this is not perfect way to check if updates are applied
                         ifTrue = {},
                         ifFalse = { NotUpdatedError(type = entityType.name, id = entity.id) })
+            }
+        }
+    }
+
+    fun update(id: String, properties: Map<String, Any?>, transaction: Transaction): Either<StoreError, Unit> {
+
+        val props = properties
+                .filterValues { it != null }
+                .mapValues { it.value.toString() }
+        val parameters: Map<String, Any> = mapOf("props" to props)
+        return exists(id, transaction).flatMap {
+            write(query = """MATCH (node:${entityType.name} { id: '$id' }) SET node += ${'$'}props ;""",
+                    parameters = parameters,
+                    transaction = transaction) { statementResult ->
+                Either.cond(
+                        test = statementResult.summary().counters().containsUpdates(), // TODO vihang: this is not perfect way to check if updates are applied
+                        ifTrue = {},
+                        ifFalse = { NotUpdatedError(type = entityType.name, id = id) })
             }
         }
     }
@@ -199,10 +200,6 @@ sealed class BaseRelationStore {
 
 // TODO vihang: check if relation already exists, with allow duplicate boolean flag param
 class RelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType: RelationType<FROM, RELATION, TO>) : BaseRelationStore() {
-
-    init {
-        relationType.relationStore = this
-    }
 
     fun create(from: FROM, relation: RELATION, to: TO, transaction: Transaction): Either<StoreError, Unit> {
 
@@ -268,6 +265,7 @@ class RelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType
         }
     }
 
+    // TODO vihang: use parameters
     fun create(fromId: String, toIds: Collection<String>, transaction: Transaction): Either<StoreError, Unit> = write("""
                 MATCH (to:${relationType.to.name})
                 WHERE to.id in [${toIds.joinToString(",") { "'$it'" }}]
@@ -289,6 +287,7 @@ class RelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType
                 })
     }
 
+    // TODO vihang: use parameters
     fun create(fromIds: Collection<String>, toId: String, transaction: Transaction): Either<StoreError, Unit> = write("""
                 MATCH (from:${relationType.from.name})
                 WHERE from.id in [${fromIds.joinToString(",") { "'$it'" }}]
@@ -309,6 +308,25 @@ class RelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType
                             expectedCount = fromIds.size,
                             actualCount = actualCount)
                 })
+    }
+
+    fun get(
+            fromId: String,
+            toId: String,
+            transaction: Transaction): Either<StoreError, List<RELATION>> {
+
+        return relationType.from.entityStore.exists(fromId, transaction)
+                .flatMap { relationType.to.entityStore.exists(fromId, transaction) }
+                .flatMap {
+            read("""
+                MATCH (:${relationType.from.name} { id: '$fromId' })-[r:${relationType.name}]-(:${relationType.to.name} { id: '$toId' })
+                return r;
+                """.trimIndent(),
+                    transaction) { statementResult ->
+                statementResult.list { record -> relationType.createRelation(record["r"].asMap()) }
+                        .right()
+            }
+        }
     }
 
     fun removeAll(toId: String, transaction: Transaction): Either<StoreError, Unit> = write("""
@@ -332,24 +350,14 @@ class RelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType
     }
 }
 
-// Removes double apostrophes from key values in a JSON string.
-// Usage: output = re.replace(input, "$1$2$3")
-val re = Regex("""([,{])\s*"([^"]+)"\s*(:)""")
-
 class UniqueRelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType: RelationType<FROM, RELATION, TO>) : BaseRelationStore() {
-
-    init {
-        relationType.relationStore = this
-    }
 
     // If relation does not exists, then it creates new relation.
     fun createIfAbsent(fromId: String, toId: String, transaction: Transaction): Either<StoreError, Unit> {
 
-        return (relationType.from.entityStore?.exists(fromId, transaction)
-                ?: NotFoundError(type = relationType.from.name, id = fromId).left())
+        return relationType.from.entityStore.exists(fromId, transaction)
                 .flatMap {
-                    relationType.to.entityStore?.exists(toId, transaction)
-                            ?: NotFoundError(type = relationType.to.name, id = toId).left()
+                    relationType.to.entityStore.exists(toId, transaction)
                 }.flatMap {
 
                     doNotExist(fromId, toId, transaction).fold(
@@ -372,17 +380,16 @@ class UniqueRelationStore<FROM : HasId, RELATION, TO : HasId>(private val relati
     // If relation does not exists, then it creates new relation.
     fun createIfAbsent(fromId: String, relation: RELATION, toId: String, transaction: Transaction): Either<StoreError, Unit> {
 
-        return (relationType.from.entityStore?.exists(fromId, transaction)
-                ?: NotFoundError(type = relationType.from.name, id = fromId).left())
+        return relationType.from.entityStore.exists(fromId, transaction)
                 .flatMap {
-                    relationType.to.entityStore?.exists(toId, transaction)
-                            ?: NotFoundError(type = relationType.to.name, id = toId).left()
+                    relationType.to.entityStore.exists(toId, transaction)
                 }.flatMap {
 
                     doNotExist(fromId, toId, transaction).fold(
                             { Unit.right() },
                             {
                                 val properties = getProperties(relation as Any)
+                                // TODO vihang: set props using parameter
                                 val strProps: String = properties.entries.joinToString(",") { """`${it.key}`: "${it.value}"""" }
 
                                 write("""
@@ -402,17 +409,15 @@ class UniqueRelationStore<FROM : HasId, RELATION, TO : HasId>(private val relati
     // If relation does not exists, then it creates new relation. Or else updates it.
     fun createOrUpdate(fromId: String, relation: RELATION, toId: String, transaction: Transaction): Either<StoreError, Unit> {
 
-        return (relationType.from.entityStore?.exists(fromId, transaction)
-                ?: NotFoundError(type = relationType.from.name, id = fromId).left())
+        return relationType.from.entityStore.exists(fromId, transaction)
                 .flatMap {
-                    relationType.to.entityStore?.exists(toId, transaction)
-                            ?: NotFoundError(type = relationType.to.name, id = toId).left()
+                    relationType.to.entityStore.exists(toId, transaction)
                 }.flatMap {
 
                     val properties = getProperties(relation as Any)
                     doNotExist(fromId, toId, transaction).fold(
                             {
-                                // TODO vihang: replace setClause with map based settings written by Kjell
+                                // TODO vihang: set props using parameter
                                 val setClause: String = properties.entries.fold("") { acc, entry -> """$acc SET r.`${entry.key}` = '${entry.value}' """ }
                                 write(
                                     """MATCH (fromId:${relationType.from.name} {id: '$fromId'})-[r:${relationType.name}]->(toId:${relationType.to.name} {id: '$toId'})
@@ -425,6 +430,7 @@ class UniqueRelationStore<FROM : HasId, RELATION, TO : HasId>(private val relati
                                 }
                             },
                             {
+                                // TODO vihang: set props using parameter
                                 val strProps: String = properties.entries.joinToString(",") { """`${it.key}`: "${it.value}"""" }
 
                                 write("""
@@ -437,7 +443,8 @@ class UniqueRelationStore<FROM : HasId, RELATION, TO : HasId>(private val relati
                                             ifTrue = { Unit },
                                             ifFalse = { NotCreatedError(relationType.name, "$fromId -> $toId") })
                                 }
-                            })
+                            }
+                    )
                 }
     }
 
@@ -463,6 +470,7 @@ class UniqueRelationStore<FROM : HasId, RELATION, TO : HasId>(private val relati
 
         return doNotExist(fromId, toId, transaction).flatMap {
             val properties = getProperties(relation as Any)
+            // TODO vihang: set props using parameter
             val strProps: String = properties.entries.joinToString(",") { """`${it.key}`: "${it.value}"""" }
 
             write("""
@@ -478,17 +486,6 @@ class UniqueRelationStore<FROM : HasId, RELATION, TO : HasId>(private val relati
         }
     }
 
-    override fun delete(fromId: String, toId: String, transaction: Transaction): Either<StoreError, Unit> = write("""
-                MATCH (:${relationType.from.name} { id: '$fromId'})-[r:${relationType.name}]->(:${relationType.to.name} {id: '$toId'})
-                DELETE r
-                """.trimMargin(),
-            transaction) { statementResult ->
-
-        Either.cond(statementResult.summary().counters().relationshipsDeleted() == 1,
-                ifTrue = { Unit },
-                ifFalse = { NotDeletedError(relationType.name, "$fromId -> $toId") })
-    }
-
     fun get(fromId: String, toId: String, transaction: Transaction): Either<StoreError, RELATION> = read("""
                 MATCH (:${relationType.from.name} {id: '$fromId'})-[r:${relationType.name}]->(:${relationType.to.name} {id: '$toId'})
                 RETURN r
@@ -501,6 +498,17 @@ class UniqueRelationStore<FROM : HasId, RELATION, TO : HasId>(private val relati
                 .flatMap {
                     relation -> relation?.right() ?: NotFoundError(relationType.name, "$fromId -> $toId").left()
                 }
+    }
+
+    override fun delete(fromId: String, toId: String, transaction: Transaction): Either<StoreError, Unit> = write("""
+                MATCH (:${relationType.from.name} { id: '$fromId'})-[r:${relationType.name}]->(:${relationType.to.name} {id: '$toId'})
+                DELETE r
+                """.trimMargin(),
+            transaction) { statementResult ->
+
+        Either.cond(statementResult.summary().counters().relationshipsDeleted() == 1,
+                ifTrue = { Unit },
+                ifFalse = { NotDeletedError(relationType.name, "$fromId -> $toId") })
     }
 
     private fun doNotExist(fromId: String, toId: String, transaction: Transaction): Either<StoreError, Unit> = read("""
