@@ -300,7 +300,7 @@ class RegionsTest {
                 this.email = email
             }
 
-            assertEquals(2, regionDetailsList.size, "Customer should have 2 regions")
+            assertEquals(3, regionDetailsList.size, "Customer $email should have 3 regions")
             var receivedRegion = regionDetailsList.find { it.status == APPROVED }
                     ?: fail("Failed to find an approved region.")
             val regionCode = receivedRegion.region.id
