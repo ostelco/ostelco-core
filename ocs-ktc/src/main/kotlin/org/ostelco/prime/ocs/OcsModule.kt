@@ -13,6 +13,7 @@ import org.ostelco.prime.ocs.consumption.pubsub.PubSubClient
 import org.ostelco.prime.ocs.core.OnlineCharging
 
 @JsonTypeName("ocs")
+@ExperimentalUnsignedTypes
 class OcsModule : PrimeModule {
 
     @JsonProperty
@@ -45,11 +46,6 @@ class OcsModule : PrimeModule {
         }
     }
 }
-
-data class Rate(
-        val serviceId: Long,
-        val ratingGroup: Long,
-        val rate: String)
 
 data class PubSubChannel(
         val projectId: String,

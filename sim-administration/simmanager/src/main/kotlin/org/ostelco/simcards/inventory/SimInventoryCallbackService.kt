@@ -35,7 +35,7 @@ class SimInventoryCallbackService(val dao: SimInventoryDAO) : SmDpPlusCallbackSe
         // If we can't find the ICCID, then cry foul and log an error message
         // that will get the ops team's attention asap!
         val profileQueryResult = dao.getSimProfileByIccid(numericIccId)
-        profileQueryResult.mapLeft {
+        if (profileQueryResult.isLeft()) {
             logger.error(NOTIFY_OPS_MARKER,
                     "Could not find ICCID='$numericIccId' in database while handling downloadProgressinfo callback!!")
             return

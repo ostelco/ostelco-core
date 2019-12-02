@@ -21,10 +21,8 @@ dependencies {
 
   api("io.dropwizard:dropwizard-core:${Version.dropwizard}")
   
-  api("io.arrow-kt:arrow-core:${Version.arrow}")
-  api("io.arrow-kt:arrow-typeclasses:${Version.arrow}")
-  api("io.arrow-kt:arrow-instances-core:${Version.arrow}")
-  api("io.arrow-kt:arrow-effects:${Version.arrow}")
+  api("io.arrow-kt:arrow-fx:${Version.arrow}")
+  api("io.arrow-kt:arrow-syntax:${Version.arrow}")
 
   runtimeOnly("javax.xml.bind:jaxb-api:${Version.jaxb}")
   runtimeOnly("javax.activation:activation:${Version.javaxActivation}")
