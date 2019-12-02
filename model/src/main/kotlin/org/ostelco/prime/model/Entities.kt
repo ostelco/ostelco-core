@@ -10,6 +10,7 @@ import org.ostelco.prime.model.PaymentProperties.TYPE
 import org.ostelco.prime.model.ProductProperties.NO_OF_BYTES
 import org.ostelco.prime.model.ProductProperties.PRODUCT_CLASS
 import org.ostelco.prime.model.ProductProperties.SEGMENT_IDS
+import org.ostelco.prime.model.PurchaseRecordProperties.INVOICE_ID
 import org.ostelco.prime.model.SimProfileStatus.INSTALLED
 import java.util.*
 
@@ -351,7 +352,20 @@ data class PurchaseRecord(
         /* For storing 'invoice-id' when purchasing a plan. */
         val properties: Map<String, String> = emptyMap()) : HasId {
 
+    val chargeId: String
+        @JsonIgnore
+        get() = id
+
+    val invoiceId: String?
+        @Exclude
+        @JsonIgnore
+        get() = properties[INVOICE_ID.s]
+
     companion object
+}
+
+enum class PurchaseRecordProperties(val s: String) {
+    INVOICE_ID("invoiceId")
 }
 
 data class SimEntry(

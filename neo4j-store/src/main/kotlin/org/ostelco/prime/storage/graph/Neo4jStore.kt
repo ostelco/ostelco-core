@@ -1334,14 +1334,17 @@ object Neo4jStoreSingleton : GraphStore {
                                             "invoiceId" to invoicePaymentInfo.id))
                         }
                         else -> {
-                            BadGatewayError(description = "Product purchase failed due to illegal product: ${product.sku}",
-                                    error = SystemError(type = "Product",
+                            InvalidRequestError(description = "Product purchase failed due to illegal product: ${product.sku}",
+                                    internalError = SystemError(type = "Product",
                                             id = product.sku,
                                             message = "Missing product class in properties of product: ${product.sku}"))
                                     .left()
                                     .bind()
                         }
                     }
+
+                    val chargeId = purchaseRecord.chargeId
+                    val invoiceId = purchaseRecord.invoiceId
 
                     /* If this step fails, the previously added 'removeInvoice' call added to the transaction
                     will ensure that the invoice will be voided. */
@@ -1738,7 +1741,7 @@ object Neo4jStoreSingleton : GraphStore {
     fun WriteTransaction.createPurchaseRecord(customerId: String,
                                               purchaseRecord: PurchaseRecord): Either<StoreError, String> {
 
-        val invoiceId = purchaseRecord.properties["invoiceId"]
+        val invoiceId = purchaseRecord.invoiceId
 
         return IO {
             Either.monad<StoreError>().binding {
