@@ -92,14 +92,30 @@ class SimInventoryCallbackService(val dao: SimInventoryDAO) : SmDpPlusCallbackSe
                 }
             }
         } else {
-            /* XXX Update to handle other cases explicitly + review of logging. */
-            logger.warn("download-progress-info: Received message with notificationPointStatus {} for ICCID {}" +
-                    "(notificationPointId: {}, profileType: {}, resultData: {})",
-                    notificationPointStatus,
-                    numericIccId,
-                    notificationPointId,
-                    profileType,
-                    resultData)
+            // Log non-successful operations differently.  Confirmation failures and eligibility retry checks
+            // are not something that should show up in the logs and take attention from  ops personnel, so we're
+            // just logging it at info level.  Everything else shouldn't fail and if it does it should be researched
+            // by ops.
+            when (notificationPointId) {
+                1, 2 -> {
+                    logger.info("download-progress-info: Received message with notificationPointStatus {} for ICCID {}" +
+                            "(notificationPointId: {}, profileType: {}, resultData: {})",
+                            notificationPointStatus,
+                            numericIccId,
+                            notificationPointId,
+                            profileType,
+                            resultData)
+                }
+                else -> {
+                    logger.warn("download-progress-info: Received message with notificationPointStatus {} for ICCID {}" +
+                            "(notificationPointId: {}, profileType: {}, resultData: {})",
+                            notificationPointStatus,
+                            numericIccId,
+                            notificationPointId,
+                            profileType,
+                            resultData)
+                }
+            }
         }
     }
 
