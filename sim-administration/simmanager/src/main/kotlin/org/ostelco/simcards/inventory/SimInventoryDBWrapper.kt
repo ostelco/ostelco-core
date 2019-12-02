@@ -152,10 +152,15 @@ interface SimInventoryDBWrapper {
     fun reserveGoldenNumbersForBatch(batchId: Long): Either<SimManagerError, Int>
 
     /**
-     * Return a list of sim Profile names associated with HSSes.  Return both the
-     * HSSId (database internal ID), and the public name of the HSS.
+     * Return a list of  (HSS ID, hss Name, sim profile name) tuples.
      */
     fun getHssProfileNamePairs():  Either<SimManagerError, List<HssProfileIdName>>
+
+    /**
+     * Return a list of sim entries representing profiles that has been allocated
+     * to end user equipment, but has not
+     */
+    fun findAllocatedButNotDownloadedProfiles(): Either<SimManagerError, List<SimEntry>>
 }
 
 /**

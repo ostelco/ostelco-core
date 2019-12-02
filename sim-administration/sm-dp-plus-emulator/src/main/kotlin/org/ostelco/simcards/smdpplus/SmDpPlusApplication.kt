@@ -81,6 +81,18 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 
     fun getHttpClient() = httpClient
 
+    lateinit var callbackClient:SmDpPlusCallbackClient
+
+    var callbacksEnabled = true
+
+    fun enableCallbacks() {
+        callbacksEnabled = true
+    }
+
+    fun disableCallbacks() {
+        callbacksEnabled = false
+    }
+
     override fun run(config: SmDpPlusAppConfiguration,
                      env: Environment) {
 
@@ -106,7 +118,7 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
         }
 
         val simEntriesIterator = SmDpSimEntryIterator(FileInputStream(config.simBatchData))
-        val smDpPlusEmulator = SmDpPlusEmulator(simEntriesIterator)
+        val smDpPlusEmulator = SmDpPlusEmulator(simEntriesIterator, this)
         this.smdpPlusService = smDpPlusEmulator
 
         this.serverResource = SmDpPlusServerResource(
@@ -118,15 +130,14 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
                 certConfig = config.certConfig))) */
 
 
-        val callbackClient = SmDpPlusCallbackClient(
+        callbackClient = SmDpPlusCallbackClient(
                 httpClient = httpClient,
-
                 hostname = config.es2plusConfig.host,
                 portNumber = config.es2plusConfig.port,
                 requesterId = config.es2plusConfig.requesterId,
                 smdpPlus = smdpPlusService)
 
-        val commandsProcessor = CommandsProcessorResource(callbackClient)
+        val commandsProcessor = CommandsProcessorResource(this)
         jerseyEnvironment.register(commandsProcessor)
 
         // XXX This is weird, is it even necessary?  Probably not.
@@ -147,6 +158,21 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 
     fun reset() {
         this.smdpPlusService.reset();
+        enableCallbacks()
+    }
+
+    fun setCurrentState(iccid: String, newState: String) {
+        if (newState == "DOWNLOAD" && callbacksEnabled) { // TODO: Add flag to switch reporting off (to test error situations)
+            callbackClient.reportDownload(iccid)
+        }
+    }
+
+    fun reportDownload(iccid: String) {
+        setCurrentState(iccid, "DOWNLOAD")
+    }
+
+    fun emulateInstallOfIccid(iccid: String) {
+        smdpPlusService.emulateInstallOfIccid(iccid)
     }
 }
 
@@ -194,13 +220,12 @@ class SmDpPlusCallbackClient(
  * that has been registred to receive the callbacks.
  */
 @Path("commands")
-class CommandsProcessorResource(private val callbackClient: SmDpPlusCallbackClient) {
-
+class CommandsProcessorResource(private val app: SmDpPlusApplication) {
 
     @Path("simulate-download-of/iccid/{iccid}")
     @GET
     fun simulateDownloadOf(@PathParam("iccid") iccid: String): String {
-        callbackClient.reportDownload(iccid = iccid)
+        app.reportDownload(iccid)
         return "Simulated download of iccid ${iccid} went well."
     }
 }
@@ -210,7 +235,7 @@ class CommandsProcessorResource(private val callbackClient: SmDpPlusCallbackClie
  * happy day scenarios, and not particulary efficient, and in-memory
  * only etc.
  */
-class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusService {
+class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>, val app: SmDpPlusApplication) : SmDpPlusService {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -259,6 +284,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
 
 
     fun reset() {
+        app.enableCallbacks()
         entries.clear()
         entriesByIccid.clear()
         entriesByProfile.clear()
@@ -285,6 +311,16 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
 
     fun getEntryByIccid(iccid: String): SmDpSimEntry? = entriesByIccid[iccid]
 
+    fun setEntryState(entry: SmDpSimEntry, newState: String) {
+        entry.setCurrentState(newState)
+        app.setCurrentState(entry.iccid, newState)
+    }
+
+    fun setEntryStateByIccid(iccid: String, state: String) {
+        val entry: SmDpSimEntry = getEntryByIccid(iccid)
+                ?: throw SmDpPlusException("Could not find download order matching criteria")
+        setEntryState(entry, state)
+    }
 
     // TODO; What about the reservation flag?
     override fun downloadOrder(eid: String?, iccid: String?, profileType: String?): Es2DownloadOrderResponse {
@@ -300,7 +336,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
 
             // Then mark the entry as allocated and return the corresponding ICCID.
             entry.allocated = true
-            entry.setCurrentState("DOWNLOADED")
+            setEntryState(entry, "DOWNLOADED")
 
             // Finally return the ICCID uniquely identifying the profile instance.
             return Es2DownloadOrderResponse(eS2SuccessResponseHeader(),
@@ -390,7 +426,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
 
         // XXX The state mechanism in this class is a pice of .... Fix it!
         entry.released = releaseFlag
-        entry.setCurrentState("RELEASED")
+        setEntryState(entry, "RELEASED")
 
 
         if (confirmationCode != null) {
@@ -432,6 +468,10 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
 
     override fun releaseProfile(iccid: String) {
         TODO("not implemented")
+    }
+
+    fun emulateInstallOfIccid(iccid: String) {
+        setEntryStateByIccid(iccid, "INSTALLED")
     }
 }
 

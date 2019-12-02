@@ -65,14 +65,14 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                                 }
                     }
 
-    fun allocateNextEsimProfile(hlrName: String, phoneType: String): Either<SimManagerError, SimEntry> =
+    fun allocateNextEsimProfile(hssName: String, phoneType: String): Either<SimManagerError, SimEntry> =
             IO {
                 Either.monad<SimManagerError>().binding {
-                    logger.info("Allocating new SIM for hlr ${hlrName} and phone-type ${phoneType}")
+                    logger.info("Allocating new SIM for hlr ${hssName} and phone-type ${phoneType}")
 
-                    val hlrAdapter = dao.getHssEntryByName(hlrName)
+                    val hlrAdapter = dao.getHssEntryByName(hssName)
                             .bind()
-                    val profile = getProfileType(hlrName, phoneType)
+                    val profile = getProfileType(hssName, phoneType)
                             .bind()
                     val simEntry = dao.findNextReadyToUseSimProfileForHss(hlrAdapter.id, profile)
                             .bind()

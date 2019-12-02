@@ -25,6 +25,29 @@ import org.ostelco.simcards.inventory.SmDpPlusState
 import java.net.URL
 
 
+class ProfileVendorAdapterFactory(
+        val simInventoryDAO: SimInventoryDAO,
+        val httpClient: CloseableHttpClient,
+        val profileVendors: List<ProfileVendorConfig>) {
+
+    // Give this a shorter name
+    fun getAdapterByVendorId(profileVendorId: Long): Either<SimManagerError, ProfileVendorAdapter> =
+            simInventoryDAO.getProfileVendorAdapterDatumById(profileVendorId)
+                    .flatMap { datum ->
+                        val profileVendorConfig = getConfigForVendorNamed(datum.name)
+                        if (profileVendorConfig == null) {
+                            AdapterError("profileVendorCondig null for profile vendor $profileVendorId, that's very bad.").left()
+                        } else {
+                            ProfileVendorAdapter(datum, profileVendorConfig, httpClient, simInventoryDAO).right()
+                        }
+                    }
+
+    private fun getConfigForVendorNamed(name: String) =
+            profileVendors.firstOrNull {
+                it.name == name
+            }
+}
+
 // TODO:  Why on earth is the json property set to "metricName"? It makes no sense.
 //        Fix it, but understand what it means.
 data class ProfileVendorAdapterDatum(
@@ -226,9 +249,8 @@ data class ProfileVendorAdapter(
     /**
      * Downloads the SM-DP+ 'profile status' information for a list of ICCIDs
      * from a SM-DP+ service.
-     * @param httpClient  HTTP client
-     * @param config  SIM vendor specific configuration
      * @param iccidList  list with ICCID
+     * @param expectSuccess True iff no null values are to be expected.
      * @return  A list with SM-DP+ 'profile status' information
      */
     private fun getProfileStatus(
@@ -243,6 +265,16 @@ data class ProfileVendorAdapter(
         }
     }
 
+
+
+    /**
+     * Return a list of profile statuses for a parameter list of profiles. Signal an error
+     * if an attempt is made at getting the status of a profile for which there is no known
+     * record
+     */
+    fun getProfileStatusList(iccidList: List<String>): Either<SimManagerError, List<ProfileStatus>> {
+        return  getProfileStatus(iccidList = iccidList, expectSuccess = true)
+    }
 
     ///
     ///  Activating a sim card.
@@ -278,4 +310,6 @@ data class ProfileVendorAdapter(
      */
     fun ping(): Either<SimManagerError, List<ProfileStatus>> =
             getProfileStatus(iccidList = listContainingOnlyInvalidIccid, expectSuccess = false)
+
+
 }

@@ -30,6 +30,7 @@ import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SimInventoryDB
 import org.ostelco.simcards.inventory.SimInventoryDBWrapperImpl
 import org.ostelco.simcards.inventory.SimInventoryResource
+import org.ostelco.simcards.profilevendors.ProfileVendorAdapterFactory
 
 /**
  * The SIM manager
@@ -108,12 +109,20 @@ class SimAdministrationModule : PrimeModule {
                 simInventoryDAO = this.DAO
         )
 
-        env.admin().addTask(PreallocateProfilesTask(
+        val pvaf = ProfileVendorAdapterFactory(
                 simInventoryDAO = this.DAO,
                 httpClient = httpClient,
-                hssAdapterProxy = hssAdapters,
-                profileVendors = config.profileVendors))
+                profileVendors = config.profileVendors
+        )
 
+        env.admin().addTask(PreallocateProfilesTask(
+                simInventoryDAO = this.DAO,
+                hssAdapterProxy = hssAdapters,
+                pvaf = pvaf))
+
+        env.admin().addTask(PollOutstandingProfilesTask(
+                simInventoryDAO = this.DAO,
+                pvaf = pvaf))
 
         env.healthChecks().register("smdp",
                 SmdpPlusHealthceck(getDAO(), httpClient, config.profileVendors))

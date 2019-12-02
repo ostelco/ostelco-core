@@ -6,7 +6,6 @@ import arrow.core.left
 import arrow.core.right
 import com.google.common.collect.ImmutableMultimap
 import io.dropwizard.servlets.tasks.Task
-import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.simmanager.AdapterError
@@ -20,7 +19,7 @@ import org.ostelco.simcards.inventory.ProvisionState
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SimProfileKeyStatistics
-import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
+import org.ostelco.simcards.profilevendors.ProfileVendorAdapterFactory
 import java.io.PrintWriter
 import kotlin.math.min
 
@@ -41,14 +40,11 @@ import kotlin.math.min
 class PreallocateProfilesTask(
         private val lowWaterMark: Int = 10,
         val maxNoOfProfileToAllocate: Int = 30,
+        val pvaf : ProfileVendorAdapterFactory,
         val simInventoryDAO: SimInventoryDAO,
-        val httpClient: CloseableHttpClient,
-        val hssAdapterProxy: SimManagerToHssDispatcherAdapter,
-        val profileVendors: List<ProfileVendorConfig>) : Task("preallocate_sim_profiles") {
-
+        val hssAdapterProxy: SimManagerToHssDispatcherAdapter) : Task("preallocate_sim_profiles") {
 
     private val logger by getLogger()
-
 
     @Throws(Exception::class)
     override fun execute(parameters: ImmutableMultimap<String, String>, output: PrintWriter) {
@@ -60,30 +56,13 @@ class PreallocateProfilesTask(
                 }
     }
 
-    private fun getConfigForVendorNamed(name: String) =
-            profileVendors.firstOrNull {
-                it.name == name
-            }
-
-    private fun getProfileVendorAdapterForProfileVendorId(profileVendorId: Long): Either<SimManagerError, ProfileVendorAdapter> =
-            simInventoryDAO.getProfileVendorAdapterDatumById(profileVendorId)
-                    .flatMap { datum ->
-                        val profileVendorConfig = getConfigForVendorNamed(datum.name)
-                        if (profileVendorConfig == null) {
-                            AdapterError("profileVendorCondig null for profile vendor $profileVendorId, that's very bad.").left()
-                        } else {
-                            ProfileVendorAdapter(datum, profileVendorConfig, httpClient, simInventoryDAO).right()
-                        }
-                    }
-
-
     // TODO: This method must be refactored. It is still _way_ too complex.
     private fun preProvisionSimProfile(hssEntry: HssEntry,
                                        simEntry: SimEntry): Either<SimManagerError, SimEntry> =
             if (simEntry.id == null) { // TODO: This idiom is _bad_, find something better!
                 AdapterError("simEntry.id == null for simEntry = '$simEntry'.").left()
             } else
-                getProfileVendorAdapterForProfileVendorId(simEntry.profileVendorId)
+                pvaf.getAdapterByVendorId(simEntry.profileVendorId)
                         .flatMap { profileVendorAdapter ->
                             when {
                                 simEntry.hssState == HssState.NOT_ACTIVATED -> {

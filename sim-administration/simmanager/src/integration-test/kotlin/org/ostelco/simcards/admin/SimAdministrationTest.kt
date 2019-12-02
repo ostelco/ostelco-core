@@ -2,15 +2,18 @@ package org.ostelco.simcards.admin
 
 import arrow.core.Either
 import com.codahale.metrics.health.HealthCheck
+import com.google.common.collect.ImmutableMultimap
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import io.dropwizard.client.HttpClientBuilder
 import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.jdbi3.JdbiFactory
+import io.dropwizard.servlets.tasks.Task
 import io.dropwizard.testing.ConfigOverride
 import io.dropwizard.testing.ResourceHelpers
 import io.dropwizard.testing.junit.DropwizardAppRule
+import org.apache.http.impl.client.CloseableHttpClient
 import org.assertj.core.api.Assertions.assertThat
 import org.glassfish.jersey.client.ClientProperties
 import org.jdbi.v3.core.Jdbi
@@ -30,15 +33,21 @@ import org.ostelco.simcards.hss.SimManagerToHssDispatcherAdapter
 import org.ostelco.simcards.inventory.HssState
 import org.ostelco.simcards.inventory.ProvisionState
 import org.ostelco.simcards.inventory.SimEntry
+import org.ostelco.simcards.inventory.SimInventoryApi
+import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SimProfileKeyStatistics
+import org.ostelco.simcards.profilevendors.ProfileVendorAdapterFactory
 import org.ostelco.simcards.smdpplus.SmDpPlusApplication
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.FixedHostPortGenericContainer
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import java.io.FileInputStream
+import java.io.PrintWriter
+import java.io.StringWriter
 import java.time.Duration
 import java.time.temporal.ChronoUnit
+import java.util.*
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
@@ -50,7 +59,6 @@ class SimAdministrationTest {
     private val profileVendor = "Bar"
     private val phoneType = "rababara"
     private val expectedProfile = "IPHONE_PROFILE_2"
-
 
     companion object {
         private lateinit var jdbi: Jdbi
@@ -168,7 +176,6 @@ class SimAdministrationTest {
         dao.clearTables()
     }
 
-
     private fun presetTables() {
         val dao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().getDAO()
 
@@ -178,7 +185,7 @@ class SimAdministrationTest {
     }
 
     /* The SIM dataset is the same that is used by the SM-DP+ emulator. */
-    private fun loadSimData(hssState: HssState? = null, queryParameterName: String = "initialHssState", expectedReturnCode: Int = 200) {
+    protected fun loadSimData(hssState: HssState? = null, queryParameterName: String = "initialHssState", expectedReturnCode: Int = 200) {
         val entries = FileInputStream(SM_DP_PLUS_RULE.configuration.simBatchData)
         var target = client.target("$simManagerEndpoint/$hssName/import-batch/profilevendor/$profileVendor")
         if (hssState != null) {
@@ -186,9 +193,7 @@ class SimAdministrationTest {
         }
 
         val response =
-                target
-                        .request()
-                        .put(Entity.entity(entries, MediaType.TEXT_PLAIN))
+                target.request().put(Entity.entity(entries, MediaType.TEXT_PLAIN))
         assertThat(response.status).isEqualTo(expectedReturnCode)
     }
 
@@ -303,64 +308,191 @@ class SimAdministrationTest {
         }
     }
 
+    /**
+     * Helper class that is used to wrap invocations of the
+     * preallocation and polling of outstandng profiles tasks.
+     */
+    class TaskInvocationFixture(val testClass: SimAdministrationTest) {
+        var simDao: SimInventoryDAO
+        var profileVendors: List<ProfileVendorConfig>
+        var hssConfigs: List<HssConfig>
+        var httpClient : CloseableHttpClient
+        var maxNoOfProfilesToAllocate = 10
+        var dispatcher: DirectHssDispatcher
+        var hssAdapterCache: SimManagerToHssDispatcherAdapter
+        var preStats: SimProfileKeyStatistics
+        var pvaf: ProfileVendorAdapterFactory
+        var preallocationTask: PreallocateProfilesTask
+
+        val simApi: SimInventoryApi
+
+        val pollingTask : PollOutstandingProfilesTask
+
+        var hssId: Long = -1L
+
+        init {
+            testClass.loadSimData()
+
+            simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
+                    .getDAO()
+
+            profileVendors = SIM_MANAGER_RULE.configuration.profileVendors
+            hssConfigs = SIM_MANAGER_RULE.configuration.hssVendors
+            httpClient = HttpClientBuilder(SIM_MANAGER_RULE.environment)
+                    .build("taskInvocationFixtureClient-${UUID.randomUUID()}")
+
+            val hlrs = simDao.getHssEntries()
+            assertThat(hlrs.isRight()).isTrue()
+
+            hlrs.map {
+                hssId = it[0].id
+            }
+
+            dispatcher = DirectHssDispatcher(
+                    hssConfigs = hssConfigs,
+                    httpClient = httpClient,
+                    healthCheckRegistrar = object : HealthCheckRegistrar {
+                        override fun registerHealthCheck(name: String, healthCheck: HealthCheck) {
+                            SIM_MANAGER_RULE.environment.healthChecks().register(name, healthCheck)
+                        }
+                    })
+            hssAdapterCache = SimManagerToHssDispatcherAdapter(
+                    dispatcher = dispatcher,
+                    simInventoryDAO = simDao)
+            preStats = SimProfileKeyStatistics(
+                    noOfEntries = 0L,
+                    noOfEntriesAvailableForImmediateUse = 0L,
+                    noOfReleasedEntries = 0L,
+                    noOfUnallocatedEntries = 0L,
+                    noOfReservedEntries = 0L)
+            pvaf = ProfileVendorAdapterFactory(
+                    simInventoryDAO = simDao,
+                    httpClient = httpClient,
+                    profileVendors = ConfigRegistry.config.profileVendors)
+            preallocationTask = PreallocateProfilesTask(
+                    maxNoOfProfileToAllocate = maxNoOfProfilesToAllocate,
+                    simInventoryDAO = simDao,
+                    hssAdapterProxy = hssAdapterCache,
+                    pvaf = pvaf)
+            simApi = SimInventoryApi(httpClient, SIM_MANAGER_RULE.configuration, simDao)
+
+            pollingTask = PollOutstandingProfilesTask(simInventoryDAO = simDao, pvaf = pvaf)
+        }
+
+
+
+        private fun executeTask(task: Task): String {
+            val out = StringWriter();
+            val writer = PrintWriter(out);
+            val parameters = ImmutableMultimap.builder<String, String>().build()
+            task.execute(parameters, writer)
+            return out.toString()
+        }
+
+        /**
+         * Execute the preallocation task, returning the report it makes as a string.
+         */
+        fun executePreallocateSimProfilesTask(): String {
+            return executeTask(preallocationTask)
+        }
+
+        /**
+         * Execute the polling of outstanding sim roles task, returning the report it makes as a string.
+         */
+        fun executePollOutstandingSimrofilesTask() : String {
+            return executeTask(pollingTask)
+        }
+
+        /**
+         * Allocate the next sim profile for a generic ("nokia") phone.  This method
+         * doesn't actually use the tasks, but it is used as a convenience methods when
+         * testing the tasks.
+         */
+        fun allocateNextEsimProfile ():SimEntry {
+            val simEntry = simApi.allocateNextEsimProfile(hssName = testClass.hssName, phoneType = "nokia")
+                    .fold({ null }, { it })
+
+            assertNotNull(simEntry)
+            return simEntry!!
+        }
+
+        /**
+         * Switch off callbacks from the SM-DP+ emulator to the Prime emulator.
+         */
+        fun disableEs2CallbacksFromSmdpPlus() {
+            SM_DP_PLUS_RULE.getApplication<SmDpPlusApplication>().disableCallbacks()
+        }
+
+        /**
+         * Instruct the SM-DP+ emulator to simulate an installation of a simcard.
+         */
+        fun emulateDownloadOfIccid(iccid: String) {
+            SM_DP_PLUS_RULE.getApplication<SmDpPlusApplication>().emulateInstallOfIccid(iccid)
+        }
+
+
+        /**
+         * Get statistics for a specific type of sim profile. Used to test
+         * if the preallocation task is doing the right thing.
+         */
+        fun getStatsForProfile(profile:String): SimProfileKeyStatistics {
+            val postAllocationStats =
+                    simDao.getProfileStats(hssId, profile)
+            assertThat(postAllocationStats.isRight()).isTrue()
+
+            var stats : SimProfileKeyStatistics? = null
+            postAllocationStats.map {
+                stats = it
+            }
+            if (stats == null) {
+                fail("Failed to get stats for profile $profile")
+            }
+
+            return stats!!
+        }
+    }
+
+
+    @Test
+    fun testPollingOfOutstandingProfilesTask() {
+        val tif = TaskInvocationFixture(this)
+
+        tif.executePreallocateSimProfilesTask()
+
+        // Run the polling, and observe that nothing happens.
+        // Then run the polling task and see what happens.
+        var outString = tif.executePollOutstandingSimrofilesTask()
+        assertTrue(true)  // TODO: Replace with something more useful
+
+        // Then allocate the next profile
+        val simEntry = tif.allocateNextEsimProfile()
+
+        // Then run the polling task and see what happens.
+        outString = tif.executePollOutstandingSimrofilesTask()
+        assertTrue(outString.contains("State for iccid=${simEntry.iccid} still set to RELEASED"))
+
+        // Disable callbacks and emulate dowload (emulation of failing callbacks from SMDP+, which
+        // is the situation we want the callbacks to help us with)
+        tif.disableEs2CallbacksFromSmdpPlus()
+        tif.emulateDownloadOfIccid(simEntry.iccid)
+
+        outString = tif.executePollOutstandingSimrofilesTask()
+        assertTrue(outString.contains("Updated  state for iccid=${simEntry.iccid} to INSTALLED"))
+    }
+
     @Test
     fun testPeriodicProvisioningTask() {
-        loadSimData()
-        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
-                .getDAO()
+        val  tif = TaskInvocationFixture(this)
 
-        val profileVendors = SIM_MANAGER_RULE.configuration.profileVendors
-        val hssConfigs = SIM_MANAGER_RULE.configuration.hssVendors
-        val httpClient = HttpClientBuilder(SIM_MANAGER_RULE.environment)
-                .build("periodicProvisioningTaskClient")
-        val maxNoOfProfilesToAllocate = 10
+        val preStats = tif.getStatsForProfile(expectedProfile)
+        tif.executePreallocateSimProfilesTask()
 
-        val hlrs = simDao.getHssEntries()
-        assertThat(hlrs.isRight()).isTrue()
-
-        var hssId: Long = 0
-        hlrs.map {
-            hssId = it[0].id
-        }
-
-        val dispatcher = DirectHssDispatcher(
-                hssConfigs = hssConfigs,
-                httpClient = httpClient,
-                healthCheckRegistrar = object : HealthCheckRegistrar {
-                    override fun registerHealthCheck(name: String, healthCheck: HealthCheck) {
-                        SIM_MANAGER_RULE.environment.healthChecks().register(name, healthCheck)
-                    }
-                })
-        val hssAdapterCache = SimManagerToHssDispatcherAdapter(
-                dispatcher = dispatcher,
-                simInventoryDAO = simDao)
-        val preStats = SimProfileKeyStatistics(
-                noOfEntries = 0L,
-                noOfEntriesAvailableForImmediateUse = 0L,
-                noOfReleasedEntries = 0L,
-                noOfUnallocatedEntries = 0L,
-                noOfReservedEntries = 0L)
-        val task = PreallocateProfilesTask(
-                profileVendors = profileVendors,
-                simInventoryDAO = simDao,
-                maxNoOfProfileToAllocate = maxNoOfProfilesToAllocate,
-                hssAdapterProxy = hssAdapterCache,
-                httpClient = httpClient)
-        task.preAllocateSimProfiles()
-
-        val postAllocationStats =
-                simDao.getProfileStats(hssId, expectedProfile)
-        assertThat(postAllocationStats.isRight()).isTrue()
-
-        var postStats = SimProfileKeyStatistics(0L, 0L, 0L, 0L, 0L)
-        postAllocationStats.map {
-            postStats = it
-        }
+        val postStats = tif.getStatsForProfile(expectedProfile)
 
         val noOfAllocatedProfiles =
                 postStats.noOfEntriesAvailableForImmediateUse - preStats.noOfEntriesAvailableForImmediateUse
         assertEquals(
-                maxNoOfProfilesToAllocate.toLong(),
+                tif.maxNoOfProfilesToAllocate.toLong(),
                 noOfAllocatedProfiles)
     }
 
@@ -490,7 +622,6 @@ class SimAdministrationTest {
         assertGaugeValue(98, "sims.noOfUnallocatedEntries.IPHONE_PROFILE_2")
         assertGaugeValue(2, "sims.noOfReservedEntries.IPHONE_PROFILE_2")
     }
-
 
     // XXX MISSING TEST:  SHould test periodic updater also in cases where
     //      either HSS or SM-DP+ entries are pre-allocated.

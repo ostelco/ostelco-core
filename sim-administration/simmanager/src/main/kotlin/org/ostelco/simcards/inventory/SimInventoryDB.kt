@@ -234,7 +234,6 @@ interface SimInventoryDB {
     fun getProfileNamesForHss(hssId: Long): List<String>
 
 
-
     // WHERE hlrId = 2 AND profile = 'OYA_M1_BF76' AND
     // smdpPlusState <>  'DOWNLOADED' AND smdpPlusState <>  'INSTALLED' AND smdpPlusState <>  'ENABLED' AND  provisionState = 'AVAILABLE' AND matchingid is null
 
@@ -283,13 +282,28 @@ interface SimInventoryDB {
             provisionedAvailableState: String = ProvisionState.AVAILABLE.name): List<KeyValuePair>
 
 
-
     @SqlQuery("""
         SELECT DISTINCT profile AS simprofilename, hlrid  AS hssid, hlr_adapters.name AS hssname FROM sim_entries, hlr_adapters WHERE hlrid=hlr_adapters.id
     """)
     @RegisterRowMapper(HssProfileNameMapper::class)
     fun getHssProfileNamePairs(): List<HssProfileIdName>
 
+
+    /**
+     * Row mapper for the getHssProfileNamePairs method.
+     */
+    class HssProfileNameMapper : RowMapper<HssProfileIdName> {
+        override fun map(row: ResultSet, ctx: StatementContext): HssProfileIdName? {
+            if (row.isAfterLast) {
+                return null
+            }
+
+            val hssId = row.getLong("hssid")
+            val hssName = row.getString("hssname")
+            val simProfileName = row.getString("simprofilename")
+            return HssProfileIdName(hssId = hssId, hssName = hssName, simProfileName = simProfileName)
+        }
+    }
 
     /**
      * Golden numbers are numbers ending in either "0000" or "9999", and they have to be
@@ -299,18 +313,14 @@ interface SimInventoryDB {
                        WHERE batch = :batchId AND msisdn ~ '[0-9]*(0000|9999)$'
                        """)
     fun reserveGoldenNumbersForBatch(batchId: Long, provisionReservedState: ProvisionState = ProvisionState.RESERVED): Int
-}
 
 
-class HssProfileNameMapper : RowMapper<HssProfileIdName> {
-    override fun map(row: ResultSet, ctx: StatementContext): HssProfileIdName? {
-        if (row.isAfterLast) {
-            return null
-        }
-
-        val hssId = row.getLong("hssid")
-        val hssName = row.getString("hssname")
-        val simProfileName = row.getString("simprofilename")
-        return HssProfileIdName(hssId = hssId, hssName = hssName, simProfileName = simProfileName)
-    }
+    /**
+     * Return a list of all sim profiles that are both priovisioned for a specific
+     * end user equipment, and still in SMDP sttr 'RELEASED' meaning that it hasn't
+     * been downloaded, installed or deleted yet.
+     */
+    @SqlQuery("""SELECT * FROM sim_entries
+                      WHERE provisionstate = 'PROVISIONED' and smdpplusstate = 'RELEASED'""")
+    fun findAllocatedButNotDownloadedProfiles(): List<SimEntry>
 }
