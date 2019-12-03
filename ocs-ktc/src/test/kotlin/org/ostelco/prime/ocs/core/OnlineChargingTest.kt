@@ -13,6 +13,7 @@ import java.util.concurrent.CountDownLatch
 import kotlin.system.measureTimeMillis
 import kotlin.test.fail
 
+@ExperimentalUnsignedTypes
 class OnlineChargingTest {
 
     @Ignore

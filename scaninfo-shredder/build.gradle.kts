@@ -24,10 +24,8 @@ dependencies {
   implementation("com.google.cloud:google-cloud-datastore:${Version.googleCloudDataStore}")
 
   implementation("io.arrow-kt:arrow-core:${Version.arrow}")
-  implementation("io.arrow-kt:arrow-typeclasses:${Version.arrow}")
-  implementation("io.arrow-kt:arrow-instances-core:${Version.arrow}")
-  implementation("io.arrow-kt:arrow-effects:${Version.arrow}")
-  
+  implementation("io.arrow-kt:arrow-syntax:${Version.arrow}")
+
   runtimeOnly("io.dropwizard:dropwizard-json-logging:${Version.dropwizard}")
 
   testImplementation("io.dropwizard:dropwizard-testing:${Version.dropwizard}")
