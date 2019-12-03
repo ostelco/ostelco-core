@@ -34,7 +34,7 @@ object ApiErrorMapper {
     /* Log level depends on the type of payment error. */
     fun mapPaymentErrorToApiError(description: String, errorCode: ApiErrorCode, paymentError: PaymentError): ApiError {
         if (paymentError is org.ostelco.prime.paymentprocessor.core.CardError) {
-            logger.warn("{}: {}, paymentError: {}", errorCode, description, asJson(paymentError))
+            logger.info("{}: {}, paymentError: {}", errorCode, description, asJson(paymentError))
         } else {
             logger.error("{}: {}, paymentError: {}", errorCode, description, asJson(paymentError))
         }

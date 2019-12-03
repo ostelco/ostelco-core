@@ -2,6 +2,7 @@ package org.ostelco.prime.customer.endpoint.store
 
 import arrow.core.Either
 import arrow.core.flatMap
+import arrow.core.left
 import org.ostelco.prime.activation.Activation
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.apierror.ApiErrorCode
@@ -29,6 +30,7 @@ import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.model.withSimProfileStatusAsInstalled
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
+import org.ostelco.prime.paymentprocessor.core.CardError
 import org.ostelco.prime.paymentprocessor.core.PlanAlredyPurchasedError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
@@ -304,12 +306,15 @@ class SubscriberDAOImpl : SubscriberDAO {
                 saveCard).fold(
                 { paymentError ->
                     when (paymentError) {
-                        is PlanAlredyPurchasedError -> Either.left(mapPaymentErrorToApiError("Already subscribed to plan. ",
+                        is CardError -> mapPaymentErrorToApiError("Payment source rejected. ",
+                                ApiErrorCode.PAYMENT_SOURCE_REJECTED,
+                                paymentError).left()
+                        is PlanAlredyPurchasedError -> mapPaymentErrorToApiError("Already subscribed to plan. ",
                                 ApiErrorCode.ALREADY_SUBSCRIBED_TO_PLAN,
-                                paymentError))
-                        else -> Either.left(mapPaymentErrorToApiError("Failed to purchase product. ",
+                                paymentError).left()
+                        else -> mapPaymentErrorToApiError("Failed to purchase product. ",
                                 ApiErrorCode.FAILED_TO_PURCHASE_PRODUCT,
-                                paymentError))
+                                paymentError).left()
                     }
                     // if no error, check if this was a topup of empty account, in that case send activate
                 }, { productInfo ->
