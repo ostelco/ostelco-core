@@ -192,20 +192,21 @@ data class ProfileVendorAdapter(
 
                     val matchingId = response.matchingId
                     if (matchingId.isNullOrEmpty()) {
-                        return AdapterError("response.matchingId == null or empty").left()
+                        AdapterError("response.matchingId == null or empty").left()
+                    } else {
+
+                        // TODO: This and the next methods should result in
+                        // failures if they return error values, but they probably don't
+                        //  Check out what the ideomatic way of doing this is, also apply that
+                        // finding to  the activate method below.
+
+                        dao.setSmDpPlusStateAndMatchingId(simEntry.id, SmDpPlusState.RELEASED, matchingId)
+
+                        // TODO Do we really want to do this?  Do we need the
+                        //      sim entry value as a returnv value?   If we don't then
+                        //      remove the next line.
+                        dao.getSimProfileById(simEntry.id)
                     }
-
-                    // TODO: This and the next methods should result in
-                    // failures if they return error values, but they probably don't
-                    //  Check out what the ideomatic way of doing this is, also apply that
-                    // finding to  the activate method below.
-
-                    dao.setSmDpPlusStateAndMatchingId(simEntry.id, SmDpPlusState.RELEASED, matchingId)
-
-                    // TODO Do we really want to do this?  Do we need the
-                    //      sim entry value as a returnv value?   If we don't then
-                    //      remove the next line.
-                    dao.getSimProfileById(simEntry.id)
                 }
     }
 

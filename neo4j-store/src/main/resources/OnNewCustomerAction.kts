@@ -1,7 +1,5 @@
 import arrow.core.Either
-import arrow.core.fix
-import arrow.effects.IO
-import arrow.instances.either.monad.monad
+import arrow.core.extensions.fx
 import org.ostelco.prime.dsl.WriteTransaction
 import org.ostelco.prime.dsl.withSku
 import org.ostelco.prime.model.Customer
@@ -23,25 +21,23 @@ object : OnNewCustomerAction {
 
         val welcomePackProductSku = "2GB_FREE_ON_JOINING"
 
-        return IO {
-            Either.monad<StoreError>().binding {
-                WriteTransaction(transaction).apply {
-                    val product = get(Product withSku welcomePackProductSku).bind()
-                    createPurchaseRecord(
-                            customer.id,
-                            PurchaseRecord(
-                                    id = UUID.randomUUID().toString(),
-                                    product = product,
-                                    timestamp = Instant.now().toEpochMilli()
-                            )
-                    ).bind()
-                    applyProduct(
-                            customerId = customer.id,
-                            product = product
-                    ).bind()
-                }
-                Unit
-            }.fix()
-        }.unsafeRunSync()
+        return Either.fx {
+            WriteTransaction(transaction).apply {
+                val (product) = get(Product withSku welcomePackProductSku)
+                createPurchaseRecord(
+                        customer.id,
+                        PurchaseRecord(
+                                id = UUID.randomUUID().toString(),
+                                product = product,
+                                timestamp = Instant.now().toEpochMilli()
+                        )
+                ).bind()
+                applyProduct(
+                        customerId = customer.id,
+                        product = product
+                ).bind()
+            }
+            Unit
+        }
     }
 }

@@ -1,8 +1,5 @@
 import arrow.core.Either
-import arrow.core.fix
-import arrow.core.getOrElse
-import arrow.effects.IO
-import arrow.instances.either.monad.monad
+import arrow.core.extensions.fx
 import org.ostelco.prime.auditlog.AuditLog
 import org.ostelco.prime.dsl.WriteTransaction
 import org.ostelco.prime.dsl.withId
@@ -19,19 +16,18 @@ object : OnRegionApprovedAction {
             regionCode: String,
             transaction: PrimeTransaction
     ): Either<StoreError, Unit> {
-        return IO {
-            Either.monad<StoreError>().binding {
-                WriteTransaction(transaction).apply {
-                    val segmentId = get(Segment withId "plan-country-${regionCode.toLowerCase()}")
-                            .getOrElse {
-                                get(Segment withId "country-${regionCode.toLowerCase()}").bind()
-                            }
-                            .id
-                    fact { (Customer withId customer.id) belongsToSegment (Segment withId segmentId) }.bind()
-                    AuditLog.info(customer.id, "Added customer to segment - $segmentId")
-                }
-                Unit
-            }.fix()
-        }.unsafeRunSync()
+        return Either.fx {
+            WriteTransaction(transaction).apply {
+                val segmentId = get(Segment withId "plan-country-${regionCode.toLowerCase()}")
+                        .fold(
+                                { get(Segment withId "country-${regionCode.toLowerCase()}").bind() },
+                                { it }
+                        )
+                        .id
+                fact { (Customer withId customer.id) belongsToSegment (Segment withId segmentId) }.bind()
+                AuditLog.info(customer.id, "Added customer to segment - $segmentId")
+            }
+            Unit
+        }
     }
 }
