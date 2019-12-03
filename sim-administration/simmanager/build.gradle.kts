@@ -23,9 +23,7 @@ dependencies {
 
   // Arrow
   api("io.arrow-kt:arrow-core:${Version.arrow}")
-  api("io.arrow-kt:arrow-typeclasses:${Version.arrow}")
-  api("io.arrow-kt:arrow-instances-core:${Version.arrow}")
-  api("io.arrow-kt:arrow-effects:${Version.arrow}")
+  api("io.arrow-kt:arrow-syntax:${Version.arrow}")
 
   // Grpc
   api("io.grpc:grpc-netty-shaded:${Version.grpc}")

@@ -27,6 +27,7 @@ private const val CCR_SUBSCRIPTION = "ocs-ccr-sub"
 private const val CCA_SUBSCRIPTION = "ocsgw-cca-sub"
 private const val ACTIVATE_SUBSCRIPTION = "ocsgw-activate-sub"
 
+@ExperimentalUnsignedTypes
 class OcsPubSubTest {
 
     private val logger by getLogger()

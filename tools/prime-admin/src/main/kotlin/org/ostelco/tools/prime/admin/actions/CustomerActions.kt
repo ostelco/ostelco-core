@@ -1,12 +1,10 @@
 package org.ostelco.tools.prime.admin.actions
 
 import arrow.core.Either
-import arrow.core.fix
+import arrow.core.extensions.fx
 import arrow.core.flatMap
 import arrow.core.left
 import arrow.core.right
-import arrow.effects.IO
-import arrow.instances.either.monad.monad
 import org.apache.commons.codec.digest.DigestUtils
 import org.ostelco.prime.dsl.withId
 import org.ostelco.prime.dsl.writeTransaction
@@ -33,32 +31,27 @@ fun createCustomer(email: String, nickname: String): Either<StoreError, Unit> = 
                         analyticsId = UUID.randomUUID().toString(),
                         referralId = UUID.randomUUID().toString()))
 
-fun approveRegionForCustomer(email: String, regionCode: String): Either<StoreError, Unit> = IO {
-    Either.monad<StoreError>().binding {
+fun approveRegionForCustomer(email: String, regionCode: String): Either<StoreError, Unit> = Either.fx {
 
+    val customerId = adminStore
+            .getCustomer(identity = emailAsIdentity(email = email))
+            .bind()
+            .id
+
+    adminStore.approveRegionForCustomer(
+            customerId = customerId,
+            regionCode = regionCode
+    ).bind()
+}
+
+fun addCustomerToSegment(email: String, segmentId: String): Either<StoreError, Unit> = writeTransaction {
+    Either.fx {
         val customerId = adminStore
                 .getCustomer(identity = emailAsIdentity(email = email))
                 .bind()
                 .id
-
-        adminStore.approveRegionForCustomer(
-                customerId = customerId,
-                regionCode = regionCode
-        ).bind()
-
-    }.fix()
-}.unsafeRunSync()
-
-fun addCustomerToSegment(email: String, segmentId: String): Either<StoreError, Unit> = writeTransaction {
-    IO {
-        Either.monad<StoreError>().binding {
-            val customerId = adminStore
-                    .getCustomer(identity = emailAsIdentity(email = email))
-                    .bind()
-                    .id
-            fact { (Customer withId customerId) belongsToSegment (org.ostelco.prime.storage.graph.model.Segment withId segmentId) }.bind()
-        }.fix()
-    }.unsafeRunSync()
+        fact { (Customer withId customerId) belongsToSegment (org.ostelco.prime.storage.graph.model.Segment withId segmentId) }.bind()
+    }
 }
 
 fun deleteCustomer(email: String) = adminStore
@@ -129,8 +122,8 @@ private fun emailAsIdentity(email: String) = Identity(
         provider = "email"
 )
 
-fun identifyCustomer(idDigests: Set<String>) = IO {
-    Either.monad<StoreError>().binding {
+fun identifyCustomer(idDigests: Set<String>) {
+    Either.fx<StoreError, Unit> {
         adminStore
                 // get all Identity values
                 .getAllIdentities()
@@ -147,9 +140,7 @@ fun identifyCustomer(idDigests: Set<String>) = IO {
                             { println("Found Customer ID: ${it.id} for digest: $idDigest") }
                     )
                 }
-        }.fix()
+    }.mapLeft {
+        println(it.message)
     }
-        .unsafeRunSync()
-        .mapLeft {
-            println(it.message)
-        }
+}
