@@ -122,7 +122,7 @@ services:
     build:
       context: sim-administration/postgres
       dockerfile: Dockerfile
-    tmpfs: "//var/lib/postgresql/data"
+    tmpfs: "/var/lib/postgresql/data"
     ports:
       - "55432:5432"
 
