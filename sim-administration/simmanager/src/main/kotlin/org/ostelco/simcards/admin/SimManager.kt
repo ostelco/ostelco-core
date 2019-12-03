@@ -26,7 +26,7 @@ object SimManagerSingleton : SimManager {
         return simInventoryApi.findSimProfileByIccid(hlrName = hlr, iccid = iccId)
                 .map { simEntry -> mapToModelSimEntry(simEntry) }
                 .mapLeft {
-                    logger.error("Failed to get SIM Profile, hlr = {}, ICCID = {},  description: {}", iccId, hlr, it.description)
+                    logger.error("Failed to get SIM Profile, hlr = {}, ICCID = {},  description: {}", hlr, iccId, it.description)
                     it.description
                 }
     }

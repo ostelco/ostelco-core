@@ -1,11 +1,9 @@
 package org.ostelco.prime.storage.scaninfo
 
 import arrow.core.Either
-import arrow.core.fix
+import arrow.core.extensions.fx
 import arrow.core.left
 import arrow.core.right
-import arrow.effects.IO
-import arrow.instances.either.monad.monad
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.cloud.datastore.Blob
@@ -69,21 +67,20 @@ object ScanInformationStoreSingleton : ScanInformationStore {
      *  2) <bucket>-<country-code>/<customer-id>/<scan-id>.zip.tk
      */
     override fun upsertVendorScanInformation(customerId: String, countryCode: String, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit> {
-        return IO {
-            Either.monad<StoreError>().binding {
-                logger.info("Creating createVendorScanInformation for customerId = $customerId")
-                val vendorScanInformation = createVendorScanInformation(vendorData).bind()
-                logger.info("Generating data map for customerId = $customerId")
-                val dataMap = JumioHelper.toDataMap(vendorScanInformation)
-                secureArchiveService.archiveEncrypted(
-                        customerId = customerId,
-                        regionCodes = listOf(countryCode),
-                        fileName = vendorScanInformation.id,
-                        dataMap = dataMap).bind()
-                saveScanMetaData(customerId, countryCode, vendorScanInformation).bind()
-                Unit
-            }.fix()
-        }.unsafeRunSync()
+
+        return Either.fx {
+            logger.info("Creating createVendorScanInformation for customerId = $customerId")
+            val vendorScanInformation = createVendorScanInformation(vendorData).bind()
+            logger.info("Generating data map for customerId = $customerId")
+            val dataMap = JumioHelper.toDataMap(vendorScanInformation)
+            secureArchiveService.archiveEncrypted(
+                    customerId = customerId,
+                    regionCodes = listOf(countryCode),
+                    fileName = vendorScanInformation.id,
+                    dataMap = dataMap).bind()
+            saveScanMetaData(customerId, countryCode, vendorScanInformation).bind()
+            Unit
+        }
     }
 
     override fun getExtendedStatusInformation(scanInformation: ScanInformation): Map<String, String> {
@@ -223,42 +220,40 @@ object JumioHelper {
         val scanImageFaceUrl: String? = vendorData.getFirst(JumioScanData.SCAN_IMAGE_FACE.s)
         val scanLivenessImagesUrl: List<String>? = vendorData[JumioScanData.SCAN_LIVENESS_IMAGES.s]
 
-        return IO {
-            Either.monad<StoreError>().binding {
-                var result: Pair<Blob, String>
-                if (scanImageUrl != null) {
-                    logger.info("Downloading scan image: $scanImageUrl")
-                    result = downloadFileAsBlob(scanImageUrl, apiToken, apiSecret).bind()
-                    val filename = "id.${getFileExtFromType(result.second)}"
+        return Either.fx {
+            var result: Pair<Blob, String>
+            if (scanImageUrl != null) {
+                logger.info("Downloading scan image: $scanImageUrl")
+                result = downloadFileAsBlob(scanImageUrl, apiToken, apiSecret).bind()
+                val filename = "id.${getFileExtFromType(result.second)}"
+                images.put(filename, result.first)
+            }
+            if (scanImageBacksideUrl != null) {
+                logger.info("Downloading scan image back: $scanImageBacksideUrl")
+                result = downloadFileAsBlob(scanImageBacksideUrl, apiToken, apiSecret).bind()
+                val filename = "id_backside.${getFileExtFromType(result.second)}"
+                images.put(filename, result.first)
+            }
+            if (scanImageFaceUrl != null) {
+                logger.info("Downloading Face Image: $scanImageFaceUrl")
+                result = downloadFileAsBlob(scanImageFaceUrl, apiToken, apiSecret).bind()
+                val filename = "face.${getFileExtFromType(result.second)}"
+                images.put(filename, result.first)
+            }
+            if (scanLivenessImagesUrl != null) {
+                val urls = scanLivenessImagesUrl.toMutableList()
+                urls.sort() // The url list is not in sequence
+                val flattenedList = flattenList(urls)
+                var imageIndex = 0
+                for (imageUrl in flattenedList) {
+                    logger.info("Downloading Liveness image: $imageUrl")
+                    result = downloadFileAsBlob(imageUrl, apiToken, apiSecret).bind()
+                    val filename = "liveness-${++imageIndex}.${getFileExtFromType(result.second)}"
                     images.put(filename, result.first)
                 }
-                if (scanImageBacksideUrl != null) {
-                    logger.info("Downloading scan image back: $scanImageBacksideUrl")
-                    result = downloadFileAsBlob(scanImageBacksideUrl, apiToken, apiSecret).bind()
-                    val filename = "id_backside.${getFileExtFromType(result.second)}"
-                    images.put(filename, result.first)
-                }
-                if (scanImageFaceUrl != null) {
-                    logger.info("Downloading Face Image: $scanImageFaceUrl")
-                    result = downloadFileAsBlob(scanImageFaceUrl, apiToken, apiSecret).bind()
-                    val filename = "face.${getFileExtFromType(result.second)}"
-                    images.put(filename, result.first)
-                }
-                if (scanLivenessImagesUrl != null) {
-                    val urls = scanLivenessImagesUrl.toMutableList()
-                    urls.sort() // The url list is not in sequence
-                    val flattenedList = flattenList(urls)
-                    var imageIndex = 0
-                    for (imageUrl in flattenedList) {
-                        logger.info("Downloading Liveness image: $imageUrl")
-                        result = downloadFileAsBlob(imageUrl, apiToken, apiSecret).bind()
-                        val filename = "liveness-${++imageIndex}.${getFileExtFromType(result.second)}"
-                        images.put(filename, result.first)
-                    }
-                }
-                VendorScanInformation(scanId, scanReference, scanDetails, images)
-            }.fix()
-        }.unsafeRunSync()
+            }
+            VendorScanInformation(scanId, scanReference, scanDetails, images)
+        }
     }
 
     private fun toRegularMap(jsonData: String?): Map<String, String>? {

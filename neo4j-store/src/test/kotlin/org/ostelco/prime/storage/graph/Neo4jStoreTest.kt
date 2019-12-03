@@ -1,10 +1,8 @@
 package org.ostelco.prime.storage.graph
 
 import arrow.core.Either
-import arrow.core.fix
+import arrow.core.extensions.fx
 import arrow.core.right
-import arrow.effects.IO
-import arrow.instances.either.monad.monad
 import com.palantir.docker.compose.DockerComposeRule
 import com.palantir.docker.compose.connection.waiting.HealthChecks
 import kotlinx.coroutines.runBlocking
@@ -1200,74 +1198,68 @@ class Neo4jStoreTest {
             create { Segment(id = "country-sg") }
         }.mapLeft { fail(it.message) }
 
-        IO {
-            Either.monad<StoreError>().binding {
+        Either.fx<StoreError, Unit> {
 
-                Neo4jStoreSingleton.addCustomer(
-                        identity = IDENTITY,
-                        customer = CUSTOMER).bind()
+            Neo4jStoreSingleton.addCustomer(
+                    identity = IDENTITY,
+                    customer = CUSTOMER).bind()
 
-                Neo4jStoreSingleton.approveRegionForCustomer(
-                        customerId = CUSTOMER.id,
-                        regionCode = "sg")
-                        .bind()
+            Neo4jStoreSingleton.approveRegionForCustomer(
+                    customerId = CUSTOMER.id,
+                    regionCode = "sg")
+                    .bind()
 
-                Neo4jStoreSingleton.addSubscription(
-                        identity = IDENTITY,
-                        regionCode = "sg",
-                        iccId = ICC_ID,
-                        alias = ALIAS,
-                        msisdn = MSISDN)
-                        .mapLeft { fail(it.message) }
-                        .bind()
+            Neo4jStoreSingleton.addSubscription(
+                    identity = IDENTITY,
+                    regionCode = "sg",
+                    iccId = ICC_ID,
+                    alias = ALIAS,
+                    msisdn = MSISDN)
+                    .mapLeft { fail(it.message) }
+                    .bind()
 
-                // test
-                Neo4jStoreSingleton.removeCustomer(identity = IDENTITY).bind()
-            }.fix()
-        }.unsafeRunSync()
-                .mapLeft { fail(it.message) }
+            // test
+            Neo4jStoreSingleton.removeCustomer(identity = IDENTITY).bind()
+        }.mapLeft { fail(it.message) }
 
         // asserts
         readTransaction {
-            IO {
-                Either.monad<StoreError>().binding {
+            Either.fx<StoreError, Unit> {
 
-                    val exCustomer = get(ExCustomer withId CUSTOMER.id).bind()
-                    assertEquals(
-                            expected = ExCustomer(id = CUSTOMER.id, createdOn = exCustomer.createdOn, terminationDate = "%d-%02d-%02d".format(LocalDate.now().year, LocalDate.now().monthValue, LocalDate.now().dayOfMonth)),
-                            actual = exCustomer,
-                            message = "ExCustomer does not match")
+                val exCustomer = get(ExCustomer withId CUSTOMER.id).bind()
+                assertEquals(
+                        expected = ExCustomer(id = CUSTOMER.id, createdOn = exCustomer.createdOn, terminationDate = "%d-%02d-%02d".format(LocalDate.now().year, LocalDate.now().monthValue, LocalDate.now().dayOfMonth)),
+                        actual = exCustomer,
+                        message = "ExCustomer does not match")
 
-                    val simProfiles = get(org.ostelco.prime.storage.graph.model.SimProfile forExCustomer (ExCustomer withId CUSTOMER.id)).bind()
-                    assertEquals(expected = 1, actual = simProfiles.size, message = "No SIM profiles found for ExCustomer")
+                val simProfiles = get(org.ostelco.prime.storage.graph.model.SimProfile forExCustomer (ExCustomer withId CUSTOMER.id)).bind()
+                assertEquals(expected = 1, actual = simProfiles.size, message = "No SIM profiles found for ExCustomer")
 
-                    val simProfile = simProfiles[0]
-                    assertEquals(
-                            expected = simProfile.iccId,
-                            actual = ICC_ID,
-                            message = "ICC ID of simProfile for ExCustomer do not match")
+                val simProfile = simProfiles[0]
+                assertEquals(
+                        expected = simProfile.iccId,
+                        actual = ICC_ID,
+                        message = "ICC ID of simProfile for ExCustomer do not match")
 
-                    val subscriptions = get(Subscription wasSubscribedBy (ExCustomer withId CUSTOMER.id)).bind()
-                    assertEquals(expected = 1, actual = subscriptions.size, message = "No subscriptions found for ExCustomer")
+                val subscriptions = get(Subscription wasSubscribedBy (ExCustomer withId CUSTOMER.id)).bind()
+                assertEquals(expected = 1, actual = subscriptions.size, message = "No subscriptions found for ExCustomer")
 
-                    val subscription = subscriptions[0]
-                    assertEquals(
-                            expected = subscription.msisdn,
-                            actual = MSISDN,
-                            message = "MSISDN of subscription for ExCustomer do not match")
+                val subscription = subscriptions[0]
+                assertEquals(
+                        expected = subscription.msisdn,
+                        actual = MSISDN,
+                        message = "MSISDN of subscription for ExCustomer do not match")
 
-                    val regions = get(Region linkedToExCustomer (ExCustomer withId CUSTOMER.id)).bind()
-                    assertEquals(expected = 1, actual = regions.size, message = "No regions found for ExCustomer")
+                val regions = get(Region linkedToExCustomer (ExCustomer withId CUSTOMER.id)).bind()
+                assertEquals(expected = 1, actual = regions.size, message = "No regions found for ExCustomer")
 
-                    val region = regions[0]
-                    assertEquals(
-                            expected = Region("sg", "Singapore"),
-                            actual = region,
-                            message = "Region for ExCustomer do not match")
+                val region = regions[0]
+                assertEquals(
+                        expected = Region("sg", "Singapore"),
+                        actual = region,
+                        message = "Region for ExCustomer do not match")
 
-                }.fix()
-            }.unsafeRunSync()
-                    .mapLeft { fail(it.message) }
+            }.mapLeft { fail(it.message) }
         }
     }
 

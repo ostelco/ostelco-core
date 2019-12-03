@@ -10,7 +10,7 @@ plugins {
   id("project-report")
   id("com.github.ben-manes.versions") version "0.27.0"
   jacoco
-  kotlin("jvm") version "1.3.60" apply false
+  kotlin("jvm") version "1.3.61" apply false
   id("com.google.protobuf") version "0.8.10" apply false
   id("com.github.johnrengelman.shadow") version "5.2.0" apply false
   idea

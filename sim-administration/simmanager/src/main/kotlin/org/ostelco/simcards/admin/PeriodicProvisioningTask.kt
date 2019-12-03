@@ -126,8 +126,10 @@ class PreallocateProfilesTask(
             for (i in 1..noOfProfilesToActuallyAllocate) {
                 logger.debug("preprovisioning for profileName='$simProfileName', HSS with ID/metricName ${hssEntry.id}/${hssEntry.name}. Iteration index = $i")
                 val focus = simInventoryDAO.findNextNonProvisionedSimProfileForHss(hssId = hssEntry.id, profile = simProfileName)
-                focus.mapLeft { error -> return error.left() }
-                focus.flatMap { simEntry -> preProvisionSimProfile(simEntry, simProfileName, hssEntry).right() }
+                if (focus.isLeft()) {
+                    return focus
+                }
+                focus.flatMap { simEntry -> preProvisionSimProfile(simEntry, simProfileName, hssEntry) }
             }
 
         // TODO: Replace the text "Unit" with a report of what was actually done by the provisioning
@@ -174,7 +176,7 @@ class PreallocateProfilesTask(
             if (profileStats.noOfUnallocatedEntries == 0L) {
                 val msg = "No  more unallocated  $thisProfilesNameForLogging"
                 logger.error(msg)
-                return SystemError(msg).left()
+                SystemError(msg).left()
             } else {
                 logger.debug("Ready for use: $thisProfilesNameForLogging = ${profileStats.noOfEntriesAvailableForImmediateUse}")
                 if (profileStats.noOfEntriesAvailableForImmediateUse < lowWaterMark) {
