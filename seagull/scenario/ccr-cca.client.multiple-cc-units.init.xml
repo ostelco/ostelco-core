@@ -87,7 +87,15 @@
 
         <avp name="User-Equipment-Info">
           <avp name="User-Equipment-Info-Type" value="0"> </avp>
-          <avp name="User-Equipment-Info-Value" value="38:36:31:39:35:35:30:33:30:37:38:31:30:33:35:36"> </avp>
+          <avp name="User-Equipment-Info-Value" value="3836"> </avp>
+        </avp>
+
+        <avp name="Service-Information">
+          <avp name="PS-Information">
+            <avp name="Called-Station-Id" value="loltel"> </avp>
+            <avp name="3GPP-SGSN-MCC-MNC" value="24201"> </avp>
+            <avp name="3GPP-IMSI-MCC-MNC" value="24201"> </avp>
+          </avp>
         </avp>
 
       </command>
