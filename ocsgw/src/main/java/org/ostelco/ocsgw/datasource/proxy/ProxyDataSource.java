@@ -4,6 +4,8 @@ import org.ostelco.ocsgw.datasource.DataSource;
 import org.ostelco.ocsgw.datasource.local.LocalDataSource;
 import org.ostelco.diameter.CreditControlContext;
 import org.ostelco.ocs.api.CreditControlRequestType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Proxy DataSource is a combination of the Local DataSource and any other
@@ -22,6 +24,8 @@ public class ProxyDataSource implements DataSource {
 
     private final DataSource secondary;
 
+    private static final Logger LOG = LoggerFactory.getLogger(ProxyDataSource.class);
+
     public ProxyDataSource(DataSource dataSource) {
         secondary = dataSource;
     }
@@ -33,21 +37,34 @@ public class ProxyDataSource implements DataSource {
 
     @Override
     public void handleRequest(CreditControlContext context) {
-        // CCR-I and CCR-T will always be handled by the secondary DataSource
-        if (context.getOriginalCreditControlRequest().getRequestTypeAVPValue()
-                != CreditControlRequestType.UPDATE_REQUEST.getNumber()) {
-            secondary.handleRequest(context);
-        } else {
-            // For CCR-U we will send all requests to both Local and Secondary until the secondary has blocked the msisdn
-            if (!secondary.isBlocked(context.getCreditControlRequest().getMsisdn())) {
-                local.handleRequest(context);
-                // When local datasource will be responding with Answer, Secondary datasource should skip to send Answer to P-GW.
-                context.setSkipAnswer(true);
+
+        switch (context.getOriginalCreditControlRequest().getRequestTypeAVPValue()) {
+            case CreditControlRequestType.INITIAL_REQUEST_VALUE:
                 secondary.handleRequest(context);
-            } else {
-                secondary.handleRequest(context);
-            }
+                break;
+            case CreditControlRequestType.UPDATE_REQUEST_VALUE:
+                if (!secondary.isBlocked(context.getCreditControlRequest().getMsisdn())) {
+                    proxyAnswer(context);
+                } else {
+                    secondary.handleRequest(context);
+                }
+                break;
+            case CreditControlRequestType.TERMINATION_REQUEST_VALUE:
+                proxyAnswer(context);
+                break;
+            default:
+                LOG.warn("Unknown request type : {}", context.getOriginalCreditControlRequest().getRequestTypeAVPValue());
         }
+    }
+
+    /**
+     * Use the local data source to send an answer directly to P-GW.
+     * Use secondary to report the usage to OCS.
+     */
+    private void proxyAnswer(CreditControlContext context) {
+        local.handleRequest(context);
+        context.setSkipAnswer(true);
+        secondary.handleRequest(context);
     }
 
     @Override
