@@ -26,8 +26,8 @@ class DiameterUtilities {
     private fun printAvps(avps: AvpSet, indentation: String, builder: StringBuilder) {
         for (avp in avps) {
             val avpRep : AvpRepresentation? = dictionary.getAvp(avp.code, avp.vendorId)
-            val avpValue = getAvpValue(avp)
-            val avpLine = StringBuilder("$indentation${avp.code} : ${avpRep?.name} (${avpRep?.type})")
+            val avpValue = getAvpValue(avp, avpRep?.originalType)
+            val avpLine = StringBuilder("$indentation${avp.code} : ${avpRep?.name} (${avpRep?.originalType})")
             while (avpLine.length < 50) {
                 avpLine.append(if (avpLine.length % 2 == 0) "." else " ")
             }
@@ -43,26 +43,37 @@ class DiameterUtilities {
         }
     }
 
-    private fun getAvpValue(avp: Avp): Any {
-        val avpType = AvpTypeDictionary.getType(avp)
-        return when (avpType) {
-            ADDRESS -> avp.address
-            IDENTITY -> avp.diameterIdentity
-            URI -> avp.diameterURI
-            FLOAT32 -> avp.float32
-            FLOAT64 -> avp.float64
-            GROUPED -> "<Grouped>"
-            INTEGER32, APP_ID -> avp.integer32
-            INTEGER64 -> avp.integer64
-            OCTET_STRING -> ByteArrayToHexString(avp.octetString)
-            RAW -> avp.raw
-            RAW_DATA -> avp.rawData
-            TIME -> avp.time
-            UNSIGNED32, VENDOR_ID -> avp.unsigned32
-            UNSIGNED64 -> avp.unsigned64
-            UTF8STRING -> avp.utF8String
-            null -> "<null>"
+    private fun getAvpValue(avp: Avp, originalType: String?): Any {
+        val type = getAvpType(avp, originalType)
+        return when (type) {
+            ADDRESS.label -> avp.address
+            DIAMETER_IDENTITY.label -> avp.diameterIdentity
+            DIAMETER_IDENTITY.label -> avp.diameterURI
+            FLOAT32.label -> avp.float32
+            FLOAT64.label -> avp.float64
+            ENUMERATED.label -> avp.integer32
+            GROUPED.label -> "<Grouped>"
+            INTEGER32.label, APP_ID.label -> avp.integer32
+            INTEGER64.label -> avp.integer64
+            IP_ADDRESS.label -> avp.address
+            OCTET_STRING.label -> ByteArrayToHexString(avp.octetString)
+            RAW.label -> avp.raw
+            RAW_DATA.label -> avp.rawData
+            TIME.label -> avp.time
+            UNSIGNED32.label, VENDOR_ID.label -> avp.unsigned32
+            UNSIGNED64.label -> avp.unsigned64
+            UTF8STRING.label -> avp.utF8String
+            else -> "unknown type $originalType"
         }
+    }
+
+    private fun getAvpType(avp: Avp, originalType: String?) : String? {
+        var type = originalType
+        val correctedType = AvpTypeDictionary.getOverrideType(avp)
+        if ( correctedType != null ) {
+            type = correctedType.label
+        }
+        return type
     }
 
     private fun ByteArrayToHexString(bytes: ByteArray): String {

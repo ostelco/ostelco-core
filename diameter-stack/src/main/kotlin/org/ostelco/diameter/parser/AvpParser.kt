@@ -3,23 +3,8 @@ package org.ostelco.diameter.parser
 import org.jdiameter.api.Avp
 import org.jdiameter.api.AvpSet
 import org.ostelco.diameter.getLogger
-import org.ostelco.diameter.util.AvpType.ADDRESS
-import org.ostelco.diameter.util.AvpType.APP_ID
-import org.ostelco.diameter.util.AvpType.FLOAT32
-import org.ostelco.diameter.util.AvpType.FLOAT64
-import org.ostelco.diameter.util.AvpType.GROUPED
-import org.ostelco.diameter.util.AvpType.IDENTITY
-import org.ostelco.diameter.util.AvpType.INTEGER32
-import org.ostelco.diameter.util.AvpType.INTEGER64
-import org.ostelco.diameter.util.AvpType.OCTET_STRING
-import org.ostelco.diameter.util.AvpType.RAW
-import org.ostelco.diameter.util.AvpType.RAW_DATA
-import org.ostelco.diameter.util.AvpType.TIME
-import org.ostelco.diameter.util.AvpType.UNSIGNED32
-import org.ostelco.diameter.util.AvpType.UNSIGNED64
-import org.ostelco.diameter.util.AvpType.URI
-import org.ostelco.diameter.util.AvpType.UTF8STRING
-import org.ostelco.diameter.util.AvpType.VENDOR_ID
+import org.ostelco.diameter.util.AvpType
+import org.ostelco.diameter.util.AvpType.*
 import org.ostelco.diameter.util.AvpTypeDictionary
 import java.lang.reflect.Field
 import kotlin.reflect.KClass
@@ -209,14 +194,18 @@ class AvpParser {
         }
         return when (type) {
             ADDRESS -> avp.address
-            IDENTITY -> avp.diameterIdentity
-            URI -> avp.diameterURI
+            DIAMETER_IDENTITY -> avp.diameterIdentity
+            DIAMETER_URI -> avp.diameterURI
             FLOAT32 -> avp.float32
             FLOAT64 -> avp.float64
+            ENUMERATED -> avp.integer32
             GROUPED -> parse(kclazz, avp.grouped)
             INTEGER32, APP_ID -> avp.integer32
             INTEGER64 -> avp.integer64
+            IP_ADDRESS -> avp.address
+            IP_FILTER_RULE -> avp.octetString
             OCTET_STRING -> avp.octetString
+            QOS_FILTER_RULE -> avp.octetString
             RAW -> avp.raw
             RAW_DATA -> avp.rawData
             TIME -> avp.time
