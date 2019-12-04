@@ -28,7 +28,7 @@ dependencies {
   implementation("ch.qos.logback.contrib:logback-json-classic:0.1.5")
   implementation("ch.qos.logback.contrib:logback-jackson:0.1.5")
 
-  compile("com.google.cloud:google-cloud-logging-logback:${Version.googleCloudLogging}")
+  implementation("com.google.cloud:google-cloud-logging-logback:${Version.googleCloudLogging}")
 
   testImplementation(project(":diameter-test"))
   testImplementation("org.junit.jupiter:junit-jupiter-api:${Version.junit5}")
