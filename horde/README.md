@@ -19,12 +19,13 @@ A configuration will be added that permits experimentation using this
 protocol.  The configuration will initially look like this:
 
      horde:
-	  server: foo.bar.baz
-	  port:   1234
-	  imsis:
-	    - 123456789012345
-   	    - 123456789012344
-	    - 123456789012343
+	  server: horde1-server
+	    host: foo.bar.baz
+	    port: 1234
+	    imsis:
+	      - 123456789012345
+   	      - 123456789012344
+	      - 123456789012343
 
 The server/port parameters are the coordinates for the remote grpc server,
 the imsis is a whitelist of imsis for which the external service will be
