@@ -270,6 +270,7 @@ public class GrpcDataSource implements DataSource {
         CreditControlRequestInfo creditControlRequestInfo = protobufDataSource.handleRequest(context, null);
 
         if (creditControlRequestInfo != null) {
+            context.setSentToOcsTime(System.currentTimeMillis());
             producer.queueEvent(creditControlRequestInfo);
         }
     }
