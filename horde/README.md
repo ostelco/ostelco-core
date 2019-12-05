@@ -11,7 +11,6 @@ lines outlined in the github repo:
 
     https://github.com/ExploratoryEngineering/gyorde
 
-
 In addition to the base protocol client, which operates in a synchronous
 (blocking) mode.
 
