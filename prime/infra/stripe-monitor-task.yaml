@@ -39,9 +39,6 @@ spec:
                            "invoice.upcoming",
                            "invoice.updated",
                            "invoice.voided",
-                           "payment_intent.created",
-                           "payment_intent.payment_failed",
-                           "payment_intent.succeeded",
                            "payout.failed",
                            "payout.paid"]'
                 - name: INTERVAL
