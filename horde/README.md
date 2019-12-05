@@ -41,5 +41,5 @@ use more parameters than ip/imsi to make the determination for access,
 and we will also introduce more encryption/authentication parameters
 for the grpc connection
 
-The name "horde" is used, since one of the components we will be interfacing
+The name "horde" is used for the associated directory, since one of the components we will be interfacing
 with is called "horde".
