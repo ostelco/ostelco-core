@@ -9,6 +9,7 @@
 --
 alter table sim_entries add column tsHlrState timestamp;
 alter table sim_entries alter column tsHlrState set default now();
+update sim_entries set tsHlrState = now();
 create or replace function hlrState_changed()
 returns trigger as $$
 begin
@@ -28,6 +29,7 @@ execute procedure hlrState_changed();
 --
 alter table sim_entries add column tsSmdpPlusState timestamp;
 alter table sim_entries alter column tsSmdpPlusState set default now();
+update sim_entries set tsSmdpPlusState = now();
 create or replace function smdpPlusState_changed()
 returns trigger as $$
 begin
@@ -47,6 +49,7 @@ execute procedure smdpPlusState_changed();
 --
 alter table sim_entries add column tsProvisionState timestamp;
 alter table sim_entries alter column tsProvisionState set default now();
+update sim_entries set tsProvisionState = now();
 create or replace function provisionState_changed()
 returns trigger as $$
 begin
