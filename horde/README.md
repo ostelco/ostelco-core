@@ -21,7 +21,7 @@ protocol.  The configuration will initially look like this:
 	  server: horde1-server
 	    host: foo.bar.baz
 	    port: 1234
-	    imsis:
+	    imsilist:
 	      - 123456789012345
    	      - 123456789012344
 	      - 123456789012343
