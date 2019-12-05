@@ -9,7 +9,7 @@ This module implements logic that permits external services to be involved
 in this calculation.   It does this by implementing a gRPC client along the
 lines outlined in the github repo:
 
-   https://github.com/ExploratoryEngineering/gyorde
+    https://github.com/ExploratoryEngineering/gyorde
 
 
 In addition to the base protocol client, which operates in a synchronous
