@@ -69,6 +69,7 @@ class PubSubDataSource(
         val creditControlRequestInfo = protobufDataSource.handleRequest(context, ccaTopicId)
 
         if (creditControlRequestInfo != null) {
+            context.sentToOcsTime = System.currentTimeMillis()
             sendRequest(creditControlRequestInfo)
         }
     }
@@ -81,7 +82,7 @@ class PubSubDataSource(
         setupPubSubSubscriber(projectId, ccaSubscriptionId) { message, consumer ->
             val ccaInfo = CreditControlAnswerInfo.parseFrom(message)
             if (ccaInfo.resultCode != ResultCode.UNKNOWN) {
-                logger.info("Pubsub received CreditControlAnswer for msisdn {} sessionId [{}]", ccaInfo.msisdn, ccaInfo.requestId)
+                logger.info("Pubsub received CreditControlAnswer for msisdn {} sessionId [{}] request number [{}]", ccaInfo.msisdn, ccaInfo.requestId, ccaInfo.requestNumber)
                 protobufDataSource.handleCcrAnswer(ccaInfo)
             }
             consumer.ack()
@@ -131,7 +132,9 @@ class PubSubDataSource(
 
             override fun onSuccess(messageId: String) {
                 // Once published, returns server-assigned message ids (unique within the topic)
-                // logger.debug("Submitted message with request-id: {} successfully", messageId)
+                if (creditControlRequestInfo.type != CreditControlRequestType.NONE) {
+                    logger.debug("Submitted CCR on pubsub for session[{}] request number [{}] successfully", creditControlRequestInfo.requestId, creditControlRequestInfo.requestNumber)
+                }
             }
         }, singleThreadScheduledExecutor)
     }
