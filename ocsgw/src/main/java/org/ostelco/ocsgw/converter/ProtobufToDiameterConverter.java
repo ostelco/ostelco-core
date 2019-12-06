@@ -162,6 +162,9 @@ public class ProtobufToDiameterConverter {
                 if (psInformation.getUserLocationInfo() != null) {
                     psInformationBuilder.setUserLocationInfo(ByteString.copyFrom(psInformation.getUserLocationInfo()));
                 }
+                if (psInformation.getPdpAddress() != null) {
+                    psInformationBuilder.setPdpAddress(psInformation.getPdpAddress().getHostAddress());
+                }
                 builder.setServiceInformation(ServiceInfo.newBuilder().setPsInformation(psInformationBuilder));
             }
         }
