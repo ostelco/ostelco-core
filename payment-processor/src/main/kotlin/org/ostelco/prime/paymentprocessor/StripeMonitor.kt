@@ -10,7 +10,7 @@ import com.stripe.model.WebhookEndpoint
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.StripeUtils.either
-import org.ostelco.prime.paymentprocessor.core.BadGatewayError
+import org.ostelco.prime.paymentprocessor.core.NotFoundError
 import org.ostelco.prime.paymentprocessor.core.PaymentConfigurationError
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 
@@ -234,7 +234,7 @@ class StripeMonitor {
                             }.right()
                         else {
                             logger.error("No webhooks found on check for Stripe events state")
-                            BadGatewayError("No webhooks found on check for Stripe events state")
+                            NotFoundError("No webhooks found on check for Stripe events state")
                                     .left()
                         }
                     }
