@@ -24,6 +24,7 @@ update_event_list() {
          -d enabled_events[]="customer.deleted" \
          -d enabled_events[]="customer.subscription.created" \
          -d enabled_events[]="customer.subscription.deleted" \
+         -d enabled_events[]="customer.subscription.updated" \
          -d enabled_events[]="invoice.created" \
          -d enabled_events[]="invoice.deleted" \
          -d enabled_events[]="invoice.finalized" \
@@ -34,9 +35,6 @@ update_event_list() {
          -d enabled_events[]="invoice.upcoming" \
          -d enabled_events[]="invoice.updated" \
          -d enabled_events[]="invoice.voided" \
-         -d enabled_events[]="payment_intent.created" \
-         -d enabled_events[]="payment_intent.payment_failed" \
-         -d enabled_events[]="payment_intent.succeeded" \
          -d enabled_events[]="payout.failed" \
          -d enabled_events[]="payout.paid"
 }

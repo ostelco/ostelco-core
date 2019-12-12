@@ -7,7 +7,6 @@ services:
     command: ["./start_dev.sh"]
     environment:
       - OCS_GRPC_SERVER=ocs.dev.oya.world
-      - METRICS_GRPC_SERVER=metrics.dev.oya.world
       - SERVICE_FILE=prime-service-account.json
       - GOOGLE_CLOUD_PROJECT=${GCP_PROJECT_ID}
       - PUBSUB_PROJECT_ID=${GCP_PROJECT_ID}

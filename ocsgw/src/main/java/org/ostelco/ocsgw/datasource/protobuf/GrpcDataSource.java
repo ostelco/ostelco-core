@@ -16,7 +16,6 @@ import org.ostelco.ocs.api.CreditControlRequestInfo;
 import org.ostelco.ocs.api.CreditControlRequestType;
 import org.ostelco.ocs.api.OcsServiceGrpc;
 import org.ostelco.ocsgw.datasource.DataSource;
-import org.ostelco.ocsgw.metrics.OcsgwMetrics;
 import org.ostelco.ocsgw.utils.EventConsumer;
 import org.ostelco.ocsgw.utils.EventProducer;
 import org.slf4j.Logger;
@@ -53,8 +52,6 @@ public class GrpcDataSource implements DataSource {
 
     private ServiceAccountJwtAccessCredentials jwtAccessCredentials;
 
-    private OcsgwMetrics ocsgwAnalytics;
-
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
     private ScheduledFuture reconnectStreamFuture = null;
@@ -76,8 +73,7 @@ public class GrpcDataSource implements DataSource {
      */
     public GrpcDataSource(
             final ProtobufDataSource protobufDataSource,
-            final String ocsServerHostname,
-            final String metricsServerHostname) throws IOException {
+            final String ocsServerHostname) throws IOException {
 
         this.protobufDataSource = protobufDataSource;
 
@@ -85,7 +81,6 @@ public class GrpcDataSource implements DataSource {
 
         LOG.info("Created GrpcDataSource");
         LOG.info("ocsServerHostname : {}", ocsServerHostname);
-        LOG.info("metricsServerHostname : {}", metricsServerHostname);
 
         // Not using the standard GOOGLE_APPLICATION_CREDENTIALS for this
         // as we need to download the file using container credentials in
@@ -93,7 +88,6 @@ public class GrpcDataSource implements DataSource {
         final String serviceAccountFile = "/config/" + System.getenv("SERVICE_FILE");
         jwtAccessCredentials = ServiceAccountJwtAccessCredentials.fromStream(new FileInputStream(serviceAccountFile));
 
-        ocsgwAnalytics = new OcsgwMetrics(metricsServerHostname, jwtAccessCredentials, protobufDataSource);
         producer = new EventProducer<>(requestQueue);
     }
 
@@ -104,7 +98,6 @@ public class GrpcDataSource implements DataSource {
         initCreditControlRequestStream();
         initActivateStream();
         initKeepAlive();
-        ocsgwAnalytics.initAnalyticsRequestStream();
 
         setupEventConsumer();
     }
@@ -277,6 +270,7 @@ public class GrpcDataSource implements DataSource {
         CreditControlRequestInfo creditControlRequestInfo = protobufDataSource.handleRequest(context, null);
 
         if (creditControlRequestInfo != null) {
+            context.setSentToOcsTime(System.currentTimeMillis());
             producer.queueEvent(creditControlRequestInfo);
         }
     }

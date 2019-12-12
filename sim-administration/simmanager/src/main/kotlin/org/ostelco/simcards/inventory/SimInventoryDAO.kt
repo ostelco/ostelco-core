@@ -1,12 +1,10 @@
 package org.ostelco.simcards.inventory
 
 import arrow.core.Either
-import arrow.core.fix
+import arrow.core.extensions.fx
 import arrow.core.flatMap
 import arrow.core.left
 import arrow.core.right
-import arrow.effects.IO
-import arrow.instances.either.monad.monad
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
@@ -200,18 +198,16 @@ class SimInventoryDAO(private val db: SimInventoryDBWrapperImpl) : SimInventoryD
      * @return true on successful update
      */
     @Transaction
-    fun permitVendorForHssByNames(profileVendor: String, hssName: String): Either<SimManagerError, Boolean> =
-            IO {
-                Either.monad<SimManagerError>().binding {
-                    val profileVendorAdapter = getProfileVendorAdapterDatumByName(profileVendor)
-                            .bind()
-                    val hlrAdapter = getHssEntryByName(hssName)
-                            .bind()
+    fun permitVendorForHssByNames(profileVendor: String, hssName: String): Either<SimManagerError, Boolean> = Either.fx {
 
-                    storeSimVendorForHssPermission(profileVendorAdapter.id, hlrAdapter.id)
-                            .bind() > 0
-                }.fix()
-            }.unsafeRunSync()
+        val profileVendorAdapter = getProfileVendorAdapterDatumByName(profileVendor)
+                .bind()
+        val hlrAdapter = getHssEntryByName(hssName)
+                .bind()
+
+        storeSimVendorForHssPermission(profileVendorAdapter.id, hlrAdapter.id)
+                .bind() > 0
+    }
 
     //
     // Importing
@@ -228,35 +224,33 @@ class SimInventoryDAO(private val db: SimInventoryDBWrapperImpl) : SimInventoryD
                    hlrId: Long,
                    profileVendorId: Long,
                    csvInputStream: InputStream,
-                   initialHssState: HssState = HssState.NOT_ACTIVATED): Either<SimManagerError, SimImportBatch> =
-            IO {
-                Either.monad<SimManagerError>().binding {
-                    createNewSimImportBatch(importer = importer,
-                            hssId = hlrId,
-                            profileVendorId = profileVendorId)
-                            .bind()
-                    val batchId = lastInsertedRowId()
-                            .bind()
-                    val values = SimEntryIterator(
-                            profileVendorId = profileVendorId,
-                            hssId = hlrId,
-                            batchId = batchId,
-                            initialHssState = initialHssState,
-                            csvInputStream = csvInputStream)
-                    insertAll(values)
-                            .bind()
-                    // Because "golden numbers" needs special handling, so we're simply marking them
-                    // as reserved.
-                    reserveGoldenNumbersForBatch(batchId)
-                    updateBatchState(id = batchId,
-                            size = values.count.get(),
-                            status = "SUCCESS",  // TODO: Use enumeration, not naked string.
-                            endedAt = System.currentTimeMillis())
-                            .bind()
-                    getBatchInfo(batchId)
-                            .bind()
-                }.fix()
-            }.unsafeRunSync()
+                   initialHssState: HssState = HssState.NOT_ACTIVATED): Either<SimManagerError, SimImportBatch> = Either.fx {
+
+        createNewSimImportBatch(importer = importer,
+                hssId = hlrId,
+                profileVendorId = profileVendorId)
+                .bind()
+        val batchId = lastInsertedRowId()
+                .bind()
+        val values = SimEntryIterator(
+                profileVendorId = profileVendorId,
+                hssId = hlrId,
+                batchId = batchId,
+                initialHssState = initialHssState,
+                csvInputStream = csvInputStream)
+        insertAll(values)
+                .bind()
+        // Because "golden numbers" needs special handling, so we're simply marking them
+        // as reserved.
+        reserveGoldenNumbersForBatch(batchId)
+        updateBatchState(id = batchId,
+                size = values.count.get(),
+                status = "SUCCESS",  // TODO: Use enumeration, not naked string.
+                endedAt = System.currentTimeMillis())
+                .bind()
+        getBatchInfo(batchId)
+                .bind()
+    }
 
     //
     // Finding next free SIM card for a particular HLR.
@@ -267,38 +261,35 @@ class SimInventoryDAO(private val db: SimInventoryDBWrapperImpl) : SimInventoryD
      */
     fun getProfileStats(@Bind("hssId") hssId: Long,
                         @Bind("simProfile") simProfile: String):
-            Either<SimManagerError, SimProfileKeyStatistics> =
-            IO {
-                Either.monad<SimManagerError>().binding {
+            Either<SimManagerError, SimProfileKeyStatistics> = Either.fx {
 
-                    val keyValuePairs = mutableMapOf<String, Long>()
+        val keyValuePairs = mutableMapOf<String, Long>()
 
-                    getProfileStatsAsKeyValuePairs(hssId = hssId, simProfile = simProfile).bind()
-                            .forEach { keyValuePairs.put(it.key, it.value) }
+        getProfileStatsAsKeyValuePairs(hssId = hssId, simProfile = simProfile).bind()
+                .forEach { keyValuePairs.put(it.key, it.value) }
 
-                    fun lookup(key: String) = keyValuePairs[key]
-                            ?.right()
-                            ?: NotFoundError("Could not find key $key").left()
+        fun lookup(key: String) = keyValuePairs[key]
+                ?.right()
+                ?: NotFoundError("Could not find key $key").left()
 
-                    val noOfEntries =
-                            lookup("NO_OF_ENTRIES").bind()
-                    val noOfUnallocatedEntries =
-                            lookup( "NO_OF_UNALLOCATED_ENTRIES").bind()
-                    val noOfReleasedEntries =
-                            lookup("NO_OF_RELEASED_ENTRIES").bind()
-                    val noOfEntriesAvailableForImmediateUse =
-                            lookup("NO_OF_ENTRIES_READY_FOR_IMMEDIATE_USE").bind()
-                    val noOfReservedEntries =
-                            lookup("NO_OF_RESERVED_ENTRIES").bind()
+        val noOfEntries =
+                lookup("NO_OF_ENTRIES").bind()
+        val noOfUnallocatedEntries =
+                lookup("NO_OF_UNALLOCATED_ENTRIES").bind()
+        val noOfReleasedEntries =
+                lookup("NO_OF_RELEASED_ENTRIES").bind()
+        val noOfEntriesAvailableForImmediateUse =
+                lookup("NO_OF_ENTRIES_READY_FOR_IMMEDIATE_USE").bind()
+        val noOfReservedEntries =
+                lookup("NO_OF_RESERVED_ENTRIES").bind()
 
-                    SimProfileKeyStatistics(
-                            noOfEntries = noOfEntries,
-                            noOfUnallocatedEntries = noOfUnallocatedEntries,
-                            noOfEntriesAvailableForImmediateUse = noOfEntriesAvailableForImmediateUse,
-                            noOfReleasedEntries = noOfReleasedEntries,
-                            noOfReservedEntries = noOfReservedEntries)
-                }.fix()
-            }.unsafeRunSync()
+        SimProfileKeyStatistics(
+                noOfEntries = noOfEntries,
+                noOfUnallocatedEntries = noOfUnallocatedEntries,
+                noOfEntriesAvailableForImmediateUse = noOfEntriesAvailableForImmediateUse,
+                noOfReleasedEntries = noOfReleasedEntries,
+                noOfReservedEntries = noOfReservedEntries)
+    }
 }
 
 

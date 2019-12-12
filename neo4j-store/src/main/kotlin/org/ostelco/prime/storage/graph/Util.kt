@@ -52,3 +52,13 @@ fun createProduct(sku: String, taxRegionId: String? = null): Product {
             }
     )
 }
+
+/**
+ *  Formatting of amounts.
+ *  TODO (kmm) Update to use the java.text.NumberFormat API or the new
+ *             JSR-354 Currency and Money API.
+ */
+fun formatMoney(amount: Int, currency: String): String = DecimalFormat("#,###.##")
+        .format(amount / 100.0) + " ${currency.toUpperCase()}"
+
+fun formatMoney(price: Price): String = formatMoney(price.amount, price.currency)

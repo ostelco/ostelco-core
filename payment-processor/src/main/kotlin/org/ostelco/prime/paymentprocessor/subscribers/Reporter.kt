@@ -205,7 +205,7 @@ object Reporter {
                                 event)
                 )
                 event.type == "payment_intent.payment_failed" -> logger.warn(
-                        format("Failed to create payment ${intent.id} for ${currency(intent.amount, intent.currency)}",
+                        format("Creating payment ${intent.id} of ${currency(intent.amount, intent.currency)} failed",
                                 event)
                 )
                 event.type == "payment_intent.succeeded" -> logger.debug(
@@ -272,6 +272,14 @@ object Reporter {
                         format("${email(subscription.customer)} subscribed to ${subscription.plan.id}",
                                 event)
                 )
+                event.type == "customer.subscription.updated" -> logger.info(
+                        format("${email(subscription.customer)} subscription to ${subscription.plan.id} got updated",
+                                event)
+                )
+                event.type == "customer.subscription.deleted" -> logger.info(NOTIFY_OPS_MARKER,
+                        format("${email(subscription.customer)} subscription to ${subscription.plan.id} got deleted",
+                                event)
+                )
                 else -> logger.warn(format("Unhandled Stripe event ${event.type} (cat: Subscription)",
                         event))
             }
@@ -280,6 +288,8 @@ object Reporter {
 
     private fun url(eventId: String): String = "https://dashboard.stripe.com/events/${eventId}"
 
+    /* TODO (kmm) Update to use the java.text.NumberFormat API or the new
+            JSR-354 Currency and Money API. */
     private fun currency(amount: Long, currency: String): String =
             when (currency.toUpperCase()) {
                 "SGD", "USD" -> "\$"

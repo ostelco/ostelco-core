@@ -38,7 +38,6 @@ modules:
       projectId: ${GCP_PROJECT_ID}
       dataTrafficTopicId: data-traffic
       purchaseInfoTopicId: purchase-info
-      activeUsersTopicId: active-users
       simProvisioningTopicId: sim-provisioning
       subscriptionStatusUpdateTopicId: subscription-status-update
       refundsTopicId: analytics-refunds

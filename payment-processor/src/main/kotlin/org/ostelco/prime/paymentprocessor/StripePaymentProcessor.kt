@@ -23,8 +23,8 @@ import com.stripe.net.RequestOptions
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.StripeUtils.either
-import org.ostelco.prime.paymentprocessor.core.BadGatewayError
-import org.ostelco.prime.paymentprocessor.core.ForbiddenError
+import org.ostelco.prime.paymentprocessor.core.ChargeError
+import org.ostelco.prime.paymentprocessor.core.InvoiceError
 import org.ostelco.prime.paymentprocessor.core.InvoicePaymentInfo
 import org.ostelco.prime.paymentprocessor.core.InvoiceInfo
 import org.ostelco.prime.paymentprocessor.core.InvoiceItemInfo
@@ -36,6 +36,7 @@ import org.ostelco.prime.paymentprocessor.core.PlanInfo
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
+import org.ostelco.prime.paymentprocessor.core.SourceError
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
@@ -303,6 +304,7 @@ class StripePaymentProcessor : PaymentProcessor {
                 SubscriptionInfo(id = subscription.id)
             }
 
+    /* TODO (kmm): Fix missing exception handling of the 'Charge.create()' call. */
     override fun authorizeCharge(customerId: String, sourceId: String?, amount: Int, currency: String): Either<PaymentError, String> {
         val errorMessage = "Failed to authorize the charge for customerId $customerId sourceId $sourceId amount $amount currency $currency"
         return when (amount) {
@@ -323,12 +325,13 @@ class StripePaymentProcessor : PaymentProcessor {
                 Either.cond(
                         test = (review == null),
                         ifTrue = { charge.id },
-                        ifFalse = { ForbiddenError("Review required, $errorMessage $review") }
+                        ifFalse = { ChargeError("Review required, $errorMessage $review") }
                 )
             }
         }
     }
 
+    /* TODO (kmm): Fix missing exception handling of the 'Charge.retrive()' call. */
     override fun captureCharge(chargeId: String, customerId: String, amount: Int, currency: String): Either<PaymentError, String> {
         val errorMessage = "Failed to capture charge for customerId $customerId chargeId $chargeId"
         return when (amount) {
@@ -340,7 +343,7 @@ class StripePaymentProcessor : PaymentProcessor {
                 Either.cond(
                         test = (review == null),
                         ifTrue = { charge },
-                        ifFalse = { ForbiddenError("Review required, $errorMessage $review") }
+                        ifFalse = { ChargeError("Review required, $errorMessage $review") }
                 )
             }.flatMap { charge ->
                 try {
@@ -348,7 +351,7 @@ class StripePaymentProcessor : PaymentProcessor {
                     charge.id.right()
                 } catch (e: Exception) {
                     logger.warn(errorMessage, e)
-                    BadGatewayError(errorMessage).left()
+                    ChargeError(errorMessage).left()
                 }
             }
         }
@@ -378,7 +381,7 @@ class StripePaymentProcessor : PaymentProcessor {
                     is Card -> accountInfo.delete()
                     is Source -> accountInfo.detach()
                     else ->
-                        BadGatewayError("Attempt to remove unsupported account-type $accountInfo")
+                        SourceError("Attempt to remove unsupported account-type $accountInfo")
                                 .left()
                 }
                 SourceInfo(sourceId)
@@ -448,9 +451,9 @@ class StripePaymentProcessor : PaymentProcessor {
 
                             removeInvoice(invoice)
                                     .fold({
-                                        BadGatewayError(errorMessage, error = it)
+                                        InvoiceError(errorMessage, internalError = it)
                                     }, {
-                                        BadGatewayError(errorMessage)
+                                        InvoiceError(errorMessage)
                                     }).left()
                         } else {
                             InvoiceInfo(invoice.id).right()

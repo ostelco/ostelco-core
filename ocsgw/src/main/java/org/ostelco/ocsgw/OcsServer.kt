@@ -164,8 +164,7 @@ object OcsServer {
             appConfig: AppConfig): GrpcDataSource =
             GrpcDataSource(
                     protobufDataSource,
-                    appConfig.grpcServer,
-                    appConfig.metricsServer)
+                    appConfig.grpcServer)
 
     private fun getPubSubDataSource(
             protobufDataSource: ProtobufDataSource,

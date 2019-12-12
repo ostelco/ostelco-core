@@ -11,7 +11,7 @@ import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.paymentprocessor.StripeEventState
 import org.ostelco.prime.paymentprocessor.StripeMonitor
-import org.ostelco.prime.paymentprocessor.core.BadGatewayError
+import org.ostelco.prime.paymentprocessor.core.GenericError
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.publishers.StripeEventPublisher
 import java.time.Instant
@@ -148,7 +148,7 @@ class StripeMonitorResource(val monitor: StripeMonitor) {
                 events.size
             }.toEither {
                 logger.error("Failed to publish retrieved failed events - ${it.message}")
-                BadGatewayError("Failed to publish failed retrieved events - ${it.message}")
+                GenericError("Failed to publish failed retrieved events - ${it.message}")
             }
 
     private fun ok(value: Map<String, Any>) =
