@@ -104,17 +104,18 @@ class PollOutstandingProfilesTask(
             }
         }
 
-        fun asVendorIdToIccdList(profiles: List<SimEntry>): Map<Long, List<String>> {
-            val iccidsByProfileVendorIdMap: MutableMap<Long, MutableList<String>> = mutableMapOf<Long, MutableList<String>>()
-            profiles.forEach { simEntry: SimEntry ->
-                val vendorId = simEntry.profileVendorId
-                if (!iccidsByProfileVendorIdMap.containsKey(vendorId)) {
-                    iccidsByProfileVendorIdMap[vendorId] = mutableListOf<String>()
+
+        fun asVendorIdToIccdList(profiles: List<SimEntry>): Map<Long, List<String>> =
+                profiles.map {
+                    mapOf(it.profileVendorId to it.iccid)
+                }.flatMap {
+                    it.entries
+                }.groupBy {
+                    it.key
+                }.mapValues { vendor ->
+                    vendor.value.map { it.value }
                 }
-                iccidsByProfileVendorIdMap[vendorId]?.add(simEntry.iccid)
-            }
-            return iccidsByProfileVendorIdMap
-        }
+        
 
         // Then poll them individually via the profile vendor adapter associated with the
         // profile (there is not much to be gained here by doing it in paralellel, but perhaps
@@ -122,7 +123,8 @@ class PollOutstandingProfilesTask(
 
         for ((vendorId, iccidList) in asVendorIdToIccdList(profilesToPoll)) {
             pvaf.getAdapterByVendorId(vendorId).mapRight { profileVendorAdapter ->
-                val statuses = profileVendorAdapter.getProfileStatusList(iccidList)
+                val statuses =
+                        profileVendorAdapter.getProfileStatusList(iccidList)
                 statuses.mapRight {
                     it.forEach { updateProfileInDb(it) }
                 }
