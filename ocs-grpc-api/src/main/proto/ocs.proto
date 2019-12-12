@@ -70,6 +70,17 @@ enum ResultCode {
   DIAMETER_RATING_FAILED = 5031;
 }
 
+// 3GPP-PDP-Type #: 29.061
+enum PdpType {
+  IPV4 = 0;
+  PPP = 1;
+  IPV6 = 2;
+  IPV4V6 = 3;
+  NON_IP = 4;
+  UNSTRUCTURED = 5;
+  ETHERNET = 6;
+}
+
 message RedirectServer {
   RedirectAddressType redirectAddressType = 1;
   string redirectServerAddress = 2;
@@ -102,7 +113,8 @@ message PsInformation {
   string sgsnMccMnc = 2;
   string imsiMccMnc = 3;
   bytes userLocationInfo = 4;
-  string pdpAddress = 5;
+  PdpType pdpType = 5;
+  bytes pdpAddress = 6;
 }
 
 message ServiceInfo {

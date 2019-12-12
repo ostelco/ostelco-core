@@ -5,6 +5,7 @@ import org.ostelco.diameter.CreditControlContext;
 import org.ostelco.diameter.model.*;
 import org.ostelco.ocs.api.CreditControlRequestInfo;
 import org.ostelco.ocs.api.CreditControlRequestType;
+import org.ostelco.ocs.api.PdpType;
 import org.ostelco.ocs.api.PsInformation;
 import org.ostelco.ocs.api.ServiceInfo;
 import org.ostelco.ocsgw.datasource.protobuf.GrpcDataSource;
@@ -162,8 +163,11 @@ public class ProtobufToDiameterConverter {
                 if (psInformation.getUserLocationInfo() != null) {
                     psInformationBuilder.setUserLocationInfo(ByteString.copyFrom(psInformation.getUserLocationInfo()));
                 }
+                if (psInformation.getPdpType() != null) {
+                    psInformationBuilder.setPdpType(PdpType.forNumber(psInformation.getPdpType()));
+                }
                 if (psInformation.getPdpAddress() != null) {
-                    psInformationBuilder.setPdpAddress(psInformation.getPdpAddress().getHostAddress());
+                    psInformationBuilder.setPdpAddress(ByteString.copyFrom(psInformation.getPdpAddress().getAddress()));
                 }
                 builder.setServiceInformation(ServiceInfo.newBuilder().setPsInformation(psInformationBuilder));
             }
