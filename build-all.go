@@ -87,26 +87,26 @@ func generateDummyStripeEndpointSecretIfNotSet() {
 
 func main() {
 
-	cleanPtr := flag.Bool("clean", false, "If set, run a './gradlew clean' and 'go clean' before building and testing.")
-	stayUpPtr := flag.Bool("stay-up", false, "If set, keep test environment up in docker after running tests.")
-	doJvmPtr := flag.Bool("build-jvm-components", true, "If set, then compile and test JVM based components.")
-	doGoPtr := flag.Bool("build-golang-components", true, "If set, then compile and test GO based components.")
+	clean := flag.Bool("clean", false, "If set, run a './gradlew clean' and 'go clean' before building and testing.")
+	stayUp := flag.Bool("stay-up", false, "If set, keep test environment up in docker after running tests.")
+	doJvm := flag.Bool("build-jvm-components", true, "If set, then compile and test JVM based components.")
+	doGo := flag.Bool("build-golang-components", true, "If set, then compile and test GO based components.")
 
 	flag.Parse()
 
 	log.Printf("About to get started\n")
-	if *cleanPtr {
+	if *clean {
 		log.Printf("    ... will clean.")
 	}
 
-	if *stayUpPtr {
+	if *stayUp  {
 		log.Printf("    ... will keep environment up after acceptance tests have run (if any).")
 	}
 
 	log.Printf("Starting building.")
 
 
-	if !*doGoPtr {
+	if !*doGo {
 		log.Printf("    ...  Not building/testing GO code")
 	} else {
 		log.Printf("    ...  Building and testing go code.")
@@ -117,9 +117,8 @@ func main() {
 		goscript.AssertSuccesfulRun("~/go/bin/staticcheck ./...")
 	}
 
-	if !*doJvmPtr {
+	if !*doJvm {
 		log.Printf("    ...  Not building/testing JVM based code.")
-
 	} else {
 		log.Printf("    ... Building/testing JVM based code.")
 		//
@@ -150,9 +149,9 @@ func main() {
 			"ocsgw/cert/metrics.crt",
 			"ocs.dev.ostelco.org")
 
-		buildUsingGradlew(cleanPtr)
+		buildUsingGradlew(*clean)
 
-		runIntegrationTestsViaDocker(stayUpPtr)
+		runIntegrationTestsViaDocker(*stayUp)
 
 		log.Printf("Build and integration tests succeeded\n")
 	}
@@ -192,13 +191,13 @@ func parseServiceAccountFile(filename string) (GcpProjectProfile) {
 	return profile
 }
 
-func runIntegrationTestsViaDocker(stayUpPtr *bool) {
+func runIntegrationTestsViaDocker(stayUpPtr bool) {
 
 	// First take down any lingering docker jobs that may interfere with
 	// the current run.
 	goscript.AssertSuccesfulRun("docker-compose down")
 
-	if *stayUpPtr {
+	if stayUpPtr {
 		// If  ctrl-c is pushed during stay-up, then take the whole thing down using docker-compose down
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt)
@@ -213,12 +212,12 @@ func runIntegrationTestsViaDocker(stayUpPtr *bool) {
 	}
 }
 
-func buildUsingGradlew(cleanPtr *bool) {
+func buildUsingGradlew(clean bool) {
 	//
 	// All preconditions are now satisfied, now run the actual build/test commands
 	// and terminate the build process if any of them fails.
 	//
-	if *cleanPtr {
+	if clean {
 		goscript.AssertSuccesfulRun("./gradlew build")
 	}
 	goscript.AssertSuccesfulRun("./gradlew build")
