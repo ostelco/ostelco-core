@@ -35,7 +35,9 @@ class CreditControlContext(
     // Set to true, when answer to not to be sent to P-GW. This logic is used by ProxyDatasource.
     var skipAnswer: Boolean = false
 
-    var requestTime = System.currentTimeMillis()
+    private val contextCreatedTime = System.currentTimeMillis()
+
+    var sentToOcsTime: Long = 0L
 
     val creditControlRequest: CreditControlRequest = AvpParser().parse(
             CreditControlRequest::class,
@@ -136,6 +138,6 @@ class CreditControlContext(
     }
 
     fun logLatency() {
-        logger.info("Time from request to answer {} ms. SessionId [{}]", System.currentTimeMillis() - requestTime, this.sessionId)
+        logger.info("Time from request to answer {} ms. OCS roundtrip {} ms. SessionId [{}] request number [{}]", System.currentTimeMillis() - contextCreatedTime, System.currentTimeMillis() - sentToOcsTime, this.sessionId, this.creditControlRequest.ccRequestNumber?.unsigned32)
     }
 }

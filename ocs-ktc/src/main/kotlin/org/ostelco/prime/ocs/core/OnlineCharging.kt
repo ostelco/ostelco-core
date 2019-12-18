@@ -91,7 +91,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
         }
     }
 
-    private fun sendCreditControlAnswer(returnCreditControlAnswer: (CreditControlAnswerInfo) -> kotlin.Unit,
+    private fun sendCreditControlAnswer(returnCreditControlAnswer: (CreditControlAnswerInfo) -> Unit,
                                         responseBuilder: CreditControlAnswerInfo.Builder) {
         synchronized(OnlineCharging) {
             returnCreditControlAnswer(responseBuilder.build())
@@ -144,7 +144,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                         sgsnMccMnc = getUserLocationMccMnc(request),
                         apn = request.serviceInformation.psInformation.calledStationId,
                         imsiMccMnc = request.serviceInformation.psInformation.imsiMccMnc)
-                        .bimap(
+                        .fold(
                                 { consumptionResult -> consumptionResultHandler(consumptionResult) },
                                 { consumptionRequest ->  consumeRequestHandler(consumptionRequest) }
                         )

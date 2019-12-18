@@ -150,11 +150,6 @@ class SchemaTest {
             fromEntityStore.getRelated(aId, relation, transaction).fold(
                     { fail(it.message) },
                     { assertEquals(listOf(b), it) })
-
-            // get 'r' from 'a'
-            fromEntityStore.getRelations(aId, relation, transaction).fold(
-                    { fail(it.message) },
-                    { assertEquals(listOf(r), it) })
         }
     }
 

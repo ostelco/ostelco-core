@@ -41,16 +41,16 @@ class ProtobufDataSource {
 
     fun handleCcrAnswer(answer: CreditControlAnswerInfo) {
         try {
-            logger.info("[<<] CreditControlAnswer for msisdn {} requestId {}", answer.msisdn, answer.requestId)
+            logger.info("[<<] CreditControlAnswer for msisdn {} requestId {} request number [{}]", answer.msisdn, answer.requestId, answer.requestNumber)
             val ccrContext = ccrMap.remove(answer.requestId + "-" + answer.requestNumber)
             if (ccrContext != null) {
                 ccrContext.logLatency()
-                logger.debug("Found Context for answer msisdn {} requestId [{}] request number {}", ccrContext.creditControlRequest.msisdn, ccrContext.sessionId, ccrContext.creditControlRequest.ccRequestNumber?.integer32)
-                val session = OcsServer.stack?.getSession(ccrContext.sessionId, ServerCCASession::class.java)
-                if (session != null && session.isValid) {
-                    removeFromSessionMap(ccrContext)
-                    updateBlockedList(answer, ccrContext.creditControlRequest)
-                    if (!ccrContext.skipAnswer) {
+                logger.debug("Found Context for answer msisdn {} requestId [{}] request number [{}]", ccrContext.creditControlRequest.msisdn, ccrContext.sessionId, ccrContext.creditControlRequest.ccRequestNumber?.integer32)
+                removeFromSessionMap(ccrContext)
+                updateBlockedList(answer, ccrContext.creditControlRequest)
+                if (!ccrContext.skipAnswer) {
+                    val session = OcsServer.stack?.getSession(ccrContext.sessionId, ServerCCASession::class.java)
+                    if (session != null && session.isValid) {
                         val cca = createCreditControlAnswer(answer)
                         try {
                             session.sendCreditControlAnswer(ccrContext.createCCA(cca))
@@ -63,9 +63,9 @@ class ProtobufDataSource {
                         } catch (e: OverloadException) {
                             logger.error("Failed to send Credit-Control-Answer msisdn {} requestId {}", answer.msisdn, answer.requestId, e)
                         }
+                    } else {
+                        logger.warn("No session found for [{}] [{}] [{}]", answer.msisdn, answer.requestId, answer.requestNumber)
                     }
-                } else {
-                    logger.warn("No session found for [{}] [{}] [{}]", answer.msisdn, answer.requestId, answer.requestNumber)
                 }
             } else {
                 logger.warn("Missing CreditControlContext for [{}] [{}] [{}]", answer.msisdn, answer.requestId, answer.requestNumber)

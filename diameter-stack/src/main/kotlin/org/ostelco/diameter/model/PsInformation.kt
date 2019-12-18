@@ -3,6 +3,7 @@ package org.ostelco.diameter.model
 import org.jdiameter.api.Avp
 import org.ostelco.diameter.parser.AvpField
 import java.net.InetAddress
+import java.util.*
 
 /**
  * PS-Information ( Avp 874 )
@@ -18,7 +19,7 @@ class PsInformation {
 
     // 3GPP-PDP-Type ( Avp 3 )
     @AvpField(Avp.TGPP_PDP_TYPE)
-    var pdpType: ByteArray? = null
+    var pdpType: Int? = null
 
     // PDP-Address ( Avp 1227 )
     @AvpField(Avp.PDP_ADDRESS)

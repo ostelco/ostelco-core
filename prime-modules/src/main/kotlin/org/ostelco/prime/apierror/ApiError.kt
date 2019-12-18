@@ -31,15 +31,32 @@ object ApiErrorMapper {
 
     val logger by getLogger()
 
-    fun mapPaymentErrorToApiError(description: String, errorCode: ApiErrorCode, paymentError: PaymentError) : ApiError {
-        logger.error("{}: {}, paymentError: {}", errorCode, description, asJson(paymentError))
-        return when(paymentError) {
-            is org.ostelco.prime.paymentprocessor.core.PlanAlredyPurchasedError -> ForbiddenError(description, errorCode, paymentError)
-            is org.ostelco.prime.paymentprocessor.core.ForbiddenError  ->  ForbiddenError(description, errorCode, paymentError)
-            // FIXME vihang: remove PaymentError from BadGatewayError
-            is org.ostelco.prime.paymentprocessor.core.BadGatewayError -> InternalServerError(description, errorCode, paymentError)
+    /* Log level depends on the type of payment error. */
+    fun mapPaymentErrorToApiError(description: String, errorCode: ApiErrorCode, paymentError: PaymentError): ApiError {
+        if (paymentError is org.ostelco.prime.paymentprocessor.core.CardError) {
+            logger.info("{}: {}, paymentError: {}", errorCode, description, asJson(paymentError))
+        } else {
+            logger.error("{}: {}, paymentError: {}", errorCode, description, asJson(paymentError))
+        }
+        return when (paymentError) {
+            /* Self made. */
+            is org.ostelco.prime.paymentprocessor.core.ChargeError -> BadRequestError(description, errorCode, paymentError)
+            is org.ostelco.prime.paymentprocessor.core.InvoiceError -> BadRequestError(description, errorCode, paymentError)
             is org.ostelco.prime.paymentprocessor.core.NotFoundError -> NotFoundError(description, errorCode, paymentError)
             is org.ostelco.prime.paymentprocessor.core.PaymentConfigurationError -> InternalServerError(description, errorCode, paymentError)
+            is org.ostelco.prime.paymentprocessor.core.PlanAlredyPurchasedError -> ForbiddenError(description, errorCode, paymentError)
+            is org.ostelco.prime.paymentprocessor.core.StorePurchaseError -> BadRequestError(description, errorCode, paymentError)
+            is org.ostelco.prime.paymentprocessor.core.SourceError -> BadRequestError(description, errorCode, paymentError)
+            is org.ostelco.prime.paymentprocessor.core.SubscriptionError -> BadRequestError(description, errorCode, paymentError)
+            is org.ostelco.prime.paymentprocessor.core.UpdatePurchaseError -> BadRequestError(description, errorCode, paymentError)
+            /* Caused by upstream payment vendor. */
+            is org.ostelco.prime.paymentprocessor.core.CardError -> ForbiddenError(description, errorCode, paymentError)
+            is org.ostelco.prime.paymentprocessor.core.RateLimitError -> InternalServerError(description, errorCode, paymentError)
+            is org.ostelco.prime.paymentprocessor.core.AuthenticationError -> BadRequestError(description, errorCode, paymentError)
+            is org.ostelco.prime.paymentprocessor.core.ApiConnectionError -> InternalServerError(description, errorCode, paymentError)
+            is org.ostelco.prime.paymentprocessor.core.InvalidRequestError -> ForbiddenError(description, errorCode, paymentError)
+            is org.ostelco.prime.paymentprocessor.core.PaymentVendorError -> InternalServerError(description, errorCode, paymentError)
+            is org.ostelco.prime.paymentprocessor.core.GenericError -> InternalServerError(description, errorCode, paymentError)
         }
     }
 
