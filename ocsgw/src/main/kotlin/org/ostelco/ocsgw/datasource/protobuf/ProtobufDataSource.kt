@@ -13,7 +13,7 @@ import org.ostelco.diameter.model.MultipleServiceCreditControl
 import org.ostelco.diameter.model.ResultCode.DIAMETER_UNABLE_TO_COMPLY
 import org.ostelco.diameter.model.SessionContext
 import org.ostelco.ocs.api.*
-import org.ostelco.ocsgw.OcsServer
+import OcsServer
 import org.ostelco.ocsgw.converter.ProtobufToDiameterConverter
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap

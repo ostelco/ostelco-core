@@ -1,25 +1,23 @@
-package org.ostelco.ocsgw.datasource;
+package org.ostelco.ocsgw.datasource
 
-
-import org.ostelco.diameter.CreditControlContext;
+import org.ostelco.diameter.CreditControlContext
 
 /**
  * Interface to interact with a datasource.
  *
  */
-public interface DataSource {
-
+interface DataSource {
     /**
-     *  Initiates the datasource
+     * Initiates the datasource
      */
-    void init();
+    fun init()
 
     /**
      * Forward a new initial/update/terminate request.
      *
      * @param context That holds the request and session
      */
-    void handleRequest(CreditControlContext context);
+    fun handleRequest(context: CreditControlContext)
 
     /**
      * Check if a subscriber is on the blocked-list.
@@ -28,5 +26,5 @@ public interface DataSource {
      *
      * @param msisdn Subscriber msisdn to check
      */
-    boolean isBlocked(final String msisdn);
+    fun isBlocked(msisdn: String): Boolean
 }
