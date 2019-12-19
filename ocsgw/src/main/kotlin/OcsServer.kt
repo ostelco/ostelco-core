@@ -1,5 +1,3 @@
-package org.ostelco.ocsgw
-
 import org.jdiameter.api.ApplicationId
 import org.jdiameter.api.Avp
 import org.jdiameter.api.IllegalDiameterStateException
@@ -119,12 +117,12 @@ object OcsServer {
 
     }
 
-    internal fun init(stack: Stack, appConfig: AppConfig) {
-        this.stack = stack
-        this.localPeerFQDN = stack.metaData.localPeer.uri.fqdn
-        this.localPeerRealm = stack.metaData.localPeer.realmName
+    fun init(stack: Stack, appConfig: AppConfig) {
+        OcsServer.stack = stack
+        localPeerFQDN = stack.metaData.localPeer.uri.fqdn
+        localPeerRealm = stack.metaData.localPeer.realmName
 
-        this.defaultRequestedServiceUnit = appConfig.defaultRequestedServiceUnit
+        defaultRequestedServiceUnit = appConfig.defaultRequestedServiceUnit
 
         val protobufDataSource = ProtobufDataSource()
 
@@ -134,7 +132,6 @@ object OcsServer {
                 val secondary = when (appConfig.secondaryDataStoreType) {
                     SecondaryDataSourceType.PubSub -> getPubSubDataSource(protobufDataSource, appConfig)
                     SecondaryDataSourceType.gRPC -> getGrpcDataSource(protobufDataSource, appConfig)
-                    else -> getPubSubDataSource(protobufDataSource, appConfig)
                 }
                 secondary.init()
                 ProxyDataSource(secondary)
@@ -150,10 +147,6 @@ object OcsServer {
             gRPC -> {
                 logger.info("Using GrpcDataSource")
                 getGrpcDataSource(protobufDataSource, appConfig)
-            }
-            else -> {
-                logger.warn("Unknown DataStoreType {}", appConfig.dataStoreType)
-                LocalDataSource()
             }
         }
         source?.init()
