@@ -260,7 +260,7 @@ func checkIfDockerIsRunning() bool {
 	out, err := exec.Command("bash", "-c", cmd).Output()
 	ostring := string(out)
 
-	if "Docker not running" == ostring && err == nil {
+	if ostring == "Docker not running" && err == nil {
 		return false
 	}
 

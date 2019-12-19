@@ -257,9 +257,8 @@ func (sdb SimBatchDB) GetProfileVendorByID(id int64) (*model.ProfileVendor, erro
 
 	if len(result) == 0 {
 		return nil, nil
-	} else {
-		return &result[0], nil
 	}
+	return &result[0], nil
 }
 
 // GetProfileVendorByName find a profile vendor in the database by looking it up by name.

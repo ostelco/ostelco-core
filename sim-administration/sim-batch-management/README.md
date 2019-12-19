@@ -111,3 +111,16 @@ that justifies adding these checks).
  
 10. Declare prime instances (should make sense to have both prod and dev defined
    with different constraints on them).
+
+11. Read through [parser options in kingpin](https://github.com/alecthomas/kingpin/blob/master/parsers.go) and
+    amend the command line reader to read existing files, proper DNS etc.
+    as appropriate.
+
+12. Refactor the main program. It's way to big now.
+
+13. Rewrite the top-evel build-all.go to also compile go-code (which it
+    paradoxically doesn't do now).
+
+14. Make goland less confused with respect to imports than it is now.
+
+15. Fix all suggestions by goland.
