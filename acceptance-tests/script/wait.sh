@@ -221,6 +221,17 @@ echo " ... HLR preactivated rofiles loaded into prime"
 
 
 ##
+## Creating pub-sub subscriptions for recurring payments tests (plans).
+## Have to create one subscription per test, as the tests runs in parallel.
+##
+
+echo "Creating pub-sub subscriptions for recurring payment tests"
+curl -X PUT -H "Content-Type: application/json" -d '{"topic":"projects/'${GCP_PROJECT_ID}'/topics/stripe-event","ackDeadlineSeconds":10}' pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/stripe-event-okhttp-purchase-ok-sub
+curl -X PUT -H "Content-Type: application/json" -d '{"topic":"projects/'${GCP_PROJECT_ID}'/topics/stripe-event","ackDeadlineSeconds":10}' pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/stripe-event-okhttp-purchase-fail-sub
+curl -X PUT -H "Content-Type: application/json" -d '{"topic":"projects/'${GCP_PROJECT_ID}'/topics/stripe-event","ackDeadlineSeconds":10}' pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/stripe-event-jersey-purchase-ok-sub
+curl -X PUT -H "Content-Type: application/json" -d '{"topic":"projects/'${GCP_PROJECT_ID}'/topics/stripe-event","ackDeadlineSeconds":10}' pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/stripe-event-jersey-purchase-fail-sub
+
+##
 ##   Finally run acceptance tests
 ##
 java -cp '/acceptance-tests.jar' org.junit.runner.JUnitCore org.ostelco.at.TestSuite

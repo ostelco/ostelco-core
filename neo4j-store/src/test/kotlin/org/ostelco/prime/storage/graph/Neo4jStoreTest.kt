@@ -54,6 +54,7 @@ import org.ostelco.prime.notifications.EmailNotifier
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.InvoiceInfo
 import org.ostelco.prime.paymentprocessor.core.InvoicePaymentInfo
+import org.ostelco.prime.paymentprocessor.core.PaymentStatus
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.sim.SimManager
 import org.ostelco.prime.storage.NotFoundError
@@ -259,7 +260,7 @@ class Neo4jStoreTest {
 
         `when`(mockPaymentProcessor.payInvoice(
                 invoiceId = invoiceId)
-        ).thenReturn(InvoicePaymentInfo(invoiceId, chargeId).right())
+        ).thenReturn(InvoicePaymentInfo(invoiceId, PaymentStatus.PAYMENT_SUCCEEDED, chargeId).right())
 
         // prep
         job {

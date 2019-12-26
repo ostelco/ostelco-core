@@ -45,6 +45,24 @@ class FirebaseAppNotifier: AppNotifier {
                             body = FCMStrings.JUMIO_IDENTITY_FAILED.s,
                             data = data)
                 }
+                NotificationType.PAYMENT_METHOD_REQUIRED -> {
+                    logger.info("Notifying customer $customerId of failed payment on renewal of " +
+                            "subscription to product ${data["sku"]} with data $data")
+                    sendMessage(customerId = customerId,
+                            title = FCMStrings.SUBSCRIPTION_RENEWAL_TITLE.s,
+                            body = FCMStrings.SUBSCRIPTION_PAYMENT_METHOD_REQUIRED.s,
+                            data = data)
+                }
+                NotificationType.USER_ACTION_REQUIRED -> {
+                    /* TODO: Add support for 3D secure notification. */
+                }
+                NotificationType.SUBSCRIPTION_RENEWAL_UPCOMING -> {
+
+                }
+                NotificationType.SUBSCRIPTION_RENEWAL_STARTING -> {
+                    /* No notification, as a notification will be sent on either successful
+                       or failed renewal. */
+                }
             }
 
     override fun notify(customerId: String, title: String, body: String, data: Map<String, Any>) {

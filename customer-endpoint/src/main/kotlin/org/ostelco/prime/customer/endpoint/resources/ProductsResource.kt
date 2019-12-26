@@ -54,4 +54,31 @@ class ProductsResource(private val dao: SubscriberDAO) {
                         saveCard = saveCard ?: false)
                         .responseBuilder(Response.Status.CREATED)
             }.build()
+
+    @POST
+    @Path("{sku}/renew")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun renewPaymentSubscription(@Auth token: AccessTokenPrincipal?,
+                                 @NotNull
+                                 @PathParam("sku")
+                                 sku: String,
+                                 @QueryParam("sourceId")
+                                 sourceId: String?,
+                                 @QueryParam("saveCard")
+                                 saveCard: Boolean?): Response =
+            if (token == null) {
+                Response.status(Response.Status.UNAUTHORIZED)
+            } else {
+                if (sourceId == null) {
+                    dao.renewPaymentSubscription(
+                            identity = token.identity,
+                            sku = sku)
+                } else {
+                    dao.renewPaymentSubscription(
+                            identity = token.identity,
+                            sku = sku,
+                            sourceId = sourceId,
+                            saveCard = saveCard ?: false)
+                }.responseBuilder(Response.Status.CREATED)
+            }.build()
 }

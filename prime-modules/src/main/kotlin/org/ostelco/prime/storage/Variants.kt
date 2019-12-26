@@ -19,6 +19,7 @@ import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.PaymentTransactionInfo
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
+import org.ostelco.prime.paymentprocessor.core.SubscriptionPaymentInfo
 import javax.ws.rs.core.MultivaluedMap
 
 interface ClientDocumentStore {
@@ -194,6 +195,16 @@ interface ClientGraphStore {
      * Save address and Phone number
      */
     fun saveAddress(identity: Identity, address: String, regionCode: String): Either<StoreError, Unit>
+
+    /**
+     * Renew pending (due to payment issues) subscription to plan.
+     */
+    fun renewSubscriptionToPlan(identity: Identity, sku: String): Either<StoreError, Product>
+
+    fun renewSubscriptionToPlan(identity: Identity,
+                                sku: String,
+                                sourceId: String,
+                                saveCard: Boolean): Either<StoreError, Product>
 }
 
 data class ConsumptionResult(val msisdnAnalyticsId: String, val granted: Long, val balance: Long)
@@ -269,10 +280,9 @@ interface AdminGraphStore {
      * Set up a customer with a subscription to a specific plan.
      * @param identity - The identity of the customer
      * @param planId - The name/id of the plan
-     * @param trialEnd - Epoch timestamp for when the trial period ends
      * @return Unit value if the subscription was created successfully
      */
-    fun subscribeToPlan(identity: Identity, planId: String, trialEnd: Long = 0): Either<StoreError, Unit>
+    fun subscribeToPlan(identity: Identity, planId: String): Either<StoreError, Unit>
 
     /**
      * Remove the subscription to a plan for a specific subscrber.
@@ -284,16 +294,56 @@ interface AdminGraphStore {
     fun unsubscribeFromPlan(identity: Identity, planId: String, invoiceNow: Boolean = true): Either<StoreError, Plan>
 
     /**
-     * Adds a purchase record to customer on start of or renewal
-     * of a subscription.
-     * @param customerId - The customer that got charged
-     * @param invoiceId - The reference to the invoice that has been paid
-     * @param chargeId - The reference to the charge (used on refunds)
-     * @param sku - The product/plan bought
-     * @param amount - Cost of the product/plan
-     * @param currency - Currency used
+     * Notify customer about upcoming renewal of a subscription.
+     * @param customerId - The identity of the customer to be notified
+     * @param sku - Subscription product to be renewed
+     * @param dueDate - Time when the renewal will happen
      */
-    fun purchasedSubscription(customerId: String, invoiceId: String, chargeId: String, sku: String, amount: Long, currency: String): Either<StoreError, Plan>
+    fun notifySubscriptionToPlanRenewalUpcoming(customerId: String,
+                                                sku: String,
+                                                dueDate: Long): Either<StoreError, Unit>
+
+    /**
+     * Notify customer that a renewal of a subscription is starting and
+     * that a charge will be made. By default the actual charge for the
+     * renewal will happen in about 1 hour, but an immediate charge can
+     * be forced by setting the 'payInvoiceNow' flag to true.
+     * @param customerId - The identity of the customer to be notified.
+     * @param sku - Subscription product being renewed.
+     * @param invoiceId - ID of invoice generated for the renewal.
+     * @param payInvoiceNow - If true pay the invoice immediately.
+     */
+    fun notifySubscriptionToPlanRenewalStarting(customerId: String,
+                                                sku: String,
+                                                invoiceId: String,
+                                                payInvoiceNow: Boolean = false): Either<StoreError, Unit>
+
+    /**
+     * Subscription renewed without issues.
+     * @param customerId - The identity of the customer
+     * @param sku - Id of the product/subscription
+     * @param subscriptionPaymentInfo - Details about the renewed subscription
+     */
+    fun renewedSubscriptionToPlanSuccessfully(customerId: String,
+                                              sku: String,
+                                              subscriptionPaymentInfo: SubscriptionPaymentInfo): Either<StoreError, Plan>
+
+    /**
+     * Subscription renewal failed either due to issues with payment source or
+     * because additional actions is required (3D secure).
+     * @param customerId - The identity of the customer
+     * @param sku - Id of the product/subscription
+     * @param subscriptionPaymentInfo - Details about the renewed subscription
+     */
+    fun subscriptionToPlanRenewalFailed(customerId: String,
+                                        sku: String,
+                                        subscriptionPaymentInfo: SubscriptionPaymentInfo): Either<StoreError, Unit>
+    /**
+     * Removes a product and associated price plans. Mainly intended for use
+     * in test for cleanup.
+     * @param productId - The id of the product to be to be removed.
+     */
+    fun removeProductAndPricePlans(productId: String): Either<PaymentError, ProductInfo>
 
     // atomic import of Offer + Product + Segment
     fun atomicCreateOffer(

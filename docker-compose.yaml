@@ -79,6 +79,16 @@ services:
         ipv4_address: 172.16.238.3
       default:
 
+  webhook-stripe:
+    container_name: webhook-stripe
+    build:
+      context: acceptance-tests
+      dockerfile: Dockerfile.stripe
+    environment:
+      - STRIPE_API_KEY=${STRIPE_API_KEY}
+      - STRIPE_ENDPOINT_SECRET=${STRIPE_ENDPOINT_SECRET}
+    command: ["/proxy.sh"]
+
   acceptance-tests:
     container_name: acceptance-tests
     build: acceptance-tests
@@ -87,9 +97,11 @@ services:
       - "prime"
     command: ["./wait.sh"]
     environment:
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
       - PRIME_SOCKET=prime:8080
       - OCS_SOCKET=prime:8082
       - STRIPE_API_KEY=${STRIPE_API_KEY}
+      - STRIPE_ENDPOINT_SECRET=${STRIPE_ENDPOINT_SECRET}
       - GOOGLE_APPLICATION_CREDENTIALS=/secret/prime-service-account.json
       - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
     networks:

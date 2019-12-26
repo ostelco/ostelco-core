@@ -38,7 +38,7 @@ import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SourceError
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
-import org.ostelco.prime.paymentprocessor.core.SubscriptionDetailsInfo
+import org.ostelco.prime.paymentprocessor.core.SubscriptionPaymentInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
 import org.ostelco.prime.paymentprocessor.core.TaxRateInfo
 import java.math.BigDecimal
@@ -177,6 +177,7 @@ class StripePaymentProcessor : PaymentProcessor {
     override fun createPlan(productId: String, amount: Int, currency: String, interval: PaymentProcessor.Interval, intervalCount: Long): Either<PaymentError, PlanInfo> =
             either("Failed to create plan for product $productId amount $amount currency $currency interval ${interval.value}") {
                 val planParams = mapOf(
+                        "id" to productId,
                         "product" to productId,
                         "amount" to amount,
                         "interval" to interval.value,
@@ -194,9 +195,21 @@ class StripePaymentProcessor : PaymentProcessor {
                 }
             }
 
-    override fun createProduct(name: String): Either<PaymentError, ProductInfo> =
+    override fun removeProductAndPricePlans(productId: String): Either<PaymentError, ProductInfo> =
+            either("Failed to remove product ${productId} and associated price plans") {
+                val params = mapOf(
+                        "product" to productId
+                )
+                Plan.list(params).data.forEach {
+                    it.delete()
+                }
+                ProductInfo(Product.retrieve(productId).delete().id)
+            }
+
+    override fun createProduct(productId: String, name: String): Either<PaymentError, ProductInfo> =
             either("Failed to create product with name $name") {
                 val productParams = mapOf(
+                        "id" to productId,
                         "name" to name,
                         "type" to "service")
                 ProductInfo(Product.create(productParams).id)
@@ -206,6 +219,35 @@ class StripePaymentProcessor : PaymentProcessor {
             either("Failed to delete product $productId") {
                 val product = Product.retrieve(productId)
                 ProductInfo(product.delete().id)
+            }
+
+    override fun addSource(customerId: String,
+                           sourceId: String,
+                           setDefault: Boolean): Either<PaymentError, SourceInfo> =
+            either("Failed to add source $sourceId to customer $customerId") {
+                val customer = Customer.retrieve(customerId)
+                val sources = customer.sources.data.map {
+                    it.id
+                }
+                if (!sources.any {
+                            it == sourceId
+                        }) {
+                    val params = mapOf(
+                            "source" to sourceId,
+                            "metadata" to mapOf("created" to Instant.now())
+                    )
+                    customer.sources.create(params).id
+                } else {
+                    sourceId
+                }.let {
+                    if (setDefault) {
+                        val params = mapOf(
+                                "default_source" to it
+                        )
+                        customer.update(params)
+                    }
+                    SourceInfo(it)
+                }
             }
 
     override fun addSource(customerId: String, sourceId: String): Either<PaymentError, SourceInfo> =
@@ -236,10 +278,7 @@ class StripePaymentProcessor : PaymentProcessor {
                                 .right()
                     }
 
-    /* The 'expand' part will cause an immediate attempt at charging for the
-       subscription when creating it. For interpreting the result see:
-       https://stripe.com/docs/billing/subscriptions/payment#signup-3b */
-    override fun createSubscription(planId: String, customerId: String, trialEnd: Long, taxRegionId: String?): Either<PaymentError, SubscriptionDetailsInfo> =
+    override fun createSubscription(planId: String, customerId: String, trialEnd: Long, taxRegionId: String?): Either<PaymentError, SubscriptionPaymentInfo> =
             either("Failed to subscribe customer $customerId to plan $planId") {
                 val item = mapOf("plan" to planId)
                 val taxRates = getTaxRatesForTaxRegionId(taxRegionId)
@@ -247,52 +286,67 @@ class StripePaymentProcessor : PaymentProcessor {
                                 { emptyList<TaxRateInfo>() },
                                 { it }
                         )
-                val subscriptionParams = mapOf(
+                val trialEndInEpochSeconds = ofEpochMilliToSecond(trialEnd)
+                val params = mapOf(
                         "customer" to customerId,
                         "items" to mapOf("0" to item),
-                        *(if (trialEnd > Instant.now().epochSecond)
-                            arrayOf("trial_end" to trialEnd.toString())
+                        *(if (trialEndInEpochSeconds > Instant.now().epochSecond)
+                            arrayOf("trial_end" to trialEndInEpochSeconds.toString())
                         else
                             arrayOf("expand" to arrayOf("latest_invoice.payment_intent"))),
                         *(if (taxRates.isNotEmpty())
                             arrayOf("default_tax_rates" to taxRates.map { it.id })
-                        else arrayOf()))
-                val subscription = Subscription.create(subscriptionParams)
-                val status = subscriptionStatus(subscription)
-                SubscriptionDetailsInfo(id = subscription.id,
-                        status = status.first,
-                        invoiceId = status.second,
-                        chargeId = status.third,
-                        created = Instant.ofEpochSecond(subscription.created).toEpochMilli(),
-                        trialEnd = subscription.trialEnd ?: 0L)
+                        else arrayOf()),
+                        "payment_behavior" to "allow_incomplete",
+                        "prorate" to true)
+                getSubscriptionPaymentInfo(Subscription.create(params))
             }
 
-    private fun subscriptionStatus(subscription: Subscription): Triple<PaymentStatus, String, String> {
+    private fun getSubscriptionPaymentInfo(subscription: Subscription): SubscriptionPaymentInfo {
         val invoice = subscription.latestInvoiceObject
         val intent = invoice?.paymentIntentObject
 
-        return when (subscription.status) {
-            "active", "incomplete" -> {
-                if (intent != null)
-                    Triple(when (intent.status) {
+        return if (subscription.status == "trialing") {
+            PaymentStatus.TRIAL_START
+        } else {
+            require(intent != null) {
+                "Expected an invoice intent with invoice ${invoice.id} for subscription ${subscription.id} " +
+                        "with status ${subscription.status}"
+            }
+            when (subscription.status) {
+                "active" -> {
+                    when (intent.status) {
                         "succeeded" -> PaymentStatus.PAYMENT_SUCCEEDED
+                        else -> throw IllegalArgumentException("Unexpected intent ${intent.status} for invoice ${invoice.id} " +
+                                "for subscription ${subscription.id} with status ${subscription.status}")
+                    }
+                }
+                "incomplete" -> {
+                    when (intent.status) {
                         "requires_payment_method" -> PaymentStatus.REQUIRES_PAYMENT_METHOD
                         "requires_action" -> PaymentStatus.REQUIRES_ACTION
-                        else -> throw RuntimeException(
-                                "Unexpected intent ${intent.status} for Stipe payment invoice ${invoice.id}")
-                    }, invoice.id, invoice.charge)
-                else {
-                    throw RuntimeException(
-                            "'Intent' absent in response when creating subscription ${subscription.id} with status ${subscription.status}")
+                        else -> throw IllegalArgumentException("Unexpected intent ${intent.status} for invoice ${invoice.id} " +
+                                "for subscription ${subscription.id} with status ${subscription.status}")
+                    }
+                }
+                else -> {
+                    throw IllegalArgumentException(
+                            "Got unexpected status ${subscription.status} when creating subscription ${subscription.id}")
                 }
             }
-            "trialing" -> {
-                Triple(PaymentStatus.TRIAL_START, "", "")
-            }
-            else -> {
-                throw RuntimeException(
-                        "Got unexpected status ${subscription.status} when creating subscription ${subscription.id}")
-            }
+        }.let {
+            SubscriptionPaymentInfo(id = subscription.id,
+                    status = it,
+                    invoiceId = if (invoice != null)
+                        invoice.id
+                    else
+                        subscription.latestInvoice,         /* No 'invoice' object in case of trials. */
+                    chargeId = invoice?.charge,
+                    sku = subscription.plan.product,
+                    created = ofEpochSecondToMilli(subscription.created),
+                    currentPeriodStart = ofEpochSecondToMilli(subscription.currentPeriodStart),
+                    currentPeriodEnd = ofEpochSecondToMilli(subscription.currentPeriodEnd),
+                    trialEnd = ofEpochSecondToMilli(subscription.trialEnd ?: 0L))
         }
     }
 
@@ -376,7 +430,8 @@ class StripePaymentProcessor : PaymentProcessor {
 
     override fun removeSource(customerId: String, sourceId: String): Either<PaymentError, SourceInfo> =
             either("Failed to remove source $sourceId for customerId $customerId") {
-                val accountInfo = Customer.retrieve(customerId).sources.retrieve(sourceId)
+                val accountInfo = Customer.retrieve(customerId).sources
+                        .retrieve(sourceId)
                 when (accountInfo) {
                     is Card -> accountInfo.delete()
                     is Source -> accountInfo.detach()
@@ -475,10 +530,33 @@ class StripePaymentProcessor : PaymentProcessor {
                 Invoice.create(params)
             }
 
-    override fun payInvoice(invoiceId: String): Either<PaymentError, InvoicePaymentInfo> =
+    /*
+       TODO: Handle payement fails on subscr. creation/renewal.
+
+       Ref. https://stripe.com/docs/billing/subscriptions/payment#handling-failure
+
+       Missing parts:
+          - on create-sub or renewal with status "payment-fails"
+              --  collect invoice-id
+              --  call 'payInvoice' and expand function to include "payment-intent"
+                  in "expand" parameter
+          - if payment fails with 402 - probably fine with java as the invoice is always
+            retrieved first.
+
+       TODO Must have two pay methods, one for subscription renewal and one for all other
+            or maybe not...
+     */
+    override fun payInvoice(invoiceId: String, sourceId: String?): Either<PaymentError, InvoicePaymentInfo> =
             either("Failed to complete payment of invoice ${invoiceId}") {
-                val receipt = Invoice.retrieve(invoiceId).pay()
-                InvoicePaymentInfo(receipt.id, receipt?.charge ?: UUID.randomUUID().toString())
+                val params = if (sourceId != null)
+                    mapOf("source" to sourceId)
+                else
+                    emptyMap()
+                val receipt = Invoice.retrieve(invoiceId)
+                        .pay(params)
+                InvoicePaymentInfo(id = receipt.id,
+                        status = PaymentStatus.PAYMENT_SUCCEEDED,
+                        chargeId = receipt.charge ?: UUID.randomUUID().toString())
             }
 
     override fun removeInvoice(invoiceId: String): Either<PaymentError, InvoiceInfo> =
@@ -610,4 +688,7 @@ class StripePaymentProcessor : PaymentProcessor {
 
     /* Timestamps in Stripe must be in seconds. */
     private fun ofEpochMilliToSecond(ts: Long): Long = ts.div(1000L)
+
+    /* Timestamps in Prime must be in milliseconds. */
+    private fun ofEpochSecondToMilli(ts: Long): Long = Instant.ofEpochSecond(ts).toEpochMilli()
 }

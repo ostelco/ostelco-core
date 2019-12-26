@@ -2,10 +2,12 @@ package org.ostelco.prime.customer.endpoint.store
 
 import arrow.core.Either
 import arrow.core.flatMap
+import arrow.core.right
 import arrow.core.left
 import org.ostelco.prime.activation.Activation
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.apierror.ApiErrorCode
+import org.ostelco.prime.apierror.ApiErrorMapper
 import org.ostelco.prime.apierror.ApiErrorMapper.mapPaymentErrorToApiError
 import org.ostelco.prime.apierror.ApiErrorMapper.mapStorageErrorToApiError
 import org.ostelco.prime.apierror.BadRequestError
@@ -347,6 +349,31 @@ class SubscriberDAOImpl : SubscriberDAO {
         }
         return hasZeroBundle
     }
+
+    //
+    // Subscription to plans
+    //
+
+    override fun renewPaymentSubscription(identity: Identity,
+                                          sku: String): Either<ApiError, Product> =
+            storage.renewSubscriptionToPlan(identity, sku)
+                    .mapLeft { error ->
+                        mapStorageErrorToApiError(error.message, ApiErrorCode.FAILED_TO_RENEW_SUBSCRIPTION,
+                                error)
+                    }
+
+    override fun renewPaymentSubscription(identity: Identity,
+                                          sku: String,
+                                          sourceId: String,
+                                          saveCard: Boolean): Either<ApiError, Product> =
+            storage.renewSubscriptionToPlan(identity,
+                    sku,
+                    sourceId,
+                    saveCard)
+                    .mapLeft { error ->
+                        mapStorageErrorToApiError(error.message, ApiErrorCode.FAILED_TO_RENEW_SUBSCRIPTION,
+                                error)
+                    }
 
     //
     // Payment

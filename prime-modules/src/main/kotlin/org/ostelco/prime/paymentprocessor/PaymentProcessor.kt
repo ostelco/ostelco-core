@@ -11,7 +11,7 @@ import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
-import org.ostelco.prime.paymentprocessor.core.SubscriptionDetailsInfo
+import org.ostelco.prime.paymentprocessor.core.SubscriptionPaymentInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
 import org.ostelco.prime.paymentprocessor.core.TaxRateInfo
 import java.math.BigDecimal
@@ -31,6 +31,18 @@ interface PaymentProcessor {
      * @return Stripe sourceId if created
      */
     fun addSource(customerId: String, sourceId: String): Either<PaymentError, SourceInfo>
+
+    /**
+     * Adds source and sets it as 'default source' if requested. If the source has
+     * already been added it is not added again.
+     * @param customerId Customer id
+     * @param sourceId Stripe source id
+     * @param setDefault If true then set the 'sourceId' as the default source
+     * @return The source-info object describing the source
+     */
+    fun addSource(customerId: String,
+                  sourceId: String,
+                  setDefault: Boolean = false): Either<PaymentError, SourceInfo>
 
     /**
      * @param customerId: Prime unique identifier for customer
@@ -68,13 +80,21 @@ interface PaymentProcessor {
     fun removePlan(planId: String): Either<PaymentError, PlanInfo>
 
     /**
+     * Removes the product identified with 'productId' and all associated
+     * price plans.
+     * @param productId The plan product to be removed
+     * @return Id of the removed plan product
+     */
+    fun removeProductAndPricePlans(productId: String): Either<PaymentError, ProductInfo>
+
+    /**
      * @param Stripe Plan Id
      * @param customerId Stripe Customer Id
      * @param trielEnd Epoch timestamp for when the trial period ends
      * @param taxRegion An identifier representing the taxes to be applied to a region
      * @return Stripe SubscriptionId if subscribed
      */
-    fun createSubscription(planId: String, customerId: String, trialEnd: Long = 0L, taxRegionId: String? = null): Either<PaymentError, SubscriptionDetailsInfo>
+    fun createSubscription(planId: String, customerId: String, trialEnd: Long = 0L, taxRegionId: String? = null): Either<PaymentError, SubscriptionPaymentInfo>
 
     /**
      * @param Stripe Subscription Id
@@ -84,10 +104,11 @@ interface PaymentProcessor {
     fun cancelSubscription(subscriptionId: String, invoiceNow: Boolean = false): Either<PaymentError, SubscriptionInfo>
 
     /**
+     * @param productId Prime product Id
      * @param name Prime product name
      * @return Stripe productId if created
      */
-    fun createProduct(name: String): Either<PaymentError, ProductInfo>
+    fun createProduct(productId: String, name: String): Either<PaymentError, ProductInfo>
 
     /**
      * @param productId Stripe product Id
@@ -187,10 +208,13 @@ interface PaymentProcessor {
     fun createInvoice(customerId: String, amount: Int, currency: String, description: String, taxRegionId: String?, sourceId: String?): Either<PaymentError, InvoiceInfo>
 
     /**
+     * Pay an invoice now. If a 'sourceId' is given, then pay the invoice using
+     * that source.
      * @param invoiceId ID of the invoice to be paid
+     * @param sourceId Optionally the payment source to be used
      * @return ID of the invoice
      */
-    fun payInvoice(invoiceId: String): Either<PaymentError, InvoicePaymentInfo>
+    fun payInvoice(invoiceId: String, sourceId: String? = null): Either<PaymentError, InvoicePaymentInfo>
 
     /**
      * @param invoiceId ID of the invoice to be paid

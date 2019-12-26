@@ -73,3 +73,8 @@ data class ExCustomer(
 
     companion object
 }
+
+data class PendingSubscriptionToPlan(
+        val sku: String,
+        val subscriptionId: String,
+        val invoiceId: String)

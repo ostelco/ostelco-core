@@ -4,7 +4,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.experimental.ParallelComputer
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import org.junit.runner.JUnitCore
+import org.ostelco.at.common.StripePayment
 import org.ostelco.at.common.getLogger
 import kotlin.test.assertTrue
 
@@ -43,6 +45,43 @@ class TestSuite {
                                 org.ostelco.at.jersey.JumioKycTest::class.java,
                                 org.ostelco.at.pgw.OcsTest::class.java,
                                 org.ostelco.at.simmanager.SimManager::class.java
+                        )
+                )
+            }
+        }
+    }
+
+    /**
+     * Test of recurring payments requires that:
+     *    1) The webhook-stripe service docker instance is running.
+     *    2) The STRIPE_ENDPOINT_SECRET env. variable set.
+     * If the STRIPE_ENDPOINT_SECRET variable is not set the tests will be skipped.
+     */
+    @Test
+    @EnabledIfEnvironmentVariable(named = "STRIPE_ENDPOINT_SECRET", matches="whsec_\\S+")
+    fun `run recurring payment tests`() {
+
+        /**
+         * TODO: For some reason the '@EnabledIfEnvironmentVariable' annotation
+         *       is not working...
+         *       Remove the check below when this is fixed.
+         */
+        val secret = System.getenv("STRIPE_ENDPOINT_SECRET") ?: "not_set"
+
+        if (!secret.matches(Regex("whsec_\\S+"))) {
+            logger.info("Skipping the 'recurring payment tests' as the STRIPE_ENDPOINT_SECRET environment variable " +
+                    "is not set or set to a value not matching a secret.")
+            return
+        }
+
+        runBlocking {
+
+            launch {
+                checkResult(
+                        JUnitCore.runClasses(
+                                ParallelComputer(true, true),
+                                org.ostelco.at.okhttp.RenewPlanTest::class.java,
+                                org.ostelco.at.jersey.RenewPlanTest::class.java
                         )
                 )
             }

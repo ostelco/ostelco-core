@@ -281,7 +281,7 @@ class StripePaymentProcessorTest {
 
     @Test
     fun createAndRemoveProduct() {
-        val resultCreateProduct = paymentProcessor.createProduct("TestSku")
+        val resultCreateProduct = paymentProcessor.createProduct("TEST_SKU","TestSku")
         assertNotFailure(resultCreateProduct)
 
         val resultRemoveProduct = paymentProcessor.removeProduct(resultCreateProduct.fold({ "" }, { it.id }))
@@ -294,7 +294,7 @@ class StripePaymentProcessorTest {
         val resultAddSource = paymentProcessor.addSource(customerId, createPaymentTokenId())
         assertNotFailure(resultAddSource)
 
-        val resultCreateProduct = paymentProcessor.createProduct("TestSku")
+        val resultCreateProduct = paymentProcessor.createProduct("TEST_SKU","TestSku")
         assertNotFailure(resultCreateProduct)
 
         val resultCreatePlan = paymentProcessor.createPlan(right(resultCreateProduct).id, 1000, "NOK", PaymentProcessor.Interval.MONTH)

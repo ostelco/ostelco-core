@@ -18,18 +18,37 @@ data class ProfileInfo(val id: String)
 
 data class SourceInfo(val id: String)
 
-data class SourceDetailsInfo(val id: String, val type: String, val details: Map<String, Any>)
+data class SourceDetailsInfo(val id: String,
+                             val type: String,
+                             val details: Map<String, Any>)
 
 data class SubscriptionInfo(val id: String)
 
-data class SubscriptionDetailsInfo(val id: String, val status: PaymentStatus, val invoiceId: String, val chargeId: String, val created: Long, val trialEnd: Long = 0L)
+data class SubscriptionPaymentInfo(val id: String,                  /* Stripe subscription id. */
+                                   val sku: String,
+                                   val status: PaymentStatus,
+                                   val invoiceId: String,           /* Not set on plans with trial time. */
+                                   val chargeId: String? = null,    /* Only set on successful payment on creation/renewal. */
+                                   val created: Long,
+                                   val currentPeriodStart: Long,
+                                   val currentPeriodEnd: Long,
+                                   val trialEnd: Long = 0L)
 
-data class TaxRateInfo(val id: String, val percentage: BigDecimal, val displayName: String, val inclusive: Boolean)
+data class TaxRateInfo(val id: String,
+                       val percentage: BigDecimal,
+                       val displayName: String,
+                       val inclusive: Boolean)
 
 data class InvoiceItemInfo(val id: String)
 
 data class InvoiceInfo(val id: String)
 
-data class InvoicePaymentInfo(val id: String, val chargeId: String)
+data class InvoicePaymentInfo(val id: String,
+                              val status: PaymentStatus,
+                              val chargeId: String)
 
-data class PaymentTransactionInfo(val id: String, val amount: Int, val currency: String, val created: Long, val refunded: Boolean)
+data class PaymentTransactionInfo(val id: String,
+                                  val amount: Int,
+                                  val currency: String,
+                                  val created: Long,
+                                  val refunded: Boolean)

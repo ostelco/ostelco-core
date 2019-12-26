@@ -14,7 +14,7 @@ fun expectedProducts(): List<Product> {
     )
 }
 
-val expectedPlanProduct: Product = Product()
+val expectedPlanProductSG: Product = Product()
         .sku("PLAN_1000SGD_YEAR")
         .price(Price().amount(1_000_00).currency("SGD"))
         .properties(
@@ -28,6 +28,24 @@ val expectedPlanProduct: Product = Product()
                         "type" to "SUBSCRIPTION",
                         "label" to "Annual subscription plan",
                         "taxRegionId" to "sg"
+                )
+        )
+        .presentation(emptyMap<String, String>())
+
+val expectedPlanProductUS: Product = Product()
+        .sku("PLAN_10USD_DAY")
+        .price(Price().amount(10_00).currency("USD"))
+        .properties(
+                mapOf(
+                        "productClass" to "MEMBERSHIP",
+                        "segmentIds" to "country-us"
+                )
+        )
+        .payment(
+                mapOf(
+                        "type" to "SUBSCRIPTION",
+                        "label" to "Daily subscription plan",
+                        "taxRegionId" to "us"
                 )
         )
         .presentation(emptyMap<String, String>())
