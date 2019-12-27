@@ -3,13 +3,16 @@ package org.ostelco.tools.migration
 import org.neo4j.driver.v1.AccessMode
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 
 fun main() {
-    // neo4jExporterToCypherFile()
-    cypherFileToNeo4jImporter()
+    neo4jExporterToCypherFile("prod")
+    // cypherFileToNeo4jImporter()
 }
 
-fun neo4jExporterToCypherFile() {
+fun neo4jExporterToCypherFile(env: String) {
 
     Neo4jClient.init()
 
@@ -20,7 +23,7 @@ fun neo4jExporterToCypherFile() {
         println("Import from Neo4j to file")
 
         importFromNeo4j(txn) { str ->
-            Files.write(Paths.get("src/main/resources/backup.cypher"), str.toByteArray())
+            Files.write(Paths.get("src/main/resources/backup.$env.${now()}.cypher"), str.toByteArray())
         }
 
         println("Done")
@@ -50,3 +53,5 @@ fun cypherFileToNeo4jImporter() {
 
     Neo4jClient.stop()
 }
+
+fun now() = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern("yyyy.MM.dd-HHmm'UTC'"))
