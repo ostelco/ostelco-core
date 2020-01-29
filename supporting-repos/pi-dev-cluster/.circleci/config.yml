@@ -1,0 +1,165 @@
+version: 2
+jobs:
+  terraform-dev-plan:
+    docker:
+      # this image takes gcloud credentials from an env variable called: GOOGLE_CREDENTIALS and authenticates gcloud with it.
+      # the credentials file is made available inside the container in: /tmp/credentials.json
+    - image: eu.gcr.io/pi-ostelco-prod/terraform-gcloud:11.13
+      environment: 
+        CLUSTER: dev
+        GOOGLE_CREDENTIALS: /tmp/credentials.json
+
+    working_directory: ~/repo
+
+    steps:
+    - checkout
+    - run:
+        name: running terraform plan for dev cluster
+        command: |
+          /docker-entrypoint.sh 
+          terraform init
+          terraform plan \
+          -var cluster_admin_password=$DEV_CLUSTER_PASSWORD
+
+  terraform-dev-apply:
+    docker:
+    - image: eu.gcr.io/pi-ostelco-prod/terraform-gcloud:11.13
+      environment: 
+        CLUSTER: dev
+        GOOGLE_CREDENTIALS: /tmp/credentials.json
+
+    working_directory: ~/repo
+
+    steps:
+    - checkout
+    - run:
+        name: running terraform apply for dev cluster
+        command: |
+          /docker-entrypoint.sh
+          terraform init
+          terraform apply --auto-approve  \
+          -var cluster_admin_password=$DEV_CLUSTER_PASSWORD
+          .circleci/store_cluster_certs.sh 
+
+    - persist_to_workspace:
+          root: ~/repo/
+          paths:
+            - static_ip.txt
+            - endpoint.txt 
+            - keys/*     
+
+  # populate-k8s-secrets: 
+  #   docker:
+  #   - image: eu.gcr.io/pi-ostelco-prod/terraform-gcloud:11.13
+  #     environment: 
+  #       CLUSTER: dev
+  #       GOOGLE_CREDENTIALS: /tmp/credentials.json
+
+  #   working_directory: ~/repo
+
+  #   steps:
+  #   - checkout
+  #   - attach_workspace:
+  #         # Must be absolute path or relative path from working_directory
+  #         at: ~/repo  
+  #   - run:
+  #       name: populating secrets to dev cluster
+  #       command: | 
+  #         /docker-entrypoint.sh
+  #         PRIME_KEY=prime-sa-key.json
+  #         DNS_KEY=dns-sa-key.json
+  #         NAMESPACE=${NAMESPACE:-dev}
+  #         cd secrets 
+  #         gsutil cp gs://pi-ostelco-dev-svc-acct-keys/prime-sa-key.json ${PRIME_KEY}
+  #         gsutil cp gs://pi-ostelco-dev-svc-acct-keys/dns-sa-key.json ${DNS_KEY}
+  #         terraform init 
+
+
+  #         terraform apply --auto-approve \
+  #         -var cluster_endpoint=$(cat ~/repo/endpoint.txt) \
+  #         -var cluster_admin_password=$DEV_CLUSTER_PASSWORD \
+  #         -var keys_dir=~/repo/keys \
+  #         -var jumio_api_secret=${JUMIO_API_SECRET}  \
+  #         -var jumio_api_token=${JUMIO_API_TOKEN}  \
+  #         -var stripe_api_key=${STRIPE_API_KEY}  \
+  #         -var stripe_api_secret=${STRIPE_API_SECRET}  \
+  #         -var slack_webhook_uri=${SLACK_WEBHOOK_URI}  \
+  #         -var scaninfo_bucket_name=${SCANINFO_BUCKET_NAME}  \
+  #         -var scaninfo_master_key_uri=${SCANINFO_MASTER_KEY_URI}  \
+  #         -var prime-sa-key-path=${PRIME_KEY} \
+  #         -var dns-sa-key-path=${DNS_KEY} \
+  #         -var namespace=${NAMESPACE}  
+
+  create-cluster-prereqs:
+    docker:
+      - image: praqma/gcloud-kubectl-helm:v2.11.0
+        environment:
+          PROJECT: pi-ostelco-dev
+          CLUSTER: pi-dev
+          ZONE: europe-west1
+          SERVICE_ACCOUNT: terraform-dev-cluster@pi-ostelco-dev.iam.gserviceaccount.com
+    steps:
+      - checkout
+
+      - run:
+          name: create dev cluster prerequisites 
+          command: |
+            export GOOGLE_CREDENTIALS=${PI_DEV_GOOGLE_CREDENTIALS}
+            /authenticate.bash
+            # create SSD storage class
+            kubectl apply -f .circleci/storage_class.yaml
+            # cert-manager CRDs and namespace labels
+            CERT_MANAGER_VERSION=0.8
+            kubectl apply -f https://raw.githubusercontent.com/jetstack/cert-manager/release-${CERT_MANAGER_VERSION}/deploy/manifests/00-crds.yaml
+            CERT_MANAGER_NAMESPACE=kube-system
+            kubectl label namespace ${CERT_MANAGER_NAMESPACE} certmanager.k8s.io/disable-validation="true" --overwrite
+
+  deploy-dev-utilities: 
+    docker:
+    - image: praqma/helmsman:v1.8.1-helm-v2.11.0
+
+    working_directory: ~/repo
+
+    steps:
+    - checkout
+    - attach_workspace:
+          # Must be absolute path or relative path from working_directory
+          at: ~/repo  
+    - run:
+        name: deploying utilities/dependencies to dev cluster with Helmsman
+        command: | 
+          echo $PI_DEV_GOOGLE_CREDENTIALS > /tmp/credentials.json
+          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/credentials.json
+          export PI_DEV_K8S_ENDPOINT=https://$(cat endpoint.txt) 
+          export AMBASSADOR_STATIC_IP=$(cat static_ip.txt)    
+          helmsman --apply --keep-untracked-releases --suppress-diff-secrets -f .circleci/helmsman-dev-utilities.toml
+
+  
+workflows:
+  version: 2
+  clusters-plan-approve-and-deploy:
+    jobs:
+    - terraform-dev-plan:
+        filters:
+          branches:
+            only:
+            - master
+
+    - hold-before-updating-dev-cluster:
+        type: approval
+        requires:
+        - terraform-dev-plan
+
+    - terraform-dev-apply:
+        requires:
+        - hold-before-updating-dev-cluster
+    
+    # - populate-k8s-secrets:
+    #     requires:
+    #     - terraform-dev-apply      
+    - create-cluster-prereqs:
+        requires:
+        - terraform-dev-apply
+    - deploy-dev-utilities:
+        requires:
+        - create-cluster-prereqs     
