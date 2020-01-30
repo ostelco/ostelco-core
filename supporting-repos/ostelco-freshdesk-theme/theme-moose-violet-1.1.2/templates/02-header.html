@@ -1,0 +1,78 @@
+{% assign freshservice_enabled = false %}
+{% assign topbar_image = true %}
+
+<header class="topbar container {% if portal.current_page == 'portal_home' %}topbar--large{% if topbar_image %} topbar--with-image{% endif %}{% else %}topbar--small{% endif %}" data-topbar>
+  <div class="container-inner topbar__container-inner">
+    <div class="topbar__inner">
+      <div class="topbar__col clearfix">
+        <div class="logo-wrapper">
+          <div class="logo">
+            <a href="{% if freshservice_enabled %}/support/home{% else %}{{ portal.linkback_url }}{% endif %}">
+              <img src="{{ portal.logo_url }}" alt="">
+            </a>
+          </div>
+        </div>
+        <p class="help-center-name">{{ portal.name | h }}</p>
+        <button type="button" role="button" aria-label="Toggle Navigation" class="lines-button x" data-toggle-menu> <span class="lines"></span> </button>
+      </div>
+      <div class="topbar__col topbar__menu">
+        <div class="topbar__collapse" data-menu>
+          <div class="topbar__controls {% if portal.user.id %}topbar__controls--logged-in{% else %}topbar__controls--anonymous{% endif %}">
+            <div class="topbar__search">
+              {% snippet search_form %}
+              <button type="button" role="button" class="topbar__btn-search">
+                <svg xmlns="http://www.w3.org/2000/svg" width="23" height="24" viewBox="0 0 23 24">
+                  <g fill="none" fill-rule="evenodd" transform="translate(-6 -2)">
+                    <circle cx="19.889" cy="11.611" r="8" stroke="#fff" stroke-width="2" transform="rotate(45 19.89 11.61)"/>
+                    <path fill="#fff" fill-rule="nonzero" d="M9.34328327,15.6566781 L11.3432833,15.6566781 L11.3432833,25.6606781 C11.3432833,26.2106781 10.8992833,26.6566781 10.3432833,26.6566781 C9.79128327,26.6566781 9.34328327,26.2116781 9.34328327,25.6606781 L9.34328327,15.6566781 Z" transform="rotate(45 10.343 21.157)"/>
+                  </g>
+                </svg>
+              </button>
+            </div>
+            {% unless portal.user.is_agent %}
+              <a class="btn btn-topbar" href="{{portal.new_ticket_url}}">Submit a ticket</a>
+              <a class="btn btn-topbar" href="/support/tickets">My Tickets</a>
+            {% endunless %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search and page links for the page -->
+  {% if portal.current_tab %}
+    {% if portal.current_page == 'portal_home' %}
+      <div class="hero-unit" data-hero-unit>
+        <div class="container-inner search-box search-box--hero-unit" data-search-box>
+          <div class="intro-title">{% translate header.help_center %}</div>
+          {% snippet search_form %}
+        </div>
+      </div>
+
+      <div class="waves waves--large" data-wave-large>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1900 363" width="1900">
+          <defs>
+            <linearGradient id="a" x1="50%" x2="50%" y1="-10.882%" y2="91.608%">
+              <stop stop-color="#FCFCFD" offset="0%"/>
+              <stop stop-color="#FFFFFF" offset="100%"/>
+            </linearGradient>
+          </defs>
+          <g class="waves__wave" fill="none" fill-rule="evenodd" transform="translate(-435)">
+            <path class="waves__wave-left waves__wave-bottom" d="M300.982393,242.183587 C487.436581,204.5 522.207413,191.5 710.187223,191.5 C850.77646,191.5 988.117031,227.133959 1166.84036,251.758178 C1821.8349,342.002293 1969,310.462964 1969,310.462964 L1969,318 L300.543788,318 C300.543788,318 114.528206,279.867175 300.982393,242.183587 Z"/>
+            <path class="waves__wave-right waves__wave-bottom"  d="M1048.83841,287.322967 C1048.83841,287.322967 1215.84125,232.793319 1456.64436,246.088521 C1547.00702,251.077618 1578.05082,261.67316 1715.69867,281.380298 C2042.85789,328.219912 2333.50021,321.967995 2333.50021,321.967995 L2333.50021,348 L1048.50061,348 L1048.83841,287.322967 Z" transform="matrix(-1 0 0 1 3382 0)"/>
+            <path class="waves__wave-left waves__wave-top" d="M43.2265129,102.183587 C212.151144,64.5 243.652983,51.5 413.959805,51.5 C541.331495,51.5 719.028083,79.5365681 827.680536,111.758178 C1374.76592,274 1771,350.462964 1771,350.462964 L1771,358 L259.404292,358 C259.404292,358 -125.698118,139.867174 43.2265129,102.183587 Z"/>
+            <path class="waves__wave-right waves__wave-top" d="M658.838412,187.322967 C658.838412,187.322967 847.473396,125.508991 1066.64436,146.088521 C1285.81532,166.668052 1530.29862,234.112569 1651.04919,256.404656 C1973.32429,315.900732 2333.50021,371.967995 2333.50021,371.967995 L2333.50021,398 L658.50061,408 L658.838412,187.322967 Z" transform="matrix(-1 0 0 1 2992 0)"/>
+            <path fill-rule="nonzero" d="M0,31 C0,31 136.772295,-7.846544 390.5,2.5 C644.22771,12.846544 809,26.5 1171,62.5 C1533,98.5 1900,31 1900,31 L1900,625 L0,625 L0,31 Z" transform="translate(435 253)"/>
+          </g>
+        </svg>
+      </div>
+    {% endif %}
+  {% endif %}
+
+  <script>
+    jQuery(".hc-search-input input").attr("placeholder","");
+  </script>
+
+</header>
+
+

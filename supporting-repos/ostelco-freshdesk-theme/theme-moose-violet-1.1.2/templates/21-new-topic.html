@@ -1,0 +1,20 @@
+<div class="container">
+	<div class="container-inner">
+		<div class="new-topic-page">
+		  <div class="row clearfix">
+		    <div class="column column--sm-8 column--sm-offset-2">
+		      <h1 class="new-topic-title">
+		        {% if topic.id %}
+		          {% translate topic.edit %}
+		        {% else %}
+		          {% translate topic.new %}
+		        {% endif %}
+		      </h1>
+		      <div class="new-topic-form">
+		        {% snippet new_topic_form %}
+		      </div>
+		    </div>
+		  </div>
+		</div>
+	</div>
+</div>

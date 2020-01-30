@@ -1,0 +1,126 @@
+{% assign category_list_enabled = true %}
+{% assign category_tree_enabled = false %}
+{% assign recent_articles_enabled = true %}
+
+<div class="container" data-home-page>
+  <div class="container-inner">
+
+    <!-- PORTAL SOLUTIONS -->
+    {% if portal.has_solutions %}
+
+      <!-- RECENT ARTICLES -->
+      {% if recent_articles_and_posts_enabled %}
+        <div class="row recent-articles-and-posts-columns clearfix" id="recent-articles-and-posts-columns">
+
+          {% if portal.has_solutions %}
+            {% if portal.recent_articles.size > 0 %}
+              <div class="column column--sm-{% if portal.recent_popular_topics.size > 0 %}6{%else%}12{% endif %} recent-articles-and-posts">
+                <h3 class="recent-articles-and-posts__title">Recent articles</h3>
+                <ul class="row clearfix recent-articles-and-posts__list">
+                  {% for article in portal.recent_articles limit:5 %}
+                    <li class="column column--sm-{% if portal.recent_popular_topics.size > 0 %}12{%else%}4{% endif %}  recent-articles-and-posts-item">
+                      <a class="recent-articles-and-posts-item__title" href="{{article.url}}">{{article.title | h}}</a>
+                      {% if article.body_plain != blank %}
+                        <p class="recent-articles-and-posts-item__excerpt meta">
+                          {{ article.body_plain | h || truncate:80 }}
+                        </p>
+                      {% endif %}
+                    </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
+          {% endif %}
+
+          {% if portal.has_forums %}
+            {% if portal.recent_popular_topics.size > 0 %}
+              <div class="column column--sm-{% if portal.recent_articles.size > 0 %}6{%else%}12{% endif %} recent-articles-and-posts">
+                <h3 class="recent-articles-and-posts__title">Popular posts</h3>
+                <ul class="row clearfix recent-articles-and-posts__list">
+                  {% for topic in portal.recent_popular_topics limit:5 %}
+                    <li class="column column--sm-{% if portal.recent_articles.size > 0 %}12{%else%}4{% endif %}  recent-articles-and-posts-item">
+                      <a class="recent-articles-and-posts-item__title" href="{{topic.url}}">{{topic.title | h}}</a>
+                      {% if topic.body_plain != blank %}
+                        <p class="recent-articles-and-posts-item__excerpt meta">
+                          {{ topic.body_plain | h || truncate:80 }}
+                        </p>
+                      {% endif %}
+                    </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
+          {% endif %}
+
+        </div>
+      {% endif %}
+      <!-- / RECENT ARTICLES -->
+
+      <!-- CATEGORY LIST -->
+      {% if category_list_enabled %}
+        <div class="knowledge-base" id="category-list">
+          <h2 class="category-list-title">Knowledge base</h2>
+          <ul class="row category-list">
+            {% for category in portal.solution_categories %}
+              {% if category.folders_count > 0 %}
+                <li class="column column column--sm-6 column--md-3 category-list-item">
+                  <a class="category-list-item__link" href="{{category.url}}">
+                    <h2 class="h5 category-list-item__title">{{category.name}}</h2>
+                    <p class="meta">{{category.description}}</p>
+                  </a>
+                </li>
+              {% endif %}
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+      <!-- / CATEGORY LIST -->
+
+    {% endif %}
+    <!-- / PORTAL SOLUTIONS -->
+
+  </div>
+</div>
+
+<!-- CATEGORY TREEE -->
+{% if category_tree_enabled %}
+  <div class="category-tree" id="category-tree">
+    {% for category in portal.solution_categories %}
+      {% if category.folders_count > 0 %}
+        <section class="category-tree-item">
+          <div class="container">
+            <div class="container-inner">
+              <h2 class="category-tree-item__title">
+                <a class="category-tree-item__title-link" href="{{category.url}}">{{category.name}}</a>
+              </h2>
+              <div class="category-tree-item__folders row clearfix">
+                {% for folder in category.folders %}
+                  {% if folder.articles_count > 0 %}
+                    <section class="column column--sm-6 column--md-4 folder">
+                      <h3 class="folder__title">
+                        <a class="folder__title-link" href="{{folder.url}}">{{folder.name}}</a>
+                      </h3>
+                      <ul class="articles">
+                        {% for article in folder.articles | limit: 5 %}
+                          <li class="articles__item">
+                            <a class="articles__link" href="{{ article.url }}">{{ article.title | h }}</a>
+                          </li>
+                        {% endfor %}
+                      </ul>
+                      {% if folder.articles.size > 5 %}
+                        <a href="{{ folder.url }}" class="btn btn--default see-all-articles">View all ({{folder.articles_count}})</a>
+                      {% endif %}
+                    </section>
+                  {% endif %}
+                {% else %}
+                  {{ portal | filler_for_solutions }}
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </section>
+      {% endif %}
+    {% endfor %}
+  </div>
+{% endif %}
+<!-- / CATEGORY TREE -->

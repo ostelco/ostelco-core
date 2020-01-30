@@ -1,0 +1,81 @@
+<div class="container">
+  <div class="container-inner">
+    {% assign first_post = comments.last %}
+    <div class="article-page">
+      <div class="row clearfix">
+        <div class="column column--sm-8">
+          <ol class="breadcrumbs">
+            <li>
+              <a href="/support/home">{{ portal.name }}</a>
+            </li>
+            <li title="{% translate portal.announcements %}">
+              <a href="{{portal.show_announcements_url}}">{% translate portal.announcements %}</a>
+            </li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="row clearfix">
+        <div class="column column--sm-8">
+          <article class="article clearfix" itemscope itemtype="http://schema.org/Article">
+            <header class="article-header">
+              <h1 class="article__title" itemprop="name">
+                {{ announcement.title | h }}
+              </h1>
+
+              <div class="article-meta">
+                <div class="article-meta__col article-meta__col--main">
+                  <div class="entry-info">
+                    <div class="entry-info__content">
+                      <b class="author">
+                        {{ first_post.user.name | h}}
+                      </b>
+                      <div class="meta">{{ announcement.planned_start_date | time_ago }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </header>
+
+            <div class="article__body markdown" itemprop="articleBody">
+              {{ first_post.body_html }}
+            </div>
+          </article>
+
+          <section class="comments" id="comments" itemscope itemtype="http://schema.org/UserComments">
+            <ul class="comments__list">
+              {% for post in comments %}
+                {% if post.id != first_post.id %}
+                  <li class="comment" id="post-{{post.id}}">
+                    <div class="comment__inner">
+                      <div class="comment__content">
+                        <div class="entry-info comment__header">
+                          <div class="entry-info__avatar">
+                            <div class="avatar">
+                              {{ post.user | profile_image: '40px', '40px' }}
+                            </div>
+                          </div>
+                          <div class="entry-info__content">
+                            <b class="author">
+                              {{ post.user.name | h}}
+                            </b>
+                            <div class="meta">
+                              {% translate portal.said %} {{ post.created_on | time_ago }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="comment__body markdown">
+                          {{ post.body_html }}
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                {% endif %}
+              {% endfor %}
+            </ul>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

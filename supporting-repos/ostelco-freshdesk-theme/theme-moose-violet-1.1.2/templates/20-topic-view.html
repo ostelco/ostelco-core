@@ -1,0 +1,145 @@
+<div class="container">
+	<div class="container-inner">
+		{% assign forum = topic.forum %}
+		{% assign forum_category = forum.forum_category %}
+		{% assign first_post = topic.first_post %}
+
+		<div class="topic-page">
+		  <ol class="breadcrumbs">
+		    <li title="{% translate portal_pages.groups.discussions %}">
+		      <a href="{{ portal.discussions_home_url }}">{% translate portal_pages.groups.discussions %}</a>
+		    </li>
+		    <li>
+		      <a href="{{ forum_category.url }}">{{ forum_category.name | h }}</a>
+		    </li>
+		    <li>
+		      <a href="{{ forum.url }}">{{ forum.name | h}}</a>
+		    </li>
+		  </ol>
+
+		  <div class="row clearfix">
+		    <div class="column column--sm-8">
+		      <article class="topic">
+		        <div class="topic__body">
+		          {{ topic | topic_labels }} {% if portal.user %}
+		          <div class="toolbar-actions btn-group" id="topic-toolbar">
+		            {{ topic | follow_topic_button }}
+		            {{ topic | link_to_topic_edit }}
+		            {{ topic | link_to_mark_as_solved }}
+		          </div>
+		          {% endif %}
+
+		          <h1 class="topic__title">{{ topic.title | h}}</h1>
+
+		          <div class="entry-info topic__meta">
+		            <div class="entry-info__avatar">
+		              <div class="avatar">
+		                {{ first_post.user | profile_image:'user-pointer-bottom', '40px', '40px', 'thumb' }}
+		              </div>
+		            </div>
+		            <div class="entry-info__content">
+		              <b class="author">
+		                {{ first_post.user.name | h}}
+		              </b>
+		              <div class="meta">{% translate portal.topic.started %} {{ first_post.created_on | time_ago }}</div>
+		            </div>
+		          </div>
+
+		          <div class="topic__text markdown">
+		            {{ first_post.body_html }}
+		          </div>
+
+		          <div class="topic__attachments">
+		            {{ first_post | post_attachments }}
+		          </div>
+
+		          <div class="topic__voting">
+		            {% snippet topic_vote %}
+		          </div>
+		        </div>
+		      </article>
+
+		      <section class="comments" id="comments" itemscope itemtype="http://schema.org/UserComments">
+		        {% paginate topic.posts by 15 %}
+		        <ul class="comments__list">
+		          {% for post in paginate.collection %}
+		            {% if post.id != first_post.id %}
+		              <li class="comment" id="post-{{post.id}}">
+		                <div class="comment__inner">
+		                  <div class="comment__content">
+		                    <div class="entry-info comment__header">
+		                      <div class="entry-info__avatar">
+		                        <div class="avatar">
+		                          {{ post.user | profile_image:'user-pointer-bottom', '40px', '40px' }}
+		                        </div>
+		                      </div>
+		                      <div class="entry-info__content">
+		                        <b class="author">
+		                                {{ post.user.name | h}}
+		                              </b>
+		                        <div class="meta">
+		                          {% translate portal.said %} {{ post.created_on | time_ago }}
+		                        </div>
+		                      </div>
+		                    </div>
+		                    <div class="comment__body markdown">
+		                      {{ post.body_html }}
+                        </div>
+                        <div class="comment__attachments">
+                          {{ post | post_attachments }}
+                        </div>
+		                    <div class="comment__voting">
+		                      {{ post | post_vote_button }}
+		                    </div>
+		                  </div>
+		                </div>
+		              </li>
+		            {% endif %}
+		          {% endfor %}
+		        </ul>
+		          {{ paginate | default_pagination }}
+		        {% endpaginate %}
+		        {% if topic.locked? %}
+		        {% elsif portal.user %}
+		          <div class="comment-form">
+		            <div class="comment-form__avatar">
+		              {{ portal.user | profile_image:'user-pointer-bottom', '40px', '40px' }}
+		            </div>
+		            <div class="comment-form__body">
+		              {% snippet topic_reply %}
+		            </div>
+		          </div>
+		        {% else %}
+		          {{ portal | post_topic_in_portal }}
+		        {% endif %}
+		      </section>
+		    </div>
+		    <div class="column column--sm-4">
+		      {% if forum.topics_count > 1 %}
+		        <div class="related-topics">
+		          <h5 class="related-topics__title">Topics in this forum</h5>
+		          <ul class="related-topics__list">
+		            {% for topic in forum.topics | limit:5 %}
+		            <li class="related-topics__item">
+		              <a href="related-topics__link">{{topic.title | h}}</a>
+		            </li>
+		            {% endfor %}
+		          </ul>
+		          {% if forum.topics_count > 5 %}
+                <a href="{{ forum.url }}" class="btn btn-default">
+                  View all ({{forum.topics_count}})
+                </a>
+		          {% endif %}
+		        </div>
+		      {% endif %}
+		      {% if forum.type_name != 'announcement' %}
+		        <div class="topic-callout">
+		          <h3 class="topic-callout__title">Didn't find what you were looking for?</h3>
+		          <p class="topic-buttons">{{ portal | link_to_start_topic }}</p>
+		        </div>
+		      {% endif %}
+		    </div>
+		  </div>
+		</div>
+	</div>
+</div>

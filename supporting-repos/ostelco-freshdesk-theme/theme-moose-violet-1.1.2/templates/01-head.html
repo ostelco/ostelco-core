@@ -1,0 +1,22 @@
+{% assign freshservice_enabled = false %}
+
+<!-- Title for the page -->
+<title> {{ meta.title }} : {{ portal.name }} </title>
+
+<!-- Meta information -->
+{{ meta | default_meta }}
+
+<!-- Responsive setting -->
+{{ portal | default_responsive_settings }}
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
+<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+<link rel="stylesheet" href="//cdn.jsdelivr.net/highlight.js/9.10.0/styles/github.min.css" />
+<link rel="stylesheet" href="//cdn.jsdelivr.net/jquery.magnific-popup/1.0.0/magnific-popup.css" />
+
+{% if freshservice_enabled %}
+<!-- Stop search engine crawling -->
+<META NAME="ROBOTS" CONTENT="NOINDEX">
+<META NAME="ROBOTS" CONTENT="NOFOLLOW">
+{% endif %}

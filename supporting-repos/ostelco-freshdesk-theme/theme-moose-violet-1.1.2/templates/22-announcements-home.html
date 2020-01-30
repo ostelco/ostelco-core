@@ -1,0 +1,22 @@
+<div class="container">
+  <div class="container-inner">
+    <div class="announcements-page">
+      <div id="announcements-page">
+        <h1 class="h2">
+          {% translate portal.announcements %}
+        </h1>
+          {% paginate portal.itil_announcements by 10 %}
+            <ul class="articles announcements-list">
+              {% for topic in paginate.collection %}
+                <li class="articles__item announcements-list-item">
+                  <a class="articles__link"  title="{{topic.title | h}}" href="{{ topic.url }}">{{ topic.title | h }}</a>
+                  <p class="meta">{{ topic | topic_brief }}</p>
+                </li>
+              {% endfor %}
+            </ul>
+            {{ paginate | default_pagination }}
+          {% endpaginate %}
+      </div>
+    </div>
+  </div>
+</div>

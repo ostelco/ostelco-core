@@ -1,0 +1,46 @@
+<div class="container">
+  <div class="container-inner">
+    <div class="folder-page">
+      <div class="row clearfix">
+        <div class="column column--sm-12">
+          <ol class="breadcrumbs">
+            <li>
+              <a href="/support/home">{{ portal.name }}</a>
+            </li>
+            <li title="{% translate portal.solutions_home %}">
+              <a href="{{ portal.solutions_home_url }}">{% translate portal.solutions_home %}</a>
+            </li>
+            <li title="{{ folder.category.name | h}}">
+              <a href="{{ folder.category.url }}">{{ folder.category.name | h}}</a>
+            </li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="header">
+        <h1 class="h2 folder-title">
+          {{ folder.name | h }}
+        </h1>
+
+        {% if folder.description %}
+          <p class="page-description">{{ folder.description | h }}</p>
+        {% endif %}
+      </div>
+
+      {% if folder.articles_count > 0 %}
+        {% paginate folder.articles by 10 %}
+          <ul class="articles articles--with-columns">
+            {% for article in paginate.collection %}
+              <li class="articles__item">
+                <a class="articles__link" href="{{ article.url }}">{{ article.title | h }}</a>
+              </li>
+            {% endfor %}
+          </ul>
+          {{ paginate | default_pagination }}
+        {% endpaginate %}
+      {% else %}
+        {{ folder | h | filler_for_folders }}
+      {% endif %}
+    </div>
+  </div>
+</div>

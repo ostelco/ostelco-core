@@ -1,0 +1,76 @@
+<div class="container">
+  <div class="container-inner">
+    <div class="forum-page" id="forum-{{ forum.id }}">
+      <ol class="breadcrumbs">
+        <li title="{% translate portal_pages.groups.discussions %}">
+          <a href="{{ portal.discussions_home_url }}">{% translate portal_pages.groups.discussions %}</a>
+        </li>
+        <li>
+          <a href="{{ forum.forum_category.url }}">{{ forum.forum_category.name | h }}</a>
+        </li>
+
+      </ol>
+
+      <h1 class="forum-title">{{ forum.name| h }}</h1>
+
+      {% if forum.description.size > 0 %}
+        <p class="forum-desc">
+          {{ forum.description | h }}
+        </p>
+      {% endif %}
+
+      <p class="forum-buttons">
+        {% if forum.type_name != 'announcement' %}
+          {{ portal | link_to_start_topic }}
+        {% endif %}
+        {{ forum | follow_forum_button }}
+      </p>
+
+      <div class="forum-filters">
+        {{ forum | default_topic_filters }}
+      </div>
+
+      {% paginate forum.topics by 10 %}
+        <ul class="forum-topics">
+          <li class="forum-topics__item forum-topics__item--header meta hidden-xs">
+            <span class="forum-topics__link"></span>
+            <span class="forum-topics__labels forum-topics__head">Status</span>
+            <span class="forum-topics__author forum-topics__head">Author</span>
+            <span class="forum-topics__comments forum-topics__head">Comments</span>
+            <span class="forum-topics__date forum-topics__head">Created On</span>
+          </li>
+          {% for topic in paginate.collection %}
+            <li class="forum-topics__item {% if topic.sticky? %} forum-topics__item--sticky {% endif %}">
+      <a class="forum-topics__link" title="{{topic.title | h}}" href="{{topic.url}}">
+        {% if topic.sticky? %}
+          <i class="fa fa-thumb-tack forum-topics__pin" aria-hidden="true"></i>
+        {% endif %}
+        {{topic.title | h}}
+      </a>
+
+      <div class="forum-topics__labels">
+        {{ topic | topic_labels }}
+      </div>
+
+      <div class="forum-topics__author">
+        {{ topic.user | profile_image }}
+      </div>
+
+      <div class="forum-topics__comments">
+        <i class="fa fa-comment-o forum-topics__comments-icon" aria-hidden="true"></i> {{topic.comment_count}}
+      </div>
+
+      <div class="forum-topics__date">
+        <span class="meta">{{topic.created_on | short_day_with_time}}</span>
+      </div>
+    </li>
+
+          {% else %}
+            <p>{% translate portal.no_topics_in_this_view %}</p>
+          {% endfor %}
+        </ul>
+        {{ paginate | default_pagination }}
+      {% endpaginate %}
+    </div>
+  </div>
+</div>

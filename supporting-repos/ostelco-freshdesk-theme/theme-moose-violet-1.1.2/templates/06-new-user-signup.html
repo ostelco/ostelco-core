@@ -1,0 +1,22 @@
+{% assign freshservice_enabled = false %}
+
+<div class="container">
+  <div class="container-inner">
+    <div class="signup-page" id="login-page-wrapper">
+      <div class="row clearfix">
+        <div class="column column--sm-8 column--sm-offset-2">
+          <h1 class="signup-page__title">
+            {% if freshservice_enabled %}
+              {% translate portal.signup_form.title %} {{ portal.name }}
+              {% translate portal.signup_form.account %}
+            {% else %}
+              {% translate portal.user_signup_portal %} {{ portal.name }}
+              {% translate portal.account %}
+            {% endif %}
+          </h1>
+          {% snippet signup_form %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

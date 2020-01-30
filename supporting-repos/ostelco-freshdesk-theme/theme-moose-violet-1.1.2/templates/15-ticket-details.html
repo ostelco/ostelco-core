@@ -1,0 +1,126 @@
+<div class="container">
+	<div class="container-inner">
+		<div class="ticket-page ticket">
+	    <ol class="breadcrumbs">
+	      <li title="{% translate portal.solutions_home %}">
+	        <a href="{{ portal.home_url }}">{% translate header.tabs.home %}</a>
+	      </li>
+	      <li title="{% translate portal.tickets.ticket_list %}">
+	        <a href="{{ portal.tickets_home_url }}">{% translate portal.tickets.ticket_list %}</a>
+	      </li>
+	    </ol>
+
+	    <div class="row clearfix">
+	      <div class="column column--sm-8">
+	        <section class="ticket-column"> 
+	          {% if portal.user %}
+	            <div class="toolbar-actions" id="ticket-toolbar">
+	              {% unless ticket.closed? %}
+	                <a href="#reply-to-ticket"
+	                  class="btn btn-primary"
+	                  data-proxy-for="#add-note-form"
+	                  title="{% translate reply %}"
+	                  data-toggle="tooltip">
+	                  <i class="fa fa-reply" aria-hidden="true"></i>
+	                </a>
+	                <a href="{{ ticket.close_ticket_url }}"
+	                  data-method="post"
+	                  class="btn btn-primary"
+	                  data-toggle="tooltip"
+	                  title="{% translate portal.tickets.mark_closed %}">
+	                    <i class="fa fa-check-circle" aria-hidden="true"></i>
+	                </a>
+	                <a href="#add-people" 
+	                  rel="freshdialog" 
+	                  data-width="400" 
+	                  class="btn btn-primary"
+	                  data-submit-label="{% translate portal.tickets.add_people %}"
+	                  data-toggle="tooltip"
+	                  data-close-label="{% translate close %}"
+	                  title="{% translate portal.tickets.add_people %}">
+	                    <i class="fa fa-user-plus" aria-hidden="true"></i>
+	                </a>
+	              {% endunless %}
+	            </div>
+	          {% endif %}
+	          
+	          <p class="ticket__id">#{{ ticket.id }}</p>
+
+	          <h1 class="ticket__subject">{{ ticket.subject | h}}</h1>
+
+	          <div class="ticket__desc">
+	            {{ ticket.description_html }}
+	            {{ ticket | freshfone_audio_dom }}
+	          </div>
+
+
+	          <div class="ticket__attachments">
+	            {{ ticket | ticket_attachemnts }}
+	          </div>
+
+	          <div id="ticket-comments" class="comments" itemscope itemtype="http://schema.org/UserComments">
+	            <ul class="comments__list">
+	              {% for comment in ticket.public_comments %}
+	                <li class="comment" id="{{ comment.id }}">
+	                  <div class="comment__inner">
+	                    <div class="comment__content">
+	                      <div class="entry-info comment__header">
+	                        <div class="entry-info__avatar">
+	                          <div class="avatar">
+	                            {{ comment.user | profile_image:'user-avatar user-avatar--default', '40px', '40px' }}
+	                          </div>
+	                        </div>
+	                        <div class="entry-info__content">
+	                          <b class="author">
+	                            {{ comment.user.name | h }}
+	                          </b>
+	                          <div class="meta">
+	                            {% translate portal.said %} {{ comment.created_on | time_ago }}
+	                          </div>
+	                        </div>
+	                      </div>
+	                      
+	                      <div class="comment__body">
+	                        {{ comment | custom_survey_data}}
+	                        {{ comment.description }}
+	                        {{ comment | freshfone_audio_dom }}
+	                      </div>
+
+	                      {{ comment | comment_attachments }}
+	                    </div>
+	                  </div>
+	                </li>
+	              {% endfor %}
+	            </ul>
+	          </div>
+
+	          {% if ticket.closed? %}
+	            {{ ticket | status_alert }}
+	          {% endif %}
+
+	          <div class="comment-form">
+	            <div class="comment-form__avatar">
+	              <div class="avatar avatar--comment">
+	                {{ portal.user | profile_image:'user-avatar user-avatar--default', '40px', '40px' }}
+	              </div>
+	            </div>
+	            <div class="comment-form__body">
+	              {% snippet ticket_reply %}
+	            </div>
+	          </div>
+	        </section>
+	      </div>
+
+	      <div class="column column--sm-4">
+	        <div class="ticket__sidebar">
+	          {% assign agent = ticket.agent %}
+	          <div class="ticket__survey">{% snippet ticket_survey %}</div>
+	          <div class="ticket__details">{% snippet ticket_details %}</div> 
+	        </div>
+	      </div>
+	    </div>
+	</div>
+
+	{% snippet ticket_add_people %}
+	</div>
+</div>

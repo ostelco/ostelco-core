@@ -1,0 +1,147 @@
+{% assign freshservice_enabled = false %}
+
+<!-- Notification Messages -->
+{{ page_message }}
+<div class="layout {% if portal.user.id %}layout--logged-in{% else %}layout--anonymous{% endif %}">
+  <div class="layout__head">
+  	{{ header }}
+
+		<div class="waves waves--small {% if portal.current_tab %}{% if portal.current_page == 'portal_home' %}is-hidden{% endif %}{% endif %}" data-wave-small>
+		  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1900 47" xmlns:xlink="http://www.w3.org/1999/xlink">
+		    <g fill="none" fill-rule="evenodd">
+		      <path fill-rule="nonzero" d="M403.925926,32 C583.088889,32 1900,0 1900,0 L0,0 C0,0 163.540741,32 403.925926,32 Z" transform="translate(-250)" />
+		      <path fill-opacity="0.2" fill-rule="nonzero" d="M1342.66667,76 C1552.37037,76 1900,0.2 1900,0.2 L0,0.2 C0,0.2 896.518519,76 1342.66667,76 Z" transform="translate(0 -29)"  />
+		      <path fill-opacity="0.2" fill-rule="nonzero" d="M1342.66667,76 C1552.37037,76 1900,0.2 1900,0.2 L0,0.2 C0,0.2 896.518519,76 1342.66667,76 Z" transform="translate(617 -29)"  />
+		    </g>
+		  </svg>
+		</div>
+
+  </div>
+  <div class="layout__content">
+    {% unless freshservice_enabled %}
+      {% if portal.current_page == 'profile_edit' %}<div id="profile-edit">{% endif %}
+    {% else %}
+      {% if portal.current_page == 'profile_edit' %}
+        <div class="container">
+          <div class="container-inner">
+      {% endif %}
+    {% endunless %}
+    
+    {{ content_for_layout }}
+
+    {% unless freshservice_enabled %}
+      {% if portal.current_page == 'profile_edit' %}</div>{% endif %}
+    {% else %}
+      {% if portal.current_page == 'profile_edit' %}
+          </div>
+        </div>
+      {% endif %}
+    {% endunless %}
+  </div>
+  
+  <div class="layout__footer">
+		{{ footer }}
+  </div>
+</div>
+
+<script src="//cdn.jsdelivr.net/jquery.magnific-popup/1.0.0/jquery.magnific-popup.min.js"></script>
+<script src="//cdn.jsdelivr.net/highlight.js/9.10.0/highlight.min.js"></script>
+
+<script>
+	(function($) {
+		hljs.initHighlightingOnLoad();
+
+		var BT_SETTINGS = {
+		  css: {
+		    activeClass: "is-active",
+		    hiddenClass: "is-hidden",
+		    visibleClass: "is-visible"
+		  }
+		};
+
+		var Utils = {
+		  isHomepage: function() {
+		    return $("[data-home-page]").length > 0;
+		  }
+		};
+
+	  var $topbar = $("[data-topbar]");
+	  var $heroUnit = $("[data-hero-unit]");
+	  var $topSearchBar = $(".topbar__search .hc-search-form");
+	  var $topSearchBarQuery = $topSearchBar.find("input.special");
+	  var $topSearchBarBtn = $(".topbar__btn-search");
+
+	  $topbar.removeClass(BT_SETTINGS.css.hiddenClass);
+
+	  $("[data-toggle-menu]").click(function() {
+	    $(this).toggleClass(BT_SETTINGS.css.activeClass);
+	    $("[data-menu]").toggle();
+	  });
+
+	  $(".image-with-lightbox").magnificPopup({
+	    type: "image",
+	    closeOnContentClick: true,
+	    closeBtnInside: false,
+	    fixedContentPos: true,
+	    mainClass: "mfp-with-zoom", // class to remove default margin from left and right side
+	    image: {
+	      verticalFit: true
+	    },
+	    zoom: {
+	      enabled: true,
+	      duration: 300 // don't foget to change the duration also in CSS
+	    }
+	  });
+
+	  $(".image-with-video-icon").magnificPopup({
+	    disableOn: 700,
+	    type: "iframe",
+	    mainClass: "mfp-fade",
+	    removalDelay: 160,
+	    preloader: false,
+	    fixedContentPos: false
+	  });
+
+	  $(".accordion__item-title").on("click", function() {
+	    var $title = $(this);
+	    $title.toggleClass("accordion__item-title--active");
+	    $title
+	      .parents(".accordion__item")
+	      .find(".accordion__item-content")
+	      .slideToggle();
+	  });
+
+	  $(".tabs-link").click(function(e) {
+	    e.preventDefault();
+	    var $link = $(this);
+	    var tabIndex = $link.index();
+	    var $tab = $link.parents(".tabs").find(".tab").eq(tabIndex);
+	    $link
+	      .addClass(BT_SETTINGS.css.activeClass)
+	      .siblings()
+	      .removeClass(BT_SETTINGS.css.activeClass);
+	    $tab
+	      .removeClass(BT_SETTINGS.css.hiddenClass)
+	      .siblings(".tab")
+	      .addClass(BT_SETTINGS.css.hiddenClass);
+	  });
+
+	  $topSearchBarBtn.click(function() {
+	    $(this).addClass(BT_SETTINGS.css.hiddenClass);
+	    $topSearchBar.addClass(BT_SETTINGS.css.visibleClass);
+	    $topSearchBarQuery.focus();
+	  });
+
+	  $(document).mouseup(function(e) {
+	    if (!$topSearchBarQuery.is(e.target)) {
+	      $topSearchBar.removeClass(BT_SETTINGS.css.visibleClass);
+	      $topSearchBarBtn.removeClass(BT_SETTINGS.css.hiddenClass);
+	    }
+	  });
+
+	  // Fix animated icons
+	  $(".fa-spin").empty();
+
+	  $('.topbar__search input.special').attr('placeholder', 'Search');
+	})(jQuery);
+</script>

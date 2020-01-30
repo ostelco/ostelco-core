@@ -1,0 +1,198 @@
+{% assign custom_blocks_enabled = false %}
+{% assign category_list_enabled = true %}
+{% assign category_tree_enabled = false %}
+{% assign recent_articles_enabled = false %}
+{% assign popular_posts_enabled = false %}
+{% assign recent_articles_and_posts_enabled = false %}
+{% assign freshservice_enabled = false %}
+
+<div class="container" data-home-page>
+  <div class="container-inner">
+
+    <!-- CUSTOM BLOCKS -->
+    {% if custom_blocks_enabled %}
+      <div class="row custom-blocks" id="custom-blocks">
+        <div class="column column--sm-6 column--md-3 custom-block">
+          <a class="custom-block__link" href="{{ portal.solutions_home_url }}">
+            <div class="custom-block__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="98" height="98" viewBox="0 0 98 98" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><path id="c" d="M435,576 C435,576 571.772295,537.153456 825.5,547.5 C1079.22771,557.846544 1244,571.5 1606,607.5 C1968,643.5 2335,576 2335,576 L2335,1170 L435,1170 L435,576 Z"/><filter id="b" width="106.3%" height="119.2%" x="-3.2%" y="-14.4%" filterUnits="objectBoundingBox"><feOffset dy="-30" in="SourceAlpha" result="shadowOffsetOuter1"/><feGaussianBlur stdDeviation="15" in="shadowOffsetOuter1" result="shadowBlurOuter1"/><feColorMatrix values="0 0 0 0 0.239215686 0 0 0 0 0.22745098 0 0 0 0 0.37254902 0 0 0 0.2 0" in="shadowBlurOuter1"/></filter><rect id="f" width="270" height="270" rx="8"/><filter id="e" width="131.5%" height="131.5%" x="-15.7%" y="-12%" filterUnits="objectBoundingBox"><feOffset dy="10" in="SourceAlpha" result="shadowOffsetOuter1"/><feGaussianBlur stdDeviation="12.5" in="shadowOffsetOuter1" result="shadowBlurOuter1"/><feColorMatrix values="0 0 0 0 0.243137255 0 0 0 0 0.235294118 0 0 0 0 0.384313725 0 0 0 0.0878623188 0" in="shadowBlurOuter1"/></filter><rect id="g" width="80" height="50" x="3" rx="6"/><path id="h" d="M1.78989821e-13,60 L86,60 L86,65.5 C86,68.5375661 83.5418753,71 80.5059158,71 L5.49408424,71 C2.4597853,71 1.53870445e-13,68.5313853 1.62795902e-13,65.5 L1.78989821e-13,60 Z"/><path id="i" d="M2.34731462,47.9510689 C2.67328069,46.3212385 4.27587311,45 5.92761581,45 L79.947441,45 C81.5988207,45 83.1999796,46.3122559 83.5277422,47.9510689 L85.7590311,59.1075134 C86.4098972,62.3618439 84.2558136,65 80.9408518,65 L4.93420502,65 C1.62233197,65 -0.53542821,62.364783 0.116025709,59.1075134 L2.34731462,47.9510689 Z"/><path id="j" d="M33.8338738,57.8976712 C34.1832254,56.8496163 35.3609446,56 36.4604911,56 L48.4723706,56 C49.5736596,56 50.7486636,56.8466982 51.0989879,57.8976712 L52.8338738,63.1023288 C53.1832254,64.1503837 52.5767569,65 51.4752758,65 L33.4575858,65 C32.3579013,65 31.7486636,64.1533018 32.0989879,63.1023288 L33.8338738,57.8976712 Z"/></defs><g fill="none" fill-rule="evenodd" transform="translate(-457 -558)"><g transform="translate(365 510)"><use xlink:href="#f"/><use fill="#FFFFFF" xlink:href="#f"/><g transform="translate(98 62)"><use fill="#FFFFFF" xlink:href="#g"/><rect class="icon-color-stroke-primary" width="78" height="48" x="4" y="1" stroke="#504D7F" stroke-width="2" rx="6"/><rect class="icon-color-fill-secondary" width="58" height="2" x="14" y="11" fill="#FFA15A" rx="1"/><rect class="icon-color-fill-secondary" width="35" height="2" x="14" y="23" fill="#FFA15A" rx="1"/><rect class="icon-color-fill-secondary" width="39" height="2" x="14" y="35" fill="#FFA15A" rx="1"/><use fill="#F8F8F8" xlink:href="#h"/><path class="icon-color-stroke-primary" stroke="#504D7F" stroke-width="2" d="M1,61 L1,65.5 C1,67.9816494 3.01461582,70 5.49408424,70 L80.5059158,70 C82.9887292,70 85,67.9861431 85,65.5 L85,61 L1,61 Z"/><use class="icon-color-fill" fill="#F8F8F8" xlink:href="#i"/><path class="icon-color-stroke-primary" stroke="#504D7F" stroke-width="2" d="M3.3278953,48.147185 L1.09660639,59.3036296 C0.569013609,61.9415934 2.25285728,64 4.93420502,64 L80.9408518,64 C83.6229814,64 85.3059084,61.9409197 84.7784504,59.3036296 L82.5471615,48.147185 C82.3133575,46.978165 81.1245381,46 79.947441,46 L5.92761581,46 C4.75380868,46 3.56062119,46.9835555 3.3278953,48.147185 Z"/><g><use fill="#FFFFFF" xlink:href="#j"/><path class="icon-color-stroke-primary" stroke="#504D7F" stroke-width="2" d="M34.7825571,58.213899 L33.0476712,63.4185566 C32.913134,63.8221683 33.0406472,64 33.4575858,64 L51.4752758,64 C51.8917344,64 52.0194751,63.8214104 51.8851905,63.4185566 L50.1503046,58.213899 C49.9363352,57.5719909 49.1439883,57 48.4723706,57 L36.4604911,57 C35.7911411,57 34.9957199,57.5744105 34.7825571,58.213899 Z"/></g><path class="icon-color-fill-primary" fill="#504D7F" d="M62.070328,31.0361031 L62.070328,30.1436465 C62.070328,29.3717884 62.2351494,28.7004426 62.5647972,28.1295892 C62.8944449,27.5587358 63.4974501,26.9517106 64.3738307,26.3084954 C65.2180506,25.7054813 65.7748253,25.2150371 66.0441717,24.8371482 C66.313518,24.4592593 66.4481892,24.0371557 66.4481892,23.5708247 C66.4481892,23.0482124 66.2552275,22.650229 65.8692984,22.3768626 C65.4833693,22.1034961 64.9446847,21.966815 64.2532285,21.966815 C63.0472001,21.966815 61.6723484,22.3607783 60.128632,23.1487169 L58.8140677,20.5075279 C60.6070299,19.5025043 62.5085061,19 64.5185534,19 C66.1748324,19 67.4913936,19.3979834 68.4682766,20.1939621 C69.4451596,20.9899409 69.9335937,22.0512299 69.9335937,23.3778611 C69.9335937,24.2622819 69.732592,25.0260885 69.3305826,25.6693036 C68.9285731,26.3125187 68.1647666,27.0361249 67.0391401,27.8401438 C66.2672819,28.4109973 65.7788478,28.845161 65.573823,29.142648 C65.3687981,29.440135 65.2662873,29.8300783 65.2662873,30.3124897 L65.2662873,31.0361031 L62.070328,31.0361031 Z M61.6844009,35.1606995 C61.6844009,34.4853236 61.8653024,33.9747793 62.2271109,33.6290511 C62.5889194,33.283323 63.1155439,33.1104615 63.8070002,33.1104615 C64.4743359,33.1104615 64.9909103,33.287343 65.3567389,33.6411113 C65.7225675,33.9948797 65.9054791,34.501404 65.9054791,35.1606995 C65.9054791,35.7958745 65.7205575,36.2963687 65.3507088,36.6621973 C64.9808601,37.0280259 64.4662957,37.2109375 63.8070002,37.2109375 C63.1316243,37.2109375 62.6090199,37.032046 62.2391712,36.6742576 C61.8693224,36.3164691 61.6844009,35.8119548 61.6844009,35.1606995 Z"/></g></g></g></svg>
+            </div>
+            <h4 class="custom-block__title">Solutions</h4>
+            <p class="custom-block__description">Learn about all our theme products and services</p>
+          </a>
+        </div>
+        {% if freshservice_enabled %}
+          <div class="column column--sm-6 column--md-3 custom-block">
+            <a class="custom-block__link" href="/support/catalog/items">
+              <div class="custom-block__icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="98" height="98" viewBox="0 0 98 98" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><path id="c" d="M435,576 C435,576 571.772295,537.153456 825.5,547.5 C1079.22771,557.846544 1244,571.5 1606,607.5 C1968,643.5 2335,576 2335,576 L2335,1170 L435,1170 L435,576 Z"/><filter id="b" width="106.3%" height="119.2%" x="-3.2%" y="-14.4%" filterUnits="objectBoundingBox"><feOffset dy="-30" in="SourceAlpha" result="shadowOffsetOuter1"/><feGaussianBlur stdDeviation="15" in="shadowOffsetOuter1" result="shadowBlurOuter1"/><feColorMatrix values="0 0 0 0 0.239215686 0 0 0 0 0.22745098 0 0 0 0 0.37254902 0 0 0 0.2 0" in="shadowBlurOuter1"/></filter><rect id="f" width="290" height="290" rx="8"/><filter id="e" width="143.1%" height="143.1%" x="-21.6%" y="-14.7%" filterUnits="objectBoundingBox"><feOffset dy="20" in="SourceAlpha" result="shadowOffsetOuter1"/><feGaussianBlur stdDeviation="17.5" in="shadowOffsetOuter1" result="shadowBlurOuter1"/><feColorMatrix values="0 0 0 0 0.243137255 0 0 0 0 0.235294118 0 0 0 0 0.384313725 0 0 0 0.1 0" in="shadowBlurOuter1"/></filter><linearGradient id="g" x1="0%" x2="97.178%" y1="0%" y2="100%"><stop stop-color="#504D7F" offset="0%"/><stop stop-color="#3C3A5E" offset="100%"/></linearGradient><path id="h" d="M13,46 L38,46 L38,49 C38,50.6568542 36.6558914,52 35.0092478,52 L15.9907522,52 C14.3390054,52 13,50.6534829 13,49 L13,46 Z"/><path id="i" d="M16,50 L35,50 L35,53 C35,54.6568542 33.6639569,56 31.9998779,56 L19.0001221,56 C17.3432004,56 16,54.6534829 16,53 L16,50 Z"/><path id="j" d="M19,54 L32,54 L32,57 C32,58.6568542 30.6577357,60 29.0012144,60 L21.9987856,60 C20.3426021,60 19,58.6534829 19,57 L19,54 Z"/><path id="k" d="M22,58 L29,58 L29,61 C29,62.6568542 27.6503296,64 25.9907455,64 L25.0092545,64 C23.3472891,64 22,62.6534829 22,61 L22,58 Z"/></defs><g fill="none" fill-rule="evenodd" transform="translate(-751 -540)"><g transform="translate(655 500)"><use filter="url(#e)" xlink:href="#f"/><use fill="#FFFFFF" xlink:href="#f"/><g transform="translate(95 40)"><g transform="translate(25 17)"><path class="icon-color-stroke-secondary" stroke="#FFA15A" stroke-width="2" d="M21.4738708,47.4903403 L19,25 C19,25 20.368805,26.26509 21.5398056,26.3574532 C22.7108062,26.4498163 25.1861474,25 25.1861474,25 C25.1861474,25 27.0400801,27.8072695 28.2770155,27.8072695 C29.5139509,27.8072695 31.4353145,25 31.4353145,25 L28.9614437,47.5270238 L21.4738708,47.4903403 Z"/><path class="icon-color-stroke-secondary" stroke="#FFA15A" d="M20,31 C20,31 21.1007401,32.1527724 22.0424136,32.2369354 C22.9840871,32.3210984 24.974661,31 24.974661,31 C24.974661,31 26.4655221,33.5580338 27.4602179,33.5580338 C28.4549136,33.5580338 30.5,31 30.5,31" stroke-linecap="round"/><circle class="icon-color-stroke-primary" cx="25" cy="25" r="24" stroke="url(#g)" stroke-width="2"/><use xlink:href="#h"/><path class="icon-color-stroke-primary" fill="#fff" stroke="url(#g)" stroke-width="2" d="M14,47 L14,49 C14,50.1032255 14.8933167,51 15.9907522,51 L35.0092478,51 C36.1049413,51 37,50.1032306 37,49 L37,47 L14,47 Z"/><use xlink:href="#i"/><path class="icon-color-stroke-primary" stroke="url(#g)" stroke-width="2" d="M17,51 L17,53 C17,54.102527 17.8968133,55 19.0001221,55 L31.9998779,55 C33.1088398,55 34,54.1074052 34,53 L34,51 L17,51 Z"/><g><use xlink:href="#j"/><path class="icon-color-stroke-primary" stroke="url(#g)" stroke-width="2" d="M20,55 L20,57 C20,58.1026267 20.8963143,59 21.9987856,59 L29.0012144,59 C30.1052262,59 31,58.1047942 31,57 L31,55 L20,55 Z"/></g><g><use xlink:href="#k"/><path class="icon-color-stroke-primary" stroke="url(#g)" stroke-width="2" d="M23,59 L23,61 C23,62.1018461 23.9002258,63 25.0092545,63 L25.9907455,63 C27.0996775,63 28,62.1029366 28,61 L28,59 L23,59 Z"/></g></g><g fill="url(#g)" transform="translate(1)"><rect class="icon-color-fill-primary" width="2" height="14" x="48" rx="1"/><g transform="translate(0 48)"><rect class="icon-color-fill-primary" width="14" height="2" x="84" rx="1"/><rect class="icon-color-fill-primary" width="14" height="2" rx="1"/></g><g transform="rotate(45 -8.941 25)"><rect class="icon-color-fill-primary" width="10" height="2" x="88.243" rx="1"/><rect class="icon-color-fill-primary" width="10" height="2" rx="1"/></g><g transform="rotate(-45 106.941 25)"><rect class="icon-color-fill-primary" width="10" height="2" x="88.243" rx="1"/><rect class="icon-color-fill-primary" width="10" height="2" rx="1"/></g></g></g></g></g></svg>
+              </div>
+              <h4 class="custom-block__title">Catalog</h4>
+              <p class="custom-block__description">Need something new? We've got it!</p>
+            </a>
+          </div>
+        {% else %}
+          {% if portal.has_forums %}
+            <div class="column column--sm-6 column--md-3 custom-block">
+              <a class="custom-block__link" href="/support/discussions">
+                <div class="custom-block__icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="98" height="98" viewBox="0 0 98 98" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><path id="c" d="M435,576 C435,576 571.772295,537.153456 825.5,547.5 C1079.22771,557.846544 1244,571.5 1606,607.5 C1968,643.5 2335,576 2335,576 L2335,1170 L435,1170 L435,576 Z"/><filter id="b" width="106.3%" height="119.2%" x="-3.2%" y="-14.4%" filterUnits="objectBoundingBox"><feOffset dy="-30" in="SourceAlpha" result="shadowOffsetOuter1"/><feGaussianBlur stdDeviation="15" in="shadowOffsetOuter1" result="shadowBlurOuter1"/><feColorMatrix values="0 0 0 0 0.239215686 0 0 0 0 0.22745098 0 0 0 0 0.37254902 0 0 0 0.2 0" in="shadowBlurOuter1"/></filter><rect id="f" width="290" height="290" rx="8"/><filter id="e" width="143.1%" height="143.1%" x="-21.6%" y="-14.7%" filterUnits="objectBoundingBox"><feOffset dy="20" in="SourceAlpha" result="shadowOffsetOuter1"/><feGaussianBlur stdDeviation="17.5" in="shadowOffsetOuter1" result="shadowBlurOuter1"/><feColorMatrix values="0 0 0 0 0.243137255 0 0 0 0 0.235294118 0 0 0 0 0.384313725 0 0 0 0.1 0" in="shadowBlurOuter1"/></filter><linearGradient id="g" x1="0%" x2="97.178%" y1="0%" y2="100%"><stop stop-color="#504D7F" offset="0%"/><stop stop-color="#3C3A5E" offset="100%"/></linearGradient><path id="h" d="M13,46 L38,46 L38,49 C38,50.6568542 36.6558914,52 35.0092478,52 L15.9907522,52 C14.3390054,52 13,50.6534829 13,49 L13,46 Z"/><path id="i" d="M16,50 L35,50 L35,53 C35,54.6568542 33.6639569,56 31.9998779,56 L19.0001221,56 C17.3432004,56 16,54.6534829 16,53 L16,50 Z"/><path id="j" d="M19,54 L32,54 L32,57 C32,58.6568542 30.6577357,60 29.0012144,60 L21.9987856,60 C20.3426021,60 19,58.6534829 19,57 L19,54 Z"/><path id="k" d="M22,58 L29,58 L29,61 C29,62.6568542 27.6503296,64 25.9907455,64 L25.0092545,64 C23.3472891,64 22,62.6534829 22,61 L22,58 Z"/></defs><g fill="none" fill-rule="evenodd" transform="translate(-751 -540)"><g transform="translate(655 500)"><use filter="url(#e)" xlink:href="#f"/><use fill="#FFFFFF" xlink:href="#f"/><g transform="translate(95 40)"><g transform="translate(25 17)"><path class="icon-color-stroke-secondary" stroke="#FFA15A" stroke-width="2" d="M21.4738708,47.4903403 L19,25 C19,25 20.368805,26.26509 21.5398056,26.3574532 C22.7108062,26.4498163 25.1861474,25 25.1861474,25 C25.1861474,25 27.0400801,27.8072695 28.2770155,27.8072695 C29.5139509,27.8072695 31.4353145,25 31.4353145,25 L28.9614437,47.5270238 L21.4738708,47.4903403 Z"/><path class="icon-color-stroke-secondary" stroke="#FFA15A" d="M20,31 C20,31 21.1007401,32.1527724 22.0424136,32.2369354 C22.9840871,32.3210984 24.974661,31 24.974661,31 C24.974661,31 26.4655221,33.5580338 27.4602179,33.5580338 C28.4549136,33.5580338 30.5,31 30.5,31" stroke-linecap="round"/><circle class="icon-color-stroke-primary" cx="25" cy="25" r="24" stroke="url(#g)" stroke-width="2"/><use xlink:href="#h"/><path class="icon-color-stroke-primary" fill="#fff" stroke="url(#g)" stroke-width="2" d="M14,47 L14,49 C14,50.1032255 14.8933167,51 15.9907522,51 L35.0092478,51 C36.1049413,51 37,50.1032306 37,49 L37,47 L14,47 Z"/><use xlink:href="#i"/><path class="icon-color-stroke-primary" stroke="url(#g)" stroke-width="2" d="M17,51 L17,53 C17,54.102527 17.8968133,55 19.0001221,55 L31.9998779,55 C33.1088398,55 34,54.1074052 34,53 L34,51 L17,51 Z"/><g><use xlink:href="#j"/><path class="icon-color-stroke-primary" stroke="url(#g)" stroke-width="2" d="M20,55 L20,57 C20,58.1026267 20.8963143,59 21.9987856,59 L29.0012144,59 C30.1052262,59 31,58.1047942 31,57 L31,55 L20,55 Z"/></g><g><use xlink:href="#k"/><path class="icon-color-stroke-primary" stroke="url(#g)" stroke-width="2" d="M23,59 L23,61 C23,62.1018461 23.9002258,63 25.0092545,63 L25.9907455,63 C27.0996775,63 28,62.1029366 28,61 L28,59 L23,59 Z"/></g></g><g fill="url(#g)" transform="translate(1)"><rect class="icon-color-fill-primary" width="2" height="14" x="48" rx="1"/><g transform="translate(0 48)"><rect class="icon-color-fill-primary" width="14" height="2" x="84" rx="1"/><rect class="icon-color-fill-primary" width="14" height="2" rx="1"/></g><g transform="rotate(45 -8.941 25)"><rect class="icon-color-fill-primary" width="10" height="2" x="88.243" rx="1"/><rect class="icon-color-fill-primary" width="10" height="2" rx="1"/></g><g transform="rotate(-45 106.941 25)"><rect class="icon-color-fill-primary" width="10" height="2" x="88.243" rx="1"/><rect class="icon-color-fill-primary" width="10" height="2" rx="1"/></g></g></g></g></g></svg>
+                </div>
+                <h4 class="custom-block__title">Discussions</h4>
+                <p class="custom-block__description">Have any questions? Find the answers to all of them</p>
+              </a>
+            </div>
+          {% endif %}
+        {% endif %}
+        {% unless portal.user.is_agent %}
+          <div class="column column--sm-6 column--md-3 custom-block">
+            <a href="{{portal.new_ticket_url}}" class='custom-block__link'>
+              <div class="custom-block__icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="98" height="98" viewBox="0 0 98 98" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><path id="c" d="M435,576 C435,576 571.772295,537.153456 825.5,547.5 C1079.22771,557.846544 1244,571.5 1606,607.5 C1968,643.5 2335,576 2335,576 L2335,1170 L435,1170 L435,576 Z"/><rect id="f" width="270" height="270" rx="8"/><linearGradient id="h" x1="0%" x2="97.178%" y1="0%" y2="100%"><stop stop-color="#504D7F" offset="0%"/><stop stop-color="#3C3A5E" offset="100%"/></linearGradient><path id="g" d="M0,34.0063161 C0,30.6891193 2.20638385,26.4606624 4.92216725,24.5659298 L38.0778328,1.43407017 C40.7962707,-0.462514413 45.2063839,-0.460662428 47.9221672,1.43407017 L81.0778328,24.5659298 C83.7962707,26.4625144 86,30.6882172 86,34.0063161 L86,71.9936839 C86,75.3108807 83.3080675,78 80.0038876,78 L5.99611244,78 C2.68455098,78 0,75.3117828 0,71.9936839 L0,34.0063161 Z"/><rect id="i" width="70" height="62" x="8" y="7" rx="3"/><polygon id="j" points="0 40 43 54.431 0 72"/><polygon id="k" points="86 40 43 54.431 86 72"/><path id="l" d="M0,71.0003297 C0,69.3432934 1.21764088,67.4336554 2.72246404,66.7337377 L37.5540203,50.5330138 C40.5617518,49.1340689 45.4350702,49.1325908 48.4459797,50.5330138 L83.277536,66.7337377 C84.7811113,67.433075 86,69.3486445 86,71.0003297 L86,72.009763 C86,75.3180795 83.3080675,78 80.0038876,78 L5.99611244,78 C2.68455098,78 0,75.3201835 0,72.009763 L0,71.0003297 Z"/></defs><g fill="none" fill-rule="evenodd" transform="translate(-1057 -555)"><g transform="translate(965 510)"><use xlink:href="#f"/><use fill="#FFFFFF" xlink:href="#f"/><g transform="translate(98 55)"><use fill="#FFFFFF" xlink:href="#g"/><path class="icon-color-stroke-primary icon-color-fill" stroke="url(#h)" stroke-width="2" d="M1,34.0063161 L1,71.9936839 C1,74.7595436 3.23688236,77 5.99611244,77 L80.0038876,77 C82.7581417,77 85,74.7562347 85,71.9936839 L85,34.0063161 C85,31.0153301 82.95622,27.0957559 80.5056512,25.3860568 L47.3499857,2.25419713 C44.9770003,0.598625959 41.0237359,0.598112337 38.6500143,2.25419713 L5.49434884,25.3860568 C3.04575166,27.0943804 1,31.0170651 1,34.0063161 Z"/><use fill="#FFFFFF" xlink:href="#i"/><rect fill="#FFFFFF" class="icon-color-stroke-primary" width="68" height="60" x="9" y="8" stroke="url(#h)" stroke-width="2" rx="3"/><rect class="icon-color-fill-secondary" width="50" height="2" x="18" y="17" fill="#FFA15A" rx="1"/><rect class="icon-color-fill-secondary" width="40" height="2" x="18" y="27" fill="#FFA15A" rx="1"/><rect class="icon-color-fill-secondary" width="45" height="2" x="18" y="37" fill="#FFA15A" rx="1"/><use fill="#FFFFFF" xlink:href="#j"/><path fill="#FFFFFF" class="icon-color-stroke-primary" stroke="url(#h)" stroke-width="2" d="M1,41.3904291 L1,70.5111811 L40.1310106,54.5233173 L1,41.3904291 Z"/><g><use fill="#FFFFFF" xlink:href="#k"/><path fill="#FFFFFF" class="icon-color-stroke-primary" stroke="url(#h)" stroke-width="2" d="M85,41.3904291 L45.8689894,54.5233173 L85,70.5111811 L85,41.3904291 Z"/></g><g><use fill="#FFFFFF" xlink:href="#l"/><path class="icon-color-stroke-primary" stroke="url(#h)" stroke-width="2" d="M1,71.0003297 L1,72.009763 C1,74.7668982 3.2358346,77 5.99611244,77 L80.0038876,77 C82.7587414,77 85,74.7628399 85,72.009763 L85,71.0003297 C85,69.7357201 84.0049486,68.174944 82.8558052,67.6404588 L48.024249,51.4397349 C45.2818676,50.1642087 40.7172122,50.1646367 37.975751,51.4397349 L3.14419479,67.6404588 C1.99245655,68.176151 1,69.7318557 1,71.0003297 Z"/></g></g></g></g></svg>
+              </div>
+              <h4 class="custom-block__title">Submit a ticket</h4>
+              <p class="custom-block__description">Contact us through a specially prepared form</p>
+            </a>
+          </div>
+        {% endunless %}
+        {% unless portal.user.is_agent %}
+          <div class="column column--sm-6 column--md-3 custom-block">
+            <a href="/support/tickets" class='custom-block__link'>
+              <div class="custom-block__icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="98" height="98" viewBox="0 0 98 98" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><rect id="b" width="270" height="270" rx="8"/><filter id="a" width="131.5%" height="131.5%" x="-15.7%" y="-12%" filterUnits="objectBoundingBox"><feOffset dy="10" in="SourceAlpha" result="shadowOffsetOuter1"/><feGaussianBlur stdDeviation="12.5" in="shadowOffsetOuter1" result="shadowBlurOuter1"/><feColorMatrix values="0 0 0 0 0.243137255 0 0 0 0 0.235294118 0 0 0 0 0.384313725 0 0 0 0.1 0" in="shadowBlurOuter1"/></filter><linearGradient id="d" x1="0%" x2="97.178%" y1="0%" y2="100%"><stop stop-color="#504D7F" offset="0%"/><stop stop-color="#3C3A5E" offset="100%"/></linearGradient><path id="c" d="M0 6c0-3.314 2.68-6 5.998-6h58.004A6 6 0 0 1 70 6v28c0 3.314-2.695 6-5.998 6H23.02L9.042 52l.022-12H5.995A5.998 5.998 0 0 1 0 34V6z"/><path id="e" d="M0 6c0-3.314 2.68-6 5.998-6h58.004A6 6 0 0 1 70 6v28c0 3.314-2.695 6-5.998 6H23.02L9.042 52l.022-12H5.995A5.998 5.998 0 0 1 0 34V6z"/></defs><g transform="translate(-84 -38)" fill="none" fill-rule="evenodd"><use fill="#000" filter="url(#a)" xlink:href="#b"/><use fill="#FFF" xlink:href="#b"/><g transform="translate(88 49)"><g transform="matrix(-1 0 0 1 90 24)"><use fill="#FFF" xlink:href="#c"/><path class="icon-color-stroke-primary" stroke="url(#d)" stroke-width="2" d="M10.046 49.82L22.65 39h41.353A5.005 5.005 0 0 0 69 34V6a5 5 0 0 0-4.998-5H5.998A4.995 4.995 0 0 0 1 6v28c0 2.761 2.237 5 4.995 5h4.07l-.019 10.82z"/><rect class="icon-color-fill-secondary" width="20" height="2" x="8" y="11" fill="#FFA15A" rx="1"/><rect class="icon-color-fill-secondary" width="34" height="2" x="8" y="19" fill="#FFA15A" rx="1"/><rect class="icon-color-fill-secondary" width="10" height="2" x="8" y="27" fill="#FFA15A" rx="1"/><rect class="icon-color-fill-secondary" width="39" height="2" x="23" y="27" fill="#FFA15A" rx="1"/><rect width="15" height="2" x="47" y="15" fill="#000" rx="1"/><rect width="29" height="2" x="33" y="8" fill="#000" rx="1"/></g><use xlink:href="#e"/><path class="icon-color-stroke-primary" fill="#F8F8F8" stroke="url(#d)" stroke-width="2" d="M10.046 49.82L22.65 39h41.353A5.005 5.005 0 0 0 69 34V6a5 5 0 0 0-4.998-5H5.998A4.995 4.995 0 0 0 1 6v28c0 2.761 2.237 5 4.995 5h4.07l-.019 10.82z"/><path stroke="#FFF" stroke-width="6" d="M24.13 43L6.03 58.54 6.06 43h-.064C1.027 43-3 38.97-3 34V6c0-4.972 4.024-9 8.998-9h58.004A9 9 0 0 1 73 6v28c0 4.968-4.035 9-8.998 9H24.13z"/><rect class="icon-color-fill-primary" width="20" height="2" x="8" y="11" fill="#504D7F" rx="1"/><rect class="icon-color-fill-primary" width="34" height="2" x="8" y="19" fill="#504D7F" rx="1"/><rect class="icon-color-fill-primary" width="10" height="2" x="8" y="27" fill="#504D7F" rx="1"/><rect class="icon-color-fill-primary" width="39" height="2" x="23" y="27" fill="#504D7F" rx="1"/><rect class="icon-color-fill-primary" width="15" height="2" x="47" y="19" fill="#504D7F" rx="1"/><rect class="icon-color-fill-primary" width="29" height="2" x="33" y="11" fill="#504D7F" rx="1"/></g></g></svg>
+              </div>
+              <h4 class="custom-block__title">My tickets</h4>
+              <p class="custom-block__description">Show the list of the tickets</p>
+            </a>
+          </div>
+        {% endunless %}
+      </div>
+    {% endif %}
+    <!-- / CUSTOM BLOCKS -->
+
+    {% if freshservice_enabled %}
+      {% if portal.has_forums %}
+        <div class="announcements-list" id="announcements-list">
+          <h3 class="announcements-list__title text-center">{% translate portal.announcements %}</h3>
+          <ul class="row announcements-list__list">
+            {% for topic in portal.recent_popular_topics limit:6 %}
+            <li class="column column--sm-4 announcements-list-item">
+              <a class="announcements-list-item__title" href="{{topic.url}}">{{topic.title | h}}</a>
+              {% if topic.first_post.body != blank %}
+              <p class="announcements-list-item__excerpt meta">
+                {{ topic.first_post.body | h | truncate:80 }}
+              </p>
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+    {% else %}
+      {% if recent_articles_enabled %}
+        {% if portal.recent_articles.size > 0 %}
+          <div class="recent-articles" id="recent-articles">
+            <h2 class="recent-articles__title text-center">Recent articles</h2>
+            <ul class="row articles recent-articles__list">
+              {% for article in portal.recent_articles limit:6 %}
+                <li class="column column--sm-4 articles__item recent-articles-item">
+                  <a class="articles__link" href="{{ article.url }}"><span class="fa fa-star"></span> {{ article.title | h }}</a>
+                  <p class="recent-articles-item__excerpt meta">
+                    {{ article.body_plain | h |truncate:80 }}
+                  </p>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+      {% endif %}
+    {% endif %}
+
+    <!-- CATEGORY LIST -->
+    {% if category_list_enabled %}
+      <div class="category-list-wrapper" id="category-list">
+        <!-- <h2 class="category-list-title">Knowledge base</h2> -->
+        <ul class="row category-list">
+          {% for category in portal.solution_categories %}
+            {% if category.folders_count > 0 %}
+              <li class="column column column--sm-6 column--md-3 category-list-item">
+                <a class="category-list-item__link" href="{{category.url}}">
+                  <h2 class="h5 category-list-item__title">{{category.name}}</h2>
+                  <p class="meta">{{category.description}}</p>
+                </a>
+              </li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+    <!-- / CATEGORY LIST -->
+  </div>
+</div>
+
+<!-- CATEGORY TREEE -->
+{% if category_tree_enabled %}
+  <div class="category-tree" id="category-tree">
+    {% for category in portal.solution_categories %}
+      {% if category.folders_count > 0 %}
+        <section class="category-tree-item">
+          <div class="container">
+            <div class="container-inner">
+              <h2 class="category-tree-item__title">
+                <a class="category-tree-item__title-link" href="{{category.url}}">{{category.name}}</a>
+              </h2>
+              <div class="category-tree-item__folders row clearfix">
+                {% for folder in category.folders %}
+                  {% if folder.articles_count > 0 %}
+                    <section class="column column--sm-6 column--md-4 folder">
+                      <h3 class="folder__title">
+                        <a class="folder__title-link" href="{{folder.url}}">{{folder.name}}</a>
+                      </h3>
+                      <ul class="articles">
+                        {% for article in folder.articles | limit: 5 %}
+                          <li class="articles__item">
+                            <a class="articles__link" href="{{ article.url }}">{{ article.title | h }}</a>
+                          </li>
+                        {% endfor %}
+                      </ul>
+                      {% if folder.articles.size > 5 %}
+                        <a href="{{ folder.url }}" class="btn btn--default see-all-articles">View all ({{folder.articles_count}})</a>
+                      {% endif %}
+                    </section>
+                  {% endif %}
+                {% else %}
+                  {{ portal | filler_for_solutions }}
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </section>
+      {% endif %}
+    {% endfor %}
+  </div>
+{% endif %}
+<!-- / CATEGORY TREE -->
+
+{% if freshservice_enabled == false and portal.has_forums and popular_posts_enabled %}
+  {% if portal.recent_popular_topics.size > 0 %}
+
+  <div class="popular-posts container" id="popular-posts">
+    <div class="container-inner">
+      <h3 class="popular-posts__title">Popular posts</h3>
+      <ul class="row clearfix popular-posts__list">
+        {% for topic in portal.recent_popular_topics limit:6 %}
+          <li class="column column--sm-4 popular-posts-item">
+            <div class="popular-posts-item__inner">
+                <span class="popular-posts-item__forum">{{topic.forum.name}}</span> <a class="popular-posts-item__title" href="{{topic.url}}">{{topic.title | h}}</a>
+                <p class="popular-posts-item__excerpt meta">
+                  <span class="fa fa-comment-o"></span> {{topic.comment_count}}
+                </p>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  {% endif %}
+{% endif %}

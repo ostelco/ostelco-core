@@ -1,0 +1,50 @@
+{% assign freshservice_enabled = false %}
+
+<div class="container">
+  <div class="container-inner">
+    <div class="auth-page"  id="login-page-wrapper">
+      <div class="row clearfix">
+        <div class="column column--sm-5 column--sm-offset-1"  id="login-container">
+          <div id="login-form">
+            <h2 class="h3 auth-title">{% translate portal.login_portal %}</h2>
+            <p class="meta">{% translate portal.login_details %}</p>
+            {% snippet login_form %}
+          </div>
+          <div id="forgot-form" class="hide">
+            <h2 class="h3 auth-title">{% translate forgot_password %}</h2>
+            <p>{% translate portal.reset_password %}</p>
+            {% snippet forgot_password_form %}
+          </div>
+        </div>
+        <div class="column column--sm-5">
+          <div class="auth-wrapper">
+            {% if portal.has_alternate_login %}
+              <div class="auth-item login-alternate">
+                <h2 class="h3 auth-title">{% translate portal.login_options %}</h2>
+                {{ "Google" | login_via_google }}
+                {% unless freshservice_enabled %}
+                {{ "Facebook" | login_via_facebook }}
+                {{ "Twitter" | login_via_twitter }}
+                {% endunless %}
+              </div>
+            {% endif %}
+    
+            {% if portal.can_signup_feature %}
+              <div class="auth-item signup" id="signup-container">
+                <h2 class="h3 auth-title">{% translate signup %}</h2>
+                <p>
+                  <a href="{{ portal.signup_url }}" class="btn btn-primary">
+                    {% translate signup_up_with_us %}
+                  </a>
+                </p>
+                <p class="meta">
+                  {% translate signup_help_information %}
+                </p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>    
+  </div>
+</div>

@@ -1,0 +1,19 @@
+<div class="container">
+	<div class="container-inner">
+		<div class="ticket-list-page">
+    
+		  {% if portal.facebook_portal %}
+		  <a href="{{ portal.new_ticket_url }}" class="btn btn-primary index_new_ticket" id="new_support_ticket">
+		    {% translate facebook_tab.portal.new_ticket %}
+		  </a>
+		  {% endif %}
+
+		  <div class="ticket-filter-container ticket-toolbar" id="ticket-filter-container">
+		    {% snippet ticket_filters %}
+
+		  </div>
+
+		  {% snippet ticket_list %}
+		</div>
+	</div>
+</div>

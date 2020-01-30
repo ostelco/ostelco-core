@@ -1,0 +1,57 @@
+<div class="container">
+	<div class="container-inner">
+		<div class="my-topics-page">
+		  <h1 class="knowledge-base-title">{% translate portal.community_forums %}</h1>
+
+		  <ul class="discussions-menu">
+		    <li class="discussions-menu__item">
+		      <a href="/discussions/topics">Discussions</a>
+		    </li>
+		    <li class="discussions-menu__item is-active">
+		      {% translate portal.my_topics %}
+		    </li>
+		  </ul>
+
+		  <p>{% translate portal.showing_my_topics %}</p>
+
+		  {% if portal.my_topics.size > 0 %}
+		    {% paginate portal.my_topics by 10 %}
+		      <ul class="forum-topics" id="forum-topic-list">
+		        {% for topic in paginate.collection %}
+		          <li class="forum-topics__item {% if topic.sticky? %} forum-topics__item--sticky {% endif %}">
+  <a class="forum-topics__link" title="{{topic.title | h}}" href="{{topic.url}}">
+    {% if topic.sticky? %}
+      <i class="fa fa-thumb-tack forum-topics__pin" aria-hidden="true"></i>
+    {% endif %}
+    {{topic.title | h}}
+  </a>
+
+  <div class="forum-topics__labels">
+    {{ topic | topic_labels }}
+  </div>
+
+  <div class="forum-topics__author">
+    {{ topic.user | profile_image }}
+  </div>
+
+  <div class="forum-topics__comments">
+    <i class="fa fa-comment-o forum-topics__comments-icon" aria-hidden="true"></i> {{topic.comment_count}}
+  </div>
+
+  <div class="forum-topics__date">
+    <span class="meta">{{topic.created_on | short_day_with_time}}</span>
+  </div>
+</li>
+
+		        {% else %}
+		          <p>{% translate portal.no_topics_in_this_view %}</p>
+		        {% endfor %}
+		      </ul>
+		      {{ paginate | default_pagination }}
+		    {% endpaginate %}
+		  {% else %}
+		    <p>{% translate portal.no_topics_in_this_view %}</p>
+		  {% endif %}
+		</div>
+	</div>
+</div>

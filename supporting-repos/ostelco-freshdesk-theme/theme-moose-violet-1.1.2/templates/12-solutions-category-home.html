@@ -1,0 +1,54 @@
+<div class="container">
+  <div class="container-inner">
+    <div class="category-page">
+      <!--
+      <div class="row clearfix">
+        <div class="column column--sm-12">
+          <ol class="breadcrumbs">
+            <li>
+              <a href="/support/home">{{ portal.name }}</a>
+            </li>
+            <li title="{% translate portal.solutions_home %}">
+              <a href="{{ portal.solutions_home_url }}">{% translate portal.solutions_home %}</a>
+            </li>
+            <li title="{{ category.name | h }}">
+              {{ category.name | h }}
+            </li>
+          </ol>
+        </div>
+      </div>
+      -->
+
+      <div class="header">
+        <h1 class="h2">{{ category.name | h }}</h1>
+        {% if category.description %}
+        <p class="page-description">{{ category.description }}</p>
+        {% endif %}
+      </div>
+      <div class="row folder-tree clearfix">
+        {% for folder in category.folders %}
+          <section class="column column--sm-6 column--md-4 folder">
+            <h3 class="folder__title">
+              <a class="folder__title-link" href="{{ folder.url}} ">{{ folder.name }}</a>
+            </h3>
+
+            {% if folder.articles_count > 0 %}
+              <ul class="articles">
+                {% for article in folder.articles limit:5 %}
+                  <li class="articles__item">
+                    <a class="articles__link" href="{{ article.url }}">{{ article.title | h }}</a>
+                  </li>
+                {% endfor %}
+              </ul>
+              {% if folder.articles.size > 5 %}
+                <a href="{{ folder.url }}" class="btn btn-primary see-all-articles">
+                  View all ({{folder.articles_count}})
+                </a>
+              {% endif %}
+            {% endif %}
+          </section>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>

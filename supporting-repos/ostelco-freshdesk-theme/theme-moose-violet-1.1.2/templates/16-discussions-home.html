@@ -1,0 +1,109 @@
+<div class="container">
+	<div class="container-inner">
+		<div class="discussions-category-list-page">
+		  <h1 class="knowledge-base-title">{% translate portal.community_forums %}</h1>
+
+		  <ul class="discussions-menu">
+		    <li class="discussions-menu__item is-active">Discussions</li>
+		    <li class="discussions-menu__item ">
+		      <a href="/support/discussions/topics/my_topics">{% translate portal.my_topics %}</a>
+		    </li>
+		  </ul>
+
+      {% if portal.recent_popular_topics.size > 0 %}
+        <section class="popular-topics">
+          <h2 class="popular-topics__title">{% translate portal.popular_topics %}</h2>
+          <ul class="row popular-topic-list">
+            {% for topic in portal.recent_popular_topics limit:6 %}
+              <li class="column column--sm-4 popular-topic-item">
+                <div class="popular-topic-item__inner">
+                  <h5  class="popular-topic-item__title"><a href="{{ topic.url }}">{{ topic.title | h }}</a></h5>
+                  <span class="meta popular-topic-item__info">
+                    {{ topic | topic_info }}
+                  </span>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        </section>
+      {% endif %}
+		  {% if portal.forum_categories.size > 1 %}
+		    <ul class="list-unstyled row clearfix forum-category-list">
+		      {% for category in portal.forum_categories %}
+		        <li class="column column--sm-6 forum-category-list-item">
+		          <a class="forum-category-list-item__link" href="{{ category.url }}">
+		            <h2 class="forum-category-list-item__title">
+		              {{ category.name }}
+		            </h2>
+		            <span class="meta forum-category-list-item__meta">
+		              {{ category.forums_count | pluralize: 'forum', 'forums' }}
+		            </span>
+		           </a>
+		        </li>
+		      {% endfor %}
+		    </ul>
+		  {% else %}
+		    {% for category in portal.forum_categories %}
+		      {% if category.forums_count > 0 %}
+  <ul class="list-unstyled forum-list">
+    {% for forum in category.forums %}
+      <li class="forum-list-item">
+        <h2 class="forum-list-item__title">
+          <a class="forum-list-item__link" href="{{ forum.url }}">{{ forum.name }}</a>
+        </h2>
+
+        {% if forum.topics_count > 0 %}
+          <ul class="forum-topics">
+            <li class="forum-topics__item forum-topics__item--header meta hidden-xs">
+              <span class="forum-topics__link"></span>
+              <span class="forum-topics__labels forum-topics__head">Status</span>
+              <span class="forum-topics__author forum-topics__head">Author</span>
+              <span class="forum-topics__comments forum-topics__head">Comments</span>
+              <span class="forum-topics__date forum-topics__head">Created On</span>
+            </li>
+            {% for topic in forum.topics | limit:5 %}
+              <li class="forum-topics__item {% if topic.sticky? %} forum-topics__item--sticky {% endif %}">
+  <a class="forum-topics__link" title="{{topic.title | h}}" href="{{topic.url}}">
+    {% if topic.sticky? %}
+      <i class="fa fa-thumb-tack forum-topics__pin" aria-hidden="true"></i>
+    {% endif %}
+    {{topic.title | h}}
+  </a>
+
+  <div class="forum-topics__labels">
+    {{ topic | topic_labels }}
+  </div>
+
+  <div class="forum-topics__author">
+    {{ topic.user | profile_image }}
+  </div>
+
+  <div class="forum-topics__comments">
+    <i class="fa fa-comment-o forum-topics__comments-icon" aria-hidden="true"></i> {{topic.comment_count}}
+  </div>
+
+  <div class="forum-topics__date">
+    <span class="meta">{{topic.created_on | short_day_with_time}}</span>
+  </div>
+</li>
+
+            {% endfor %}
+          </ul>
+          {% if forum.topics_count > 5 %}
+            <a href="{{ forum.url }}" class="btn btn-default">
+              View all ({{forum.topics_count}})
+            </a>
+          {% endif %}
+        {% else %}
+          <p>{% translate portal.no_topics_in_this_view %}</p>
+        {% endif %}
+      </li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+		    {% endfor %}
+		  {% endif %}
+		</div>
+	</div>
+</div>

@@ -1,0 +1,70 @@
+<div class="container">
+  <div class="container-inner">
+    <div class="article-page">
+
+      <div class="row clearfix">
+        <div class="column column--sm-8">
+          <article class="article clearfix" itemscope itemtype="http://schema.org/Article">
+            <header class="article-header">
+              <h1 class="article__title" itemprop="name">
+                {{ article.title | h}}
+              </h1>
+
+              <div class="article-meta">
+                <div class="article-meta__col article-meta__col--main">
+                  <div class="entry-info">
+                    <div class="entry-info__content">
+                      <!-- TODO: Figure out how to handle multiple language, for now, hard code the text we want -->
+                      <!-- <div class="meta">{% translate portal.article.modified_on %} {{ article.modified_on | short_day_with_time }}</div> -->
+                      <div class="meta">Last updated {{ article.modified_on | short_day_with_time }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </header>
+
+            <div class="article__body markdown" itemprop="articleBody">
+              {{ article.body }}
+            </div>
+
+            {% if article.attachments.size > 0  %}
+              <div class="article__attachments">
+                <ul class="list-unstyled attachment-list">
+                {% for attachment in article.attachments %}
+                  <li class="attachment-list__item">
+                    <span class="fa fa-paperclip attachment-list__icon"></span>
+                    <a href="{{ attachment.url }}" target="_blank">{{ attachment.filename }}</a>
+                    <div class="meta">({{ attachment.size }})</div>
+                  </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
+          </article>
+
+          <footer class="article-footer clearfix">
+            {{article | article_voting }}
+          </footer>
+        </div>
+        <div class="column column--sm-4">
+          <div class="article-sidebar">
+            {% if article.folder.articles_count > 1 %}
+              <div class="related-articles">
+                <h4 class="related-articles__title">Related Articles</h4>
+                <ul class="related-articles__list">
+                  {% for related_article in article.folder.articles %}
+                    {% unless related_article.id == article.id %}
+                    <li>
+                      <a href="{{related_article.url}}">{{related_article.title}}</a>
+                      </li>
+                    {% endunless %}
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

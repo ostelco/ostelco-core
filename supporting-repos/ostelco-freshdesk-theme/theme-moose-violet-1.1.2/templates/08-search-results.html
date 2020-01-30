@@ -1,0 +1,52 @@
+{% assign freshservice_enabled = false %}
+
+<div class="search-results-page">
+  <div class="row search-results clearfix">
+    {% unless freshservice_enabled %}
+    <div class="column column--sm-4 column--md-3 search-results-sidebar">
+      <div class="search-results-filters">
+        {{ search | default_filters }}
+      </div>
+    </div>
+    {% endunless %}
+    <section class="column column--sm-8 column--md-9 search-results-column {% if freshservice_enabled %}search-results-column--centered{% endif %}">
+      <h1 class="search-results-count">{% translate portal.search.results_for %} "{{ search.term | escape_once }}"</h1>
+      {% if search.result_count != 0 %}
+        <ul class="list-unstyled search-results__list">
+          {% for result in search.results %}
+
+            {% if {{result.module_type}} %}
+
+            {% elsif {{result.module_url}} %}
+
+            {% else %}
+              <li class="search-result">
+                <h3 class="h5 search-result__title">
+                  <a href="{{ result.url }}" class="search-result__link">{{ result.title }}</a>
+                </h3>
+
+                <p class="search-result__description">{{ result.desc }}</p>
+
+                <div class="meta search-result__meta">
+                  <span class="meta__item">
+                    {{ result.group }}
+                  </span>
+                  <span class="meta__item">
+                    {{ result.source.created_on | short_day_with_time }}
+                  </span>
+                </div>
+              </li>
+            {% endif %}
+
+
+          {% endfor %}
+        </ul>
+        <div class="text-center">
+          {{ search.pagination }}
+        </div>
+      {% else %}
+         <p>{% translate search.no_results_msg %}</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
