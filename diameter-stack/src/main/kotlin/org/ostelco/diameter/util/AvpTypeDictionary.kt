@@ -5,7 +5,7 @@ import org.mobicents.diameter.dictionary.AvpDictionary
 import org.mobicents.diameter.dictionary.AvpRepresentation
 import org.ostelco.diameter.getLogger
 import org.ostelco.diameter.util.AvpType.ADDRESS
-import org.ostelco.diameter.util.AvpType.IDENTITY
+import org.ostelco.diameter.util.AvpType.DIAMETER_IDENTITY
 import org.ostelco.diameter.util.AvpType.OCTET_STRING
 import org.ostelco.diameter.util.AvpType.UTF8STRING
 
@@ -57,18 +57,27 @@ object AvpTypeDictionary {
 
         return avpType
     }
+
+    // Some AVPs are incorrect in jDiameter dictionary. This will correct the known misstakes.
+    fun getOverrideType(avp: Avp): AvpType? {
+        return avpRepMap[avp.code]
+    }
 }
 
 enum class AvpType(val label: String) {
     ADDRESS("Address"),
-    IDENTITY("Identity"),
-    URI("URI"),
+    DIAMETER_IDENTITY("DiameterIdentity"),
+    DIAMETER_URI("DiameterURI"),
+    ENUMERATED("Enumerated"),
     FLOAT32("Float32"),
     FLOAT64("Float64"),
     GROUPED("Grouped"),
     INTEGER32("Integer32"),
     INTEGER64("Integer64"),
+    IP_ADDRESS("IPAddress"),
+    IP_FILTER_RULE("IPFilterRule"),
     OCTET_STRING("OctetString"),
+    QOS_FILTER_RULE("QoSFilterRule"),
     RAW("Raw"),
     RAW_DATA("RawData"),
     TIME("Time"),
@@ -87,6 +96,6 @@ enum class AvpRep(val avpCode: Int, val avpType: AvpType) {
     SELECTION_MODE(Avp.TGPP_SELECTION_MODE, UTF8STRING),
     SGSN_ADDRESS(Avp.SGSN_ADDRESS, ADDRESS),
     USER_LOCATION(Avp.GPP_USER_LOCATION_INFO, OCTET_STRING),
-    ORIGIN_HOST(Avp.ORIGIN_HOST, IDENTITY),
-    ORIGIN_REALM(Avp.ORIGIN_REALM, IDENTITY)
+    ORIGIN_HOST(Avp.ORIGIN_HOST, DIAMETER_IDENTITY),
+    ORIGIN_REALM(Avp.ORIGIN_REALM, DIAMETER_IDENTITY)
 }
