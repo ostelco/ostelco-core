@@ -87,52 +87,74 @@ func generateDummyStripeEndpointSecretIfNotSet() {
 
 func main() {
 
-	cleanPtr := flag.Bool("clean", false, "If set, run a './gradlew clean' before building and testing.")
-	stayUpPtr := flag.Bool("stay-up", false, "If set, keep test environment up after running tests.")
+	clean := flag.Bool("clean", false, "If set, run a './gradlew clean' and 'go clean' before building and testing.")
+	stayUp := flag.Bool("stay-up", false, "If set, keep test environment up in docker after running tests.")
+	doJvm := flag.Bool("build-jvm-components", true, "If set, then compile and test JVM based components.")
+	doGo := flag.Bool("build-golang-components", true, "If set, then compile and test GO based components.")
+
 	flag.Parse()
 
 	log.Printf("About to get started\n")
-	if *cleanPtr {
+	if *clean {
 		log.Printf("    ... will clean.")
 	}
 
-	if *stayUpPtr {
-		log.Printf("    ... will keep environment up after acceptance tests have run.")
+	if *stayUp  {
+		log.Printf("    ... will keep environment up after acceptance tests have run (if any).")
 	}
 
-	//
-	// Ensure that  all preconditions for building and testing are met, if not
-	// fail and terminate execution.
-	//
+	log.Printf("Starting building.")
 
-	goscript.AssertThatScriptCommandsAreAvailable("docker-compose", "./gradlew", "docker", "cmp")
 
-    projectProfile := parseServiceAccountFile("prime-service-account.json")
+	if !*doGo {
+		log.Printf("    ...  Not building/testing GO code")
+	} else {
+		log.Printf("    ...  Building and testing go code.")
+		goscript.AssertThatScriptCommandsAreAvailable("go", "~/go/bin/staticcheck")
 
-    gcpProjectId := projectProfile.ProjectId
-    
-    os.Setenv("GCP_PROJECT_ID", gcpProjectId)
+		goscript.AssertSuccesfulRun("go build ./...")
+		goscript.AssertSuccesfulRun("go test ./...")
+		goscript.AssertSuccesfulRun("~/go/bin/staticcheck ./...")
+	}
 
-	goscript.AssertThatEnvironmentVariableaAreSet("STRIPE_API_KEY", "GCP_PROJECT_ID")
-	goscript.AssertDockerIsRunning()
-	generateDummyStripeEndpointSecretIfNotSet()
-	distributeServiceAccountConfigs(
-		"prime-service-account.json",
-		"c54b903790340dd9365fa59fce3ad8e2",
-		"acceptance-tests/config",
-		"dataflow-pipelines/config",
-		"ocsgw/config",
-		"auth-server/config prime/config")
-	generateEspEndpointCertificates(
-		"certs/ocs.dev.ostelco.org/nginx.crt",
-		"ocsgw/cert/metrics.crt",
-		"ocs.dev.ostelco.org")
+	if !*doJvm {
+		log.Printf("    ...  Not building/testing JVM based code.")
+	} else {
+		log.Printf("    ... Building/testing JVM based code.")
+		//
+		// Ensure that  all preconditions for building and testing are met, if not
+		// fail and terminate execution.
+		//
 
-	buildUsingGradlew(cleanPtr)
+		goscript.AssertThatScriptCommandsAreAvailable("docker-compose", "./gradlew", "docker", "cmp")
 
-	runIntegrationTestsViaDocker(stayUpPtr)
+		projectProfile := parseServiceAccountFile("prime-service-account.json")
 
-	log.Printf("Build and integration tests succeeded\n")
+		gcpProjectId := projectProfile.ProjectId
+
+		os.Setenv("GCP_PROJECT_ID", gcpProjectId)
+
+		goscript.AssertThatEnvironmentVariableaAreSet("STRIPE_API_KEY", "GCP_PROJECT_ID")
+		goscript.AssertDockerIsRunning()
+		generateDummyStripeEndpointSecretIfNotSet()
+		distributeServiceAccountConfigs(
+			"prime-service-account.json",
+			"c54b903790340dd9365fa59fce3ad8e2",
+			"acceptance-tests/config",
+			"dataflow-pipelines/config",
+			"ocsgw/config",
+			"auth-server/config prime/config")
+		generateEspEndpointCertificates(
+			"certs/ocs.dev.ostelco.org/nginx.crt",
+			"ocsgw/cert/metrics.crt",
+			"ocs.dev.ostelco.org")
+
+		buildUsingGradlew(*clean)
+
+		runIntegrationTestsViaDocker(*stayUp)
+
+		log.Printf("Build and integration tests succeeded\n")
+	}
 }
 
 type GcpProjectProfile struct {
@@ -169,13 +191,13 @@ func parseServiceAccountFile(filename string) (GcpProjectProfile) {
 	return profile
 }
 
-func runIntegrationTestsViaDocker(stayUpPtr *bool) {
+func runIntegrationTestsViaDocker(stayUpPtr bool) {
 
-	// First take down any lingering docker jobs that may interfer with
+	// First take down any lingering docker jobs that may interfere with
 	// the current run.
 	goscript.AssertSuccesfulRun("docker-compose down")
 
-	if *stayUpPtr {
+	if stayUpPtr {
 		// If  ctrl-c is pushed during stay-up, then take the whole thing down using docker-compose down
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt)
@@ -190,12 +212,12 @@ func runIntegrationTestsViaDocker(stayUpPtr *bool) {
 	}
 }
 
-func buildUsingGradlew(cleanPtr *bool) {
+func buildUsingGradlew(clean bool) {
 	//
 	// All preconditions are now satisfied, now run the actual build/test commands
 	// and terminate the build process if any of them fails.
 	//
-	if *cleanPtr {
+	if clean {
 		goscript.AssertSuccesfulRun("./gradlew build")
 	}
 	goscript.AssertSuccesfulRun("./gradlew build")
