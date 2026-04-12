@@ -23,6 +23,7 @@ At the storage and integration level, the repository combines Google Cloud servi
 | --- | --- |
 | [The big picture (diagram) of current workflow](https://github.com/ostelco/ostelco-docs/blob/master/the-current-work-flow.md) | High-level workflow diagram showing the main moving parts and message flow. |
 | [General documentation](./docs/README.md) | Entry point for development, deployment, testing, logging, glossary, and architecture notes. |
+| [Historical PR and branch structure](./historical-pr-and-branch-structure.md) | Historical triage of open PRs and unmerged branches, with a git-structure summary and revival assessment. |
 | [admin-endpoint](./admin-endpoint/README.md) | Back-office API for managing offers, segments, plans, payment inspection, imports, and KYC callbacks. |
 | [auth-server](./auth-server/README.md) | Standalone service that issues Firebase-backed authentication tokens for subscribers. |
 | [customer-endpoint](./customer-endpoint/README.md) | Customer-facing API for profile, regions, KYC, bundles, purchases, payment sources, and SIM actions. |
